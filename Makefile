@@ -25,7 +25,7 @@ wipe: clean
 	find $(SRCDIRS) -name '*~' -type f -exec rm '{}' \;
 	find $(SRCDIRS) -name '*.sw*' -type f -exec rm '{}' \;
 
-test: ensure $(GOBINDATA) bindata
+test: ensure
 	# add more test directories
 	go clean -testcache
 	go test $(TFLAGS)  ./...
