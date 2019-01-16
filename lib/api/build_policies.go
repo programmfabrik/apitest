@@ -19,7 +19,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	w := multipart.NewWriter(buf)
 
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
-	for key, val := range request.body.(map[string]interface{}) {
+	for key, val := range request.Body.(map[string]interface{}) {
 		pathSpec, ok := val.(util.JsonString)
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
@@ -28,7 +28,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid", pathSpec)
 		}
 
-		_, file, err := util.OpenFileOrUrl(pathSpec, request.manifestDir)
+		_, file, err := util.OpenFileOrUrl(pathSpec, request.ManifestDir)
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
@@ -50,7 +50,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 	additionalHeaders = make(map[string]string)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
-	for key, value := range request.body.(map[string]string) {
+	for key, value := range request.Body.(map[string]string) {
 		formParams.Add(key, value)
 	}
 	body = strings.NewReader(formParams.Encode())
@@ -61,7 +61,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string)
 	additionalHeaders["Content-Type"] = "application/json"
-	bodyBytes, err := cjson.Marshal(request.body)
+	bodyBytes, err := cjson.Marshal(request.Body)
 	if err != nil {
 		return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
 	}

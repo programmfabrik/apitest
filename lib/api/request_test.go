@@ -4,43 +4,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
 )
 
-func TestRequestFromSpec(t *testing.T) {
-	requestSpec := RequestSerialization{
-		Endpoint: "session",
-		Method:   "GET",
-		QueryParams: map[string]interface{}{
-			"priority":  "2",
-			"format":    "long",
-			"verbosity": 2,
-			"object": map[string]interface{}{
-				"test": 2,
-			},
-		},
-		Headers: map[string]string{
-			"testheader": "val",
-		},
-	}
-	request := NewRequest(requestSpec, "manifestDir")
-	test_utils.AssertStringEquals(t, request.queryParams["priority"], "2")
-	test_utils.AssertStringEquals(t, request.queryParams["format"], "long")
-	test_utils.AssertStringEquals(t, request.queryParams["verbosity"], "2")
-	test_utils.AssertStringEquals(t, request.queryParams["object"], `{"test":2}`)
-	test_utils.AssertStringEquals(t, request.headers["testheader"], "val")
-	test_utils.AssertStringEquals(t, request.manifestDir, "manifestDir")
-}
-
 func TestRequestBuildHttp(t *testing.T) {
 	request := Request{
-		endpoint: "endpoint",
-		method:   "DO!",
-		queryParams: map[string]string{
+		Endpoint: "endpoint",
+		Method:   "DO!",
+		QueryParams: map[string]interface{}{
 			"query_param": "value",
 		},
 	}
@@ -61,29 +35,5 @@ func TestRequestBuildHttp(t *testing.T) {
 
 	url := httpRequest.URL
 	test_utils.AssertStringEquals(t, url.RawQuery, "query_param=value")
-	test_utils.AssertStringEquals(t, url.Path, "serverUrl/api/v1/endpoint")
-}
-
-func TestRequestSetBuildPolicy_regular(t *testing.T) {
-	request := Request{}
-	request.setBuildPolicy("")
-	if reflect.ValueOf(request.buildPolicy).Pointer() != reflect.ValueOf(buildRegular).Pointer() {
-		t.Errorf("expected build policy to be 'buildRegular'")
-	}
-}
-
-func TestRequestSetBuildPolicy_multipart(t *testing.T) {
-	request := Request{}
-	request.setBuildPolicy("multipart")
-	if reflect.ValueOf(request.buildPolicy).Pointer() != reflect.ValueOf(buildMultipart).Pointer() {
-		t.Errorf("expected build policy to be 'buildMultipart'")
-	}
-}
-
-func TestRequestSetBuildPolicy_urlencoded(t *testing.T) {
-	request := Request{}
-	request.setBuildPolicy("urlencoded")
-	if reflect.ValueOf(request.buildPolicy).Pointer() != reflect.ValueOf(buildUrlencoded).Pointer() {
-		t.Errorf("expected build policy to be 'buildUrlencoded'")
-	}
+	test_utils.AssertStringEquals(t, url.Path, "serverUrl/endpoint")
 }

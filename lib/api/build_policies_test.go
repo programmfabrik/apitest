@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
+	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
 
 	"github.com/spf13/afero"
 )
@@ -20,11 +20,11 @@ func TestBuildMultipart(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, fmt.Sprintf("test/%s", assertFilename), []byte(assertContent), 0644)
 
 	testRequest := Request{
-		body: map[string]interface{}{
+		Body: map[string]interface{}{
 			"somekey": fmt.Sprintf("@%s", assertFilename),
 		},
-		manifestDir: "test/",
-		buildPolicy: buildMultipart,
+		ManifestDir: "test/",
+		BodyType:    "multipart",
 	}
 
 	httpRequest, err := testRequest.buildHttpRequest("some_interface", "some_token")
@@ -43,10 +43,10 @@ func TestBuildMultipart(t *testing.T) {
 
 func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 	testRequest := Request{
-		body: map[string]interface{}{
+		Body: map[string]interface{}{
 			"somekey": fmt.Sprintf("noPathspec"),
 		},
-		manifestDir: "test/path/",
+		ManifestDir: "test/path/",
 	}
 
 	_, _, err := buildMultipart(testRequest)
@@ -60,10 +60,10 @@ func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 
 func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 	testRequest := Request{
-		body: map[string]interface{}{
+		Body: map[string]interface{}{
 			"somekey": 1,
 		},
-		manifestDir: "test/path/",
+		ManifestDir: "test/path/",
 	}
 
 	_, _, err := buildMultipart(testRequest)
@@ -77,10 +77,10 @@ func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 
 func TestBuildMultipart_FileDoesNotExist(t *testing.T) {
 	testRequest := Request{
-		body: map[string]interface{}{
+		Body: map[string]interface{}{
 			"somekey": "@does_not_exist.json",
 		},
-		manifestDir: "test/path/",
+		ManifestDir: "test/path/",
 	}
 
 	_, _, err := buildMultipart(testRequest)

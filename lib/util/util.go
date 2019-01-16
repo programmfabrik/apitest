@@ -18,3 +18,17 @@ func RemoveFromJsonArray(input []GenericJson, removeIndex int) (output []Generic
 
 	return output
 }
+
+func GetStringFromInterface(queryParam interface{}) (string, error) {
+	switch t := queryParam.(type) {
+	case string:
+		return t, nil
+	case float64:
+		return strconv.FormatFloat(t, 'f', -1, 64), nil
+	case int:
+		return fmt.Sprintf("%d", t), nil
+	default:
+		jsonVal, err := json.Marshal(t)
+		return string(jsonVal), err
+	}
+}
