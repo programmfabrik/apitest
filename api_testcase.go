@@ -10,11 +10,11 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/compare"
+	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	apitestLogging "github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/template"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
 )
 
 const (
@@ -92,9 +92,14 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 
 	if testCase.BreakResponse != nil {
 		for _, v := range testCase.BreakResponse {
-			eResp, err := testCase.loadResponseSerialization(v)
+			spec, err := testCase.loadResponseSerialization(v)
 			if err != nil {
-				return false, fmt.Errorf("error loading break response serilization: %s", err)
+				return false, fmt.Errorf("error loading check response serilization: %s", err)
+			}
+
+			eResp, err := api.NewResponseFromSpec(spec)
+			if err != nil {
+				return false, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
 			responsesMatch, err := testCase.responsesEqual(eResp, response)
@@ -137,9 +142,14 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		leftResponses := make(util.JsonArray, 0)
 		for _, v := range jsonRespArray {
-			eResp, err := testCase.loadResponseSerialization(v)
+			spec, err := testCase.loadResponseSerialization(v)
 			if err != nil {
 				return -1, fmt.Errorf("error loading check response serilization: %s", err)
+			}
+
+			eResp, err := api.NewResponseFromSpec(spec)
+			if err != nil {
+				return -1, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
 			responsesMatch, err := testCase.responsesEqual(eResp, response)
@@ -344,11 +354,15 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.Response{StatusCode: 200, Header: nil, Body: nil}, nil
+		return api.NewResponse(200, nil, bytes.NewReader([]byte("")))
 	}
-	res, err = testCase.loadResponseSerialization(testCase.ResponseData)
+	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
 		return res, fmt.Errorf("error loading response spec: %s", err)
+	}
+	res, err = api.NewResponseFromSpec(spec)
+	if err != nil {
+		return res, fmt.Errorf("error creating response from spec: %s", err)
 	}
 	return res, nil
 }
@@ -379,7 +393,7 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	return
 }
 
-func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (spec api.Response, err error) {
+func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (spec api.ResponseSerialization, err error) {
 	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, testCase.loader)
 	if err != nil {
 		return spec, fmt.Errorf("error loading response data: %s", err)
@@ -391,10 +405,6 @@ func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (spec a
 	err = cjson.Unmarshal(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("error unmarshaling res: %s", err)
-	}
-
-	if spec.StatusCode == 0 {
-		spec.StatusCode = 200
 	}
 
 	return spec, nil

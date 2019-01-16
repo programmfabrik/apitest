@@ -91,15 +91,10 @@ func (session *Session) SendRequest(request Request) (response Response, err err
 	if err != nil {
 		return response, err
 	}
-  
+
 	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body)
 	if err != nil {
-		return response, fmt.Errorf("error reading httpResponse.Body: %s", err)
-	}
-	response = Response{
-		StatusCode: httpResponse.StatusCode,
-		Header:     httpResponse.Header,
-		Body:       bodyBytes,
+		return response, fmt.Errorf("error constructing response from http response")
 	}
 	logging.DebugWithVerbosityf(logging.V2, "response: %s", response.ToString())
 
@@ -126,21 +121,22 @@ type settingsBody struct {
 
 func (session *Session) SendSettingsRequest() (res settingsBody, err error) {
 	request := Request{
-		Endpoint:   "settings",
-		Method:     "GET",
-		DoNotStore: true,
+		Endpoint:    "settings",
+		Method:      "GET",
+		buildPolicy: buildRegular,
+		DoNotStore:  true,
 	}
 	resp, err := session.SendRequest(request)
 	if err != nil {
 		return res, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.statusCode != 200 {
 		apiErr := apiError{}
 		if err = resp.marshalBodyInto(&apiErr); err != nil {
 			return res, err
 		}
-		apiErr.Statuscode = resp.StatusCode
+		apiErr.Statuscode = resp.statusCode
 
 		return res, apiErr
 	}
@@ -173,21 +169,22 @@ func (apiErr apiError) Error() string {
 
 func (session *Session) SendSessionRequest() (res sessionBody, err error) {
 	request := Request{
-		Endpoint:   "session",
-		Method:     "GET",
-		DoNotStore: true,
+		Endpoint:    "session",
+		Method:      "GET",
+		buildPolicy: buildRegular,
+		DoNotStore:  true,
 	}
 	resp, err := session.SendRequest(request)
 	if err != nil {
 		return res, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.statusCode != 200 {
 		apiErr := apiError{}
 		if err = resp.marshalBodyInto(&apiErr); err != nil {
 			return res, err
 		}
-		apiErr.Statuscode = resp.StatusCode
+		apiErr.Statuscode = resp.statusCode
 
 		return res, apiErr
 	}
@@ -216,8 +213,8 @@ func (session *Session) SendSessionAuthenticateRequest(auth SessionAuthenticatio
 			"login":    auth.Login,
 			"password": auth.Password,
 		},
-		BodyType:   "urlencoded",
-		DoNotStore: true,
+		buildPolicy: buildUrlencoded,
+		DoNotStore:  true,
 	}
 
 	resp, err := session.SendRequest(request)

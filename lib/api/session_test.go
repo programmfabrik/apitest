@@ -17,7 +17,7 @@ func TestNewSessionSucceeds(t *testing.T) {
 	})
 	client := server.Client()
 	defer server.Close()
-	session, err := NewSession(server.URL, client, nil, &Datastore{})
+	session, err := NewSession(server.URL+"/api/v1", client, nil, &Datastore{})
 	test_utils.CheckError(t, err, fmt.Sprintf("error creating session: %s", err))
 	test_utils.AssertStringEquals(t, session.token, "mock")
 }
@@ -31,7 +31,7 @@ func TestNewSessionFails(t *testing.T) {
 	})
 	client := server.Client()
 	defer server.Close()
-	_, err := NewSession(server.URL, client, nil, &Datastore{})
+	_, err := NewSession(server.URL+"/api/v1", client, nil, &Datastore{})
 	if err == nil || !strings.Contains(err.Error(), "error.server.fail") {
 		t.Errorf("expected error to contain: 'error.server.fail', got %s", err)
 	}
@@ -49,7 +49,7 @@ func TestSessionLoginSuccess(t *testing.T) {
 	client := server.Client()
 	defer server.Close()
 	auth := &SessionAuthentication{}
-	session, err := NewSession(server.URL, client, auth, &Datastore{})
+	session, err := NewSession(server.URL+"/api/v1", client, auth, &Datastore{})
 	test_utils.CheckError(t, err, fmt.Sprintf("error creating session: %s", err))
 	test_utils.AssertStringEquals(t, session.token, "mock")
 	test_utils.AssertIntEquals(t, session.MaxEventId, 2391)
@@ -68,7 +68,7 @@ func TestSessionLoginFailsNotAuthenticated(t *testing.T) {
 	client := server.Client()
 	defer server.Close()
 	auth := &SessionAuthentication{}
-	_, err := NewSession(server.URL, client, auth, &Datastore{})
+	_, err := NewSession(server.URL+"/api/v1", client, auth, &Datastore{})
 	if err == nil || !strings.Contains(err.Error(), "error.something.failed") {
 		t.Errorf("expected error to contain: 'error.something.failed', got %s", err)
 	}
@@ -82,7 +82,7 @@ func TestSessionSettingsRequest(t *testing.T) {
 	})
 	client := server.Client()
 	defer server.Close()
-	session := Session{Store: nil, client: client, serverUrl: server.URL}
+	session := Session{Store: nil, client: client, serverUrl: server.URL + "/api/v1"}
 	settingsResponse, err := session.SendSettingsRequest()
 	test_utils.CheckError(t, err, fmt.Sprintf("error sending settings request: %s", err))
 	test_utils.AssertStringEquals(t, settingsResponse.DbName, "mock")
