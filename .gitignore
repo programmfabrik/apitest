@@ -1,0 +1,17 @@
+commit.txt
+go.sum
+tags
+vendor
+.DS_Store
+*~
+.*.sw*
+.\#*
+\#*#
+/fylr-apitest
+/fylr.yml
+/website/public
+/public
+tmpl.go
+.idea/
+apitest_report.json
+/commands/server/assets/tmpl.go
