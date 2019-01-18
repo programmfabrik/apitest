@@ -206,12 +206,12 @@ func (session *Session) SendSessionAuthenticateRequest(auth SessionAuthenticatio
 		Endpoint: "session/authenticate",
 		Method:   "POST",
 		Headers: map[string]string{
-			"token":  session.token,
-			"method": auth.Method,
+			"token": session.token,
 		},
 		Body: map[string]string{
 			"login":    auth.Login,
 			"password": auth.Password,
+			"method":   auth.Method,
 		},
 		buildPolicy: buildUrlencoded,
 		DoNotStore:  true,
