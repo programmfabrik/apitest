@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -86,6 +87,9 @@ func (this *Datastore) SetMap(smap map[string]interface{}) error {
 }
 
 func (this *Datastore) Set(index string, value interface{}) error {
+	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
+
+	//Slice in datastore
 	if strings.HasSuffix(index, "[]") {
 		// do a push to an array
 		use_index := index[:len(index)-2]
@@ -108,11 +112,25 @@ func (this *Datastore) Set(index string, value interface{}) error {
 		this.storage[use_index] = append(s, value)
 
 		//logging.Debugf("datastore[\"%s\"][]=%#v", use_index, value)
+	} else if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
+		// do a push to an array
+		use_index := rego[1]
+		_, ok := this.storage[use_index]
+		if !ok {
+			this.storage[use_index] = make(map[string]interface{}, 0)
+		}
+
+		s, ok := this.storage[use_index].(map[string]interface{})
+		if !ok {
+			this.storage[use_index] = make(map[string]interface{}, 0)
+			s = this.storage[use_index].(map[string]interface{})
+		}
+		s[rego[2]] = value
+		this.storage[use_index] = s
+
 	} else {
 		this.storage[index] = value
-		//logging.Debugf("datastore[\"%s\"]=%#v", index, value)
 	}
-	//logging.Debugf("datastore %#v", this)
 	return nil
 }
 
