@@ -237,8 +237,8 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "it.objecterino",
-					Message: "[0]actual response[objecterino] != nil but should NOT exist",
+					Key:     "it[0].objecterino",
+					Message: "actual response[objecterino] != nil but should NOT exist",
 				},
 			},
 		},
@@ -268,8 +268,8 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "it.objecterino",
-					Message: "[0]actual response[objecterino] != nil but should NOT exist",
+					Key:     "it[0].objecterino",
+					Message: "actual response[objecterino] != nil but should NOT exist",
 				},
 			},
 		},
@@ -371,8 +371,8 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "array",
-					Message: "[1]Expected 'val3' != 'val1' Got",
+					Key:     "array[1]",
+					Message: "Expected 'val3' != 'val1' Got",
 				},
 			},
 		},
@@ -397,12 +397,12 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "array",
-					Message: "[0]Expected 'val3' != 'val2' Got",
+					Key:     "array[0]",
+					Message: "Expected 'val3' != 'val2' Got",
 				},
 				{
-					Key:     "array",
-					Message: "[1]Expected 'val2' != 'val3' Got",
+					Key:     "array[1]",
+					Message: "Expected 'val2' != 'val3' Got",
 				},
 			},
 		},
@@ -434,12 +434,34 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "array.inner.deeper",
-					Message: "[0]Expected 'val4' != 'val5' Got",
+					Key:     "array.inner.deeper[0]",
+					Message: "Expected 'val4' != 'val5' Got",
 				},
 				{
-					Key:     "array.inner.deeper",
-					Message: "[1]Expected 'val5' != 'val4' Got",
+					Key:     "array.inner.deeper[1]",
+					Message: "Expected 'val5' != 'val4' Got",
+				},
+			},
+		},
+		{
+			name: "Right error message for array",
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"henk": "denk",
+					},
+				},
+			},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{},
+				},
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "body[0].henk",
+					Message: "actual response[henk] == nil but should exists",
 				},
 			},
 		},
@@ -556,7 +578,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "array",
-					Message: "Length of the actual response array '1' != '2' Expected Length",
+					Message: "length of the actual response array '1' != '2' expected length",
 				},
 			},
 		},
@@ -588,6 +610,11 @@ func TestComparison(t *testing.T) {
 			}
 
 			test_utils.AssertStringArraysEqualNoOrder(t, wantFailures, haveFailures)
+
+			if t.Failed() {
+				t.Log("EXPECTED ", wantFailures)
+				t.Log("GOT ", haveFailures)
+			}
 		})
 	}
 }

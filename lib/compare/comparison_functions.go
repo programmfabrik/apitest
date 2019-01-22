@@ -225,7 +225,11 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 				if iv.Key == "" {
 					tmp.Failures[ik].Key = k
 				} else {
-					tmp.Failures[ik].Key = k + "." + iv.Key
+					if []rune(iv.Key)[0] == '[' {
+						tmp.Failures[ik].Key = k + iv.Key
+					} else {
+						tmp.Failures[ik].Key = k + "." + iv.Key
+					}
 				}
 			}
 			res.Failures = append(res.Failures, tmp.Failures...)
@@ -273,7 +277,11 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 			}
 			if tmp.Equal != true {
 				for _, v := range tmp.Failures {
-					res.Failures = append(res.Failures, CompareFailure{v.Key, fmt.Sprintf("[%d]%s", lk, v.Message)})
+					key := fmt.Sprintf("[%d].%s", lk, v.Key)
+					if v.Key == "" {
+						key = fmt.Sprintf("[%d]", lk)
+					}
+					res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("%s", v.Message)})
 				}
 				res.Equal = false
 			}
@@ -304,7 +312,11 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 
 			if found != true {
 				for _, v := range allTmpFailures {
-					res.Failures = append(res.Failures, CompareFailure{v.Key, fmt.Sprintf("[%d]%s", lk, v.Message)})
+					key := fmt.Sprintf("[%d].%s", lk, v.Key)
+					if v.Key == "" {
+						key = fmt.Sprintf("[%d]", lk)
+					}
+					res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("%s", v.Message)})
 				}
 				res.Equal = false
 			}
@@ -424,7 +436,7 @@ func keyChecks(lk string, right util.GenericJson, control ComparisonContext) (er
 		rightArray := right.(util.JsonArray)
 		rightLen := int64(len(rightArray))
 		if rightLen != *leftLen {
-			return fmt.Errorf("Length of the actual response array '%d' != '%d' Expected Length", rightLen, *leftLen)
+			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *leftLen)
 		}
 	}
 
