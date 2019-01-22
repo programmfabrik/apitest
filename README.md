@@ -890,6 +890,7 @@ error
 - string,array
 - float64,array
 - bool,array
+- json
 
 #### Example
 

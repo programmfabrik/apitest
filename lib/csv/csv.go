@@ -3,6 +3,7 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -119,7 +120,7 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 func isValidFormat(format string) bool {
 	validFormats := []string{"string", "int64", "float64", "bool"}
 	for _, v := range validFormats {
-		if format == v || format == v+",array" {
+		if format == v || format == v+",array" || format == "json" {
 			return true
 		}
 	}
@@ -235,7 +236,17 @@ func getTyped(value, format string) (interface{}, error) {
 			retArray = append(retArray, v == "true")
 		}
 		return retArray, nil
+	case "json":
+		if value == "" {
+			return nil, nil
+		}
+		var data interface{}
+		err := json.Unmarshal([]byte(value), &data)
+		if err != nil {
+			return nil, fmt.Errorf("file_csv: Error in JSON: \"%s\": %s", value, err)
+		}
 	default:
 		return nil, fmt.Errorf("Given format '%s' not supported for csv usage", format)
 	}
+
 }
