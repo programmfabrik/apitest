@@ -6,13 +6,15 @@ import (
 	"regexp"
 )
 
-func Unmarshal(input []byte, output interface{}) (error) {
-	var re = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
+func Unmarshal(input []byte, output interface{}) error {
+	var commentRegex = regexp.MustCompile(`(?m)^(.*?)(#|//).*$`)
+	inputNoComments := []byte(commentRegex.ReplaceAllString(string(input), `$1`))
 
-	inputNoComments := []byte(re.ReplaceAllString(string(input), ``))
+	var emptyLineRegex = regexp.MustCompile(`(?m)^\s*$\n`)
+	inputNoEmptyLines := []byte(emptyLineRegex.ReplaceAllString(string(inputNoComments), ``))
 
 	// unmarshal into object
-	err := json.Unmarshal(inputNoComments, output)
+	err := json.Unmarshal(inputNoEmptyLines, output)
 	if err != nil {
 		return getIndepthJsonError(inputNoComments, err)
 	}

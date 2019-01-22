@@ -104,8 +104,8 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     //Defines how a single test (if defined in the single testcase) should authenticate against the easydb. The authentication is valid for the complete testsuite and only one session can be used.
     "authentication": {
         "login": "root",
-        "method": "easydb",
-        "password": "admin"
+        "method": "easydb", // This is the method given in the easydb doc
+        "password": "admin" 
     },
     //General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename", 

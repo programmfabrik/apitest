@@ -104,6 +104,65 @@ welt:1
 
 }
 
+func TestRemoveComments(t *testing.T) {
+	testCases := []struct {
+		iJson string
+		eOut  util.JsonObject
+	}{
+		{
+			`{
+"hallo":2
+}`,
+			util.JsonObject{
+				"hallo": float64(2),
+			},
+		},
+		{
+			`{
+"hallo":2 //as
+}`,
+			util.JsonObject{
+				"hallo": float64(2),
+			},
+		},
+		{
+			`{
+"hallo":2 //as
+## line 2
+
+#line2
+}`,
+			util.JsonObject{
+				"hallo": float64(2),
+			},
+		},
+		{
+			`{
+"hallo":2, //as
+## line 2
+
+#line2
+"hey":"ha"
+}`,
+			util.JsonObject{
+				"hallo": float64(2),
+				"hey":   "ha",
+			},
+		},
+	}
+
+	for _, v := range testCases {
+		var out util.JsonObject
+		Unmarshal([]byte(v.iJson), &out)
+		for k, v := range v.eOut {
+			if out[k] != v {
+				t.Errorf("[%s] Have '%d' != '%d' want", k, out[k], v)
+			}
+		}
+	}
+
+}
+
 func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	testCases := []struct {
 		cjsonString string
