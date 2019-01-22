@@ -510,7 +510,7 @@ func TestComparison(t *testing.T) {
 			name: "Check array length",
 			left: util.JsonObject{
 				"array:control": util.JsonObject{
-					"element_count": func(i int64) *int64 { return &i }(3),
+					"element_count": 3,
 				},
 			},
 			right: util.JsonObject{
@@ -536,7 +536,7 @@ func TestComparison(t *testing.T) {
 			name: "Check array length and fail",
 			left: util.JsonObject{
 				"array:control": util.JsonObject{
-					"element_count": func(i int64) *int64 { return &i }(2),
+					"element_count": 2,
 				},
 				"array": util.JsonArray{
 					util.JsonArray{},
@@ -586,9 +586,6 @@ func TestComparison(t *testing.T) {
 			for _, v := range equal.Failures {
 				haveFailures = append(haveFailures, fmt.Sprintf("%s", v))
 			}
-
-			t.Log("Have: ", haveFailures)
-			t.Log("Want: ", wantFailures)
 
 			test_utils.AssertStringArraysEqualNoOrder(t, wantFailures, haveFailures)
 		})

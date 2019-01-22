@@ -1,8 +1,10 @@
 package compare
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
@@ -59,13 +61,12 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			}
 			out.mustExist = tV
 		case "element_count":
-			tV, ok := v.(*int64)
-			if !ok {
-				err = fmt.Errorf("element_count is no int64")
-				return
+			tV, err := getAsInt64(v)
+			if err != nil {
+				return out, fmt.Errorf("element_count is no int64: %s", err)
 
 			}
-			out.elementCount = tV
+			out.elementCount = &tV
 		case "is_string":
 			tV, ok := v.(bool)
 			if !ok {
@@ -444,5 +445,20 @@ func getJsonType(value util.GenericJson) string {
 		return "Bool"
 	default:
 		return "No JSON Type"
+	}
+}
+
+func getAsInt64(value util.GenericJson) (v int64, err error) {
+	switch t := value.(type) {
+	case int64:
+		return t, nil
+	case int:
+		return int64(t), nil
+	case float32, float64:
+		return strconv.ParseInt(fmt.Sprintf("%.0f", t), 10, 64)
+	case json.Number:
+		return t.Int64()
+	default:
+		return 0, fmt.Errorf("'%v' has no valid json number type", value)
 	}
 }

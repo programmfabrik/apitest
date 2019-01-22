@@ -403,7 +403,7 @@ E.g. the following response would **fail**  as `"iShouldExists"` is  **not** in 
 #### element_count
 Check if the size of an array equals the element_count
 
-`must_exist` is available only for arrays
+`element_count` is available only for arrays
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
