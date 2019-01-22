@@ -9,8 +9,8 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/csv"
-	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"github.com/programmfabrik/fylr-apitest/lib/logging"
+	"github.com/programmfabrik/fylr-apitest/lib/util"
 
 	"io/ioutil"
 	"path/filepath"
@@ -128,6 +128,9 @@ func (loader *Loader) Render(
 				return nil, err
 			}
 			data, err := csv.CSVToMap(fileBytes, delimiter)
+			if err != nil {
+				return data, fmt.Errorf("'%s' %s", path, err)
+			}
 			return data, err
 		},
 		"datastore": func(index interface{}) (interface{}, error) {
