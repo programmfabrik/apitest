@@ -76,8 +76,9 @@ func (loader *Loader) Render(
 	ctx interface{}) (res []byte, err error) {
 
 	//Remove comments from template
+
 	var re = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
-	tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), ``))
+	tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), `$1`))
 
 	var funcMap template.FuncMap
 
