@@ -2,14 +2,26 @@ package api
 
 import (
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
+	"time"
+
 	"io"
 	"net/http"
 	"net/http/httputil"
 )
 
+var c http.Client
+
+func init() {
+	c = http.Client{
+		Timeout: time.Second * 10,
+	}
+}
+
 type Request struct {
 	Endpoint    string                 `yaml:"endpoint" json:"endpoint"`
+	ServerURL   string                 `yaml:"serverurl" json:"serverurl"`
 	Method      string                 `yaml:"method" json:"method"`
 	QueryParams map[string]interface{} `yaml:"query_params" json:"query_params"`
 	Headers     map[string]string      `yaml:"header" json:"header"`
@@ -19,9 +31,10 @@ type Request struct {
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool
 	ManifestDir string
+	DataStore   *Datastore
 }
 
-func (request Request) buildHttpRequest(serverUrl string, token string) (res *http.Request, err error) {
+func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	if request.buildPolicy == nil {
 		//Set Build policy
 		switch request.BodyType {
@@ -34,7 +47,7 @@ func (request Request) buildHttpRequest(serverUrl string, token string) (res *ht
 		}
 	}
 	//Render Request Url
-	requestUrl := fmt.Sprintf("%s/%s", serverUrl, request.Endpoint)
+	requestUrl := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
 
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
@@ -59,15 +72,32 @@ func (request Request) buildHttpRequest(serverUrl string, token string) (res *ht
 		res.Header.Add(key, val)
 	}
 
-	additionalHeaders["x-easydb-token"] = token
 	for key, val := range additionalHeaders {
 		res.Header.Add(key, val)
 	}
+
+	//Get own headers from datastore
+	if request.DataStore != nil {
+		headersInt, err := request.DataStore.Get("httpHeaders")
+		if err != nil {
+			return nil, fmt.Errorf("Could not get 'httpHeaders' from Datastore: %s", err)
+		}
+		ownHeaders, ok := headersInt.(map[string]interface{})
+		if ok {
+			for key, val := range ownHeaders {
+				valString, ok := val.(string)
+				if ok {
+					res.Header.Add(key, valString)
+				}
+			}
+		}
+	}
+
 	return res, nil
 }
 
-func (request Request) ToString(session Session) (res string) {
-	httpRequest, err := request.buildHttpRequest(session.serverUrl, session.token)
+func (request Request) ToString() (res string) {
+	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
 		return fmt.Sprintf("could not build httpRequest: %s", err)
 	}
@@ -83,4 +113,25 @@ func (request Request) ToString(session Session) (res string) {
 		return fmt.Sprintf("could not dump httpRequest: %s", err)
 	}
 	return string(resBytes)
+}
+
+func (request Request) Send() (response Response, err error) {
+	logging.DebugWithVerbosityf(logging.V2, "request: %s", request.ToString())
+	httpRequest, err := request.buildHttpRequest()
+	if err != nil {
+		return response, err
+	}
+
+	httpResponse, err := c.Do(httpRequest)
+	if err != nil {
+		return response, err
+	}
+
+	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body)
+	if err != nil {
+		return response, fmt.Errorf("error constructing response from http response")
+	}
+	logging.DebugWithVerbosityf(logging.V2, "response: %s", response.ToString())
+
+	return response, err
 }

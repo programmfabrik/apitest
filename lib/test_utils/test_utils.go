@@ -3,12 +3,13 @@ package test_utils
 import (
 	"bytes"
 	"fmt"
+	"github.com/programmfabrik/go-test-utils"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
-var TestServer = NewTestServer(Routes{
+var TestServer = test_utils.NewTestServer(test_utils.Routes{
 	"/api/v1/session": func(w *http.ResponseWriter, r *http.Request) {
 		(*w).Write([]byte("{\"token\": \"mock\"}"))
 	},

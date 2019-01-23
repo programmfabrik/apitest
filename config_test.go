@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 
@@ -47,23 +46,6 @@ func SetupFS() {
 	afero.WriteFile(filesystem.Fs, manifestPath3, []byte(""), 644)
 	afero.WriteFile(filesystem.Fs, manifestPath4, []byte(""), 644)
 	afero.WriteFile(filesystem.Fs, manifestPath5, []byte(""), 644)
-
-}
-
-func TestTestToolConfig_DBName(t *testing.T) {
-	SetupFS()
-
-	//Wrong db name -> Expect error
-	_, err := NewTestToolConfig(server.URL+"/api/v1", "Fail", []string{"path"})
-	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on wrong dbName")
-
-	//Wrong db name -> Expect error
-	_, err = NewTestToolConfig("invalid", "sTest", []string{"path"})
-	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on wrong server url")
-
-	//Wrong db name -> Expect error
-	_, err = NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"path"})
-	test_utils.CheckError(t, err, fmt.Sprintf("NewTestToolConfig failed with right dbName: %s", err))
 
 }
 

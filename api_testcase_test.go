@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
-	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
+	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/spf13/afero"
 )
 
@@ -68,7 +68,8 @@ func TestCollectResponseShouldWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	test.reporter = r
-	test.session, _ = api.NewSession(ts.URL, &http.Client{}, &api.SessionAuthentication{}, api.NewStore())
+	test.ServerURL = ts.URL
+	test.dataStore = api.NewStore()
 
 	test.runAPITestCase()
 
@@ -120,7 +121,8 @@ func TestCollectLoadExternalFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	test.reporter = r
-	test.session, _ = api.NewSession(ts.URL, &http.Client{}, &api.SessionAuthentication{}, api.NewStore())
+	test.ServerURL = ts.URL
+	test.dataStore = api.NewStore()
 
 	test.runAPITestCase()
 
@@ -180,7 +182,8 @@ func TestCollectLoadExternalCollect(t *testing.T) {
 		t.Fatal(err)
 	}
 	test.reporter = r
-	test.session, _ = api.NewSession(ts.URL, &http.Client{}, &api.SessionAuthentication{}, api.NewStore())
+	test.ServerURL = ts.URL
+	test.dataStore = api.NewStore()
 
 	test.runAPITestCase()
 
@@ -279,7 +282,8 @@ func TestCollectEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	test.reporter = r
-	test.session, _ = api.NewSession(ts.URL, &http.Client{}, &api.SessionAuthentication{}, api.NewStore())
+	test.ServerURL = ts.URL
+	test.dataStore = api.NewStore()
 
 	test.runAPITestCase()
 
@@ -331,7 +335,8 @@ func TestCollectResponseShouldFail(t *testing.T) {
 		t.Fatal(err)
 	}
 	test.reporter = r
-	test.session, _ = api.NewSession(ts.URL, &http.Client{}, &api.SessionAuthentication{}, api.NewStore())
+	test.ServerURL = ts.URL
+	test.dataStore = api.NewStore()
 
 	test.runAPITestCase()
 

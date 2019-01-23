@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestDataStore_Get(t *testing.T) {

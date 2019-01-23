@@ -24,13 +24,12 @@ const (
 // Case defines the structure of our single testcase
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
-	Name              string                     `json:"name"`
-	RequestData       *util.GenericJson          `json:"request"`
-	ResponseData      util.GenericJson           `json:"response"`
-	ContinueOnFailure bool                       `json:"continue_on_failure"`
-	Authentication    *api.SessionAuthentication `json:"authentication"`
-	Store             map[string]interface{}     `json:"store"`                // init datastore before testrun
-	StoreResponse     map[string]string          `json:"store_response_qjson"` // store qjson parsed response in datastore
+	Name              string                 `json:"name"`
+	RequestData       *util.GenericJson      `json:"request"`
+	ResponseData      util.GenericJson       `json:"response"`
+	ContinueOnFailure bool                   `json:"continue_on_failure"`
+	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
+	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
 	Timeout         int                `json:"timeout_ms"`
 	Delay           *int               `json:"delay_ms"`
@@ -38,11 +37,12 @@ type Case struct {
 	CollectResponse util.GenericJson   `json:"collect_response"`
 
 	loader      template.Loader
-	session     api.Session
 	manifestDir string
 	reporter    *report.Report
 	suiteIndex  int
 	index       int
+	dataStore   *api.Datastore
+	ServerURL   string
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
@@ -178,7 +178,7 @@ func (testCase Case) executeRequest(counter int) (
 	err error) {
 
 	// Store datastore
-	err = testCase.session.Store.SetMap(testCase.Store)
+	err = testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 	}
@@ -191,15 +191,15 @@ func (testCase Case) executeRequest(counter int) (
 	}
 	apitestLogging.DebugWithVerbosityf(
 		apitestLogging.V1,
-		"request: %s", req.ToString(testCase.session))
-	apiResp, err = testCase.session.SendRequest(req)
+		"request: %s", req.ToString())
+	apiResp, err = req.Send()
 	if err != nil {
 		err = fmt.Errorf("error sending request: %s", err)
 		return
 	}
 
 	// Store in custom store
-	err = testCase.session.Store.SetWithQjson(apiResp, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiResp, testCase.StoreResponse)
 	if err != nil {
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
 		return
@@ -215,9 +215,9 @@ func (testCase Case) executeRequest(counter int) (
 		}
 		// Store in datastore -1 list
 		if counter == 0 {
-			testCase.session.Store.AppendResponse(json)
+			testCase.dataStore.AppendResponse(json)
 		} else {
-			testCase.session.Store.UpdateLastResponse(json)
+			testCase.dataStore.UpdateLastResponse(json)
 		}
 	}
 
@@ -239,10 +239,10 @@ func (testCase Case) executeRequest(counter int) (
 	return
 }
 
-func LogReqResp(request api.Request, response api.Response, session api.Session) {
+func LogReqResp(request api.Request, response api.Response) {
 	apitestLogging.DebugWithVerbosityf(
 		apitestLogging.V0,
-		"[Request] %s", request.ToString(session))
+		"[Request] %s", request.ToString())
 	apitestLogging.DebugWithVerbosityf(
 		apitestLogging.V0,
 		"[Response] %s", response.ToString())
@@ -276,18 +276,18 @@ func (testCase Case) run() (success bool, err error) {
 
 		breakPresent, err := testCase.breakResponseIsPresent(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogReqResp(request, apiResponse)
 			return false, fmt.Errorf("error checking for break response: %s", err)
 		}
 
 		if breakPresent {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogReqResp(request, apiResponse)
 			return false, fmt.Errorf("Break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogReqResp(request, apiResponse)
 			return false, fmt.Errorf("error checking for continue response: %s", err)
 		}
 
@@ -328,7 +328,7 @@ func (testCase Case) run() (success bool, err error) {
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					LogReqResp(request, apiResponse, testCase.session)
+					LogReqResp(request, apiResponse)
 					return false, err
 				}
 				logging.Warnf("Collect response not found: %s", jsonV)
@@ -336,7 +336,7 @@ func (testCase Case) run() (success bool, err error) {
 			}
 		}
 
-		LogReqResp(request, apiResponse, testCase.session)
+		LogReqResp(request, apiResponse)
 		return false, nil
 	}
 	return true, nil
@@ -390,6 +390,8 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	}
 	err = cjson.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
+	spec.DataStore = testCase.dataStore
+	spec.ServerURL = testCase.ServerURL
 	return
 }
 

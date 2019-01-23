@@ -249,4 +249,6 @@ func getTyped(value, format string) (interface{}, error) {
 		return nil, fmt.Errorf("Given format '%s' not supported for csv usage", format)
 	}
 
+	return nil, fmt.Errorf("Given format '%s' not supported for csv usage", format)
+
 }

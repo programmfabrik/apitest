@@ -101,12 +101,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```json
 {
-    //Defines how a single test (if defined in the single testcase) should authenticate against the easydb. The authentication is valid for the complete testsuite and only one session can be used.
-    "authentication": {
-        "login": "root",
-        "method": "easydb", // This is the method given in the easydb doc
-        "password": "admin" 
-    },
     //General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename", 
     //Testname. Should be the ticket number if the test is based on a ticket
@@ -143,16 +137,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "continue_on_failure": true, 
     //Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname", 
-    //Defines how this single test should authenticate against the easydb. This authentication is valid only for the single test and overwrites the testuite setting
-    "authentication": {
-        "login": "root",
-        "method": "easydb",
-        "password": "admin",
-        // Store parts of the session repsonse
-        "store_response_qjson": {
-          "max_event_id": "body.current_max_event_id"
-	    },
-    },
     // Store custom values to the datastore
     "store": {
         "key1": "value1",
@@ -233,12 +217,15 @@ The custom storage is persistent throughout the **apitest** run, so all requirem
 
 The custom store uses a **string** as index and can store any type of data.
 
-If an **key** ends in `[]`, the value is assumed to be an Array, and is appended. If no Array exists, an array is created.
+**Array**: If an key ends in `[]`, the value is assumed to be an Array, and is appended. If no Array exists, an array is created.
+
+**Map**: If an key ends in `[key]`, the value is assumed to be an map, and writes the data into the map at that key. If no map exists, an map is created.
 
 ```django
 {
   "store": {
-    "eas_ids[]": 15
+    "eas_ids[]": 15,
+    "mapStorage[keyIWantToStore]": "value"
   }
 }
 ```

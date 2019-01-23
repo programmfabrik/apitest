@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestResponse_ToGenericJson(t *testing.T) {

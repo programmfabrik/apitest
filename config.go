@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
-	)
-
+)
 
 type FylrConfigStruct struct {
 	Fylr struct {
@@ -32,7 +29,6 @@ type FylrConfigStruct struct {
 		} `mapstructure:"report"`
 	}
 }
-
 
 var FylrConfig FylrConfigStruct
 
@@ -55,11 +51,6 @@ func LoadConfig(cfgFile string) {
 
 }
 
-func GetStartTime() time.Time {
-	return startTime
-}
-
-
 // TestToolConfig gives us the basic testtool infos
 type TestToolConfig struct {
 	ServerURL       string
@@ -74,9 +65,6 @@ func NewTestToolConfig(serverURL, dataBaseName string, rootDirectory []string) (
 		ServerURL:      serverURL,
 		DataBaseName:   dataBaseName,
 		rootDirectorys: rootDirectory,
-	}
-	if err = config.checkDataBase(); err != nil {
-		return config, fmt.Errorf("error checking database names: %s", err)
 	}
 	err = config.extractTestDirectories()
 	return config, err
@@ -102,21 +90,6 @@ func (config *TestToolConfig) extractTestDirectories() error {
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (config *TestToolConfig) checkDataBase() error {
-	session, err := api.NewSession(config.ServerURL, &http.Client{}, nil, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := session.SendSettingsRequest()
-	if err != nil {
-		return fmt.Errorf("error sending settings request: %s", err)
-	}
-	if resp.DbName != config.DataBaseName {
-		return fmt.Errorf("db settings differ: %s != %s", resp.DbName, config.DataBaseName)
 	}
 	return nil
 }

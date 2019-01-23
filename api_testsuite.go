@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"time"
 
@@ -12,23 +11,21 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
-	"github.com/programmfabrik/fylr-apitest/lib/report"
-	"github.com/programmfabrik/fylr-apitest/lib/template"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 	"github.com/programmfabrik/fylr-apitest/lib/logging"
+	"github.com/programmfabrik/fylr-apitest/lib/report"
+	"github.com/programmfabrik/fylr-apitest/lib/template"
 )
 
 // Suite defines the structure of our apitest
 // We do read this in with the config loader
 type Suite struct {
-	Name           string                     `json:"name"`
-	Description    string                     `json:"description"`
-	Authentication *api.SessionAuthentication `json:"authentication"`
-	Tests          []util.GenericJson         `json:"tests"`
-	RequirePaths   []string                   `json:"require"`
-	Store          map[string]interface{}     `json:"store"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	Tests        []util.GenericJson     `json:"tests"`
+	RequirePaths []string               `json:"require"`
+	Store        map[string]interface{} `json:"store"`
 
-	Client              *http.Client
 	Config              TestToolConfig
 	datastore           *api.Datastore
 	manifestDir         string
@@ -36,12 +33,12 @@ type Suite struct {
 	reporter            *report.Report
 	index               int
 	executeRequirements bool
+	serverURL           string
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on
 // Normally this only gets call from within the apitest main command
 func NewTestSuite(
-	client *http.Client,
 	config TestToolConfig,
 	manifestPath string,
 	r *report.Report,
@@ -50,7 +47,6 @@ func NewTestSuite(
 	index int,
 ) (suite Suite, err error) {
 	suite = Suite{
-		Client:              client,
 		Config:              config,
 		manifestDir:         filepath.Dir(manifestPath),
 		manifestPath:        manifestPath,
@@ -120,7 +116,6 @@ func (ats Suite) runRequirements() (success bool) {
 	logging.Infof("[%2d] %s", ats.index, "run requirements")
 	for _, parentPath := range ats.RequirePaths {
 		suite, err := NewTestSuite(
-			ats.Client,
 			ats.Config,
 			filepath.Join(ats.manifestDir, parentPath),
 			r,
@@ -159,21 +154,9 @@ func (ats Suite) runTestCases() (success bool) {
 	}()*/
 
 	r := ats.reporter
+	//datastoreShare := api.NewStoreShare(ats.datastore)
 
-	datastoreShare := api.NewStoreShare(ats.datastore)
-
-	loader := template.NewLoader(datastoreShare)
-	suiteSession, err := api.NewSession(
-		ats.Config.ServerURL,
-		ats.Client,
-		ats.Authentication,
-		datastoreShare)
-	if err != nil {
-		r.SaveToReportLog(err.Error())
-		logging.Error(err)
-
-		return false
-	}
+	loader := template.NewLoader(ats.datastore)
 
 	for k, v := range ats.Tests {
 		tests := make([]Case, 0)
@@ -211,26 +194,8 @@ func (ats Suite) runTestCases() (success bool) {
 			test.reporter = r
 			test.suiteIndex = ats.index
 			test.index = k
-
-			if test.Authentication != nil {
-				test.session, err = api.NewSession(
-					ats.Config.ServerURL,
-					ats.Client,
-					test.Authentication,
-					datastoreShare,
-				)
-				if err != nil {
-					r.SaveToReportLog(err.Error())
-					logging.Error(err)
-					if test.ContinueOnFailure {
-						continue
-					} else {
-						return false
-					}
-				}
-			} else {
-				test.session = suiteSession
-			}
+			test.dataStore = ats.datastore
+			test.ServerURL = ats.Config.ServerURL
 
 			success := test.runAPITestCase()
 

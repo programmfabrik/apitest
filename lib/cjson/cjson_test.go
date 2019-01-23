@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/compare"
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestLineAndCharacter(t *testing.T) {
@@ -69,29 +69,35 @@ func TestRealWorldJsonError(t *testing.T) {
 			`{
 "hallo":2,
 }`,
-			fmt.Errorf(`Cannot parse JSON '{
-"hallo":2,
-}' schema due to a syntax error at line 3, character 1: invalid character '}' looking for beginning of object key string`),
+			fmt.Errorf(`Cannot parse JSON '
+1 {
+2 "hallo":2,
+3 }
+' schema due to a syntax error at line 3, character 1: invalid character '}' looking for beginning of object key string`),
 		},
 		{
 			`{
 "hallo":2,
 welt:1
 }`,
-			fmt.Errorf(`Cannot parse JSON '{
-"hallo":2,
-welt:1
-}' schema due to a syntax error at line 3, character 1: invalid character 'w' looking for beginning of object key string`),
+			fmt.Errorf(`Cannot parse JSON '
+1 {
+2 "hallo":2,
+3 welt:1
+4 }
+' schema due to a syntax error at line 3, character 1: invalid character 'w' looking for beginning of object key string`),
 		},
 		{
 			`{
 "hallo": 2,
 "welt": "string
 }`,
-			fmt.Errorf(`Cannot parse JSON '{
-"hallo": 2,
-"welt": "string
-}' schema due to a syntax error at line 4, character 0: invalid character '\n' in string literal`),
+			fmt.Errorf(`Cannot parse JSON '
+1 {
+2 "hallo": 2,
+3 "welt": "string
+4 }
+' schema due to a syntax error at line 4, character 0: invalid character '\n' in string literal`),
 		},
 	}
 
@@ -115,38 +121,6 @@ func TestRemoveComments(t *testing.T) {
 }`,
 			util.JsonObject{
 				"hallo": float64(2),
-			},
-		},
-		{
-			`{
-"hallo":2 //as
-}`,
-			util.JsonObject{
-				"hallo": float64(2),
-			},
-		},
-		{
-			`{
-"hallo":2 //as
-## line 2
-
-#line2
-}`,
-			util.JsonObject{
-				"hallo": float64(2),
-			},
-		},
-		{
-			`{
-"hallo":2, //as
-## line 2
-
-#line2
-"hey":"ha"
-}`,
-			util.JsonObject{
-				"hallo": float64(2),
-				"hey":   "ha",
 			},
 		},
 	}
@@ -179,8 +153,10 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 		{
 			cjsonString: `{"hallo":3
 "fail":"s"}`,
-			eError: fmt.Errorf(`Cannot parse JSON '{"hallo":3
-"fail":"s"}' schema due to a syntax error at line 2, character 1: invalid character '"' after object key:value pair`),
+			eError: fmt.Errorf(`Cannot parse JSON '
+1 {"hallo":3
+2 "fail":"s"}
+' schema due to a syntax error at line 2, character 1: invalid character '"' after object key:value pair`),
 		},
 		{
 			cjsonString: `{"hallo":3,
@@ -189,12 +165,14 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	"hey":"e
 }
 }`,
-			eError: fmt.Errorf(`Cannot parse JSON '{"hallo":3,
-"fail":"s",
-"simon":{
-	"hey":"e
-}
-}' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
+			eError: fmt.Errorf(`Cannot parse JSON '
+1 {"hallo":3,
+2 "fail":"s",
+3 "simon":{
+4 	"hey":"e
+5 }
+6 }
+' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
 		},
 	}
 
@@ -231,8 +209,12 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 		t,
 		oErr,
 		[]error{
-			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct '', field ''. See input file line 1, character 9", cjsonString),
-			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct 'expectedStructure', field 'name'. See input file line 1, character 9", cjsonString),
+			fmt.Errorf(`In JSON '
+1 %s
+', the type 'number' cannot be converted into the Go 'string' type on struct '', field ''. See input file line 1, character 9`, cjsonString),
+			fmt.Errorf(`In JSON '
+1 %s
+', the type 'number' cannot be converted into the Go 'string' type on struct 'expectedStructure', field 'name'. See input file line 1, character 9`, cjsonString),
 		},
 	)
 }
