@@ -245,6 +245,7 @@ func getTyped(value, format string) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("file_csv: Error in JSON: \"%s\": %s", value, err)
 		}
+		return data, nil
 	default:
 		return nil, fmt.Errorf("Given format '%s' not supported for csv usage", format)
 	}
