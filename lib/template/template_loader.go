@@ -159,6 +159,7 @@ func (loader *Loader) Render(
 			}
 			return gj, nil
 		},
+		"N": N,
 		"marshal": func(data interface{}) (string, error) {
 			bytes, err := cjson.Marshal(data)
 			if err != nil {
