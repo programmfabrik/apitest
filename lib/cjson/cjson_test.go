@@ -186,8 +186,8 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 			cjsonString: `{"hallo":3
 "fail":"s"}`,
 			eError: fmt.Errorf(`Cannot parse JSON '
-1 {"hallo":3
-2 "fail":"s"}
+1: {"hallo":3
+2: "fail":"s"}
 ' schema due to a syntax error at line 2, character 1: invalid character '"' after object key:value pair`),
 		},
 		{
@@ -198,12 +198,53 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 }
 }`,
 			eError: fmt.Errorf(`Cannot parse JSON '
-1 {"hallo":3,
-2 "fail":"s",
-3 "simon":{
-4 	"hey":"e
-5 }
-6 }
+1: {"hallo":3,
+2: "fail":"s",
+3: "simon":{
+4: 	"hey":"e
+5: }
+6: }
+' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
+		},
+		{
+			cjsonString: `{"hallo":3,
+"fail":"s",
+
+
+"simon":{
+	"hey":"e
+}
+}`,
+			eError: fmt.Errorf(`Cannot parse JSON '
+1: {"hallo":3,
+2: "fail":"s",
+5: "simon":{
+6: 	"hey":"e
+7: }
+8: }
+' schema due to a syntax error at line 7, character 0: invalid character '\n' in string literal`),
+		},
+		{
+			cjsonString: `{"hallo":3,
+"fail":"s",
+"simon":{
+	"hey":"e
+}
+
+
+
+
+
+
+
+}`,
+			eError: fmt.Errorf(`Cannot parse JSON '
+ 1: {"hallo":3,
+ 2: "fail":"s",
+ 3: "simon":{
+ 4: 	"hey":"e
+ 5: }
+13: }
 ' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
 		},
 	}

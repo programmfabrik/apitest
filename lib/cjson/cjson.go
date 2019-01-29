@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -30,10 +31,20 @@ func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 
 func getIndepthJsonError(input []byte, inputError error) (err error) {
 	jsonWithLineNumbers := "\n"
+	inputString := string(input)
+
+	n := strings.Count(inputString, "\n")
+	if len(inputString) > 0 && !strings.HasSuffix(inputString, "\n") {
+		n++
+	}
+	fmtString := fmt.Sprintf("%s%d%s", "%s%", len(strconv.Itoa(n)), "d: %s\n")
+
 	scanner := bufio.NewScanner(strings.NewReader(string(input)))
 	i := 1
 	for scanner.Scan() {
-		jsonWithLineNumbers = fmt.Sprintf("%s%d %s\n", jsonWithLineNumbers, i, scanner.Text())
+		if len(strings.TrimSpace(scanner.Text())) > 0 {
+			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, scanner.Text())
+		}
 		i++
 	}
 
