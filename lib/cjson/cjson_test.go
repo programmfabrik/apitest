@@ -9,6 +9,10 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 )
 
+func init() {
+	coloredError = false
+}
+
 func TestLineAndCharacter(t *testing.T) {
 	testCases := []struct {
 		iString    string
@@ -61,6 +65,7 @@ func TestLineAndCharacter(t *testing.T) {
 }
 
 func TestRealWorldJsonError(t *testing.T) {
+
 	testCases := []struct {
 		iJson  string
 		eError error
@@ -70,9 +75,9 @@ func TestRealWorldJsonError(t *testing.T) {
 "hallo":2,
 }`,
 			fmt.Errorf(`Cannot parse JSON '
-1 {
-2 "hallo":2,
-3 }
+1: {
+2: "hallo":2,
+3: }
 ' schema due to a syntax error at line 3, character 1: invalid character '}' looking for beginning of object key string`),
 		},
 		{
@@ -81,10 +86,10 @@ func TestRealWorldJsonError(t *testing.T) {
 welt:1
 }`,
 			fmt.Errorf(`Cannot parse JSON '
-1 {
-2 "hallo":2,
-3 welt:1
-4 }
+1: {
+2: "hallo":2,
+3: welt:1
+4: }
 ' schema due to a syntax error at line 3, character 1: invalid character 'w' looking for beginning of object key string`),
 		},
 		{
@@ -93,10 +98,10 @@ welt:1
 "welt": "string
 }`,
 			fmt.Errorf(`Cannot parse JSON '
-1 {
-2 "hallo": 2,
-3 "welt": "string
-4 }
+1: {
+2: "hallo": 2,
+3: "welt": "string
+4: }
 ' schema due to a syntax error at line 4, character 0: invalid character '\n' in string literal`),
 		},
 	}
@@ -268,7 +273,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 func TestCJSONUnmarshalTypeErr(t *testing.T) {
 	cjsonString := `{"Name":3}`
 	cjsonStringLines := `
-1 {"Name":3}
+1: {"Name":3}
 `
 
 	type expectedStructure struct {
