@@ -169,6 +169,7 @@ func (loader *Loader) Render(
 		},
 		// return json escape string
 		"str_escape": func(s string) (string, error) {
+			s = strings.Replace(s, "\\", "\\\\", -1)
 			return strings.Replace(s, "\"", "\\\"", -1), nil
 		},
 		// add a + b
