@@ -81,7 +81,7 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 		if len(strings.TrimSpace(scanner.Text())) > 0 {
 			fmtStringRow := "%s"
 			if coloredError && i == errLn {
-				fmtStringRow = "\033[1;33m%s\033[0m"
+				fmtStringRow = "\033[31m%s\033[0m"
 			}
 			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, fmt.Sprintf(fmtStringRow, scanner.Text()))
 		}
