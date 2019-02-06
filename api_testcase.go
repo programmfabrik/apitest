@@ -58,8 +58,16 @@ func (testCase Case) runAPITestCase() (success bool) {
 
 	start := time.Now()
 
+	// Store standard data into datastore
+	err := testCase.session.Store.SetMap(testCase.Store)
+	if err != nil {
+		err = fmt.Errorf("error setting datastore map:%s", err)
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
+		logging.Errorf("     [%2d] %s", testCase.index, err)
+		return false
+	}
+
 	success = true
-	var err error
 	if testCase.RequestData != nil {
 		success, err = testCase.run()
 	}
@@ -270,7 +278,7 @@ func (testCase Case) run() (success bool, err error) {
 			return false, err
 		}
 
-		if responsesMatch.Equal && testCase.CollectResponse == nil {
+		if responsesMatch.Equal && !collectPresent {
 			break
 		}
 
@@ -339,6 +347,7 @@ func (testCase Case) run() (success bool, err error) {
 		LogReqResp(request, apiResponse)
 		return false, nil
 	}
+
 	return true, nil
 }
 

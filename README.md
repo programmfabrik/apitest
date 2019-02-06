@@ -670,6 +670,66 @@ For mapping now certain values to a map you can use ` rows_to_map "column_a" "co
 }
 ```
 
+### group_rows "groupColumn" [rows]
+
+Generates an Array of rows from input rows. The **groupColumn** needs to be set to a column which will be used for grouping the rows into the Array.
+
+The column needs to:
+
+* be an **int64** column
+* use integers between 0 and 999
+
+The Array will group all rows with identical values in the **groupColumn**.
+
+#### Example
+
+The CSV can look at follows, use **file_csv** to read it and pipe into **group_rows**
+
+| batch | reference | title |
+| -------- | -------- | -------- |
+| int64 | string |  string |
+| 1    | ref1a    | title1a |
+| 1    | ref1b | title1b |
+| 4    | ref4 | title4  |
+| 3    | ref3   | titlte2  |
+
+Produces this output (presented as **json** for better readability:
+
+```json
+[
+    [
+        {
+            "batch": 1,
+            "reference": "ref1a",
+            "title": "title1a"
+        },
+        {
+            "batch": 1,
+            "reference": "ref1b",
+            "title": "title1b"
+        }
+    ]
+    ,
+    [
+        {
+            "batch": 3,
+            "reference": "ref3",
+            "title": "title3"
+        }
+    ]
+    ,
+    [
+        {
+            "batch": 4,
+            "reference": "ref4",
+            "title": "title4"
+        }
+    ]
+]
+```
+
+
+
 #### Template Example
 
 With the parameters `keyColumn` and `valueColumn` you can select the two columns you want to use for map. (Only two are supported)

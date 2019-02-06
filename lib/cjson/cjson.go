@@ -5,8 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
+
+var coloredError bool
+
+func init() {
+	coloredError = true
+}
 
 func Unmarshal(input []byte, output interface{}) error {
 	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
@@ -29,13 +36,6 @@ func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 }
 
 func getIndepthJsonError(input []byte, inputError error) (err error) {
-	jsonWithLineNumbers := "\n"
-	scanner := bufio.NewScanner(strings.NewReader(string(input)))
-	i := 1
-	for scanner.Scan() {
-		jsonWithLineNumbers = fmt.Sprintf("%s%d %s\n", jsonWithLineNumbers, i, scanner.Text())
-		i++
-	}
 
 	err = inputError
 
@@ -47,7 +47,7 @@ func getIndepthJsonError(input []byte, inputError error) (err error) {
 		}
 
 		err = fmt.Errorf("Cannot parse JSON '%s' schema due to a syntax error at line %d, character %d: %v",
-			string(jsonWithLineNumbers), line, character, jsonError.Error())
+			getErrorJsonWithLineNumbers(string(input), line), line, character, jsonError.Error())
 		return
 	}
 
@@ -59,7 +59,33 @@ func getIndepthJsonError(input []byte, inputError error) (err error) {
 		}
 
 		return fmt.Errorf(`In JSON '%s', the type '%v' cannot be converted into the Go '%v' type on struct '%s', field '%v'. See input file line %d, character %d`,
-			string(jsonWithLineNumbers), jsonError.Value, jsonError.Type.Name(), jsonError.Struct, jsonError.Field, line, character)
+			getErrorJsonWithLineNumbers(string(input), line), jsonError.Value, jsonError.Type.Name(), jsonError.Struct, jsonError.Field, line, character)
+	}
+
+	return
+}
+
+func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers string) {
+	jsonWithLineNumbers = "\n"
+	inputString := input
+
+	n := strings.Count(inputString, "\n")
+	if len(inputString) > 0 && !strings.HasSuffix(inputString, "\n") {
+		n++
+	}
+	fmtString := fmt.Sprintf("%s%d%s", "%s%", len(strconv.Itoa(n)), "d: %s\n")
+
+	scanner := bufio.NewScanner(strings.NewReader(string(input)))
+	i := 1
+	for scanner.Scan() {
+		if len(strings.TrimSpace(scanner.Text())) > 0 {
+			fmtStringRow := "%s"
+			if coloredError && i == errLn {
+				fmtStringRow = "\033[31m%s\033[0m"
+			}
+			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, fmt.Sprintf(fmtStringRow, scanner.Text()))
+		}
+		i++
 	}
 
 	return

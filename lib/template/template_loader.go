@@ -159,6 +159,7 @@ func (loader *Loader) Render(
 			}
 			return gj, nil
 		},
+		"N": N,
 		"marshal": func(data interface{}) (string, error) {
 			bytes, err := cjson.Marshal(data)
 			if err != nil {
@@ -168,6 +169,7 @@ func (loader *Loader) Render(
 		},
 		// return json escape string
 		"str_escape": func(s string) (string, error) {
+			s = strings.Replace(s, "\\", "\\\\", -1)
 			return strings.Replace(s, "\"", "\\\"", -1), nil
 		},
 		// add a + b
@@ -177,16 +179,40 @@ func (loader *Loader) Render(
 			return args
 		},
 		"rows_to_map": func(keyColumn, valueColumn string, rowsInput interface{}) (map[string]interface{}, error) {
-			rows := make([]map[string]interface{}, 0)
-			switch t := rowsInput.(type) {
-			case []map[string]interface{}:
-				rows = t
-			case []interface{}:
-				for _, v := range t {
-					rows = append(rows, v.(map[string]interface{}))
+			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
+		},
+		"group_rows": func(groupColumn string, rowsInput interface{}) ([][]map[string]interface{}, error) {
+			grouped_rows := make([][]map[string]interface{}, 1000)
+			rows := getRowsFromInput(rowsInput)
+
+			for _, row := range rows {
+				group_key, ok := row[groupColumn]
+				if !ok {
+					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+				}
+				switch idx := group_key.(type) {
+				case int64:
+					if idx <= 0 {
+						return nil, fmt.Errorf("Group column \"%s\" needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
+					}
+					rows2 := grouped_rows[idx]
+					if rows2 == nil {
+						grouped_rows[idx] = make([]map[string]interface{}, 0)
+					}
+					grouped_rows[idx] = append(grouped_rows[idx], row)
+				default:
+					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
-			return rowsToMap(keyColumn, valueColumn, rows)
+			// remove empty rows
+			g_rows := make([][]map[string]interface{}, 0)
+			for _, row := range grouped_rows {
+				if row == nil {
+					continue
+				}
+				g_rows = append(g_rows, row)
+			}
+			return g_rows, nil
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
@@ -200,4 +226,17 @@ func (loader *Loader) Render(
 		return nil, fmt.Errorf("error executing body template: %s", err)
 	}
 	return buf.Bytes(), nil
+}
+
+func getRowsFromInput(rowsInput interface{}) []map[string]interface{} {
+	rows := make([]map[string]interface{}, 0)
+	switch t := rowsInput.(type) {
+	case []map[string]interface{}:
+		rows = t
+	case []interface{}:
+		for _, v := range t {
+			rows = append(rows, v.(map[string]interface{}))
+		}
+	}
+	return rows
 }

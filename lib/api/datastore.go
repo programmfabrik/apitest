@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	"regexp"
 	"strconv"
 	"strings"
@@ -111,7 +112,6 @@ func (this *Datastore) Set(index string, value interface{}) error {
 
 		this.storage[use_index] = append(s, value)
 
-		//logging.Debugf("datastore[\"%s\"][]=%#v", use_index, value)
 	} else if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
 		// do a push to an array
 		use_index := rego[1]
@@ -131,6 +131,9 @@ func (this *Datastore) Set(index string, value interface{}) error {
 	} else {
 		this.storage[index] = value
 	}
+
+	logging.Debugf("Did set datastore[\"%s\"]=%#v", index, value)
+
 	return nil
 }
 
