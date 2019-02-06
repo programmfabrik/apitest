@@ -15,18 +15,19 @@ var c http.Client
 
 func init() {
 	c = http.Client{
-		Timeout: time.Second * 10,
+		Timeout: time.Second * 30,
 	}
 }
 
 type Request struct {
-	Endpoint    string                 `yaml:"endpoint" json:"endpoint"`
-	ServerURL   string                 `yaml:"serverurl" json:"serverurl"`
-	Method      string                 `yaml:"method" json:"method"`
-	QueryParams map[string]interface{} `yaml:"query_params" json:"query_params"`
-	Headers     map[string]string      `yaml:"header" json:"header"`
-	BodyType    string                 `yaml:"body_type" json:"body_type"`
-	Body        util.GenericJson       `yaml:"body" json:"body"`
+	Endpoint        string                 `yaml:"endpoint" json:"endpoint"`
+	ServerURL       string                 `yaml:"serverurl" json:"serverurl"`
+	Method          string                 `yaml:"method" json:"method"`
+	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
+	Headers         map[string]string      `yaml:"header" json:"header"`
+	HeaderFromStore map[string]string      `yaml:"header_from_store" json:"header_from_store"`
+	BodyType        string                 `yaml:"body_type" json:"body_type"`
+	Body            util.GenericJson       `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool
@@ -68,29 +69,41 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	}
 	res.URL.RawQuery = q.Encode()
 
+	for headerName, datastoreKey := range request.HeaderFromStore {
+		if request.DataStore == nil {
+			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+		}
+
+		headersInt, err := request.DataStore.Get(datastoreKey)
+		if err != nil {
+			return nil, fmt.Errorf("could not get '&s' from Datastore: %s", datastoreKey, err)
+		}
+
+		ownHeaders, ok := headersInt.([]interface{})
+		if ok {
+			for _, val := range ownHeaders {
+				valString, ok := val.(string)
+				if ok {
+					res.Header.Add(headerName, valString)
+				}
+			}
+			continue
+		}
+
+		ownHeader, ok := headersInt.(string)
+		if ok {
+			res.Header.Add(headerName, ownHeader)
+		} else {
+			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
+		}
+	}
+
 	for key, val := range request.Headers {
 		res.Header.Add(key, val)
 	}
 
 	for key, val := range additionalHeaders {
 		res.Header.Add(key, val)
-	}
-
-	//Get own headers from datastore
-	if request.DataStore != nil {
-		headersInt, err := request.DataStore.Get("httpHeaders")
-		if err != nil {
-			return nil, fmt.Errorf("Could not get 'httpHeaders' from Datastore: %s", err)
-		}
-		ownHeaders, ok := headersInt.(map[string]interface{})
-		if ok {
-			for key, val := range ownHeaders {
-				valString, ok := val.(string)
-				if ok {
-					res.Header.Add(key, valString)
-				}
-			}
-		}
 	}
 
 	return res, nil
