@@ -34,6 +34,7 @@ type Case struct {
 	Delay           *int               `json:"delay_ms"`
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
+	LogVerbosity    *int               `json:"log_verbosity"`
 
 	loader      template.Loader
 	manifestDir string
@@ -45,6 +46,11 @@ type Case struct {
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
+	if testCase.LogVerbosity != nil && *testCase.LogVerbosity > FylrConfig.Apitest.LogVerbosity {
+		defer FylrConfig.SetLogVerbosity(FylrConfig.Apitest.LogVerbosity)
+		FylrConfig.SetLogVerbosity(*testCase.LogVerbosity)
+	}
+
 	r := testCase.reporter
 
 	if testCase.Name != "" {

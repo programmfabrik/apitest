@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -50,6 +50,17 @@ func LoadConfig(cfgFile string) {
 
 	viper.Unmarshal(&FylrConfig)
 
+}
+
+func (config *FylrConfigStruct) SetLogVerbosity(verbosity int) {
+	FylrConfig.Apitest.LogVerbosity = verbosity
+	if verbosity >= 2 {
+		log.SetLevel(log.TraceLevel)
+	} else if verbosity >= 0 {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 }
 
 // TestToolConfig gives us the basic testtool infos

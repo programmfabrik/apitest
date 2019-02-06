@@ -56,6 +56,8 @@ This starts the command with the following default settings:
 	- `-v 0`: All from '-1' plus failed test responses
 	- `-v 1`: All from '-1' plus all responses
 	- `-v 2`:  All from '1' plus all requests
+	
+You can also set the log verbosity per single testcase. The greater verbosity wins.
 
 
 #### Console logging
@@ -142,6 +144,8 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "key1": "value1",
         "key2": "value2"
     },
+    // Specify a unique log level only for this single test. (If cli has a greate log verbosity than this, cli wins)
+    "log_verbosity": 2,
     //Defines what gets send to the server
     "request": { 
 		//What endpoint we want to target. You find all possible endpoints in the api documentation

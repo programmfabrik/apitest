@@ -86,14 +86,7 @@ func setup(ccmd *cobra.Command, args []string) {
 	LoadConfig(cfgFile)
 
 	//Set log verbosity
-	FylrConfig.Apitest.LogVerbosity = verbosity
-	if verbosity >= 2 {
-		log.SetLevel(log.TraceLevel)
-	} else if verbosity >= 0 {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
+	FylrConfig.SetLogVerbosity(verbosity)
 }
 
 func runApiTests(cmd *cobra.Command, args []string) {
