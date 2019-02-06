@@ -1,12 +1,5 @@
 version: 2
 jobs:
-  deploy:
-    machine:
-      enabled: true
-    steps:
-      - run:
-          name: Deploy to fylr.io
-          command: ssh ec2-user@18.194.217.112 ./fylr.io/deploy.sh
   test:
     docker:
       - image: circleci/golang:1.11
@@ -19,12 +12,6 @@ jobs:
       - run: make test
 workflows:
   version: 2
-  build-and-deploy:
-    jobs:
-      - deploy:
-          filters:
-            branches:
-              only: master
   build-and-test:
     jobs:
       - test
