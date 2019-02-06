@@ -129,6 +129,8 @@ func isValidFormat(format string) bool {
 }
 
 func getTyped(value, format string) (interface{}, error) {
+	value = strings.TrimSpace(value)
+
 	switch format {
 	case "string":
 		return value, nil
@@ -136,20 +138,20 @@ func getTyped(value, format string) (interface{}, error) {
 		if value == "" {
 			return int64(0), nil
 		}
-		return strconv.ParseInt(strings.TrimSpace(value), 10, 64)
+		return strconv.ParseInt(value, 10, 64)
 	case "float64":
 		if value == "" {
 			return float64(0), nil
 		}
-		return strconv.ParseFloat(strings.TrimSpace(value), 64)
+		return strconv.ParseFloat(value, 64)
 	case "bool":
 		if value == "" {
 			return false, nil
 		}
-		return strconv.ParseBool(strings.TrimSpace(value))
+		return strconv.ParseBool(value)
 	case "string,array":
 		if value == "" {
-			return make([]string, 0), nil
+			return []string{}, nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -170,7 +172,7 @@ func getTyped(value, format string) (interface{}, error) {
 		return retArray, nil
 	case "int64,array":
 		if value == "" {
-			return make([]int64, 0), nil
+			return []int64{}, nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -197,7 +199,7 @@ func getTyped(value, format string) (interface{}, error) {
 		return retArray, nil
 	case "float64,array":
 		if value == "" {
-			return make([]float64, 0), nil
+			return []float64{}, nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -224,7 +226,7 @@ func getTyped(value, format string) (interface{}, error) {
 		return retArray, nil
 	case "bool,array":
 		if value == "" {
-			return make([]bool, 0), nil
+			return []bool{}, nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -239,7 +241,7 @@ func getTyped(value, format string) (interface{}, error) {
 
 		retArray := make([]bool, 0)
 		for _, v := range records[0] {
-			retArray = append(retArray, v == "true")
+			retArray = append(retArray, strings.TrimSpace(v) == "true")
 		}
 		return retArray, nil
 	case "json":
