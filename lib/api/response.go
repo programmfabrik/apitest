@@ -66,7 +66,7 @@ func (response Response) ToJsonString() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error formatting respsone: %s", err)
 	}
-	json, err := cjson.MarshalIndent(gj, "", " ")
+	json, err := cjson.Marshal(gj)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}

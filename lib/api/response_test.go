@@ -72,7 +72,7 @@ func TestResponse_NewResponse(t *testing.T) {
 
 func TestResponse_String(t *testing.T) {
 	response, err := NewResponse(200, nil, strings.NewReader("{\"foo\": \"bar\"}"))
-	assertString := "Statuscode: 200, Body: {\"foo\": \"bar\"}"
+	assertString := "200\n\n\n{\"foo\": \"bar\"}"
 	test_utils.CheckError(t, err, "error constructing response")
 	test_utils.AssertStringEquals(t, response.ToString(), assertString)
 }

@@ -179,7 +179,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		log.Trace("Remaining CheckReponses: %s", testCase.CollectResponse)
+		log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		return len(leftResponses), nil
 	}
 
