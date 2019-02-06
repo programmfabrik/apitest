@@ -59,7 +59,13 @@ func (testCase Case) runAPITestCase() (success bool) {
 	start := time.Now()
 
 	// Store standard data into datastore
-	err := testCase.session.Store.SetMap(testCase.Store)
+	if testCase.dataStore == nil && len(testCase.Store) > 0 {
+		err := fmt.Errorf("error setting datastore. Datastore is nil")
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
+		logging.Errorf("     [%2d] %s", testCase.index, err)
+		return false
+	}
+	err := testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
@@ -94,7 +100,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 	return
 }
 
-// checkForBreak Response tests the given response for a so called break response.
+// cheRckForBreak Response tests the given response for a so called break response.
 // If this break response is present it returns a true
 func (testCase Case) breakResponseIsPresent(request api.Request, response api.Response) (found bool, err error) {
 

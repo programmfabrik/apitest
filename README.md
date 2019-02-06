@@ -158,6 +158,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 			"header1":"value",
 			"header2":"value"
 		},
+		// With header_from_you set a header to the value of the datastore field
+		// In this example we set the "Content-Type" header to the value "application/json"
+		// As "application/json" is stored as string in the datastore on index "contentType"
+		"header_from_store": {
+		  "Content-Type": "contentType"
+		}
 		//All the content you want to send in the http body. Is a JSON Object
 		"body":{
 			"flower":"rose",
