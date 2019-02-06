@@ -132,7 +132,7 @@ func (this *Datastore) Set(index string, value interface{}) error {
 		this.storage[index] = value
 	}
 
-	log.Debugf("Did set datastore[\"%s\"]=%#v", index, value)
+	log.Tracef("Set datastore[\"%s\"]=%#v", index, value)
 
 	return nil
 }

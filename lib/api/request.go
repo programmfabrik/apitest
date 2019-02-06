@@ -14,7 +14,7 @@ var c http.Client
 
 func init() {
 	c = http.Client{
-		Timeout: time.Second * 30,
+		Timeout: time.Minute * 5,
 	}
 }
 
@@ -23,7 +23,7 @@ type Request struct {
 	ServerURL       string                 `yaml:"serverurl" json:"serverurl"`
 	Method          string                 `yaml:"method" json:"method"`
 	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
-	Headers         map[string]string      `yaml:"header" json:"header"`
+	Headers         map[string]*string     `yaml:"header" json:"header"`
 	HeaderFromStore map[string]string      `yaml:"header_from_store" json:"header_from_store"`
 	BodyType        string                 `yaml:"body_type" json:"body_type"`
 	Body            util.GenericJson       `yaml:"body" json:"body"`
@@ -98,7 +98,13 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	}
 
 	for key, val := range request.Headers {
-		res.Header.Add(key, val)
+		if *val == "" {
+			//Unset header explicit
+			res.Header.Del(key)
+		} else {
+			//ADD header
+			res.Header.Add(key, *val)
+		}
 	}
 
 	for key, val := range additionalHeaders {

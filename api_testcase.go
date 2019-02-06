@@ -42,7 +42,11 @@ type Case struct {
 	suiteIndex  int
 	index       int
 	dataStore   *api.Datastore
-	ServerURL   string
+
+	standardHeader          map[string]*string
+	standardHeaderFromStore map[string]string
+
+	ServerURL string
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
@@ -407,6 +411,25 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
 	spec.ServerURL = testCase.ServerURL
+
+	if len(spec.Headers) == 0 {
+		spec.Headers = make(map[string]*string, 0)
+	}
+	for k, v := range testCase.standardHeader {
+		if spec.Headers[k] == nil {
+			spec.Headers[k] = v
+		}
+	}
+
+	if len(spec.HeaderFromStore) == 0 {
+		spec.HeaderFromStore = make(map[string]string, 0)
+	}
+	for k, v := range testCase.standardHeaderFromStore {
+		if spec.HeaderFromStore[k] == "" {
+			spec.HeaderFromStore[k] = v
+		}
+	}
+
 	return
 }
 

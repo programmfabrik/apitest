@@ -26,6 +26,9 @@ type Suite struct {
 	RequirePaths []string               `json:"require"`
 	Store        map[string]interface{} `json:"store"`
 
+	StandardHeader          map[string]*string `yaml:"header" json:"header"`
+	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
+
 	Config              TestToolConfig
 	datastore           *api.Datastore
 	manifestDir         string
@@ -196,6 +199,8 @@ func (ats Suite) runTestCases() (success bool) {
 			test.index = k
 			test.dataStore = ats.datastore
 			test.ServerURL = ats.Config.ServerURL
+			test.standardHeader = ats.StandardHeader
+			test.standardHeaderFromStore = ats.StandardHeaderFromStore
 
 			success := test.runAPITestCase()
 
