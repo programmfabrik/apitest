@@ -26,7 +26,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 		return nil, err
 	}
 
-	records = removeEmptyAndComments(records)
+	records = removeEmptyRowsAndComments(records)
 
 	infos, err := extractHeaderInformation(records[0], records[1])
 	if err != nil {
@@ -83,7 +83,7 @@ func extractHeaderInformation(names, formats []string) (infos []info, err error)
 	return
 }
 
-func removeEmptyAndComments(input [][]string) (output [][]string) {
+func removeEmptyRowsAndComments(input [][]string) (output [][]string) {
 	output = make([][]string, 0)
 	for _, v := range input {
 		empty := true
@@ -149,7 +149,7 @@ func getTyped(value, format string) (interface{}, error) {
 		return strconv.ParseBool(strings.TrimSpace(value))
 	case "string,array":
 		if value == "" {
-			return []string{}, nil
+			return make([]string, 0), nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -170,7 +170,7 @@ func getTyped(value, format string) (interface{}, error) {
 		return retArray, nil
 	case "int64,array":
 		if value == "" {
-			return []int64{}, nil
+			return make([]int64, 0), nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -185,16 +185,19 @@ func getTyped(value, format string) (interface{}, error) {
 
 		retArray := make([]int64, 0)
 		for _, v := range records[0] {
-			vi, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
-			if err != nil {
-				return nil, err
+			vi := int64(0)
+			if v != "" {
+				vi, err = strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+				if err != nil {
+					return nil, err
+				}
 			}
 			retArray = append(retArray, vi)
 		}
 		return retArray, nil
 	case "float64,array":
 		if value == "" {
-			return []float64{}, nil
+			return make([]float64, 0), nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -209,16 +212,19 @@ func getTyped(value, format string) (interface{}, error) {
 		}
 		retArray := make([]float64, 0)
 		for _, v := range records[0] {
-			vi, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
-			if err != nil {
-				return nil, err
+			vi := float64(0)
+			if v != "" {
+				vi, err = strconv.ParseFloat(strings.TrimSpace(v), 64)
+				if err != nil {
+					return nil, err
+				}
 			}
 			retArray = append(retArray, vi)
 		}
 		return retArray, nil
 	case "bool,array":
 		if value == "" {
-			return []bool{}, nil
+			return make([]bool, 0), nil
 		}
 
 		records, err := renderCSV(strings.NewReader(value), ',')
@@ -249,5 +255,4 @@ func getTyped(value, format string) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("Given format '%s' not supported for csv usage", format)
 	}
-
 }
