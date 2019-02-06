@@ -27,6 +27,7 @@ type FylrConfigStruct struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
 		} `mapstructure:"report"`
+		LogVerbosity int
 	}
 }
 

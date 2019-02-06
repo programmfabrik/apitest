@@ -52,10 +52,10 @@ This starts the command with the following default settings:
 ### Configure logging
 
 - `--verbosity 1` or `-v 1`: Set the verbosity of the logger. (Verbosity defines what kind of communication with the server should be shown) Can be realy helpfull to find out why a test fails.
-	- `-v -1` (default): dont't log any communication with the server
-	- `-v 0`: log the communication in case a test fails
-	- `-v 1`: log the communication if it's so defined in the manifest
-	- `-v 2`: log all server communication
+	- `-v -1` (default): Only normal test ouput
+	- `-v 0`: All from '-1' plus failed test responses
+	- `-v 1`: All from '-1' plus all responses
+	- `-v 2`:  All from '1' plus all requests
 
 
 #### Console logging

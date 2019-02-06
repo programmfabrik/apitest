@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
+	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strconv"
 	"strings"
@@ -132,7 +132,7 @@ func (this *Datastore) Set(index string, value interface{}) error {
 		this.storage[index] = value
 	}
 
-	logging.Debugf("Did set datastore[\"%s\"]=%#v", index, value)
+	log.Debugf("Did set datastore[\"%s\"]=%#v", index, value)
 
 	return nil
 }

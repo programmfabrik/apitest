@@ -12,9 +12,9 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/template"
+	log "github.com/sirupsen/logrus"
 )
 
 // Suite defines the structure of our apitest
@@ -76,7 +76,7 @@ func NewTestSuite(
 
 func (ats Suite) Run() (success bool) {
 	r := ats.reporter
-	logging.Infof("[%2d] '%s'", ats.index, ats.Name)
+	log.Infof("[%2d] '%s'", ats.index, ats.Name)
 
 	r.NewChild(ats.Name)
 	r.SetTestCount(len(ats.Tests))
@@ -87,9 +87,9 @@ func (ats Suite) Run() (success bool) {
 
 	r.LeaveChild(success)
 	if success {
-		logging.InfoWithFieldsF(map[string]interface{}{"elapsed": elapsed.Seconds()}, "[%2d] success", ats.index)
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 	} else {
-		logging.WarnWithFieldsF(map[string]interface{}{"elapsed": elapsed.Seconds()}, "[%2d] failure", ats.index)
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 	}
 	return
 }
@@ -113,7 +113,7 @@ func (ats Suite) runRequirements() (success bool) {
 		return true
 	}
 
-	logging.Infof("[%2d] %s", ats.index, "run requirements")
+	log.Infof("[%2d] %s", ats.index, "run requirements")
 	for _, parentPath := range ats.RequirePaths {
 		suite, err := NewTestSuite(
 			ats.Config,
@@ -125,18 +125,18 @@ func (ats Suite) runRequirements() (success bool) {
 		)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
-			logging.Errorf("[%2d] error loading parent suite: %s", ats.index, err)
+			log.Warnf("[%2d] error loading parent suite: %s", ats.index, err)
 			return false
 		}
 
 		pSuccess := suite.Run()
 		if !pSuccess {
-			logging.Warnf("[%2d] requirements: failure", ats.index)
+			log.Warnf("[%2d] requirements: failure", ats.index)
 			return false
 		}
 	}
 
-	logging.Infof("[%2d] requirements: success", ats.index)
+	log.Infof("[%2d] requirements: success", ats.index)
 	return true
 }
 
@@ -164,14 +164,14 @@ func (ats Suite) runTestCases() (success bool) {
 		intFilepath, testObj, err := template.LoadManifestDataAsObject(v, ats.manifestDir, loader)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
-			logging.Error(err)
+			log.Error(err)
 			return false
 		}
 
 		testJson, err := json.Marshal(testObj)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
-			logging.Error(err)
+			log.Error(err)
 			return false
 		}
 
@@ -181,7 +181,7 @@ func (ats Suite) runTestCases() (success bool) {
 			err = json.Unmarshal(testJson, &singleTest)
 			if err != nil {
 				r.SaveToReportLog(err.Error())
-				logging.Error(err)
+				log.Error(err)
 				return false
 			}
 

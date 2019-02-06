@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"io/ioutil"
-	"log"
+
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -27,8 +28,7 @@ var (
 func init() {
 	//Configure all the flags that fylr-apitest offers
 	TestCMD.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./fylr.yml", "config file")
-	TestCMD.PersistentFlags().String("log-console-level", "info", "console loglevel")
-	TestCMD.PersistentFlags().Bool("log-console-enable", true, "Set to true to enable console logging")
+
 	TestCMD.PersistentFlags().StringSliceVarP(
 		&rootDirectorys, "directory", "d", []string{"."},
 		"path to directory containing the tests.")
@@ -44,11 +44,10 @@ func init() {
 	TestCMD.PersistentFlags().IntVarP(
 		&verbosity, "verbosity", "v", -1,
 		`in [-1, 0, 1, 2], defines logging of requests and responses of the programm
--1: dont log requests or responses
-0: log requests and responses in case of test failure
-1: log requests and responses that are documented in the manifest
-2: log all requests and responses
-verbosities >= 0 automatically set the global loglevel to debug`)
+-1: Only normal test ouput
+0: All from '-1' & failed test responses
+1: All from '-1' & all responses
+2: All from '1' & all requests`)
 
 	TestCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
@@ -59,8 +58,6 @@ verbosities >= 0 automatically set the global loglevel to debug`)
 		"Defines how the report statements should be saved. [junit/json]")
 
 	//Bind the flags to overwrite the yml config if they are set
-	viper.BindPFlag("log.console.enable", TestCMD.PersistentFlags().Lookup("log-console-enable"))
-	viper.BindPFlag("log.console.level", TestCMD.PersistentFlags().Lookup("log-console-level"))
 	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", TestCMD.PersistentFlags().Lookup("report-format"))
 }
@@ -88,11 +85,14 @@ func setup(ccmd *cobra.Command, args []string) {
 	//Load yml config
 	LoadConfig(cfgFile)
 
-	//Setup logging
-	if err := logging.ConfigureLogging(
-		viper.GetBool("log.console.enable"),
-		viper.GetString("log.console.level")); err != nil {
-		log.Fatalf("error configuring logging: %s", err)
+	//Set log verbosity
+	FylrConfig.Apitest.LogVerbosity = verbosity
+	if verbosity >= 2 {
+		log.SetLevel(log.TraceLevel)
+	} else if verbosity >= 0 {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
 	}
 }
 
@@ -104,20 +104,13 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	for _, rootDirectory := range rootDirectorys {
 		if _, err := os.Stat(rootDirectory); rootDirectory != "." && os.IsNotExist(err) {
-			logging.Errorf("The path '%s' for the test folders is not valid", rootDirectory)
-			os.Exit(1)
+			log.Fatalf("The path '%s' for the test folders is not valid", rootDirectory)
 		}
 	}
 	for _, singleTest := range singleTests {
 		if _, err := os.Stat(singleTest); singleTest != "" && os.IsNotExist(err) {
-			logging.Errorf("The path '%s' for the single test is not valid", singleTest)
-			os.Exit(1)
+			log.Fatalf("The path '%s' for the single test is not valid", singleTest)
 		}
-	}
-
-	if err := logging.InitApiTestLogging(verbosity); err != nil {
-		logging.Errorf("Could not configure verbosity of apitest logging")
-		os.Exit(1)
 	}
 
 	serverUrl := FylrConfig.Apitest.Server
@@ -128,14 +121,13 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	//Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(serverUrl, dbName, rootDirectorys)
 	if err != nil {
-		logging.Error(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	datastore := api.NewStore()
 	for k, v := range FylrConfig.Apitest.StoreInit {
 		datastore.Set(k, v)
-		logging.Infof("Add Init value for datastore Key: '%s', Value: '%v'", k, v)
+		log.Debugf("Add Init value for datastore Key: '%s', Value: '%v'", k, v)
 	}
 
 	//Actually run the tests
@@ -150,8 +142,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			0,
 		)
 		if err != nil {
-			logging.Error(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 
 		suite.Run()
@@ -182,7 +173,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		case "json":
 			parsingFunction = report.ParseJSONResult
 		default:
-			logging.Errorf(
+			log.Errorf(
 				"Given report format '%s' not supported. Saving report '%s' as json",
 				reportFormat,
 				reportFile)

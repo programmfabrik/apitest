@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"time"
 
@@ -121,7 +120,7 @@ func (request Request) ToString() (res string) {
 	} else {
 		dumpBody = true
 	}
-	resBytes, err := httputil.DumpRequest(httpRequest, dumpBody)
+	resBytes, err := httputil.DumpRequestOut(httpRequest, dumpBody)
 	if err != nil {
 		return fmt.Sprintf("could not dump httpRequest: %s", err)
 	}
@@ -129,7 +128,6 @@ func (request Request) ToString() (res string) {
 }
 
 func (request Request) Send() (response Response, err error) {
-	logging.DebugWithVerbosityf(logging.V2, "request: %s", request.ToString())
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
 		return response, err
@@ -144,7 +142,5 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}
-	logging.DebugWithVerbosityf(logging.V2, "response: %s", response.ToString())
-
 	return response, err
 }

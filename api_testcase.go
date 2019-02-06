@@ -10,11 +10,10 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/compare"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
-	apitestLogging "github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/template"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -49,9 +48,9 @@ func (testCase Case) runAPITestCase() (success bool) {
 	r := testCase.reporter
 
 	if testCase.Name != "" {
-		logging.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+		log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 	} else {
-		logging.Infof("     [%2d] '<no name>'", testCase.index)
+		log.Infof("     [%2d] '<no name>'", testCase.index)
 	}
 
 	r.NewChild(testCase.Name)
@@ -62,14 +61,14 @@ func (testCase Case) runAPITestCase() (success bool) {
 	if testCase.dataStore == nil && len(testCase.Store) > 0 {
 		err := fmt.Errorf("error setting datastore. Datastore is nil")
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logging.Errorf("     [%2d] %s", testCase.index, err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
 		return false
 	}
 	err := testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logging.Errorf("     [%2d] %s", testCase.index, err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
 		return false
 	}
 
@@ -82,18 +81,14 @@ func (testCase Case) runAPITestCase() (success bool) {
 
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logging.Errorf("     [%2d] %s", testCase.index, err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
 
 	if !success {
-		logging.WarnWithFieldsF(
-			map[string]interface{}{"elapsed": elapsed.Seconds()},
-			"     [%2d] %s", testCase.index, "failure")
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
 	} else {
-		logging.InfoWithFieldsF(
-			map[string]interface{}{"elapsed": elapsed.Seconds()},
-			"     [%2d] %s", testCase.index, "success")
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.LeaveChild(success)
@@ -178,7 +173,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		logging.Debugf("Remaining CheckReponses: %s", testCase.CollectResponse)
+		log.Trace("Remaining CheckReponses: %s", testCase.CollectResponse)
 		return len(leftResponses), nil
 	}
 
@@ -203,9 +198,10 @@ func (testCase Case) executeRequest(counter int) (
 		err = fmt.Errorf("error loading request: %s", err)
 		return
 	}
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V1,
-		"request: %s", req.ToString())
+
+	//Log request on trace level (so only v2 will trigger this)
+	log.Tracef("[REQUEST]:\n%s", req.ToString())
+
 	apiResp, err = req.Send()
 	if err != nil {
 		err = fmt.Errorf("error sending request: %s", err)
@@ -241,9 +237,7 @@ func (testCase Case) executeRequest(counter int) (
 		err = fmt.Errorf("error loading response: %s", err)
 		return
 	}
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V1,
-		"response: %s", apiResp.ToString())
+
 	responsesMatch, err = testCase.responsesEqual(response, apiResp)
 	if err != nil {
 		err = fmt.Errorf("error matching responses: %s", err)
@@ -253,13 +247,10 @@ func (testCase Case) executeRequest(counter int) (
 	return
 }
 
-func LogReqResp(request api.Request, response api.Response) {
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V0,
-		"[Request] %s", request.ToString())
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V0,
-		"[Response] %s", response.ToString())
+func LogResp(response api.Response) {
+	if FylrConfig.Apitest.LogVerbosity == 0 {
+		log.Debugf("[RESPONSE]:\n%s", response.ToString())
+	}
 }
 
 func (testCase Case) run() (success bool, err error) {
@@ -280,7 +271,12 @@ func (testCase Case) run() (success bool, err error) {
 	//Poll repeats the request until the right response is found, or a timeout triggers
 	for {
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
+		if FylrConfig.Apitest.LogVerbosity >= 1 {
+			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
+		}
+
 		if err != nil {
+			LogResp(apiResponse)
 			return false, err
 		}
 
@@ -290,18 +286,18 @@ func (testCase Case) run() (success bool, err error) {
 
 		breakPresent, err := testCase.breakResponseIsPresent(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for break response: %s", err)
 		}
 
 		if breakPresent {
-			LogReqResp(request, apiResponse)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("Break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for continue response: %s", err)
 		}
 
@@ -313,7 +309,7 @@ func (testCase Case) run() (success bool, err error) {
 		//break if timeout or we do not have a repeater
 		if timedOut := time.Now().Sub(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
-				logging.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
+				log.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				r.SaveToReportLogF("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				timedOutFlag = true
 			}
@@ -330,27 +326,25 @@ func (testCase Case) run() (success bool, err error) {
 	}
 
 	if !responsesMatch.Equal || timedOutFlag {
-		//logging.Warnf("responses did not match: Expected: %s \n Actual: %s",response.ToString(), apiResponse.ToString())
 		for _, v := range responsesMatch.Failures {
-			logging.Warnf("[%s] %s", v.Key, v.Message)
+			log.Infof("[%s] %s", v.Key, v.Message)
 			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
 		}
 
-		//logging.Warnf("responses did not match: Expected: %s \n Actual: %s",response.ToString(), apiResponse.ToString())
 		collectArray, ok := testCase.CollectResponse.(util.JsonArray)
 		if ok {
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					LogReqResp(request, apiResponse)
+					LogResp(apiResponse)
 					return false, err
 				}
-				logging.Warnf("Collect response not found: %s", jsonV)
+				log.Warnf("Collect response not found: %s", jsonV)
 				r.SaveToReportLog(fmt.Sprintf("Collect response not found: %s", jsonV))
 			}
 		}
 
-		LogReqResp(request, apiResponse)
+		LogResp(apiResponse)
 		return false, nil
 	}
 
