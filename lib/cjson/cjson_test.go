@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/compare"
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func init() {

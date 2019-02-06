@@ -76,7 +76,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
 		if err != nil {
-			return nil, fmt.Errorf("could not get '&s' from Datastore: %s", datastoreKey, err)
+			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
 		}
 
 		ownHeaders, ok := headersInt.([]interface{})
