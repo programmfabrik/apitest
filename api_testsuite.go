@@ -28,14 +28,13 @@ type Suite struct {
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
 
-	Config              TestToolConfig
-	datastore           *api.Datastore
-	manifestDir         string
-	manifestPath        string
-	reporter            *report.Report
-	index               int
-	executeRequirements bool
-	serverURL           string
+	Config       TestToolConfig
+	datastore    *api.Datastore
+	manifestDir  string
+	manifestPath string
+	reporter     *report.Report
+	index        int
+	serverURL    string
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on
@@ -44,18 +43,16 @@ func NewTestSuite(
 	config TestToolConfig,
 	manifestPath string,
 	r *report.Report,
-	executeRequirements bool,
 	datastore *api.Datastore,
 	index int,
 ) (suite Suite, err error) {
 	suite = Suite{
-		Config:              config,
-		manifestDir:         filepath.Dir(manifestPath),
-		manifestPath:        manifestPath,
-		reporter:            r,
-		executeRequirements: executeRequirements,
-		datastore:           datastore,
-		index:               index,
+		Config:       config,
+		manifestDir:  filepath.Dir(manifestPath),
+		manifestPath: manifestPath,
+		reporter:     r,
+		datastore:    datastore,
+		index:        index,
 	}
 
 	manifest, err := suite.loadManifest()

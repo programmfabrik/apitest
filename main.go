@@ -21,7 +21,6 @@ import (
 var (
 	reportFormat, reportFile    string
 	verbosity                   int
-	noRequirements              bool
 	rootDirectorys, singleTests []string
 )
 
@@ -91,8 +90,6 @@ func setup(ccmd *cobra.Command, args []string) {
 
 func runApiTests(cmd *cobra.Command, args []string) {
 
-	noRequirements = (cmd.Flag("no-requirements").Value.String() == "true")
-
 	//Check if paths are valid
 
 	for _, rootDirectory := range rootDirectorys {
@@ -130,7 +127,6 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			testToolConfig,
 			manifestPath,
 			r,
-			!noRequirements,
 			datastore,
 			0,
 		)
