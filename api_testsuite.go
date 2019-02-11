@@ -20,11 +20,10 @@ import (
 // Suite defines the structure of our apitest
 // We do read this in with the config loader
 type Suite struct {
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description"`
-	Tests        []util.GenericJson     `json:"tests"`
-	RequirePaths []string               `json:"require"`
-	Store        map[string]interface{} `json:"store"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Tests       []util.GenericJson     `json:"tests"`
+	Store       map[string]interface{} `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
@@ -98,102 +97,30 @@ func (ats Suite) Run() (success bool) {
 }
 
 func (ats Suite) run() (success bool) {
-	if ats.executeRequirements {
-		success = ats.runRequirements()
-		if !success {
-			return false
-		}
-	}
-
-	return ats.runTestCases()
-}
-
-func (ats Suite) runRequirements() (success bool) {
-	//new empty reporter to don't include requirements in Testreport
-	r := report.NewReport()
-
-	if ats.RequirePaths == nil {
-		return true
-	}
-
-	log.Infof("[%2d] %s", ats.index, "run requirements")
-	for _, parentPath := range ats.RequirePaths {
-		suite, err := NewTestSuite(
-			ats.Config,
-			filepath.Join(ats.manifestDir, parentPath),
-			r,
-			ats.executeRequirements,
-			ats.datastore,
-			ats.index+1,
-		)
-		if err != nil {
-			r.SaveToReportLog(err.Error())
-			log.Warnf("[%2d] error loading parent suite: %s", ats.index, err)
-			return false
-		}
-
-		pSuccess := suite.Run()
-		if !pSuccess {
-			log.Warnf("[%2d] requirements: failure", ats.index)
-			return false
-		}
-	}
-
-	log.Infof("[%2d] requirements: success", ats.index)
-	return true
-}
-
-/*
-Runs TestCases of the TestSuite
-We have to create the session at this point, otherwise
-it might get deleted by a previous post to session/purgeall.
-*/
-func (ats Suite) runTestCases() (success bool) {
-	/*defer func() {
-		if err := recover(); err != nil {
-			logging.Error(err)
-			success = false
-		}
-	}()*/
-
 	r := ats.reporter
-	//datastoreShare := api.NewStoreShare(ats.datastore)
 
 	loader := template.NewLoader(ats.datastore)
 
 	for k, v := range ats.Tests {
-		tests := make([]Case, 0)
 
-		intFilepath, testObj, err := template.LoadManifestDataAsObject(v, ats.manifestDir, loader)
+		tests, err := ats.loadTestCaseByte(v, ats.manifestDir, loader)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
-			log.Error(err)
+			log.Error(fmt.Errorf("can not loadTestCaseByte %s", err))
 			return false
 		}
 
-		testJson, err := json.Marshal(testObj)
-		if err != nil {
-			r.SaveToReportLog(err.Error())
-			log.Error(err)
-			return false
-		}
-
-		err = json.Unmarshal(testJson, &tests)
-		if err != nil {
-			singleTest := Case{}
-			err = json.Unmarshal(testJson, &singleTest)
+		for _, testContainer := range tests {
+			var test Case
+			err := json.Unmarshal(testContainer.CaseByte, &test)
 			if err != nil {
 				r.SaveToReportLog(err.Error())
-				log.Error(err)
+				log.Error(fmt.Errorf("can not unmarshal single test %s", err))
 				return false
 			}
 
-			tests = append(tests, singleTest)
-		}
-
-		for _, test := range tests {
 			test.loader = loader
-			test.manifestDir = filepath.Join(ats.manifestDir, intFilepath)
+			test.manifestDir = filepath.Join(ats.manifestDir, testContainer.Path)
 			test.reporter = r
 			test.suiteIndex = ats.index
 			test.index = k
@@ -207,12 +134,137 @@ func (ats Suite) runTestCases() (success bool) {
 			if !success && !test.ContinueOnFailure {
 				return false
 			}
+
 		}
 	}
 
 	return true
 }
 
+type TestUnmarsh struct {
+	CaseByte json.RawMessage
+	Path     string
+}
+
+func (ats Suite) loadTestCaseByte(v util.GenericJson, manifestDir string, loader template.Loader) ([]TestUnmarsh, error) {
+	rTests := make([]TestUnmarsh, 0)
+
+	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	if err != nil {
+		return rTests, err
+	}
+
+	var testCases []json.RawMessage
+	err = cjson.Unmarshal(testObj, &testCases)
+
+	if err != nil {
+		err = nil
+
+		rTests = make([]TestUnmarsh, 0)
+		var singleTest json.RawMessage
+		err = cjson.Unmarshal(testObj, &singleTest)
+		if err == nil {
+			rTests = append(rTests, TestUnmarsh{CaseByte: singleTest, Path: filepath.Join(manifestDir, dir)})
+		} else {
+			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+			if lErr != nil {
+				return rTests, lErr
+			}
+
+			if string(requestBytes) == string(testObj) {
+				return rTests, err
+			}
+
+			tests, llErr := ats.loadTestCaseByte(requestBytes, filepath.Join(manifestDir, dir), loader)
+			if llErr != nil {
+				return rTests, llErr
+			}
+			rTests = append(rTests, tests...)
+
+			err = nil
+
+		}
+	} else {
+		for _, v := range testCases {
+			rTests = append(rTests, TestUnmarsh{CaseByte: v, Path: filepath.Join(manifestDir, dir)})
+		}
+	}
+
+	tempTests := make([]TestUnmarsh, 0)
+
+	for _, v := range rTests {
+
+		if rune(v.CaseByte[1]) == rune('@') {
+			var sS string
+			cjson.Unmarshal(v.CaseByte, &sS)
+			tests, err := ats.loadTestCaseByte(sS, v.Path, loader)
+			if err != nil {
+				return rTests, fmt.Errorf("could not load inner loadTestCaseByte: %s", err)
+			}
+			tempTests = append(tempTests, tests...)
+		} else {
+			requestBytes, err := loader.Render(v.CaseByte, v.Path, nil)
+			if err != nil {
+				return rTests, fmt.Errorf("could not render: %s", err)
+			}
+			v.CaseByte = requestBytes
+
+			tempTests = append(tempTests, v)
+		}
+	}
+
+	return tempTests, err
+}
+
+/*
+
+func (ats Suite) unmarshalIntoTestCases(v util.GenericJson, loader template.Loader, manifestDir string)(rTests []TestUnmarsh, err error){
+	rTests = make([]TestUnmarsh, 0)
+
+	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	if err != nil {
+		return rTests, err
+	}
+
+	testJson, err := json.Marshal(testObj)
+	if err != nil {
+		return rTests, err
+	}
+
+	var testCases []Case
+	err = json.Unmarshal(testJson, &testCases)
+	if err != nil {
+		rTests = make([]TestUnmarsh,0)
+
+		var singleTest Case
+		err = json.Unmarshal(testJson, &singleTest)
+		if err != nil {
+			rTests = make([]TestUnmarsh,0)
+			err = nil
+
+				var genJson []util.GenericJson
+				json.Unmarshal(testJson, &genJson)
+				for _,iv := range genJson{
+					iTests, err := ats.unmarshalIntoTestCases(iv,loader,filepath.Join(ats.manifestDir, dir))
+					if err != nil {
+						return rTests, err
+					}
+					rTests = append(rTests,iTests...)
+				}
+
+
+		}else {
+			rTests = append(rTests, TestUnmarsh{Case:singleTest,Path:dir})
+		}
+	}else{
+		for _,v := range testCases{
+			rTests = append(rTests, TestUnmarsh{Case:v,Path:dir})
+		}
+	}
+
+	return
+}
+*/
 func (ats Suite) loadManifest() (res []byte, err error) {
 	loader := template.NewLoader(ats.datastore)
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
