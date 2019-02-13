@@ -126,7 +126,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			fmt.Println("breakResponseIsPresent: ", responsesMatch)
+			log.Tracef("breakResponseIsPresent: %s", responsesMatch)
 
 			if responsesMatch.Equal {
 				return true, nil

@@ -81,7 +81,15 @@ func (ats Suite) Run() (success bool) {
 	r.SetTestCount(len(ats.Tests))
 
 	start := time.Now()
-	success = ats.run()
+
+	success = true
+	for k, v := range ats.Tests {
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, k)
+		if !sTestSuccess {
+			success = false
+		}
+	}
+
 	elapsed := time.Since(start)
 
 	r.LeaveChild(success)
@@ -93,44 +101,92 @@ func (ats Suite) Run() (success bool) {
 	return
 }
 
-func (ats Suite) run() (success bool) {
-	r := ats.reporter
+type TestContainer struct {
+	CaseByte json.RawMessage
+	Path     string
+}
 
+func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) bool {
+	//Init variables
+	r := ats.reporter
 	loader := template.NewLoader(ats.datastore)
 
-	for k, v := range ats.Tests {
+	//Get the Manifest with @ logic
+	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s", err))
+		return false
+	}
 
-		tests, err := ats.loadTestCaseByte(v, ats.manifestDir, loader)
-		if err != nil {
-			r.SaveToReportLog(err.Error())
-			log.Error(fmt.Errorf("can not loadTestCaseByte %s", err))
-			return false
+	//Try to directly unmarshal the manifest into testcase array
+	var testCases []json.RawMessage
+	err = cjson.Unmarshal(testObj, &testCases)
+	if err == nil {
+		//Did work -> No go template
+
+		var success bool
+		//Run single tests
+		for ki, v := range testCases {
+
+			//Check if is @ and if so load the test
+			if rune(v[1]) == rune('@') {
+				var sS string
+
+				err := cjson.Unmarshal(v, &sS)
+				if err != nil {
+					r.SaveToReportLog(err.Error())
+					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					return false
+				}
+
+				success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), k+ki)
+			} else {
+				success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, loader, ki)
+			}
+
+			if !success {
+				return false
+			}
 		}
+	} else {
+		//We were not able unmarshal into array, so we try to unmarshal into raw message
+		var singleTest json.RawMessage
+		err = cjson.Unmarshal(testObj, &singleTest)
+		if err == nil {
+			//Did work to unmarshal -> no go template
 
-		for _, testContainer := range tests {
-			var test Case
-			err := json.Unmarshal(testContainer.CaseByte, &test)
-			if err != nil {
+			//Check if is @ and if so load the test
+			if rune(testObj[1]) == rune('@') {
+				var sS string
+
+				err := cjson.Unmarshal(testObj, &sS)
+				if err != nil {
+					r.SaveToReportLog(err.Error())
+					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					return false
+				}
+
+				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), k)
+			} else {
+				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, loader, k)
+			}
+		} else {
+			//Did not work -> Could be go template or a mallformed json
+			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+			if lErr != nil {
+				return false
+			}
+
+			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
+			if string(requestBytes) == string(testObj) {
 				r.SaveToReportLog(err.Error())
-				log.Error(fmt.Errorf("can not unmarshal single test %s", err))
+				log.Error(fmt.Errorf("can not unmarshal json: %s", err))
 				return false
 			}
 
-			test.loader = loader
-			test.manifestDir = testContainer.Path
-			test.reporter = r
-			test.suiteIndex = ats.index
-			test.index = k
-			test.dataStore = ats.datastore
-			test.ServerURL = ats.Config.ServerURL
-			test.standardHeader = ats.StandardHeader
-			test.standardHeaderFromStore = ats.StandardHeaderFromStore
-
-			success := test.runAPITestCase()
-
-			if !success && !test.ContinueOnFailure {
-				return false
-			}
+			//We have a template -> One level deeper with rendered bytes
+			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir), k)
 
 		}
 	}
@@ -138,79 +194,32 @@ func (ats Suite) run() (success bool) {
 	return true
 }
 
-type TestUnmarsh struct {
-	CaseByte json.RawMessage
-	Path     string
-}
-
-func (ats Suite) loadTestCaseByte(v util.GenericJson, manifestDir string, loader template.Loader) ([]TestUnmarsh, error) {
-	rTests := make([]TestUnmarsh, 0)
-
-	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
-	if err != nil {
-		return rTests, err
+func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, loader template.Loader, k int) (success bool) {
+	var test Case
+	jErr := cjson.Unmarshal(tc.CaseByte, &test)
+	if jErr != nil {
+		r.SaveToReportLog(jErr.Error())
+		log.Error(fmt.Errorf("can not unmarshal single test %s", jErr))
+		return false
 	}
 
-	var testCases []json.RawMessage
-	err = cjson.Unmarshal(testObj, &testCases)
+	test.loader = loader
+	test.manifestDir = tc.Path
+	test.reporter = r
+	test.suiteIndex = ats.index
+	test.index = k
+	test.dataStore = ats.datastore
+	test.ServerURL = ats.Config.ServerURL
+	test.standardHeader = ats.StandardHeader
+	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 
-	if err != nil {
-		err = nil
+	success = test.runAPITestCase()
 
-		rTests = make([]TestUnmarsh, 0)
-		var singleTest json.RawMessage
-		err = cjson.Unmarshal(testObj, &singleTest)
-		if err == nil {
-			rTests = append(rTests, TestUnmarsh{CaseByte: singleTest, Path: filepath.Join(manifestDir, dir)})
-		} else {
-			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-			if lErr != nil {
-				return rTests, lErr
-			}
-
-			if string(requestBytes) == string(testObj) {
-				return rTests, err
-			}
-
-			tests, llErr := ats.loadTestCaseByte(requestBytes, filepath.Join(manifestDir, dir), loader)
-			if llErr != nil {
-				return rTests, llErr
-			}
-			rTests = append(rTests, tests...)
-
-			err = nil
-
-		}
-	} else {
-		for _, v := range testCases {
-			rTests = append(rTests, TestUnmarsh{CaseByte: v, Path: filepath.Join(manifestDir, dir)})
-		}
+	if !success && !test.ContinueOnFailure {
+		return false
 	}
 
-	tempTests := make([]TestUnmarsh, 0)
-
-	for _, v := range rTests {
-
-		if rune(v.CaseByte[1]) == rune('@') {
-			var sS string
-			cjson.Unmarshal(v.CaseByte, &sS)
-			tests, err := ats.loadTestCaseByte(sS, v.Path, loader)
-			if err != nil {
-				return rTests, fmt.Errorf("could not load inner loadTestCaseByte: %s", err)
-			}
-			tempTests = append(tempTests, tests...)
-		} else {
-			requestBytes, err := loader.Render(v.CaseByte, v.Path, nil)
-			if err != nil {
-				return rTests, fmt.Errorf("could not render: %s", err)
-			}
-			v.CaseByte = requestBytes
-
-			tempTests = append(tempTests, v)
-		}
-	}
-
-	return tempTests, err
+	return true
 }
 
 func (ats Suite) loadManifest() (res []byte, err error) {

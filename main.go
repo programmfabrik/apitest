@@ -32,10 +32,6 @@ func init() {
 		&rootDirectorys, "directory", "d", []string{"."},
 		"path to directory containing the tests.")
 
-	TestCMD.PersistentFlags().Bool(
-		"no-requirements", false,
-		"don't run requirements for the testsuite.")
-
 	TestCMD.PersistentFlags().StringSliceVarP(
 		&singleTests, "single", "s", []string{},
 		"path to a single manifest. Runs only that specified testsuite")
