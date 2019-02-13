@@ -53,11 +53,11 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 	SetupFS()
 
 	//Invalid rootDirectory -> Expect error
-	_, err := NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"invalid"})
+	_, err := NewTestToolConfig(server.URL+"/api/v1", []string{"invalid"})
 	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
 
 	//Invalid rootDirectory -> Expect error
-	conf, err := NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"path"})
+	conf, err := NewTestToolConfig(server.URL+"/api/v1", []string{"path"})
 	test_utils.CheckError(t, err, "NewTestToolConfig did fail on valid root directory")
 
 	expectedResults := []string{
