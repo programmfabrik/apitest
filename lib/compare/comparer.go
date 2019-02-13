@@ -16,6 +16,14 @@ type CompareFailure struct {
 	Message string
 }
 
+func (f CompareFailure) String() string {
+	return fmt.Sprintf("[%s] %s", f.Key, f.Message)
+}
+
+func (f CompareFailure) Error() string {
+	return f.String()
+}
+
 func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res CompareResult, err error) {
 
 	//left may be nil, because we dont specifiy the content of the field
