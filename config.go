@@ -21,7 +21,6 @@ type FylrConfigStruct struct {
 	}
 	Apitest struct {
 		Server    string                 `mapstructure:"server"`
-		DBName    string                 `mapstructure:"db-name"`
 		StoreInit map[string]interface{} `mapstructure:"store"`
 		Report    struct {
 			File   string `mapstructure:"file"`
@@ -66,16 +65,14 @@ func (config *FylrConfigStruct) SetLogVerbosity(verbosity int) {
 // TestToolConfig gives us the basic testtool infos
 type TestToolConfig struct {
 	ServerURL       string
-	DataBaseName    string
 	rootDirectorys  []string
 	TestDirectories []string
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
-func NewTestToolConfig(serverURL, dataBaseName string, rootDirectory []string) (config TestToolConfig, err error) {
+func NewTestToolConfig(serverURL string, rootDirectory []string) (config TestToolConfig, err error) {
 	config = TestToolConfig{
 		ServerURL:      serverURL,
-		DataBaseName:   dataBaseName,
 		rootDirectorys: rootDirectory,
 	}
 	err = config.extractTestDirectories()

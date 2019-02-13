@@ -104,12 +104,11 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	}
 
 	serverUrl := FylrConfig.Apitest.Server
-	dbName := FylrConfig.Apitest.DBName
 	reportFormat = FylrConfig.Apitest.Report.Format
 	reportFile = FylrConfig.Apitest.Report.File
 
 	//Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(serverUrl, dbName, rootDirectorys)
+	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys)
 	if err != nil {
 		log.Fatal(err)
 	}
