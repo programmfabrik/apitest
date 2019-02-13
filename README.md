@@ -1,11 +1,3 @@
----
-menu:
-  main:
-    name: "apitest"
-    identifier: apitester
-    parent: "cli"
----
-
 # fylr apitest
 
 The fylr apitesting tool helps you to build automated apitests that can be run after every build to ensure a constant product quality.
@@ -21,8 +13,7 @@ The report parametere of this config can be overwritten via a command line flag.
 
 ```yaml
 apitest:
-   server: "http://5.simon.pf-berlin.de" //The base url to the instance you want to fire the apitests against. Important: don’t add a trailing ‘/’
-   db-name: "easy5-simon" //The name of your database. The tool uses this parameter to double check if you selected the right instance to prevent damage.
+   server: "http://5.simon.pf-berlin.de/api/v1" //The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
    report: //Configures the maschine report. For usage with jenkis or any other CI tool
       file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the fylr binary
       format: "json" //Format of the report. (Supported formats: json or junit)
@@ -56,6 +47,7 @@ This starts the command with the following default settings:
 	- `-v 1`: All from '-1' plus all responses
 	- `-v 2`:  All from '1' plus all requests
 	
+
 You can also set the log verbosity per single testcase. The greater verbosity wins.
 
 
