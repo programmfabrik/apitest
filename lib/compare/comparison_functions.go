@@ -144,6 +144,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			continue
 		}
 		var rv, lv util.GenericJson
+		var rOK, lOK bool
 		control := &ComparisonContext{}
 		var k string
 
@@ -152,14 +153,12 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			//We have a control key
 			k = keyRegex.FindStringSubmatch(ck)[1]
 			if !takenInRight[k] {
-				rv = right[k]
+				rv, rOK = right[k]
 			}
-			lv = left[k]
+			lv, rOK = left[k]
 
 			takenInLeft[k] = true
 			takenInRight[k] = true
-			//delete(right, k)
-			//delete(left, k)
 
 			cvObj, ok := cv.(util.JsonObject)
 			if ok {
@@ -175,14 +174,13 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			//Normal key
 			k = ck
 			if !takenInRight[k] {
-				rv = right[k]
+				rv, rOK = right[k]
 			}
 			lv = cv
+			lOK = true
 
 			takenInLeft[k] = true
 			takenInRight[k] = true
-			//delete(right, k)
-			//delete(left, k)
 
 			leftObj, ok := left[k+":control"].(util.JsonObject)
 			if ok {
@@ -199,12 +197,12 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		}
 
 		//If a value is present, it must exist
-		if lv != nil {
+		if lOK {
 			control.mustExist = true
 		}
 
 		//Check for the given key functions
-		err := keyChecks(k, rv, *control)
+		err := keyChecks(k, rv, rOK, *control)
 		if err != nil {
 			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
@@ -214,7 +212,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		}
 
 		//If we have a left value, check if it is the same as right
-		if lv != nil {
+		if lOK {
 			tmp, err := JsonEqual(lv, rv, *control)
 			if err != nil {
 				return CompareResult{}, err
@@ -372,7 +370,7 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 	}
 }
 
-func keyChecks(lk string, right util.GenericJson, control ComparisonContext) (err error) {
+func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonContext) (err error) {
 
 	if control.isString == true {
 		if right == nil {
@@ -417,13 +415,12 @@ func keyChecks(lk string, right util.GenericJson, control ComparisonContext) (er
 	}
 
 	//Check if exists
-	if right == nil && control.mustExist == true {
-
-		return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+	if !rOK && control.mustExist == true {
+		return fmt.Errorf("actual response[%s] was not found, but should exists", lk)
 	}
 
-	if right != nil && control.mustNotExist == true {
-		return fmt.Errorf("actual response[%s] != nil but should NOT exist", lk)
+	if rOK && control.mustNotExist == true {
+		return fmt.Errorf("actual response[%s] was found, but should NOT exist", lk)
 	}
 
 	//Check for array length
