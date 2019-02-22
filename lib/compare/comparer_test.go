@@ -1,6 +1,7 @@
 package compare
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
@@ -8,8 +9,8 @@ import (
 )
 
 var trivialComparerTestData = []struct {
-	in1   string
-	in2   string
+	want  string
+	have  string
 	match bool
 	name  string
 	err   error
@@ -169,22 +170,40 @@ var trivialComparerTestData = []struct {
 		"Match events",
 		nil,
 	},
+	{
+
+		` {
+                "body": [{
+                    "henk": "denk"
+                }]
+            }`,
+		`{"body":[{}]}`,
+		false,
+		"ticket #51342. Error msg",
+		fmt.Errorf("[body[0].henk] actual response[henk] == nil but should exists"),
+	},
 }
 
 func TestTrivialJsonComparer(t *testing.T) {
 	var json1, json2 util.GenericJson
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
-			cjson.Unmarshal([]byte(td.in1), &json1)
-			cjson.Unmarshal([]byte(td.in2), &json2)
+			cjson.Unmarshal([]byte(td.want), &json1)
+			cjson.Unmarshal([]byte(td.have), &json2)
 			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
-			if err != td.err {
-				t.Errorf("Error missmatch. Want '%s' != '%s' Got", td.err, err)
+			if err != nil {
+				t.Fatal("Error occured: ", err)
 			}
-			if !(td.match == tjcMatch.Equal) {
+			if td.match != tjcMatch.Equal {
 				t.Errorf("got %t, want %t", tjcMatch.Equal, td.match)
 			}
 
+			if td.err != nil {
+				if len(tjcMatch.Failures) != 1 || td.err.Error() != tjcMatch.Failures[0].String() {
+					t.Errorf("Error missmatch. Want '%s' != '%s' Got", td.err, tjcMatch.Failures[0].String())
+
+				}
+			}
 		})
 	}
 }
