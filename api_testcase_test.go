@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
-	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
+	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/spf13/afero"
 )
 
@@ -344,7 +344,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	}
 
 	if len(log) != 2 {
-		t.Errorf("Length if log != 2")
+		t.Fatalf("Length of log != 2. Log '%s'", log)
 	}
 
 	if log[0] != "Pull Timeout '30ms' exceeded" {

@@ -12,7 +12,7 @@ func TestDataStore_Get(t *testing.T) {
 	responseJson, _ := response.ToJsonString()
 	store.AppendResponse(responseJson)
 	responseBytes, _ := store.Get("0")
-	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"header":null,"statuscode":200}`)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"statuscode":200}`)
 }
 
 func TestDataStore_Get_BodyArray(t *testing.T) {
@@ -25,7 +25,7 @@ func TestDataStore_Get_BodyArray(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":["foo","bar"],"header":null,"statuscode":200}`)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":["foo","bar"],"statuscode":200}`)
 }
 
 func TestDataStore_MAP(t *testing.T) {

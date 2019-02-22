@@ -155,7 +155,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			if !takenInRight[k] {
 				rv, rOK = right[k]
 			}
-			lv, rOK = left[k]
+			lv, lOK = left[k]
 
 			takenInLeft[k] = true
 			takenInRight[k] = true
@@ -371,7 +371,6 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 }
 
 func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonContext) (err error) {
-
 	if control.isString == true {
 		if right == nil {
 			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
@@ -415,11 +414,11 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 	}
 
 	//Check if exists
-	if !rOK && control.mustExist == true {
+	if rOK == false && control.mustExist == true {
 		return fmt.Errorf("actual response[%s] was not found, but should exists", lk)
 	}
 
-	if rOK && control.mustNotExist == true {
+	if rOK == true && control.mustNotExist == true {
 		return fmt.Errorf("actual response[%s] was found, but should NOT exist", lk)
 	}
 

@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 )
 
-
 type Response struct {
 	statusCode int
 	headers    map[string][]string
@@ -18,8 +17,8 @@ type Response struct {
 
 type ResponseSerialization struct {
 	StatusCode int                 `yaml:"statuscode" json:"statuscode"`
-	Headers    map[string][]string `yaml:"header" json:"header"`
-	Body       util.GenericJson    `yaml:"body" json:"body"`
+	Headers    map[string][]string `yaml:"header" json:"header,omitempty"`
+	Body       util.GenericJson    `yaml:"body" json:"body,omitempty"`
 }
 
 func NewResponse(statusCode int, headers map[string][]string, body io.Reader) (res Response, err error) {
@@ -39,7 +38,12 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	if spec.StatusCode == 0 {
 		spec.StatusCode = 200
 	}
-	return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes))
+
+	if spec.Headers != nil {
+		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes))
+	} else {
+		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes))
+	}
 }
 
 func (response Response) ToGenericJson() (res util.GenericJson, err error) {
@@ -51,9 +55,14 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 
 	responseJSON := ResponseSerialization{
 		StatusCode: response.statusCode,
-		Headers:    response.headers,
-		Body:       gj,
 	}
+	if len(response.headers) > 0 {
+		responseJSON.Headers = response.headers
+	}
+	if gj != nil {
+		responseJSON.Body = &gj
+	}
+
 	responseBytes, err := cjson.Marshal(responseJSON)
 	if err != nil {
 		return res, err
