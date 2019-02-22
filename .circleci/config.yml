@@ -17,6 +17,32 @@ jobs:
       - run: make
       - run: make vet
       - run: make test
+  crosscompile:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: ~/fylr_cross
+    steps:
+      - checkout
+      - run: go get -u github.com/mitchellh/gox
+      - run: GOOS=windows go get -u github.com/spf13/cobra
+      - run: make gox
+      - run: cd dist/ && gzip * && git tag -l 'v*' | tail -1 > version
+      - persist_to_workspace:
+          root: ~/fylr_cross
+          paths:
+            - dist
+  publish-github-release:
+    docker:
+      - image: cibuilds/github:0.10
+    working_directory: ~/fylr_cross
+    steps:
+      - attach_workspace:
+          at: ~/fylr_cross
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            VERSION=$(less ~/fylr_cross/dist/version) && rm ~/fylr_cross/dist/version &&
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} --replace ${VERSION} ~/fylr_cross/dist/
 workflows:
   version: 2
   build-and-deploy:
@@ -28,3 +54,15 @@ workflows:
   build-and-test:
     jobs:
       - test
+  build-and-deploy:
+    jobs:
+      - crosscompile:
+          filters:
+            branches:
+              only: master
+      - publish-github-release:
+          requires:
+            - crosscompile
+          filters:
+            branches:
+              only: master
