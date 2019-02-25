@@ -3,13 +3,13 @@ package template
 import (
 	"bytes"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/csv"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 
 	"io/ioutil"
@@ -88,7 +88,7 @@ func (loader *Loader) Render(
 				err = fmt.Errorf("The given json was empty")
 				return
 			}
-			logging.Debug(fmt.Sprintf("[QJSON] JSON input: %s", json))
+			log.Tracef("[QJSON] JSON input: %s", json)
 
 			result = gjson.Get(json, path).Raw
 			if len(result) == 0 {

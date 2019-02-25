@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestRequestBuildHttp(t *testing.T) {
@@ -17,6 +17,7 @@ func TestRequestBuildHttp(t *testing.T) {
 		QueryParams: map[string]interface{}{
 			"query_param": "value",
 		},
+		ServerURL: "serverUrl",
 	}
 	request.buildPolicy = func(request Request) (ah map[string]string, b io.Reader, err error) {
 		ah = make(map[string]string)
@@ -24,10 +25,9 @@ func TestRequestBuildHttp(t *testing.T) {
 		b = strings.NewReader("mock_body")
 		return ah, b, nil
 	}
-	httpRequest, err := request.buildHttpRequest("serverUrl", "token")
+	httpRequest, err := request.buildHttpRequest()
 	test_utils.CheckError(t, err, fmt.Sprintf("error building http-request: %s", err))
 	test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
-	test_utils.AssertStringEquals(t, httpRequest.Header.Get("x-easydb-token"), "token")
 
 	assertBody, err := ioutil.ReadAll(httpRequest.Body)
 	test_utils.CheckError(t, err, fmt.Sprintf("error reading http-request body: %s", err))

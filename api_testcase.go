@@ -10,11 +10,10 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/compare"
-	"github.com/programmfabrik/fylr-apitest/lib/logging"
-	apitestLogging "github.com/programmfabrik/fylr-apitest/lib/logging"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/programmfabrik/fylr-apitest/lib/template"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,34 +23,44 @@ const (
 // Case defines the structure of our single testcase
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
-	Name              string                     `json:"name"`
-	RequestData       *util.GenericJson          `json:"request"`
-	ResponseData      util.GenericJson           `json:"response"`
-	ContinueOnFailure bool                       `json:"continue_on_failure"`
-	Authentication    *api.SessionAuthentication `json:"authentication"`
-	Store             map[string]interface{}     `json:"store"`                // init datastore before testrun
-	StoreResponse     map[string]string          `json:"store_response_qjson"` // store qjson parsed response in datastore
+	Name              string                 `json:"name"`
+	RequestData       *util.GenericJson      `json:"request"`
+	ResponseData      util.GenericJson       `json:"response"`
+	ContinueOnFailure bool                   `json:"continue_on_failure"`
+	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
+	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
 	Timeout         int                `json:"timeout_ms"`
 	Delay           *int               `json:"delay_ms"`
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
+	LogVerbosity    *int               `json:"log_verbosity"`
 
 	loader      template.Loader
-	session     api.Session
 	manifestDir string
 	reporter    *report.Report
 	suiteIndex  int
 	index       int
+	dataStore   *api.Datastore
+
+	standardHeader          map[string]*string
+	standardHeaderFromStore map[string]string
+
+	ServerURL string
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
+	if testCase.LogVerbosity != nil && *testCase.LogVerbosity > FylrConfig.Apitest.LogVerbosity {
+		defer FylrConfig.SetLogVerbosity(FylrConfig.Apitest.LogVerbosity)
+		FylrConfig.SetLogVerbosity(*testCase.LogVerbosity)
+	}
+
 	r := testCase.reporter
 
 	if testCase.Name != "" {
-		logging.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+		log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 	} else {
-		logging.Infof("     [%2d] '<no name>'", testCase.index)
+		log.Infof("     [%2d] '<no name>'", testCase.index)
 	}
 
 	r.NewChild(testCase.Name)
@@ -59,11 +68,17 @@ func (testCase Case) runAPITestCase() (success bool) {
 	start := time.Now()
 
 	// Store standard data into datastore
-	err := testCase.session.Store.SetMap(testCase.Store)
+	if testCase.dataStore == nil && len(testCase.Store) > 0 {
+		err := fmt.Errorf("error setting datastore. Datastore is nil")
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
+		log.Errorf("     [%2d] %s", testCase.index, err)
+		return false
+	}
+	err := testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logging.Errorf("     [%2d] %s", testCase.index, err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
 		return false
 	}
 
@@ -76,25 +91,21 @@ func (testCase Case) runAPITestCase() (success bool) {
 
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logging.Errorf("     [%2d] %s", testCase.index, err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
 
 	if !success {
-		logging.WarnWithFieldsF(
-			map[string]interface{}{"elapsed": elapsed.Seconds()},
-			"     [%2d] %s", testCase.index, "failure")
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
 	} else {
-		logging.InfoWithFieldsF(
-			map[string]interface{}{"elapsed": elapsed.Seconds()},
-			"     [%2d] %s", testCase.index, "success")
+		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.LeaveChild(success)
 	return
 }
 
-// checkForBreak Response tests the given response for a so called break response.
+// cheRckForBreak Response tests the given response for a so called break response.
 // If this break response is present it returns a true
 func (testCase Case) breakResponseIsPresent(request api.Request, response api.Response) (found bool, err error) {
 
@@ -115,7 +126,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			fmt.Println("breakResponseIsPresent: ", responsesMatch)
+			log.Tracef("breakResponseIsPresent: %v", responsesMatch)
 
 			if responsesMatch.Equal {
 				return true, nil
@@ -172,7 +183,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		logging.Debugf("Remaining CheckReponses: %s", testCase.CollectResponse)
+		log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		return len(leftResponses), nil
 	}
 
@@ -185,23 +196,30 @@ func (testCase Case) executeRequest(counter int) (
 	apiResp api.Response,
 	err error) {
 
+	// Store datastore
+	err = testCase.dataStore.SetMap(testCase.Store)
+	if err != nil {
+		err = fmt.Errorf("error setting datastore map:%s", err)
+	}
+
 	//Do Request
 	req, err = testCase.loadRequest()
 	if err != nil {
 		err = fmt.Errorf("error loading request: %s", err)
 		return
 	}
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V1,
-		"request: %s", req.ToString(testCase.session))
-	apiResp, err = testCase.session.SendRequest(req)
+
+	//Log request on trace level (so only v2 will trigger this)
+	log.Tracef("[REQUEST]:\n%s", req.ToString())
+
+	apiResp, err = req.Send()
 	if err != nil {
 		err = fmt.Errorf("error sending request: %s", err)
 		return
 	}
 
 	// Store in custom store
-	err = testCase.session.Store.SetWithQjson(apiResp, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiResp, testCase.StoreResponse)
 	if err != nil {
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
 		return
@@ -217,9 +235,9 @@ func (testCase Case) executeRequest(counter int) (
 		}
 		// Store in datastore -1 list
 		if counter == 0 {
-			testCase.session.Store.AppendResponse(json)
+			testCase.dataStore.AppendResponse(json)
 		} else {
-			testCase.session.Store.UpdateLastResponse(json)
+			testCase.dataStore.UpdateLastResponse(json)
 		}
 	}
 
@@ -229,9 +247,7 @@ func (testCase Case) executeRequest(counter int) (
 		err = fmt.Errorf("error loading response: %s", err)
 		return
 	}
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V1,
-		"response: %s", apiResp.ToString())
+
 	responsesMatch, err = testCase.responsesEqual(response, apiResp)
 	if err != nil {
 		err = fmt.Errorf("error matching responses: %s", err)
@@ -241,13 +257,10 @@ func (testCase Case) executeRequest(counter int) (
 	return
 }
 
-func LogReqResp(request api.Request, response api.Response, session api.Session) {
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V0,
-		"[Request] %s", request.ToString(session))
-	apitestLogging.DebugWithVerbosityf(
-		apitestLogging.V0,
-		"[Response] %s", response.ToString())
+func LogResp(response api.Response) {
+	if FylrConfig.Apitest.LogVerbosity == 0 {
+		log.Debugf("[RESPONSE]:\n%s", response.ToString())
+	}
 }
 
 func (testCase Case) run() (success bool, err error) {
@@ -268,7 +281,12 @@ func (testCase Case) run() (success bool, err error) {
 	//Poll repeats the request until the right response is found, or a timeout triggers
 	for {
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
+		if FylrConfig.Apitest.LogVerbosity >= 1 {
+			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
+		}
+
 		if err != nil {
+			LogResp(apiResponse)
 			return false, err
 		}
 
@@ -278,18 +296,18 @@ func (testCase Case) run() (success bool, err error) {
 
 		breakPresent, err := testCase.breakResponseIsPresent(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for break response: %s", err)
 		}
 
 		if breakPresent {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("Break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
 		if err != nil {
-			LogReqResp(request, apiResponse, testCase.session)
+			LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for continue response: %s", err)
 		}
 
@@ -301,7 +319,7 @@ func (testCase Case) run() (success bool, err error) {
 		//break if timeout or we do not have a repeater
 		if timedOut := time.Now().Sub(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
-				logging.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
+				log.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				r.SaveToReportLogF("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				timedOutFlag = true
 			}
@@ -318,27 +336,25 @@ func (testCase Case) run() (success bool, err error) {
 	}
 
 	if !responsesMatch.Equal || timedOutFlag {
-		//logging.Warnf("responses did not match: Expected: %s \n Actual: %s",response.ToString(), apiResponse.ToString())
 		for _, v := range responsesMatch.Failures {
-			logging.Warnf("[%s] %s", v.Key, v.Message)
+			log.Infof("[%s] %s", v.Key, v.Message)
 			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
 		}
 
-		//logging.Warnf("responses did not match: Expected: %s \n Actual: %s",response.ToString(), apiResponse.ToString())
 		collectArray, ok := testCase.CollectResponse.(util.JsonArray)
 		if ok {
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					LogReqResp(request, apiResponse, testCase.session)
+					LogResp(apiResponse)
 					return false, err
 				}
-				logging.Warnf("Collect response not found: %s", jsonV)
+				log.Warnf("Collect response not found: %s", jsonV)
 				r.SaveToReportLog(fmt.Sprintf("Collect response not found: %s", jsonV))
 			}
 		}
 
-		LogReqResp(request, apiResponse, testCase.session)
+		LogResp(apiResponse)
 		return false, nil
 	}
 
@@ -393,6 +409,27 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	}
 	err = cjson.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
+	spec.DataStore = testCase.dataStore
+	spec.ServerURL = testCase.ServerURL
+
+	if len(spec.Headers) == 0 {
+		spec.Headers = make(map[string]*string, 0)
+	}
+	for k, v := range testCase.standardHeader {
+		if spec.Headers[k] == nil {
+			spec.Headers[k] = v
+		}
+	}
+
+	if len(spec.HeaderFromStore) == 0 {
+		spec.HeaderFromStore = make(map[string]string, 0)
+	}
+	for k, v := range testCase.standardHeaderFromStore {
+		if spec.HeaderFromStore[k] == "" {
+			spec.HeaderFromStore[k] = v
+		}
+	}
+
 	return
 }
 

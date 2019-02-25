@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 )
 
-
 type Response struct {
 	statusCode int
 	headers    map[string][]string
@@ -93,5 +92,14 @@ func (response *Response) marshalBodyInto(target interface{}) (err error) {
 }
 
 func (response Response) ToString() (res string) {
-	return fmt.Sprintf("Statuscode: %d, Body: %s", response.statusCode, string(response.Body()))
+	headersString := ""
+	for k, v := range response.headers {
+		value := ""
+		for _, iv := range v {
+			value = fmt.Sprintf("%s %s", value, iv)
+
+		}
+		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
+	}
+	return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, string(response.Body()))
 }

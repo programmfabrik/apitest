@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
-	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
-	)
-
+)
 
 type FylrConfigStruct struct {
 	Fylr struct {
@@ -24,15 +21,14 @@ type FylrConfigStruct struct {
 	}
 	Apitest struct {
 		Server    string                 `mapstructure:"server"`
-		DBName    string                 `mapstructure:"db-name"`
 		StoreInit map[string]interface{} `mapstructure:"store"`
 		Report    struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
 		} `mapstructure:"report"`
+		LogVerbosity int
 	}
 }
-
 
 var FylrConfig FylrConfigStruct
 
@@ -55,28 +51,29 @@ func LoadConfig(cfgFile string) {
 
 }
 
-func GetStartTime() time.Time {
-	return startTime
+func (config *FylrConfigStruct) SetLogVerbosity(verbosity int) {
+	FylrConfig.Apitest.LogVerbosity = verbosity
+	if verbosity >= 2 {
+		log.SetLevel(log.TraceLevel)
+	} else if verbosity >= 0 {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 }
-
 
 // TestToolConfig gives us the basic testtool infos
 type TestToolConfig struct {
 	ServerURL       string
-	DataBaseName    string
 	rootDirectorys  []string
 	TestDirectories []string
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
-func NewTestToolConfig(serverURL, dataBaseName string, rootDirectory []string) (config TestToolConfig, err error) {
+func NewTestToolConfig(serverURL string, rootDirectory []string) (config TestToolConfig, err error) {
 	config = TestToolConfig{
 		ServerURL:      serverURL,
-		DataBaseName:   dataBaseName,
 		rootDirectorys: rootDirectory,
-	}
-	if err = config.checkDataBase(); err != nil {
-		return config, fmt.Errorf("error checking database names: %s", err)
 	}
 	err = config.extractTestDirectories()
 	return config, err
@@ -102,21 +99,6 @@ func (config *TestToolConfig) extractTestDirectories() error {
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (config *TestToolConfig) checkDataBase() error {
-	session, err := api.NewSession(config.ServerURL, &http.Client{}, nil, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := session.SendSettingsRequest()
-	if err != nil {
-		return fmt.Errorf("error sending settings request: %s", err)
-	}
-	if resp.DbName != config.DataBaseName {
-		return fmt.Errorf("db settings differ: %s != %s", resp.DbName, config.DataBaseName)
 	}
 	return nil
 }

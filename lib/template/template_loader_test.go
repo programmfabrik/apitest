@@ -9,7 +9,7 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 

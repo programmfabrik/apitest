@@ -1,11 +1,3 @@
----
-menu:
-  main:
-    name: "apitest"
-    identifier: apitester
-    parent: "cli"
----
-
 # fylr apitest
 
 The fylr apitesting tool helps you to build automated apitests that can be run after every build to ensure a constant product quality.
@@ -21,8 +13,7 @@ The report parametere of this config can be overwritten via a command line flag.
 
 ```yaml
 apitest:
-   server: "http://5.simon.pf-berlin.de" //The base url to the instance you want to fire the apitests against. Important: don’t add a trailing ‘/’
-   db-name: "easy5-simon" //The name of your database. The tool uses this parameter to double check if you selected the right instance to prevent damage.
+   server: "http://5.simon.pf-berlin.de/api/v1" //The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
    report: //Configures the maschine report. For usage with jenkis or any other CI tool
       file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the fylr binary
       format: "json" //Format of the report. (Supported formats: json or junit)
@@ -47,15 +38,17 @@ This starts the command with the following default settings:
 
 - `--directory testDirectory` or `-d testDirectory`: Defines which directory should be used for running the tests in it. The tool walks recursively trough all subdirectories and runs alls tests that have a "manifest.json" file in alphabetical order of the folder names. (Depth-First-Search)
 - `--single path/to/a/single/manifest.json` or `-s path/to/a/single/manifest.json`: Run only a single test. The path needs to point directly to the manifest file. (Not the directory containing it)
-- `--no-requirements`: Do not run the requirements of the test suite. Useful for development of a test (e.g. To save time not doing a purge every time)
 
 ### Configure logging
 
 - `--verbosity 1` or `-v 1`: Set the verbosity of the logger. (Verbosity defines what kind of communication with the server should be shown) Can be realy helpfull to find out why a test fails.
-	- `-v -1` (default): dont't log any communication with the server
-	- `-v 0`: log the communication in case a test fails
-	- `-v 1`: log the communication if it's so defined in the manifest
-	- `-v 2`: log all server communication
+	- `-v -1` (default): Only normal test ouput
+	- `-v 0`: All from '-1' plus failed test responses
+	- `-v 1`: All from '-1' plus all responses
+	- `-v 2`:  All from '1' plus all requests
+	
+
+You can also set the log verbosity per single testcase. The greater verbosity wins.
 
 
 #### Console logging
@@ -101,12 +94,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```json
 {
-    //Defines how a single test (if defined in the single testcase) should authenticate against the easydb. The authentication is valid for the complete testsuite and only one session can be used.
-    "authentication": {
-        "login": "root",
-        "method": "easydb", // This is the method given in the easydb doc
-        "password": "admin" 
-    },
     //General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename", 
     //Testname. Should be the ticket number if the test is based on a ticket
@@ -143,21 +130,13 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "continue_on_failure": true, 
     //Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname", 
-    //Defines how this single test should authenticate against the easydb. This authentication is valid only for the single test and overwrites the testuite setting
-    "authentication": {
-        "login": "root",
-        "method": "easydb",
-        "password": "admin",
-        // Store parts of the session repsonse
-        "store_response_qjson": {
-          "max_event_id": "body.current_max_event_id"
-	    },
-    },
     // Store custom values to the datastore
     "store": {
         "key1": "value1",
         "key2": "value2"
     },
+    // Specify a unique log level only for this single test. (If cli has a greate log verbosity than this, cli wins)
+    "log_verbosity": 2,
     //Defines what gets send to the server
     "request": { 
 		//What endpoint we want to target. You find all possible endpoints in the api documentation
@@ -174,6 +153,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 			"header1":"value",
 			"header2":"value"
 		},
+		// With header_from_you set a header to the value of the datastore field
+		// In this example we set the "Content-Type" header to the value "application/json"
+		// As "application/json" is stored as string in the datastore on index "contentType"
+		"header_from_store": {
+		  "Content-Type": "contentType"
+		}
 		//All the content you want to send in the http body. Is a JSON Object
 		"body":{
 			"flower":"rose",
@@ -233,12 +218,15 @@ The custom storage is persistent throughout the **apitest** run, so all requirem
 
 The custom store uses a **string** as index and can store any type of data.
 
-If an **key** ends in `[]`, the value is assumed to be an Array, and is appended. If no Array exists, an array is created.
+**Array**: If an key ends in `[]`, the value is assumed to be an Array, and is appended. If no Array exists, an array is created.
+
+**Map**: If an key ends in `[key]`, the value is assumed to be an map, and writes the data into the map at that key. If no map exists, an map is created.
 
 ```django
 {
   "store": {
-    "eas_ids[]": 15
+    "eas_ids[]": 15,
+    "mapStorage[keyIWantToStore]": "value"
   }
 }
 ```

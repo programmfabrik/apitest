@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 )
