@@ -180,7 +180,47 @@ var trivialComparerTestData = []struct {
 		`{"body":[{}]}`,
 		false,
 		"ticket #51342. Error msg",
-		fmt.Errorf("[body[0].henk] actual response[henk] == nil but should exists"),
+		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exists"),
+	},
+	{
+
+		` {
+                "body": [{
+                    "henk": null
+                }]
+            }`,
+		`{"body":[{}]}`,
+		false,
+		"ticket #52417. check value null. Null not found",
+		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exists"),
+	},
+	{
+
+		` {
+                "body": [{
+                    "henk": null
+                }]
+            }`,
+		`{"body":[{
+                    "henk": "2"
+}]}`,
+		false,
+		"ticket #52417. check value null. Other value than null",
+		fmt.Errorf("[body[0].henk] the type of the expected response is invalid. Expected '<nil>' != 'string' Got"),
+	},
+	{
+
+		` {
+                "body": [{
+                    "henk": null
+                }]
+            }`,
+		`{"body":[{
+                    "henk": null
+}]}`,
+		true,
+		"ticket #52417. check value null. Null found",
+		nil,
 	},
 }
 

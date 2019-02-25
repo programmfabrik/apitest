@@ -143,6 +143,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
 	if !equal.Equal {
+		t.Error(equal.Failures)
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expJBytes, realJBytes)
 		t.Fail()
 	}
