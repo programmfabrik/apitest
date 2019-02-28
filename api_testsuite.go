@@ -87,6 +87,7 @@ func (ats Suite) Run() (success bool) {
 		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, k)
 		if !sTestSuccess {
 			success = false
+			break
 		}
 	}
 
