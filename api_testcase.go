@@ -280,6 +280,13 @@ func (testCase Case) run() (success bool, err error) {
 
 	//Poll repeats the request until the right response is found, or a timeout triggers
 	for {
+		// delay between repeating a request
+		if testCase.Delay != nil {
+			time.Sleep(time.Duration(*testCase.Delay) * time.Millisecond)
+		} else {
+			time.Sleep(time.Duration(defaultTimeout) * time.Millisecond)
+		}
+
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if FylrConfig.Apitest.LogVerbosity >= 1 {
 			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
@@ -326,12 +333,6 @@ func (testCase Case) run() (success bool, err error) {
 			break
 		}
 
-		// delay between repeating a request
-		if testCase.Delay != nil {
-			time.Sleep(time.Duration(*testCase.Delay) * time.Millisecond)
-		} else {
-			time.Sleep(time.Duration(defaultTimeout) * time.Millisecond)
-		}
 		requestCounter++
 	}
 

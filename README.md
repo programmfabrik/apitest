@@ -193,14 +193,14 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "store_response_qjson": {
         "eas_id": "body.0.eas._id"
 	},
+	//Delay the request by x msec
+	 "delay_ms":5000,
     //With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
     // timeout_ms:* If this timeout is done, no new redo will be started
     //  -1: No timeout - run endless
-    // delay_ms: How long to wait between poll retries. (default: 10)
     // break_response: [Array] [Logical OR] If one of this responses occures, the tool fails the test and tells it found a break repsponse
     // collect_response:  [Array] [Logical AND] If this is set, the tool will check if all reponses occure in the response (even in different poll runs)
     "timeout_ms":5000,
-    "delay_ms":5000,
     "break_response":["@break_response.json"],
     "collect_response":["@continue_response_pending.json","@continue_response_processing.json"]
 }
