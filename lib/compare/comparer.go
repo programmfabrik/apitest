@@ -184,8 +184,8 @@ func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res Com
 			false,
 			[]CompareFailure{
 				{
-					"$",
-					"the type of the expected response is invalid",
+					"",
+					fmt.Sprintf("the type of the expected response is invalid. Expected '%T' != '%T' Got", left, right),
 				},
 			},
 		}
