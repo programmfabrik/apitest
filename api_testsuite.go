@@ -64,6 +64,9 @@ func NewTestSuite(
 		return suite, fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
 	}
 
+	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
+	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
+
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
