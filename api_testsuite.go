@@ -179,6 +179,8 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 			//Did not work -> Could be go template or a mallformed json
 			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
 			if lErr != nil {
+				r.SaveToReportLog(lErr.Error())
+				log.Error(fmt.Errorf("can not render template: %s", lErr))
 				return false
 			}
 
