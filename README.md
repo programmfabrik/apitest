@@ -1068,7 +1068,7 @@ Returns a `string`where all `"`are escaped to `\"`. This is useful in Strings wh
 
 Just for reference, this is a Go Template [built-in](https://golang.org/pkg/text/template/#hdr-Functions).
 
-### N [float64|int]
+### N [float64|int64|int]
 
 Returns a slice of n 0-sized elements, suitable for ranging over.
 
