@@ -187,6 +187,27 @@ func (loader *Loader) Render(
 		"rows_to_map": func(keyColumn, valueColumn string, rowsInput interface{}) (map[string]interface{}, error) {
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
+		"group_map_rows": func(groupColumn string, rowsInput interface{}) (map[string][]map[string]interface{}, error) {
+			grouped_rows := make(map[string][]map[string]interface{}, 1000)
+			rows := getRowsFromInput(rowsInput)
+			for _, row := range rows {
+				group_key, ok := row[groupColumn]
+				if !ok {
+					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+				}
+				switch idx := group_key.(type) {
+				case string:
+					_, ok := grouped_rows[idx]
+					if !ok {
+						grouped_rows[idx] = make([]map[string]interface{}, 0)
+					}
+					grouped_rows[idx] = append(grouped_rows[idx], row)
+				default:
+					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
+				}
+			}
+			return grouped_rows, nil
+		},
 		"group_rows": func(groupColumn string, rowsInput interface{}) ([][]map[string]interface{}, error) {
 			grouped_rows := make([][]map[string]interface{}, 1000)
 			rows := getRowsFromInput(rowsInput)

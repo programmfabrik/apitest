@@ -729,6 +729,60 @@ Produces this output (presented as **json** for better readability:
 ]
 ```
 
+### group_map_rows "groupColumn" [rows]
+
+Generates an Map of rows from input rows. The **groupColumn** needs to be set to a column which will be used for grouping the rows into the Array.
+
+The column needs to be a **string** column.
+
+The Map will group all rows with identical values in the **groupColumn**.
+
+#### Example
+
+The CSV can look at follows, use **file_csv** to read it and pipe into **group_rows**
+
+| batch | reference | title |
+| -------- | -------- | -------- |
+| string | string |  string |
+| one    | ref1a    | title1a |
+| one    | ref1b | title1b |
+| 4    | ref4 | title4  |
+| 3    | ref3   | titlte2  |
+
+Produces this output (presented as **json** for better readability:
+
+```json
+{
+    "one": [
+        {
+            "batch": "one",
+            "reference": "ref1a",
+            "title": "title1a"
+        },
+        {
+            "batch": "one",
+            "reference": "ref1b",
+            "title": "title1b"
+        }
+    ]
+    ,
+    "4": [
+        {
+            "batch": "4",
+            "reference": "ref3",
+            "title": "title3"
+        }
+    ]
+    ,
+    "3": [
+        {
+            "batch": "3"
+            "reference": "ref4",
+            "title": "title4"
+        }
+    ]
+]
+```
 
 
 #### Template Example
