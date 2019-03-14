@@ -246,15 +246,15 @@ To set data in custom store, you can use 4 methods:
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]`and Array is created if the key does not yet exists, or the value is appended to the Array if it does exist.
 
-The methods `store_respsonse_qjson`take only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
+The method `store_respsonse_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
 
 ### Get Data from Custom Store
 
-The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. 
+The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. Use the special key `-` to return the entire datastore.
 
 ### Get Data from Sequential Store
 
-To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"`would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"`returns the last response from the current manifest. `datastore "-2"`returns second to last from the current manifest. If the index is wrong the function returns an error.
+To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
 ## Use control structures
 
