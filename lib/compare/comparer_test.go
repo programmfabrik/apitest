@@ -23,6 +23,39 @@ var trivialComparerTestData = []struct {
 		nil,
 	},
 	{
+		`{
+    "statuscode": 200,
+    "body": [
+        {
+            "pool": {
+                "reference": "system:root"
+            }
+        }
+    ],
+    "body:control": {
+        "no_extra": true
+    }
+}`,
+		`{
+    "statuscode": 200,
+    "body": [
+        {
+            "pool": {
+                "reference": "system:root"
+            }
+        },
+        {
+            "pool2": {
+                "reference": "system:root"
+            }
+        }
+    ]
+}`,
+		false,
+		"Body has more elements",
+		nil,
+	},
+	{
 		`[1, 2, 3]`,
 		`[1, 2, 3, 4]`,
 		true,

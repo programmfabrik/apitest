@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +13,12 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/spf13/afero"
 )
+
+func TestQjson(t *testing.T) {
+	jsolo := `{"body":[{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":46,"global_object_id":"1@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":1,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:05+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":47,"global_object_id":"2@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":2,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:05+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":48,"global_object_id":"3@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":3,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":49,"global_object_id":"4@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":4,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":50,"global_object_id":"1@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":1,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":51,"global_object_id":"2@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":2,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INDEX"}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":52,"global_object_id":"5@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":5,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":53,"global_object_id":"6@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":6,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":54,"global_object_id":"7@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":7,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":55,"global_object_id":"8@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":8,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":56,"global_object_id":"9@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":9,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":57,"global_object_id":"10@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":10,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":58,"global_object_id":"11@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":11,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":59,"global_object_id":"12@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":12,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":60,"global_object_id":"5@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":5,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":61,"global_object_id":"6@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":6,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":62,"global_object_id":"3@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":3,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":63,"global_object_id":"4@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":4,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":64,"global_object_id":"13@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":13,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":65,"global_object_id":"14@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":14,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":66,"global_object_id":"15@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":15,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":67,"global_object_id":"16@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":16,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":68,"global_object_id":"8@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":8,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":69,"global_object_id":"9@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":9,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":70,"global_object_id":"7@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":7,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}}],"header":{"Cache-Control":["no-cache"],"Content-Type":["application/json; charset=utf-8"],"Date":["Wed, 13 Mar 2019 09:41:16 GMT"],"Last-Modified":["Wed, 13 Mar 2019, 09:41:16 GMT"],"Pragma":["no-cache"],"Server":["Apache/2.4.25 (Debian)"],"Vary":["Origin,Accept-Encoding"],"X-Easydb-Api-Version":["1"],"X-Easydb-Base-Schema-Version":["207"],"X-Easydb-Solution":["simon"],"X-Easydb-User-Schema-Version":["2"]},"statuscode":200}`
+
+	fmt.Println(gjson.Get(jsolo, "body|@reverse|0.event._id"))
+}
 
 func TestCollectResponseShouldWork(t *testing.T) {
 
@@ -359,4 +366,55 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	if log[1] != `Collect response not found: {"body":[{"ID":1}]}` {
 		t.Errorf(`Expected 'Collect response not found: {"body":[{"ID":1}]}' != '%s' Got`, log[1])
 	}
+}
+
+func TestHeaderFromDatastoreWithMap(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"Auth": "%s"}`, r.Header.Get("AuthHeader"))
+	}))
+	defer ts.Close()
+
+	testManifest := []byte(`
+        {
+            "name": "CollectTest",
+			"request":{
+				"endpoint": "suggest", 
+				"method": "GET",
+				"header_from_store":{
+					"authHeader":"hallo[du]"
+				}
+			},
+			"response":{
+				"body": {
+					"Auth": "du index"
+				}
+			}
+        }
+`)
+
+	filesystem.Fs = afero.NewMemMapFs()
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+
+	r := report.NewReport()
+
+	var test Case
+	err := json.Unmarshal(testManifest, &test)
+	if err != nil {
+		t.Fatal(err)
+	}
+	test.reporter = r
+	test.ServerURL = ts.URL
+
+	test.dataStore = api.NewStore()
+	test.dataStore.Set("hallo[du]", "du index")
+	test.dataStore.Set("hallo[sie]", "sie index")
+
+	test.runAPITestCase()
+
+	r.GetTestResult(report.ParseJSONResult)
+	if !r.DidFail() {
+		t.Errorf("Did not fail but it should")
+	}
+
 }

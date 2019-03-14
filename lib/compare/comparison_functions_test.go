@@ -582,6 +582,43 @@ func TestComparison(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Check body no extra",
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": "system:root",
+						},
+					},
+				},
+				"body:control": util.JsonObject{
+					"no_extra": true,
+				},
+			},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference":  "system:root",
+							"reference2": "system:root",
+						},
+					},
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": "system:root",
+						},
+					},
+				},
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "body",
+					Message: "extra elements found in array",
+				},
+			},
+		},
 	}
 
 	for _, data := range testData {
