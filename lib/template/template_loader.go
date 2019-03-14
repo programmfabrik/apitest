@@ -174,6 +174,12 @@ func (loader *Loader) Render(
 		},
 		// add a + b
 		"add": add,
+		// subtract a - b
+		"subtract": subtract,
+		// multiply a * b
+		"multiply": multiply,
+		// divide a / b
+		"divide": divide,
 		// create a slice
 		"slice": func(args ...interface{}) []interface{} {
 			return args

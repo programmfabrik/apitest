@@ -1050,7 +1050,23 @@ Returns a slice with the given parameters as elements. Use this for **range** in
 
 ### add \[a\] \[b\]
 
-Returns the sum of `a`and `b`. `a`can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+Returns the sum of `a`and `b`. `a,b`can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+
+
+### subtract \[a\] \[b\]
+
+Returns `a - b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+
+
+### multiply \[a\] \[b\]
+
+Returns `a * b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+
+
+### divide \[a\] \[b\]
+
+Returns `a / b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+
 
 ### unmarshal \[string\]
 
