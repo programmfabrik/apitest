@@ -13,7 +13,7 @@ import (
 )
 
 func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string)
+	additionalHeaders = make(map[string]string, 0)
 
 	var buf = bytes.NewBuffer([]byte{})
 	w := multipart.NewWriter(buf)
@@ -40,14 +40,14 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			return additionalHeaders, nil, err
 		}
 	}
-	w.Close()
-
+	err = w.Close()
 	body = bytes.NewBuffer(buf.Bytes())
-	return additionalHeaders, body, nil
+
+	return
 }
 
 func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string)
+	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
 	for key, value := range request.Body.(map[string]string) {
@@ -59,7 +59,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 }
 
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string)
+	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
 	bodyBytes, err := cjson.Marshal(request.Body)
 	if err != nil {

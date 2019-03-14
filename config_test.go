@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 
@@ -50,32 +49,15 @@ func SetupFS() {
 
 }
 
-func TestTestToolConfig_DBName(t *testing.T) {
-	SetupFS()
-
-	//Wrong db name -> Expect error
-	_, err := NewTestToolConfig(server.URL+"/api/v1", "Fail", []string{"path"})
-	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on wrong dbName")
-
-	//Wrong db name -> Expect error
-	_, err = NewTestToolConfig("invalid", "sTest", []string{"path"})
-	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on wrong server url")
-
-	//Wrong db name -> Expect error
-	_, err = NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"path"})
-	test_utils.CheckError(t, err, fmt.Sprintf("NewTestToolConfig failed with right dbName: %s", err))
-
-}
-
 func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 	SetupFS()
 
 	//Invalid rootDirectory -> Expect error
-	_, err := NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"invalid"})
+	_, err := NewTestToolConfig(server.URL+"/api/v1", []string{"invalid"})
 	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
 
 	//Invalid rootDirectory -> Expect error
-	conf, err := NewTestToolConfig(server.URL+"/api/v1", "sTest", []string{"path"})
+	conf, err := NewTestToolConfig(server.URL+"/api/v1", []string{"path"})
 	test_utils.CheckError(t, err, "NewTestToolConfig did fail on valid root directory")
 
 	expectedResults := []string{

@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -46,6 +47,7 @@ func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader 
 
 		if err = cjson.Unmarshal(requestBytes, &jsonObject); err != nil {
 			if err = cjson.Unmarshal(requestBytes, &jsonArray); err == nil {
+
 				return filepath, jsonArray, nil
 			}
 			return "", res, fmt.Errorf("error unmarshalling: %s", err)
@@ -56,6 +58,31 @@ func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader 
 		return "", typedData, nil
 	case util.JsonArray:
 		return "", typedData, nil
+	default:
+		return "", res, fmt.Errorf("specification needs to be string[@...] or jsonObject but is: %s", data)
+	}
+}
+
+func LoadManifestDataAsRawJson(data util.GenericJson, manifestDir string) (filepath string, res json.RawMessage, err error) {
+	switch typedData := data.(type) {
+	case []byte:
+		err = res.UnmarshalJSON(typedData)
+		return "", res, nil
+	case string:
+		filepath, res, err := loadFileFromPathSpec(typedData, manifestDir)
+		if err != nil {
+			return "", res, fmt.Errorf("error loading fileFromPathSpec: %s", err)
+		}
+		return filepath, res, nil
+	case util.JsonObject, util.JsonArray:
+		jsonMar, err := json.Marshal(typedData)
+		if err != nil {
+			return "", res, fmt.Errorf("error marshaling: %s", err)
+		}
+		if err = cjson.Unmarshal(jsonMar, &res); err != nil {
+			return "", res, fmt.Errorf("error unmarshalling: %s", err)
+		}
+		return "", res, nil
 	default:
 		return "", res, fmt.Errorf("specification needs to be string[@...] or jsonObject but is: %s", data)
 	}

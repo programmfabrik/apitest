@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/test_utils"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestDataStore_Get(t *testing.T) {
@@ -12,7 +12,7 @@ func TestDataStore_Get(t *testing.T) {
 	responseJson, _ := response.ToJsonString()
 	store.AppendResponse(responseJson)
 	responseBytes, _ := store.Get("0")
-	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"header":null,"statuscode":200}`)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"statuscode":200}`)
 }
 
 func TestDataStore_Get_BodyArray(t *testing.T) {
@@ -25,7 +25,29 @@ func TestDataStore_Get_BodyArray(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":["foo","bar"],"header":null,"statuscode":200}`)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":["foo","bar"],"statuscode":200}`)
+}
+
+func TestDataStore_MAP(t *testing.T) {
+	store := NewStore()
+
+	store.Set("test[head1]", 2)
+	store.Set("test[head3]", nil)
+	store.Set("test[head3]", 3)
+	store.Set("test[head1]", 1)
+
+	tA, err := store.Get("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if tA.(map[string]interface{})["head1"] != 1 {
+		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]interface{})["head1"], 1)
+	}
+
+	if tA.(map[string]interface{})["head3"] != 3 {
+		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]interface{})["head1"], 3)
+	}
 }
 
 func TestDataStore_Get_Err_Index_Out_Of_Bounds(t *testing.T) {

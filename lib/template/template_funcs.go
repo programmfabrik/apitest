@@ -13,6 +13,19 @@ func qjson(path string, json string) string {
 	return result.Raw
 }
 
+// N returns a slice of n 0-sized elements, suitable for ranging over. (github.com/bradfitz)
+func N(n interface{}) ([]struct{}, error) {
+	switch v := n.(type) {
+	case float64:
+		return make([]struct{}, int(v)), nil
+	case int64:
+		return make([]struct{}, v), nil
+	case int:
+		return make([]struct{}, v), nil
+	}
+	return nil, fmt.Errorf("N needs to receive a float64, int, int64. Got: %T", n)
+}
+
 // rowsToMap creates a new map, maps "key" column of each to the "value" column of that row. #51482
 // if "value" is empty "", the whole row is mapped
 func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map[string]interface{}, err error) {
