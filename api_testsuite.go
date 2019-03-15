@@ -116,10 +116,12 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 	loader := template.NewLoader(ats.datastore)
 
 	//Get the Manifest with @ logic
-	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	dir := filepath.Dir(fileh)
+	testFilePath := filepath.Join(manifestDir, fileh)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s", err))
+		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s. File: %s", err, testFilePath))
 		return false
 	}
 
@@ -140,7 +142,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 				err := cjson.Unmarshal(v, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 					return false
 				}
 
@@ -167,7 +169,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 				err := cjson.Unmarshal(testObj, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 					return false
 				}
 
@@ -180,14 +182,14 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
 			if lErr != nil {
 				r.SaveToReportLog(lErr.Error())
-				log.Error(fmt.Errorf("can not render template: %s", lErr))
+				log.Error(fmt.Errorf("can not render template: %s. File: %s", lErr, testFilePath))
 				return false
 			}
 
 			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
 			if string(requestBytes) == string(testObj) {
 				r.SaveToReportLog(err.Error())
-				log.Error(fmt.Errorf("can not unmarshal json: %s", err))
+				log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 				return false
 			}
 
@@ -238,7 +240,7 @@ func (ats Suite) loadManifest() (res []byte, err error) {
 
 	manifestTmpl, err := ioutil.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("error loading manifest: %s", err)
+		return res, fmt.Errorf("error loading manifest: %s. File: %s", err, ats.manifestPath)
 	}
 	return loader.Render(manifestTmpl, ats.manifestDir, nil)
 }
