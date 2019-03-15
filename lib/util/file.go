@@ -23,10 +23,10 @@ func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
 
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 		io, err := openRemoteFile(path)
-		return "", io, err
+		return path, io, err
 	} else {
 		io, err := openLocalFile(path, rootDir)
-		return filepath.Dir(path), io, err
+		return path, io, err
 	}
 }
 

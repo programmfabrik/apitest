@@ -167,7 +167,7 @@ func getTyped(value, format string) (interface{}, error) {
 
 		retArray := make([]string, 0)
 		for _, v := range records[0] {
-			retArray = append(retArray, v)
+			retArray = append(retArray, strings.TrimSpace(v))
 		}
 		return retArray, nil
 	case "int64,array":

@@ -87,7 +87,7 @@ func (ats Suite) Run() (success bool) {
 
 	success = true
 	for k, v := range ats.Tests {
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, k)
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k)
 		if !sTestSuccess {
 			success = false
 			break
@@ -110,16 +110,20 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) bool {
+func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath string, k int) bool {
 	//Init variables
 	r := ats.reporter
 	loader := template.NewLoader(ats.datastore)
 
 	//Get the Manifest with @ logic
-	dir, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	dir := filepath.Dir(fileh)
+	if fileh != "" {
+		testFilePath = filepath.Join(filepath.Dir(testFilePath), fileh)
+	}
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s", err))
+		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s. File: %s", err, testFilePath))
 		return false
 	}
 
@@ -140,13 +144,13 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 				err := cjson.Unmarshal(v, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 					return false
 				}
 
-				success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), k+ki)
+				success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki)
 			} else {
-				success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, loader, ki)
+				success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, ki)
 			}
 
 			if !success {
@@ -167,32 +171,32 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 				err := cjson.Unmarshal(testObj, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s", err))
+					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 					return false
 				}
 
-				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), k)
+				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k)
 			} else {
-				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, loader, k)
+				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k)
 			}
 		} else {
 			//Did not work -> Could be go template or a mallformed json
 			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
 			if lErr != nil {
 				r.SaveToReportLog(lErr.Error())
-				log.Error(fmt.Errorf("can not render template: %s", lErr))
+				log.Error(fmt.Errorf("can not render template: %s. File: %s", lErr, testFilePath))
 				return false
 			}
 
 			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
 			if string(requestBytes) == string(testObj) {
 				r.SaveToReportLog(err.Error())
-				log.Error(fmt.Errorf("can not unmarshal json: %s", err))
+				log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
 				return false
 			}
 
 			//We have a template -> One level deeper with rendered bytes
-			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir), k)
+			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir), testFilePath, k)
 
 		}
 	}
@@ -200,12 +204,13 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir string, k int) 
 	return true
 }
 
-func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, loader template.Loader, k int) (success bool) {
+func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath string, loader template.Loader, k int) (success bool) {
 	var test Case
 	jErr := cjson.Unmarshal(tc.CaseByte, &test)
 	if jErr != nil {
 		r.SaveToReportLog(jErr.Error())
-		log.Error(fmt.Errorf("can not unmarshal single test %s", jErr))
+
+		log.Error(fmt.Errorf("can not unmarshal single test %s. File: %s", jErr, testFilePath))
 		return false
 	}
 
@@ -238,7 +243,7 @@ func (ats Suite) loadManifest() (res []byte, err error) {
 
 	manifestTmpl, err := ioutil.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("error loading manifest: %s", err)
+		return res, fmt.Errorf("error loading manifest: %s. File: %s", err, ats.manifestPath)
 	}
 	return loader.Render(manifestTmpl, ats.manifestDir, nil)
 }

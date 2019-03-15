@@ -2,6 +2,7 @@ package cjson
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -19,8 +20,11 @@ func Unmarshal(input []byte, output interface{}) error {
 	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
 	inputNoComments := []byte(commentRegex.ReplaceAllString(string(input), ``))
 
+	dec := json.NewDecoder(bytes.NewReader(inputNoComments))
+	dec.DisallowUnknownFields()
+
 	// unmarshal into object
-	err := json.Unmarshal(inputNoComments, output)
+	err := dec.Decode(output)
 	if err != nil {
 		return getIndepthJsonError(inputNoComments, err)
 	}
