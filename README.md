@@ -246,15 +246,15 @@ To set data in custom store, you can use 4 methods:
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]`and Array is created if the key does not yet exists, or the value is appended to the Array if it does exist.
 
-The methods `store_respsonse_qjson`take only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
+The method `store_respsonse_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
 
 ### Get Data from Custom Store
 
-The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. 
+The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. Use the special key `-` to return the entire datastore.
 
 ### Get Data from Sequential Store
 
-To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"`would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"`returns the last response from the current manifest. `datastore "-2"`returns second to last from the current manifest. If the index is wrong the function returns an error.
+To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
 ## Use control structures
 
@@ -729,6 +729,60 @@ Produces this output (presented as **json** for better readability:
 ]
 ```
 
+### group_map_rows "groupColumn" [rows]
+
+Generates an Map of rows from input rows. The **groupColumn** needs to be set to a column which will be used for grouping the rows into the Array.
+
+The column needs to be a **string** column.
+
+The Map will group all rows with identical values in the **groupColumn**.
+
+#### Example
+
+The CSV can look at follows, use **file_csv** to read it and pipe into **group_rows**
+
+| batch | reference | title |
+| -------- | -------- | -------- |
+| string | string |  string |
+| one    | ref1a    | title1a |
+| one    | ref1b | title1b |
+| 4    | ref4 | title4  |
+| 3    | ref3   | titlte2  |
+
+Produces this output (presented as **json** for better readability:
+
+```json
+{
+    "one": [
+        {
+            "batch": "one",
+            "reference": "ref1a",
+            "title": "title1a"
+        },
+        {
+            "batch": "one",
+            "reference": "ref1b",
+            "title": "title1b"
+        }
+    ]
+    ,
+    "4": [
+        {
+            "batch": "4",
+            "reference": "ref3",
+            "title": "title3"
+        }
+    ]
+    ,
+    "3": [
+        {
+            "batch": "3"
+            "reference": "ref4",
+            "title": "title4"
+        }
+    ]
+]
+```
 
 
 #### Template Example
