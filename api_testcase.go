@@ -23,10 +23,10 @@ const (
 // Case defines the structure of our single testcase
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
-	Name              string                 `json:"name"`
-	RequestData       *util.GenericJson      `json:"request"`
-	TypedResponseData *CaseResponse          `json:"response"`
-	responseData      util.GenericJson       `json:"-"`
+	Name              string            `json:"name"`
+	RequestData       *util.GenericJson `json:"request"`
+	TypedResponseData *CaseResponse     `json:"response"`
+	responseData      util.GenericJson
 	ContinueOnFailure bool                   `json:"continue_on_failure"`
 	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
