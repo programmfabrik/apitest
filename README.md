@@ -1,5 +1,10 @@
 # fylr apitest
 
+[![CircleCI](https://circleci.com/gh/programmfabrik/fylr-apitest.svg?style=svg)](https://circleci.com/gh/programmfabrik/fylr-apitest)
+[![Twitter](https://img.shields.io/twitter/follow/programmfabrik.svg?label=Follow&style=social)](https://twitter.com/programmfabrik)
+[![GoReportCard](https://goreportcard.com/badge/github.com/programmfabrik/fylr-apitest)](https://goreportcard.com/report/github.com/programmfabrik/fylr-apitest)
+
+
 The fylr apitesting tool helps you to build automated apitests that can be run after every build to ensure a constant product quality.
 
 A single testcase is also a perfect definition of an occuring problem and helps the developers to fix your issues faster!
