@@ -8,8 +8,8 @@ import (
 
 	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
-
 	"github.com/programmfabrik/go-test-utils"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/afero"
 )
 
@@ -144,7 +144,7 @@ int64,string,"string,array","int64,array"
 ,hans,,
 1,simon,"simon,jo
 nas,ste
-fan","21,24,12"`, ``, fmt.Errorf(`error executing body template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.j...>: error calling file_csv: 'somefile.json' Only one row is allowed for type 'string,array'`)},
+fan","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' Only one row is allowed for type 'string,array'`)},
 
 		{`id,name,friends,ages
 
@@ -185,11 +185,11 @@ int64,string,s,"string,array"
 ,,,
 #,hans,,
 1,simon,LALALALA,"simon,""jo
-nas"",""a,b""","21,24,12"`, ``, fmt.Errorf(`error executing body template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.j...>: error calling file_csv: 'somefile.json' 's' is no valid format`)},
+nas"",""a,b""","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 's' is no valid format`)},
 		{`id,name,,ages
 int64,string,"string,array","int64,array"`, `[]`, nil},
 		{`id,name,friends,ages
-int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing body template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.j...>: error calling file_csv: 'somefile.json' 'stringer,array' is no valid format`)},
+int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 'stringer,array' is no valid format`)},
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
@@ -202,10 +202,25 @@ int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing bo
 
 			loader := NewLoader(api.NewStore())
 			res, err := loader.Render(root, "", nil)
-			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
 
 			if err == nil {
-				test_utils.AssertStringEquals(t, string(res), testCase.expected)
+				if string(res) != testCase.expected {
+					dmp := diffmatchpatch.New()
+
+					diffs := dmp.DiffMain(string(res), testCase.expected, false)
+
+					t.Errorf("Result differs: %s", dmp.DiffPrettyText(diffs))
+
+				}
+			} else {
+				if err.Error() != testCase.expectedErr.Error() {
+					dmp := diffmatchpatch.New()
+
+					diffs := dmp.DiffMain(testCase.expectedErr.Error(), err.Error(), false)
+
+					t.Errorf("Error differs: %s", dmp.DiffPrettyText(diffs))
+
+				}
 			}
 		})
 	}

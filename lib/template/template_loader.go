@@ -229,7 +229,7 @@ func (loader *Loader) Render(
 	var b []byte
 	buf := bytes.NewBuffer(b)
 	if err = tmpl.Execute(buf, ctx); err != nil {
-		return nil, fmt.Errorf("error executing body template: %s", err)
+		return nil, fmt.Errorf("error executing template: %s", err)
 	}
 	return buf.Bytes(), nil
 }
