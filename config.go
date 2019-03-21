@@ -26,7 +26,6 @@ type FylrConfigStruct struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
 		} `mapstructure:"report"`
-		LogVerbosity int
 	}
 }
 
@@ -51,29 +50,22 @@ func LoadConfig(cfgFile string) {
 
 }
 
-func (config *FylrConfigStruct) SetLogVerbosity(verbosity int) {
-	FylrConfig.Apitest.LogVerbosity = verbosity
-	if verbosity >= 2 {
-		log.SetLevel(log.TraceLevel)
-	} else if verbosity >= 0 {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
-}
-
 // TestToolConfig gives us the basic testtool infos
 type TestToolConfig struct {
 	ServerURL       string
 	rootDirectorys  []string
 	TestDirectories []string
+	LogNetwork      bool
+	LogVerbose      bool
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
-func NewTestToolConfig(serverURL string, rootDirectory []string) (config TestToolConfig, err error) {
+func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool, logVerbose bool) (config TestToolConfig, err error) {
 	config = TestToolConfig{
 		ServerURL:      serverURL,
 		rootDirectorys: rootDirectory,
+		LogNetwork:     logNetwork,
+		LogVerbose:     logVerbose,
 	}
 	err = config.extractTestDirectories()
 	return config, err

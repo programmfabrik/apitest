@@ -46,11 +46,12 @@ This starts the command with the following default settings:
 
 ### Configure logging
 
-- `--verbosity 1` or `-v 1`: Set the verbosity of the logger. (Verbosity defines what kind of communication with the server should be shown) Can be realy helpfull to find out why a test fails.
-	- `-v -1` (default): Only normal test ouput
-	- `-v 0`: All from '-1' plus failed test responses
-	- `-v 1`: All from '-1' plus all responses
-	- `-v 2`:  All from '1' plus all requests
+Per default request and response of a request will be logged on test failure. If you want to see more information you 
+can configure the tool with additional log flags
+	
+- `--log-network`: Log all network traffic
+- `--log-datastore`: Log datastore operations
+- `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
 	
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.

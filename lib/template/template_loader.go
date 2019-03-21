@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
-	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
 	"text/template"
@@ -88,11 +87,10 @@ func (loader *Loader) Render(
 				err = fmt.Errorf("The given json was empty")
 				return
 			}
-			log.Tracef("[QJSON] JSON input: %s", json)
 
 			result = gjson.Get(json, path).Raw
 			if len(result) == 0 {
-				err = fmt.Errorf("'%s' was not found or was empty string", path)
+				err = fmt.Errorf("'%s' was not found or was empty string. Qjson Input: %s", path, json)
 			}
 			return
 		},
