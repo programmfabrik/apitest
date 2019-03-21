@@ -57,11 +57,11 @@ func NewTestSuite(
 
 	manifest, err := suite.loadManifest()
 	if err != nil {
-		return suite, fmt.Errorf("error loading manifest: %s", err)
+		return suite, fmt.Errorf("error loading manifest: %s. File: %s", err, manifestPath)
 	}
 
 	if err = cjson.Unmarshal(manifest, &suite); err != nil {
-		return suite, fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
+		return suite, fmt.Errorf("error unmarshaling manifest: %s. File: %s", err, manifestPath)
 	}
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
@@ -70,7 +70,7 @@ func NewTestSuite(
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
-		err = fmt.Errorf("error setting datastore map:%s", err)
+		err = fmt.Errorf("error setting datastore map: %s. File: %s", err, manifestPath)
 	}
 
 	return suite, nil
@@ -237,7 +237,7 @@ func (ats Suite) loadManifest() (res []byte, err error) {
 	loader := template.NewLoader(ats.datastore)
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
-		return res, fmt.Errorf("error opening manifestPath: %s", err)
+		return res, fmt.Errorf("error opening manifestPath: %s. File: %s", err, ats.manifestPath)
 	}
 	defer manifestFile.Close()
 
