@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	reportFormat, reportFile             string
-	logNetwork, logDatastore, logVerbose bool
-	rootDirectorys, singleTests          []string
+	reportFormat, reportFile    string
+	logNetwork, logVerbose      bool
+	rootDirectorys, singleTests []string
 )
 
 func init() {
@@ -36,15 +36,12 @@ func init() {
 		&singleTests, "single", "s", []string{},
 		"path to a single manifest. Runs only that specified testsuite")
 
-	TestCMD.PersistentFlags().BoolVar(
-		&logNetwork, "log-network", false,
+	TestCMD.PersistentFlags().BoolVarP(
+		&logNetwork, "log-network", "n", false,
 		`log all network traffic to console`)
-	TestCMD.PersistentFlags().BoolVar(
-		&logDatastore, "log-datastore", false,
-		`log datastore operations to console`)
-	TestCMD.PersistentFlags().BoolVar(
-		&logVerbose, "log-verbose", false,
-		`log all available information to console. Overwrites log-network & log-datastore with true`)
+	TestCMD.PersistentFlags().BoolVarP(
+		&logVerbose, "log-verbose", "v", false,
+		`log datastore operations and information about repeating request to console`)
 
 	TestCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
@@ -105,18 +102,13 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	reportFormat = FylrConfig.Apitest.Report.Format
 	reportFile = FylrConfig.Apitest.Report.File
 
-	if logVerbose {
-		logDatastore = true
-		logNetwork = true
-	}
-
 	//Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys, logNetwork, logVerbose)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sDatastore := datastore.NewStore(logDatastore)
+	sDatastore := datastore.NewStore(logVerbose)
 	for k, v := range FylrConfig.Apitest.StoreInit {
 		err := sDatastore.Set(k, v)
 		if err != nil {
