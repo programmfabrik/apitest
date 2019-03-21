@@ -256,6 +256,8 @@ The method `store_respsonse_qjson` takes only **string** as value. This qjson-st
 ### Get Data from Custom Store
 
 The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. Use the special key `-` to return the entire datastore.
+You can also use the slice and map notation for getting certain values out of the slice or map directly: `mySlice[3]` would return 
+the value at index `3` of the slice that is stored with the key `mySlice` in the datastore.
 
 ### Get Data from Sequential Store
 
