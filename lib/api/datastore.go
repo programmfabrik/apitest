@@ -137,7 +137,7 @@ func (this *Datastore) Set(index string, value interface{}) error {
 	return nil
 }
 
-func (this Datastore) Get(index string) (res interface{}, err error) {
+func (this Datastore) Get(index string) (interface{}, error) {
 	// strings are evalulated as int, so
 	// that we can support "-<int>" notations
 
@@ -146,57 +146,24 @@ func (this Datastore) Get(index string) (res interface{}, err error) {
 		return this.storage, nil
 	}
 
-	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
-
-	if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
-		//we have a map or slice
-		useIndex := rego[1]
-		mapIndex := rego[2]
-
-		tmpRes, ok := this.storage[useIndex]
-		if !ok {
-			log.Errorf("datastore: key: %s not found.", useIndex)
-			return "", nil
+	idx, err := strconv.Atoi(index)
+	if err == nil {
+		if idx < 0 {
+			idx = idx + len(this.responseJson)
 		}
-
-		tmpResMap, ok := tmpRes.(map[string]interface{})
-		if ok {
-			//We have a map
-			return tmpResMap[mapIndex], nil
+		if idx >= len(this.responseJson) || idx < 0 {
+			// index out of range
+			return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(this.responseJson))}
 		}
-
-		tmpResSlice, ok := tmpRes.([]interface{})
-		if ok {
-			//We have a slice
-			mapIdx, err := strconv.Atoi(mapIndex)
-			if err != nil {
-				log.Errorf("datastore: could not convert key to int: %s", mapIndex)
-				return "", nil
-			}
-
-			return tmpResSlice[mapIdx], nil
-		}
-
-	} else {
-
-		idx, err := strconv.Atoi(index)
-		if err == nil {
-			if idx < 0 {
-				idx = idx + len(this.responseJson)
-			}
-			if idx >= len(this.responseJson) || idx < 0 {
-				// index out of range
-				return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(this.responseJson))}
-			}
-			return this.responseJson[idx], nil
-		}
-		var ok bool
-		res, ok = this.storage[index]
-		if ok {
-			return res, nil
-		}
+		return this.responseJson[idx], nil
 	}
 
-	log.Errorf("datastore: key: %s not found.", index)
-	return "", nil
+	res, ok := this.storage[index]
+
+	// logging.Warnf("datastore: %s", store.storage)
+	if !ok {
+		// logging.Warnf("datastore: key: %s not found.", index)
+		return "", nil
+	}
+	return res, nil
 }
