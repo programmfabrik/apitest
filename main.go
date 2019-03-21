@@ -176,7 +176,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 		err = ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 		if err != nil {
-			log.Errorf("Could not save report into file: ", err)
+			log.Errorf("Could not save report into file: %s", err)
 		}
 	}
 

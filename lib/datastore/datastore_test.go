@@ -7,19 +7,15 @@ import (
 )
 
 func TestDataStore_Get(t *testing.T) {
-	store := NewStore()
-	response := Response{statusCode: 200, body: []byte(`{"foo": "bar"}`)}
-	responseJson, _ := response.ToJsonString()
-	store.AppendResponse(responseJson)
+	store := NewStore(false)
+	store.AppendResponse(`{"body":{"foo":"bar"},"statuscode":200}`)
 	responseBytes, _ := store.Get("0")
 	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"statuscode":200}`)
 }
 
 func TestDataStore_Get_BodyArray(t *testing.T) {
-	store := NewStore()
-	response := Response{statusCode: 200, body: []byte(`["foo", "bar"]`)}
-	responseJson, _ := response.ToJsonString()
-	store.AppendResponse(responseJson)
+	store := NewStore(false)
+	store.AppendResponse(`{"body":["foo","bar"],"statuscode":200}`)
 	responseBytes, err := store.Get("0")
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +25,7 @@ func TestDataStore_Get_BodyArray(t *testing.T) {
 }
 
 func TestDataStore_MAP(t *testing.T) {
-	store := NewStore()
+	store := NewStore(false)
 
 	store.Set("test[head1]", 2)
 	store.Set("test[head3]", nil)
@@ -51,10 +47,8 @@ func TestDataStore_MAP(t *testing.T) {
 }
 
 func TestDataStore_Get_Err_Index_Out_Of_Bounds(t *testing.T) {
-	store := NewStore()
-	response := Response{statusCode: 200, body: []byte(`BROKEN`)}
-	responseJson, _ := response.ToJsonString()
-	store.AppendResponse(responseJson)
+	store := NewStore(false)
+	store.AppendResponse(`BROKEN`)
 	_, err := store.Get("19")
 	if err == nil {
 		t.Errorf("expected error, got nil")

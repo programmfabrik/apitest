@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"github.com/tidwall/gjson"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
 	"github.com/spf13/afero"
@@ -76,7 +76,7 @@ func TestCollectResponseShouldWork(t *testing.T) {
 	}
 	test.reporter = r
 	test.ServerURL = ts.URL
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 
 	test.runAPITestCase()
 
@@ -129,7 +129,7 @@ func TestCollectLoadExternalFile(t *testing.T) {
 	}
 	test.reporter = r
 	test.ServerURL = ts.URL
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 
 	test.runAPITestCase()
 
@@ -190,7 +190,7 @@ func TestCollectLoadExternalCollect(t *testing.T) {
 	}
 	test.reporter = r
 	test.ServerURL = ts.URL
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 
 	test.runAPITestCase()
 
@@ -290,7 +290,7 @@ func TestCollectEvents(t *testing.T) {
 	}
 	test.reporter = r
 	test.ServerURL = ts.URL
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 
 	test.runAPITestCase()
 
@@ -343,7 +343,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	}
 	test.reporter = r
 	test.ServerURL = ts.URL
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 
 	test.runAPITestCase()
 
@@ -406,7 +406,7 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 	test.reporter = r
 	test.ServerURL = ts.URL
 
-	test.dataStore = api.NewStore()
+	test.dataStore = datastore.NewStore(false)
 	test.dataStore.Set("hallo[du]", "du index")
 	test.dataStore.Set("hallo[sie]", "sie index")
 
