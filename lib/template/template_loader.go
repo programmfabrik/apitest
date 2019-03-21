@@ -3,7 +3,7 @@ package template
 import (
 	"bytes"
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"regexp"
 	"strings"
 	"text/template"
@@ -15,7 +15,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/tidwall/gjson"
 )
 
@@ -63,10 +62,10 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 }
 
 type Loader struct {
-	datastore *api.Datastore
+	datastore *datastore.Datastore
 }
 
-func NewLoader(datastore *api.Datastore) Loader {
+func NewLoader(datastore *datastore.Datastore) Loader {
 	return Loader{datastore: datastore}
 }
 
@@ -88,11 +87,10 @@ func (loader *Loader) Render(
 				err = fmt.Errorf("The given json was empty")
 				return
 			}
-			log.Tracef("[QJSON] JSON input: %s", json)
 
 			result = gjson.Get(json, path).Raw
 			if len(result) == 0 {
-				err = fmt.Errorf("'%s' was not found or was empty string", path)
+				err = fmt.Errorf("'%s' was not found or was empty string. Qjson Input: %s", path, json)
 			}
 			return
 		},

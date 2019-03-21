@@ -2,6 +2,7 @@ package template
 
 import (
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,7 +22,7 @@ func TestRender_LoadFile_withParam(t *testing.T) {
 	filesystem.Fs.MkdirAll("some/path", 0755)
 	afero.WriteFile(filesystem.Fs, "some/path/somefile.json", target, 0644)
 
-	loader := NewLoader(api.NewStore())
+	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
 	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
 	test_utils.AssertStringEquals(t, string(res), "bogus")
@@ -37,7 +38,7 @@ func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, "root/a/next.tmpl", next, 0644)
 	afero.WriteFile(filesystem.Fs, "root/a/b/last.tmpl", last, 0644)
 
-	loader := NewLoader(api.NewStore())
+	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "root", nil)
 	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
 	test_utils.AssertStringEquals(t, string(res), "bogus")
@@ -52,7 +53,7 @@ func TestRenderWithDataStore_LoadFile_TooManyParams(t *testing.T) {
 	filesystem.Fs.MkdirAll(manifestdir, 0755)
 	afero.WriteFile(filesystem.Fs, filepath.Join(manifestdir, filename), []byte(targetFileContent), 0644)
 
-	loader := NewLoader(api.NewStore())
+	loader := NewLoader(datastore.NewStore(false))
 	testTmpl := []byte(rootTmplContent)
 	_, err := loader.Render(testTmpl, manifestdir, nil)
 	if err == nil {
@@ -64,14 +65,15 @@ func TestRenderWithDataStore_LoadFile_TooManyParams(t *testing.T) {
 }
 
 func TestBigIntRender(t *testing.T) {
-	store := api.NewStore()
+	store := datastore.NewStore(false)
 	loader := NewLoader(store)
 
 	inputNumber := "132132132182323"
 
 	resp, _ := api.NewResponse(200, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)))
 
-	store.SetWithQjson(resp, map[string]string{"testINT": "body.bigINT"})
+	respJson, _ := resp.ToJsonString()
+	store.SetWithQjson(respJson, map[string]string{"testINT": "body.bigINT"})
 
 	res, err := loader.Render([]byte(`{{ datastore "testINT" }}`), "", nil)
 	if err != nil {
@@ -87,7 +89,7 @@ func TestRowsToMapTemplate(t *testing.T) {
 
 	root := []byte(`{{ unmarshal "` + inputJson + `" | rows_to_map "column_a" "column_c" }}`)
 
-	loader := NewLoader(api.NewStore())
+	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
 
 	t.Log(string(res))
@@ -108,7 +110,7 @@ func TestRender_LoadFile_QJson_Params(t *testing.T) {
 	filesystem.Fs.MkdirAll("some/path", 0755)
 	afero.WriteFile(filesystem.Fs, "some/path/somefile.json", target, 0644)
 
-	loader := NewLoader(api.NewStore())
+	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
 	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
 	test_utils.AssertStringEquals(t, string(res), "\"bar\"")
@@ -200,7 +202,7 @@ int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing te
 			filesystem.Fs = afero.NewMemMapFs()
 			afero.WriteFile(filesystem.Fs, "somefile.json", target, 0644)
 
-			loader := NewLoader(api.NewStore())
+			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
 
 			if err == nil {
@@ -249,7 +251,7 @@ int64,string,"string,array","int64,array"
 			filesystem.Fs = afero.NewMemMapFs()
 			afero.WriteFile(filesystem.Fs, "somefile.json", target, 0644)
 
-			loader := NewLoader(api.NewStore())
+			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
 			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
 
@@ -284,7 +286,7 @@ int64,string,"string,array","int64,array"
 			filesystem.Fs = afero.NewMemMapFs()
 			afero.WriteFile(filesystem.Fs, "somefile.json", target, 0644)
 
-			loader := NewLoader(api.NewStore())
+			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
 			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
 
@@ -318,7 +320,7 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 			filesystem.Fs.MkdirAll("some/path", 0755)
 			afero.WriteFile(filesystem.Fs, "some/path/somefile.json", target, 0644)
 
-			loader := NewLoader(api.NewStore())
+			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "some/path", nil)
 			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
 
@@ -335,7 +337,7 @@ func Test_DataStore_QJson(t *testing.T) {
 		map[string][]string{"x-header": {"foo", "bar"}},
 		strings.NewReader(`{"flib": ["flab", "flob"]}`),
 	)
-	store := api.NewStore()
+	store := datastore.NewStore(false)
 	jsonResponse, err := response.ToJsonString()
 	if err != nil {
 		t.Fatal(err)
