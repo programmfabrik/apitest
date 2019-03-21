@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
@@ -41,7 +42,7 @@ type Case struct {
 	reporter    *report.Report
 	suiteIndex  int
 	index       int
-	dataStore   *api.Datastore
+	dataStore   *datastore.Datastore
 
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
@@ -50,11 +51,6 @@ type Case struct {
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
-	if testCase.LogVerbosity != nil && *testCase.LogVerbosity > FylrConfig.Apitest.LogVerbosity {
-		defer FylrConfig.SetLogVerbosity(FylrConfig.Apitest.LogVerbosity)
-		FylrConfig.SetLogVerbosity(*testCase.LogVerbosity)
-	}
-
 	r := testCase.reporter
 
 	if testCase.Name != "" {
@@ -218,8 +214,14 @@ func (testCase Case) executeRequest(counter int) (
 		return
 	}
 
+	apiRespJson, err := apiResp.ToJsonString()
+	if err != nil {
+		err = fmt.Errorf("error getting json from response: %s", err)
+		return
+	}
+
 	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiResp, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiRespJson, testCase.StoreResponse)
 	if err != nil {
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
 		return

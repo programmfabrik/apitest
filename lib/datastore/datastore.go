@@ -1,4 +1,4 @@
-package api
+package datastore
 
 import (
 	"fmt"
@@ -41,14 +41,11 @@ func (data DatastoreIndexOutOfBoundsError) Error() string {
 }
 
 // SetWithQjson stores the given response driven by a map key => qjson
-func (this *Datastore) SetWithQjson(response Response, storeResponse map[string]string) error {
-	json, err := response.ToJsonString()
-	if err != nil {
-		return err
-	}
+func (this *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]string) error {
 	for k, qv := range storeResponse {
-		qValue := gjson.Get(json, qv)
+		qValue := gjson.Get(jsonResponse, qv)
 		if qValue.Value() == nil {
+			log.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
 			continue
 		}
 		setValue := qValue.Value()
@@ -160,9 +157,7 @@ func (this Datastore) Get(index string) (interface{}, error) {
 
 	res, ok := this.storage[index]
 
-	// logging.Warnf("datastore: %s", store.storage)
 	if !ok {
-		// logging.Warnf("datastore: key: %s not found.", index)
 		return "", nil
 	}
 	return res, nil

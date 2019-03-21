@@ -1,4 +1,4 @@
-package api
+package datastore
 
 import (
 	"testing"

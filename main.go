@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/api"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 
 	log "github.com/sirupsen/logrus"
 
@@ -109,7 +109,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	datastore := api.NewStore()
+	datastore := datastore.NewStore()
 	for k, v := range FylrConfig.Apitest.StoreInit {
 		datastore.Set(k, v)
 		log.Debugf("Add Init value for datastore Key: '%s', Value: '%v'", k, v)

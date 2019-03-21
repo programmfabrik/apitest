@@ -3,6 +3,7 @@ package template
 import (
 	"bytes"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/tidwall/gjson"
 )
 
@@ -63,10 +63,10 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 }
 
 type Loader struct {
-	datastore *api.Datastore
+	datastore *datastore.Datastore
 }
 
-func NewLoader(datastore *api.Datastore) Loader {
+func NewLoader(datastore *datastore.Datastore) Loader {
 	return Loader{datastore: datastore}
 }
 

@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"io/ioutil"
 	"path/filepath"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
@@ -29,7 +29,7 @@ type Suite struct {
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
 
 	Config       TestToolConfig
-	datastore    *api.Datastore
+	datastore    *datastore.Datastore
 	manifestDir  string
 	manifestPath string
 	reporter     *report.Report
@@ -43,7 +43,7 @@ func NewTestSuite(
 	config TestToolConfig,
 	manifestPath string,
 	r *report.Report,
-	datastore *api.Datastore,
+	datastore *datastore.Datastore,
 	index int,
 ) (suite Suite, err error) {
 	suite = Suite{
