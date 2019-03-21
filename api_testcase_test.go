@@ -413,8 +413,62 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 	test.runAPITestCase()
 
 	r.GetTestResult(report.ParseJSONResult)
-	if !r.DidFail() {
-		t.Errorf("Did not fail but it should")
+	if r.DidFail() {
+		t.Errorf("Did fail but it should not")
+	}
+
+}
+
+func TestHeaderFromDatastoreWithSlice(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"Auth": "%s"}`, r.Header.Get("AuthHeader"))
+	}))
+	defer ts.Close()
+
+	testManifest := []byte(`
+        {
+            "name": "CollectTest",
+			"request":{
+				"endpoint": "suggest", 
+				"method": "GET",
+				"header_from_store":{
+					"authHeader":"hallo[3]"
+				}
+			},
+			"response":{
+				"body": {
+					"Auth": "es index"
+				}
+			}
+        }
+`)
+
+	filesystem.Fs = afero.NewMemMapFs()
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+
+	r := report.NewReport()
+
+	var test Case
+	err := json.Unmarshal(testManifest, &test)
+	if err != nil {
+		t.Fatal(err)
+	}
+	test.reporter = r
+	test.ServerURL = ts.URL
+
+	test.dataStore = api.NewStore()
+	test.dataStore.Set("hallo[]", "du index")
+	test.dataStore.Set("hallo[]", "sie index")
+	test.dataStore.Set("hallo[]", "er index")
+	test.dataStore.Set("hallo[]", "es index")
+	test.dataStore.Set("hallo[]", "mama index")
+
+	test.runAPITestCase()
+
+	r.GetTestResult(report.ParseJSONResult)
+	if r.DidFail() {
+		t.Errorf("Did fail but it should not")
 	}
 
 }
