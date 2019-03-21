@@ -140,7 +140,7 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 	return nil
 }
 
-func (ds Datastore) Get(index string) (interface{}, error) {
+func (ds Datastore) Get(index string) (res interface{}, err error) {
 	// strings are evalulated as int, so
 	// that we can support "-<int>" notations
 
@@ -149,22 +149,57 @@ func (ds Datastore) Get(index string) (interface{}, error) {
 		return ds.storage, nil
 	}
 
-	idx, err := strconv.Atoi(index)
-	if err == nil {
-		if idx < 0 {
-			idx = idx + len(ds.responseJson)
+	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
+
+	if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
+		//we have a map or slice
+		useIndex := rego[1]
+		mapIndex := rego[2]
+
+		tmpRes, ok := ds.storage[useIndex]
+		if !ok {
+			log.Errorf("datastore: key: %s not found.", useIndex)
+			return "", nil
 		}
-		if idx >= len(ds.responseJson) || idx < 0 {
-			// index out of range
-			return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
+
+		tmpResMap, ok := tmpRes.(map[string]interface{})
+		if ok {
+			//We have a map
+			return tmpResMap[mapIndex], nil
 		}
-		return ds.responseJson[idx], nil
+
+		tmpResSlice, ok := tmpRes.([]interface{})
+		if ok {
+			//We have a slice
+			mapIdx, err := strconv.Atoi(mapIndex)
+			if err != nil {
+				log.Errorf("datastore: could not convert key to int: %s", mapIndex)
+				return "", nil
+			}
+
+			return tmpResSlice[mapIdx], nil
+		}
+
+	} else {
+
+		idx, err := strconv.Atoi(index)
+		if err == nil {
+			if idx < 0 {
+				idx = idx + len(ds.responseJson)
+			}
+			if idx >= len(ds.responseJson) || idx < 0 {
+				// index out of range
+				return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
+			}
+			return ds.responseJson[idx], nil
+		}
+		var ok bool
+		res, ok = ds.storage[index]
+		if ok {
+			return res, nil
+		}
 	}
 
-	res, ok := ds.storage[index]
-
-	if !ok {
-		return "", nil
-	}
-	return res, nil
+	log.Errorf("datastore: key: %s not found.", index)
+	return "", nil
 }
