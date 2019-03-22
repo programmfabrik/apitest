@@ -18,14 +18,6 @@ type Datastore struct {
 	logDatastore bool
 }
 
-// returns a new store, with the storage copied
-func NewStoreShare(datastore *Datastore) *Datastore {
-	ds := Datastore{}
-	ds.storage = datastore.storage
-	ds.responseJson = make([]string, 0)
-	return &ds
-}
-
 func NewStore(logDatastore bool) *Datastore {
 	ds := Datastore{}
 	ds.storage = make(map[string]interface{}, 0)
@@ -34,11 +26,27 @@ func NewStore(logDatastore bool) *Datastore {
 	return &ds
 }
 
+type DatastoreKeyNotFoundError struct {
+	error string
+}
+
+func (data DatastoreKeyNotFoundError) Error() string {
+	return data.error
+}
+
 type DatastoreIndexOutOfBoundsError struct {
 	error string
 }
 
 func (data DatastoreIndexOutOfBoundsError) Error() string {
+	return data.error
+}
+
+type DatastoreIndexError struct {
+	error string
+}
+
+func (data DatastoreIndexError) Error() string {
 	return data.error
 }
 
@@ -159,7 +167,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 		tmpRes, ok := ds.storage[useIndex]
 		if !ok {
 			log.Errorf("datastore: key: %s not found.", useIndex)
-			return "", nil
+			return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
 		}
 
 		tmpResMap, ok := tmpRes.(map[string]interface{})
@@ -173,8 +181,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 			//We have a slice
 			mapIdx, err := strconv.Atoi(mapIndex)
 			if err != nil {
-				log.Errorf("datastore: could not convert key to int: %s", mapIndex)
-				return "", nil
+				return "", DatastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
 			}
 
 			return tmpResSlice[mapIdx], nil
@@ -200,6 +207,5 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 		}
 	}
 
-	log.Errorf("datastore: key: %s not found.", index)
-	return "", nil
+	return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", index)}
 }
