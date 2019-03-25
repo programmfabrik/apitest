@@ -47,6 +47,10 @@ func (r *Report) NewChild(name string) {
 	r.currentElement = &newElem
 }
 
+func (r *Report) Name(name string) {
+	r.currentElement.Name = name
+}
+
 func (r *Report) LeaveChild(result bool) {
 	if !result {
 		r.currentElement.Failures++

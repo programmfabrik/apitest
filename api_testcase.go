@@ -60,8 +60,6 @@ func (testCase Case) runAPITestCase() (success bool) {
 
 	log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 
-	r.NewChild(testCase.Name)
-
 	start := time.Now()
 
 	// Store standard data into datastore
@@ -69,6 +67,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 		err := fmt.Errorf("error setting datastore. Datastore is nil")
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		log.Errorf("     [%2d] %s", testCase.index, err)
+
 		return false
 	}
 	err := testCase.dataStore.SetMap(testCase.Store)
@@ -76,6 +75,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		log.Errorf("     [%2d] %s", testCase.index, err)
+
 		return false
 	}
 
@@ -98,7 +98,6 @@ func (testCase Case) runAPITestCase() (success bool) {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
 
-	r.LeaveChild(success)
 	return
 }
 

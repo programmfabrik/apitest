@@ -6,6 +6,7 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
@@ -87,7 +88,9 @@ func (ats Suite) Run() (success bool) {
 
 	success = true
 	for k, v := range ats.Tests {
+		r.NewChild(strconv.Itoa(k))
 		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k)
+		r.LeaveChild(sTestSuccess)
 		if !sTestSuccess {
 			success = false
 			break
@@ -205,12 +208,15 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 }
 
 func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath string, loader template.Loader, k int) (success bool) {
+	r.Name(testFilePath)
+
 	var test Case
 	jErr := cjson.Unmarshal(tc.CaseByte, &test)
 	if jErr != nil {
-		r.SaveToReportLog(jErr.Error())
 
+		r.SaveToReportLog(jErr.Error())
 		log.Error(fmt.Errorf("can not unmarshal single test (%s): %s", testFilePath, jErr))
+
 		return false
 	}
 
@@ -226,6 +232,7 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 	test.logNetwork = ats.Config.LogNetwork
 	test.logVerbose = ats.Config.LogVerbose
 
+	r.Name(test.Name)
 	success = test.runAPITestCase()
 
 	if !success && !test.ContinueOnFailure {
