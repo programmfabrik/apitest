@@ -236,6 +236,7 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 }
 
 func (ats Suite) loadManifest() (res []byte, err error) {
+	log.Trace("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
