@@ -345,7 +345,8 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	test.runAPITestCase()
+	r.NewChild(test.Name)
+	r.LeaveChild(test.runAPITestCase())
 
 	r.GetTestResult(report.ParseJSONResult)
 
