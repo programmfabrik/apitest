@@ -260,6 +260,11 @@ The data from the custom store is retrieved using the `datastore <key>`Template 
 You can also use the slice and map notation for getting certain values out of the slice or map directly: `mySlice[3]` would return 
 the value at index `3` of the slice that is stored with the key `mySlice` in the datastore.
 
+Slices allow the backwards index access. If you have a slice of length 3 and access it at index `-1` you get the last
+element in the slice (original index `2`)
+
+If you access an invalid index for datastore `map[index]` or `slice[]` you get an empty string. No error is thrown.
+
 ### Get Data from Sequential Store
 
 To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
