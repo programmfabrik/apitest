@@ -13,6 +13,46 @@ func TestDataStore_Get(t *testing.T) {
 	test_utils.AssertStringEquals(t, responseBytes.(string), `{"body":{"foo":"bar"},"statuscode":200}`)
 }
 
+func TestDataStore_GetSlice(t *testing.T) {
+	store := NewStore(false)
+	store.Set("slice[]", "val1")
+	store.Set("slice[]", "val2")
+	store.Set("slice[]", "val2")
+	responseBytes, err := store.Get("slice[2]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `val2`)
+
+	responseBytes, err = store.Get("slice[3]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), ``)
+
+	responseBytes, err = store.Get("slice[-1]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `val2`)
+
+	responseBytes, err = store.Get("slice[-15]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), ``)
+}
+
+func TestDataStore_GetMap(t *testing.T) {
+	store := NewStore(false)
+	store.Set("map[key1]", "val1")
+	store.Set("map[key2]", "val2")
+	store.Set("map[key3]", "val2")
+	responseBytes, err := store.Get("map[key2]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), `val2`)
+
+	responseBytes, err = store.Get("map[key5]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), ``)
+
+	responseBytes, err = store.Get("map[-1]")
+	test_utils.AssertErrorEquals(t, err, nil)
+	test_utils.AssertStringEquals(t, responseBytes.(string), ``)
+}
+
 func TestDataStore_Get_BodyArray(t *testing.T) {
 	store := NewStore(false)
 	store.AppendResponse(`{"body":["foo","bar"],"statuscode":200}`)

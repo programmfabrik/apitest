@@ -173,18 +173,32 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 		tmpResMap, ok := tmpRes.(map[string]interface{})
 		if ok {
 			//We have a map
-			return tmpResMap[mapIndex], nil
+			mapVal, ok := tmpResMap[mapIndex]
+			if !ok {
+				//Value not found in map, so return empty string
+				return "", nil
+			} else {
+				return mapVal, nil
+			}
 		}
 
 		tmpResSlice, ok := tmpRes.([]interface{})
 		if ok {
 			//We have a slice
-			mapIdx, err := strconv.Atoi(mapIndex)
+			sliceIdx, err := strconv.Atoi(mapIndex)
 			if err != nil {
 				return "", DatastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
 			}
 
-			return tmpResSlice[mapIdx], nil
+			if sliceIdx < 0 {
+				sliceIdx = len(tmpResSlice) + sliceIdx
+			}
+
+			if len(tmpResSlice) <= sliceIdx || sliceIdx < 0 {
+				return "", nil
+			} else {
+				return tmpResSlice[sliceIdx], nil
+			}
 		}
 
 	} else {
@@ -196,6 +210,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 			}
 			if idx >= len(ds.responseJson) || idx < 0 {
 				// index out of range
+
 				return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
 			}
 			return ds.responseJson[idx], nil
