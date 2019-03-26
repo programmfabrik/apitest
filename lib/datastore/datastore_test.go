@@ -35,6 +35,30 @@ func TestDataStore_GetSlice(t *testing.T) {
 	test_utils.AssertStringEquals(t, responseBytes.(string), ``)
 }
 
+func TestStoreTypeInt(t *testing.T) {
+	store := NewStore(false)
+	store.Set("ownInt", 1.0)
+	store.SetWithQjson(`{"id",1.000000}`, map[string]string{"jsonInt": "id"})
+
+	oVal, _ := store.Get("ownInt")
+	jVal, _ := store.Get("jsonInt")
+
+	if oVal != jVal {
+		t.Errorf("%d != %d", oVal, jVal)
+	}
+
+	store.Set("ownInt", 1.1)
+	store.SetWithQjson(`{"id",1.100000}`, map[string]string{"jsonInt": "id"})
+
+	oVal, _ = store.Get("ownInt")
+	jVal, _ = store.Get("jsonInt")
+
+	if oVal != jVal {
+		t.Errorf("%f != %f", oVal, jVal)
+	}
+
+}
+
 func TestDataStore_GetMap(t *testing.T) {
 	store := NewStore(false)
 	store.Set("map[key1]", "val1")

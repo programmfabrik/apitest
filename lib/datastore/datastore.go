@@ -60,15 +60,7 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 			}
 			continue
 		}
-		setValue := qValue.Value()
-		if qValue.Type == gjson.Number {
-			//Check if float is int
-			if fmt.Sprintf("%.0f", qValue.Float()) == fmt.Sprintf("%d", qValue.Int()) {
-				setValue = qValue.Int()
-			}
-		}
-
-		err := ds.Set(k, setValue)
+		err := ds.Set(k, qValue.Value())
 		if err != nil {
 			return err
 		}
