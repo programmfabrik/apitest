@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -90,6 +91,15 @@ func (ds *Datastore) SetMap(smap map[string]interface{}) error {
 
 func (ds *Datastore) Set(index string, value interface{}) error {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
+
+	//typeswitch for checking if float is actually int
+	switch t := value.(type) {
+	case float64:
+		if math.Mod(t, 1.0) == 0 {
+			//is int
+			value = int(t)
+		}
+	}
 
 	//Slice in datastore
 	if strings.HasSuffix(index, "[]") {
