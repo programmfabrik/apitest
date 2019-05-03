@@ -273,13 +273,13 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	if !testCase.logNetwork {
+	if !testCase.logNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[RESPONSE]:\n%s\n", response.ToString())
 	}
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	if !testCase.logNetwork {
+	if !testCase.logNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[REQUEST]:\n%s\n", request.ToString())
 	}
 }
