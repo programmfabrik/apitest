@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 
-	"github.com/programmfabrik/fylr-apitest/lib/api"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/filesystem"
 	"github.com/programmfabrik/fylr-apitest/lib/report"
@@ -29,7 +30,7 @@ type Suite struct {
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
 
 	Config       TestToolConfig
-	datastore    *api.Datastore
+	datastore    *datastore.Datastore
 	manifestDir  string
 	manifestPath string
 	reporter     *report.Report
@@ -43,7 +44,7 @@ func NewTestSuite(
 	config TestToolConfig,
 	manifestPath string,
 	r *report.Report,
-	datastore *api.Datastore,
+	datastore *datastore.Datastore,
 	index int,
 ) (suite Suite, err error) {
 	suite = Suite{
@@ -73,7 +74,7 @@ func NewTestSuite(
 		err = fmt.Errorf("error setting datastore map:%s", err)
 	}
 
-	return suite, nil
+	return suite, err
 }
 
 func (ats Suite) Run() (success bool) {
@@ -87,7 +88,9 @@ func (ats Suite) Run() (success bool) {
 
 	success = true
 	for k, v := range ats.Tests {
+		r.NewChild(strconv.Itoa(k))
 		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k)
+		r.LeaveChild(sTestSuccess)
 		if !sTestSuccess {
 			success = false
 			break
@@ -123,7 +126,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 	}
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson: %s. File: %s", err, testFilePath))
+		log.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
 		return false
 	}
 
@@ -144,7 +147,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 				err := cjson.Unmarshal(v, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
+					log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 					return false
 				}
 
@@ -171,7 +174,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 				err := cjson.Unmarshal(testObj, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
+					log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 					return false
 				}
 
@@ -184,14 +187,14 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
 			if lErr != nil {
 				r.SaveToReportLog(lErr.Error())
-				log.Error(fmt.Errorf("can not render template: %s. File: %s", lErr, testFilePath))
+				log.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
 				return false
 			}
 
 			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
 			if string(requestBytes) == string(testObj) {
 				r.SaveToReportLog(err.Error())
-				log.Error(fmt.Errorf("can not unmarshal: %s. File: %s", err, testFilePath))
+				log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 				return false
 			}
 
@@ -205,12 +208,15 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 }
 
 func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath string, loader template.Loader, k int) (success bool) {
+	r.Name(testFilePath)
+
 	var test Case
 	jErr := cjson.Unmarshal(tc.CaseByte, &test)
 	if jErr != nil {
-		r.SaveToReportLog(jErr.Error())
 
-		log.Error(fmt.Errorf("can not unmarshal single test %s. File: %s", jErr, testFilePath))
+		r.SaveToReportLog(jErr.Error())
+		log.Error(fmt.Errorf("can not unmarshal single test (%s): %s", testFilePath, jErr))
+
 		return false
 	}
 
@@ -223,7 +229,10 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 	test.ServerURL = ats.Config.ServerURL
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
+	test.logNetwork = ats.Config.LogNetwork
+	test.logVerbose = ats.Config.LogVerbose
 
+	r.Name(test.Name)
 	success = test.runAPITestCase()
 
 	if !success && !test.ContinueOnFailure {
@@ -234,16 +243,17 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 }
 
 func (ats Suite) loadManifest() (res []byte, err error) {
+	log.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
-		return res, fmt.Errorf("error opening manifestPath: %s", err)
+		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)
 	}
 	defer manifestFile.Close()
 
 	manifestTmpl, err := ioutil.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("error loading manifest: %s. File: %s", err, ats.manifestPath)
+		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
 	}
 	return loader.Render(manifestTmpl, ats.manifestDir, nil)
 }

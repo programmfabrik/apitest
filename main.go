@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/api"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 
 	log "github.com/sirupsen/logrus"
 
@@ -20,7 +20,7 @@ import (
 
 var (
 	reportFormat, reportFile    string
-	verbosity                   int
+	logNetwork, logVerbose      bool
 	rootDirectorys, singleTests []string
 )
 
@@ -36,13 +36,12 @@ func init() {
 		&singleTests, "single", "s", []string{},
 		"path to a single manifest. Runs only that specified testsuite")
 
-	TestCMD.PersistentFlags().IntVarP(
-		&verbosity, "verbosity", "v", -1,
-		`in [-1, 0, 1, 2], defines logging of requests and responses of the programm
--1: Only normal test ouput
-0: All from '-1' & failed test responses
-1: All from '-1' & all responses
-2: All from '1' & all requests`)
+	TestCMD.PersistentFlags().BoolVarP(
+		&logNetwork, "log-network", "n", false,
+		`log all network traffic to console`)
+	TestCMD.PersistentFlags().BoolVarP(
+		&logVerbose, "log-verbose", "v", false,
+		`log datastore operations and information about repeating request to console`)
 
 	TestCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
@@ -80,8 +79,8 @@ func setup(ccmd *cobra.Command, args []string) {
 	//Load yml config
 	LoadConfig(cfgFile)
 
-	//Set log verbosity
-	FylrConfig.SetLogVerbosity(verbosity)
+	//Set log verbosity to trace
+	log.SetLevel(log.TraceLevel)
 }
 
 func runApiTests(cmd *cobra.Command, args []string) {
@@ -104,15 +103,17 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	reportFile = FylrConfig.Apitest.Report.File
 
 	//Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys)
+	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys, logNetwork, logVerbose)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	datastore := api.NewStore()
+	sDatastore := datastore.NewStore(logVerbose)
 	for k, v := range FylrConfig.Apitest.StoreInit {
-		datastore.Set(k, v)
-		log.Debugf("Add Init value for datastore Key: '%s', Value: '%v'", k, v)
+		err := sDatastore.Set(k, v)
+		if err != nil {
+			log.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
+		}
 	}
 
 	//Actually run the tests
@@ -122,7 +123,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			testToolConfig,
 			manifestPath,
 			r,
-			datastore,
+			sDatastore,
 			0,
 		)
 		if err != nil {
@@ -167,7 +168,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 		err = ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 		if err != nil {
-			fmt.Println("Could not save into file: ", err)
+			log.Errorf("Could not save report into file: %s", err)
 		}
 	}
 

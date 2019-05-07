@@ -265,7 +265,7 @@ func TestTrivialJsonComparer(t *testing.T) {
 			cjson.Unmarshal([]byte(td.have), &json2)
 			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
 			if err != nil {
-				t.Fatal("Error occured: ", err)
+				t.Fatal("Error occurred: ", err)
 			}
 			if td.match != tjcMatch.Equal {
 				t.Errorf("got %t, want %t", tjcMatch.Equal, td.match)

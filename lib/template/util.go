@@ -67,7 +67,7 @@ func LoadManifestDataAsRawJson(data util.GenericJson, manifestDir string) (filep
 	switch typedData := data.(type) {
 	case []byte:
 		err = res.UnmarshalJSON(typedData)
-		return "", res, nil
+		return
 	case string:
 		filepath, res, err := loadFileFromPathSpec(typedData, manifestDir)
 		if err != nil {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"time"
 
@@ -31,7 +32,7 @@ type Request struct {
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool
 	ManifestDir string
-	DataStore   *Datastore
+	DataStore   *datastore.Datastore
 }
 
 func (request Request) buildHttpRequest() (res *http.Request, err error) {
@@ -68,6 +69,10 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	}
 	res.URL.RawQuery = q.Encode()
 
+	for key, val := range additionalHeaders {
+		res.Header.Add(key, val)
+	}
+
 	for headerName, datastoreKey := range request.HeaderFromStore {
 		if request.DataStore == nil {
 			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
@@ -103,12 +108,8 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			res.Header.Del(key)
 		} else {
 			//ADD header
-			res.Header.Add(key, *val)
+			res.Header.Set(key, *val)
 		}
-	}
-
-	for key, val := range additionalHeaders {
-		res.Header.Add(key, val)
 	}
 
 	return res, nil

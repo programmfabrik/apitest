@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
@@ -35,14 +36,15 @@ type Case struct {
 	Delay           *int               `json:"delay_ms"`
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
-	LogVerbosity    *int               `json:"log_verbosity"`
 
 	loader      template.Loader
 	manifestDir string
 	reporter    *report.Report
 	suiteIndex  int
 	index       int
-	dataStore   *api.Datastore
+	dataStore   *datastore.Datastore
+	logNetwork  bool
+	logVerbose  bool
 
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
@@ -56,18 +58,12 @@ type CaseResponse struct {
 }
 
 func (testCase Case) runAPITestCase() (success bool) {
-	if testCase.LogVerbosity != nil && *testCase.LogVerbosity > FylrConfig.Apitest.LogVerbosity {
-		defer FylrConfig.SetLogVerbosity(FylrConfig.Apitest.LogVerbosity)
-		FylrConfig.SetLogVerbosity(*testCase.LogVerbosity)
-	}
-
 	r := testCase.reporter
 
-	if testCase.Name != "" {
-		log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
-	} else {
-		log.Infof("     [%2d] '<no name>'", testCase.index)
+	if testCase.Name == "" {
+		testCase.Name = "<no name>"
 	}
+	log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 
 	//Marshal external datastructure in our internal used reponseData
 	jsonResponse, err := json.Marshal(testCase.TypedResponseData)
@@ -94,6 +90,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 		err := fmt.Errorf("error setting datastore. Datastore is nil")
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		log.Errorf("     [%2d] %s", testCase.index, err)
+
 		return false
 	}
 	err = testCase.dataStore.SetMap(testCase.Store)
@@ -101,6 +98,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		log.Errorf("     [%2d] %s", testCase.index, err)
+
 		return false
 	}
 
@@ -123,7 +121,6 @@ func (testCase Case) runAPITestCase() (success bool) {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
 
-	r.LeaveChild(success)
 	return
 }
 
@@ -148,7 +145,9 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			log.Tracef("breakResponseIsPresent: %v", responsesMatch)
+			if testCase.logVerbose {
+				log.Tracef("breakResponseIsPresent: %v", responsesMatch)
+			}
 
 			if responsesMatch.Equal {
 				return true, nil
@@ -205,7 +204,10 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
+		if testCase.logVerbose {
+			log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
+		}
+
 		return len(leftResponses), nil
 	}
 
@@ -232,17 +234,28 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	//Log request on trace level (so only v2 will trigger this)
-	log.Tracef("[REQUEST]:\n%s", req.ToString())
+	if testCase.logNetwork {
+		log.Tracef("[REQUEST]:\n%s", req.ToString())
+	}
 
 	apiResp, err = req.Send()
 	if err != nil {
+		testCase.LogReq(req)
 		err = fmt.Errorf("error sending request: %s", err)
 		return
 	}
 
-	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiResp, testCase.StoreResponse)
+	apiRespJson, err := apiResp.ToJsonString()
 	if err != nil {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error getting json from response: %s", err)
+		return
+	}
+
+	// Store in custom store
+	err = testCase.dataStore.SetWithQjson(apiRespJson, testCase.StoreResponse)
+	if err != nil {
+		testCase.LogReq(req)
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
 		return
 	}
@@ -252,6 +265,7 @@ func (testCase Case) executeRequest(counter int) (
 
 		json, err = apiResp.ToJsonString()
 		if err != nil {
+			testCase.LogReq(req)
 			err = fmt.Errorf("error prepareing response for datastore: %s", err)
 			return
 		}
@@ -266,12 +280,14 @@ func (testCase Case) executeRequest(counter int) (
 	//Compare Responses
 	response, err := testCase.loadResponse()
 	if err != nil {
+		testCase.LogReq(req)
 		err = fmt.Errorf("error loading response: %s", err)
 		return
 	}
 
 	responsesMatch, err = testCase.responsesEqual(response, apiResp)
 	if err != nil {
+		testCase.LogReq(req)
 		err = fmt.Errorf("error matching responses: %s", err)
 		return
 	}
@@ -279,9 +295,15 @@ func (testCase Case) executeRequest(counter int) (
 	return
 }
 
-func LogResp(response api.Response) {
-	if FylrConfig.Apitest.LogVerbosity == 0 {
-		log.Debugf("[RESPONSE]:\n%s", response.ToString())
+func (testCase Case) LogResp(response api.Response) {
+	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+		log.Debugf("[RESPONSE]:\n%s\n", response.ToString())
+	}
+}
+
+func (testCase Case) LogReq(request api.Request) {
+	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+		log.Debugf("[REQUEST]:\n%s\n", request.ToString())
 	}
 }
 
@@ -310,12 +332,13 @@ func (testCase Case) run() (success bool, err error) {
 		}
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
-		if FylrConfig.Apitest.LogVerbosity >= 1 {
+		if testCase.logNetwork {
 			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
 		}
 
 		if err != nil {
-			LogResp(apiResponse)
+			testCase.LogReq(request)
+			testCase.LogResp(apiResponse)
 			return false, err
 		}
 
@@ -325,18 +348,21 @@ func (testCase Case) run() (success bool, err error) {
 
 		breakPresent, err := testCase.breakResponseIsPresent(request, apiResponse)
 		if err != nil {
-			LogResp(apiResponse)
+			testCase.LogReq(request)
+			testCase.LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for break response: %s", err)
 		}
 
 		if breakPresent {
-			LogResp(apiResponse)
+			testCase.LogReq(request)
+			testCase.LogResp(apiResponse)
 			return false, fmt.Errorf("Break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
 		if err != nil {
-			LogResp(apiResponse)
+			testCase.LogReq(request)
+			testCase.LogResp(apiResponse)
 			return false, fmt.Errorf("error checking for continue response: %s", err)
 		}
 
@@ -369,7 +395,8 @@ func (testCase Case) run() (success bool, err error) {
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					LogResp(apiResponse)
+					testCase.LogReq(request)
+					testCase.LogResp(apiResponse)
 					return false, err
 				}
 				log.Warnf("Collect response not found: %s", jsonV)
@@ -377,7 +404,8 @@ func (testCase Case) run() (success bool, err error) {
 			}
 		}
 
-		LogResp(apiResponse)
+		testCase.LogReq(request)
+		testCase.LogResp(apiResponse)
 		return false, nil
 	}
 
