@@ -74,7 +74,7 @@ func NewTestSuite(
 		err = fmt.Errorf("error setting datastore map:%s", err)
 	}
 
-	return suite, nil
+	return suite, err
 }
 
 func (ats Suite) Run() (success bool) {

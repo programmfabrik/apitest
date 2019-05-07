@@ -26,7 +26,7 @@ func (f CompareFailure) Error() string {
 
 func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res CompareResult, err error) {
 
-	//left may be nil, because we dont specifiy the content of the field
+	//left may be nil, because we dont specify the content of the field
 	if left == nil && right == nil {
 		res := CompareResult{
 			Equal: true,
