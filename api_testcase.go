@@ -24,10 +24,9 @@ const (
 // Case defines the structure of our single testcase
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
-	Name              string            `json:"name"`
-	RequestData       *util.GenericJson `json:"request"`
-	TypedResponseData *CaseResponse     `json:"response"`
-	responseData      util.GenericJson
+	Name              string                 `json:"name"`
+	RequestData       *util.GenericJson      `json:"request"`
+	ResponseData      util.GenericJson       `json:"response"`
 	ContinueOnFailure bool                   `json:"continue_on_failure"`
 	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
@@ -65,22 +64,6 @@ func (testCase Case) runAPITestCase() (success bool) {
 	}
 	log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 
-	//Marshal external datastructure in our internal used reponseData
-	jsonResponse, err := json.Marshal(testCase.TypedResponseData)
-	if err != nil {
-		err = fmt.Errorf("error marshaling TypedResponseData: %s", err)
-		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
-		return false
-	}
-	err = json.Unmarshal(jsonResponse, &testCase.responseData)
-	if err != nil {
-		err = fmt.Errorf("error unmarshaling into responseData: %s", err)
-		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
-		return false
-	}
-
 	r.NewChild(testCase.Name)
 
 	start := time.Now()
@@ -93,7 +76,7 @@ func (testCase Case) runAPITestCase() (success bool) {
 
 		return false
 	}
-	err = testCase.dataStore.SetMap(testCase.Store)
+	err := testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
@@ -423,10 +406,10 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
-	if testCase.responseData == nil {
+	if testCase.ResponseData == nil {
 		return api.NewResponse(200, nil, bytes.NewReader([]byte("")))
 	}
-	spec, err := testCase.loadResponseSerialization(testCase.responseData)
+	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
 		return res, fmt.Errorf("error loading response spec: %s", err)
 	}
