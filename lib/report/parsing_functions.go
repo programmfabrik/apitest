@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -68,14 +69,14 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 			Time:     v.ExecutionTime.Seconds(),
 			Failures: v.Failures,
 			Tests:    v.TestCount,
-			Name:     v.Name,
+			Name:     strings.Replace(v.Name,".",":",-1),
 		}
 
 		for ik, iv := range v.SubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
 				Time: iv.ExecutionTime.Seconds(),
-				Name: iv.Name,
+			Name:     strings.Replace(v.Name,".",":",-1),
 			}
 
 			if iv.Failures > 0 {
