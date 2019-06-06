@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"time"
+
+	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 
@@ -15,10 +16,6 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/template"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	defaultTimeout int = 10
 )
 
 // Case defines the structure of our single testcase
@@ -32,6 +29,8 @@ type Case struct {
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
 	Timeout         int                `json:"timeout_ms"`
+	WaitBefore      *int               `json:"wait_before_ms"`
+	WaitAfter       *int               `json:"wait_after_ms"`
 	Delay           *int               `json:"delay_ms"`
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
@@ -305,13 +304,16 @@ func (testCase Case) run() (success bool, err error) {
 
 	collectPresent := testCase.CollectResponse != nil
 
+	if testCase.WaitBefore != nil {
+		log.Infof("wait_before_ms: %d", *testCase.WaitBefore)
+		time.Sleep(time.Duration(*testCase.WaitBefore) * time.Millisecond)
+	}
+
 	//Poll repeats the request until the right response is found, or a timeout triggers
 	for {
 		// delay between repeating a request
 		if testCase.Delay != nil {
 			time.Sleep(time.Duration(*testCase.Delay) * time.Millisecond)
-		} else {
-			time.Sleep(time.Duration(defaultTimeout) * time.Millisecond)
 		}
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
@@ -390,6 +392,11 @@ func (testCase Case) run() (success bool, err error) {
 		testCase.LogReq(request)
 		testCase.LogResp(apiResponse)
 		return false, nil
+	}
+
+	if testCase.WaitAfter != nil {
+		log.Infof("wait_after_ms: %d", *testCase.WaitAfter)
+		time.Sleep(time.Duration(*testCase.WaitAfter) * time.Millisecond)
 	}
 
 	return true, nil
