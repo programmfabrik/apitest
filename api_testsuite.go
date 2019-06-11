@@ -226,12 +226,14 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 	test.suiteIndex = ats.index
 	test.index = k
 	test.dataStore = ats.datastore
-	test.ServerURL = ats.Config.ServerURL
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 	test.logNetwork = ats.Config.LogNetwork
 	test.logVerbose = ats.Config.LogVerbose
 
+	if test.ServerURL == "" {
+		test.ServerURL = ats.Config.ServerURL
+	}
 	r.Name(test.Name)
 	success = test.runAPITestCase()
 

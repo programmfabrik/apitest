@@ -451,8 +451,10 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	err = cjson.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
-	spec.ServerURL = testCase.ServerURL
 
+	if spec.ServerURL == "" {
+		spec.ServerURL = testCase.ServerURL
+	}
 	if len(spec.Headers) == 0 {
 		spec.Headers = make(map[string]*string, 0)
 	}
