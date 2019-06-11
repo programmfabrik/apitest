@@ -199,6 +199,14 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "store_response_qjson": {
         "eas_id": "body.0.eas._id"
 	},
+  // wait_before_ms pauses right before sending
+  // the test request <n> milliseconds
+  "wait_before_ms": 0,
+
+  // wait_after_ms pauses right before sending
+  // the test request <n> milliseconds
+  "wait_after_ms": 0,
+
 	//Delay the request by x msec
 	 "delay_ms":5000,
     //With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
