@@ -14,5 +14,5 @@ func GetAbsPath(manifestDir, pathSpec string) string {
 }
 
 func IsPathSpec(pathSpec string) bool {
-	return strings.HasPrefix(pathSpec, "@")
+	return strings.HasPrefix(pathSpec, "@") || strings.HasPrefix(pathSpec, "p@")
 }

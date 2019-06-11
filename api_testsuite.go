@@ -138,25 +138,49 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 
 		var success bool
 		//Run single tests
+
+		c1True := make(chan bool)
+		c2False := make(chan bool)
+
+		d := 1
+		if false {
+			d = len(testCases)
+		}
+		waitCh := make(chan bool, d)
+
 		for ki, v := range testCases {
+			go func(ki int, v json.RawMessage) {
+				waitCh <- true
+				defer func() { <-waitCh }()
 
-			//Check if is @ and if so load the test
-			if rune(v[1]) == rune('@') {
-				var sS string
+				//Check if is @ and if so load the test
+				if util.IsPathSpec(string(v)) {
+					var sS string
 
-				err := cjson.Unmarshal(v, &sS)
-				if err != nil {
-					r.SaveToReportLog(err.Error())
-					log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-					return false
+					err := cjson.Unmarshal(v, &sS)
+					if err != nil {
+						r.SaveToReportLog(err.Error())
+						log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+						c2False <- false
+					}
+
+					success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki)
+				} else {
+					success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, ki)
 				}
 
-				success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki)
-			} else {
-				success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, ki)
-			}
+				if !success {
+					c2False <- false
+				}
 
-			if !success {
+				c1True <- true
+			}(ki, v)
+		}
+
+		for i := 0; i < len(testCases); i++ {
+			select {
+			case <-c1True:
+			case <-c2False:
 				return false
 			}
 		}
@@ -168,7 +192,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 			//Did work to unmarshal -> no go template
 
 			//Check if is @ and if so load the test
-			if rune(testObj[1]) == rune('@') {
+			if util.IsPathSpec(string(testObj)) {
 				var sS string
 
 				err := cjson.Unmarshal(testObj, &sS)
