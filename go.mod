@@ -2,6 +2,7 @@ module github.com/programmfabrik/fylr-apitest
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/gabriel-vasile/mimetype v0.3.11
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/programmfabrik/go-test-utils v0.0.0-20190123092434-88356e86fb35
 	github.com/sergi/go-diff v1.0.0

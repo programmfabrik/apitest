@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/vimeo/go-magic/magic"
+	"github.com/gabriel-vasile/mimetype"
 	"io/ioutil"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
@@ -41,8 +41,8 @@ func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader 
 		}
 
 		//Check mimetype of requestTmp
-		mimeType := magic.MimeFromBytes(requestTmpl)
-		if mimeType == "text/plain" || mimeType == "application/json" {
+		tmplMimeType, _ := mimetype.Detect(requestTmpl)
+		if tmplMimeType == "text/plain" || tmplMimeType == "application/json" {
 			// We have json, and load it thereby into our apitest structure
 			requestBytes, err := loader.Render(requestTmpl, manifestDir, nil)
 			if err != nil {

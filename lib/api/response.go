@@ -5,9 +5,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
-	"github.com/vimeo/go-magic/magic"
 	"io"
 	"io/ioutil"
 )
@@ -54,8 +54,8 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 	bodyBytes := response.Body()
 
 	//Check mimetype of body
-	mimeType := magic.MimeFromBytes(bodyBytes)
-	if mimeType == "text/plain" || mimeType == "application/json" {
+	bodyMimeType, _ := mimetype.Detect(bodyBytes)
+	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
 		// We have a json, and thereby try to unmarshal it into our body
 		if err = cjson.Unmarshal(bodyBytes, &gj); err != nil {
 			return res, err
@@ -132,8 +132,8 @@ func (response Response) ToString() (res string) {
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}
 
-	mimeType := magic.MimeFromBytes(response.Body())
-	if mimeType == "text/plain" || mimeType == "application/json" {
+	bodyMimeType, _ := mimetype.Detect(response.Body())
+	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
 		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, string(response.Body()))
 
 	} else {
