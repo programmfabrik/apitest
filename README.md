@@ -221,6 +221,27 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```
 
+## Binary data comparison
+
+The tool is able to do a comparison with a binary file. Here we take a MD5 hash of the file and and then later compare
+that hash.
+
+Internaly the Hash will be represented as json attribute `BinaryFileHash` and compare it. 
+
+For comparing a binary file, simply point the response to the binary file: 
+
+```json
+        {
+            "name": "Binary Comparison",
+			"request":{
+				"endpoint": "suggest", 
+				"method": "GET"
+			},
+			// Path to binary file with @
+			"response":"@simple.bin"
+        }
+```
+
 ## Datastore
 
 The datastore is a storage for arbitrary data. It can be set directly or set using values received from a response. It has two parts:
