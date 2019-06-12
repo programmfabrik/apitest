@@ -33,7 +33,7 @@ type Suite struct {
 	datastore    *datastore.Datastore
 	manifestDir  string
 	manifestPath string
-	reporter     *report.Report
+	reporterRoot *report.ReportElement
 	index        int
 	serverURL    string
 }
@@ -43,7 +43,7 @@ type Suite struct {
 func NewTestSuite(
 	config TestToolConfig,
 	manifestPath string,
-	r *report.Report,
+	r *report.ReportElement,
 	datastore *datastore.Datastore,
 	index int,
 ) (suite Suite, err error) {
@@ -51,7 +51,7 @@ func NewTestSuite(
 		Config:       config,
 		manifestDir:  filepath.Dir(manifestPath),
 		manifestPath: manifestPath,
-		reporter:     r,
+		reporterRoot: r,
 		datastore:    datastore,
 		index:        index,
 	}
@@ -78,19 +78,19 @@ func NewTestSuite(
 }
 
 func (ats Suite) Run() (success bool) {
-	r := ats.reporter
+	r := ats.reporterRoot
 	log.Infof("[%2d] '%s'", ats.index, ats.Name)
 
-	r.NewChild(ats.Name)
+	//r.NewChild(ats.Name)
 	r.SetTestCount(len(ats.Tests))
 
 	start := time.Now()
 
 	success = true
 	for k, v := range ats.Tests {
-		r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k)
-		r.LeaveChild(sTestSuccess)
+		child := r.NewChild(strconv.Itoa(k))
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child)
+		child.Leave(sTestSuccess)
 		if !sTestSuccess {
 			success = false
 			break
@@ -98,8 +98,7 @@ func (ats Suite) Run() (success bool) {
 	}
 
 	elapsed := time.Since(start)
-
-	r.LeaveChild(success)
+	r.Leave(success)
 	if success {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 	} else {
@@ -113,10 +112,16 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath string, k int) bool {
+func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath string, k int, runParallel bool,
+	r *report.ReportElement) bool {
 	//Init variables
-	r := ats.reporter
 	loader := template.NewLoader(ats.datastore)
+
+	isParallelPathSpec := false
+	switch t := v.(type) {
+	case string:
+		isParallelPathSpec = util.IsParallelPathSpec([]byte(t))
+	}
 
 	//Get the Manifest with @ logic
 	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
@@ -134,56 +139,30 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 	var testCases []json.RawMessage
 	err = cjson.Unmarshal(testObj, &testCases)
 	if err == nil {
-		//Did work -> No go template
-
-		var success bool
-		//Run single tests
-
-		c1True := make(chan bool)
-		c2False := make(chan bool)
-
 		d := 1
-		if false {
+		if isParallelPathSpec || runParallel {
 			d = len(testCases)
 		}
+
 		waitCh := make(chan bool, d)
+		succCh := make(chan bool, len(testCases))
 
 		for ki, v := range testCases {
-			go func(ki int, v json.RawMessage) {
-				waitCh <- true
-				defer func() { <-waitCh }()
-
-				//Check if is @ and if so load the test
-				if util.IsPathSpec(string(v)) {
-					var sS string
-
-					err := cjson.Unmarshal(v, &sS)
-					if err != nil {
-						r.SaveToReportLog(err.Error())
-						log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-						c2False <- false
-					}
-
-					success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki)
-				} else {
-					success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, ki)
-				}
-
-				if !success {
-					c2False <- false
-				}
-
-				c1True <- true
-			}(ki, v)
+			waitCh <- true
+			go testGoRoutine(k, ki, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec)
 		}
+		waitCh <- true
 
 		for i := 0; i < len(testCases); i++ {
 			select {
-			case <-c1True:
-			case <-c2False:
-				return false
+			case succ := <-succCh:
+				if succ == false {
+
+					return false
+				}
 			}
 		}
+
 	} else {
 		//We were not able unmarshal into array, so we try to unmarshal into raw message
 		var singleTest json.RawMessage
@@ -192,7 +171,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 			//Did work to unmarshal -> no go template
 
 			//Check if is @ and if so load the test
-			if util.IsPathSpec(string(testObj)) {
+			if util.IsPathSpec(testObj) {
 				var sS string
 
 				err := cjson.Unmarshal(testObj, &sS)
@@ -202,7 +181,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 					return false
 				}
 
-				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k)
+				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r)
 			} else {
 				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k)
 			}
@@ -223,7 +202,8 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 			}
 
 			//We have a template -> One level deeper with rendered bytes
-			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir), testFilePath, k)
+			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
+				testFilePath, k, isParallelPathSpec, r)
 
 		}
 	}
@@ -231,8 +211,8 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 	return true
 }
 
-func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath string, loader template.Loader, k int) (success bool) {
-	r.Name(testFilePath)
+func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int) (success bool) {
+	r.SetName(testFilePath)
 
 	var test Case
 	jErr := cjson.Unmarshal(tc.CaseByte, &test)
@@ -246,7 +226,6 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 
 	test.loader = loader
 	test.manifestDir = tc.Path
-	test.reporter = r
 	test.suiteIndex = ats.index
 	test.index = k
 	test.dataStore = ats.datastore
@@ -256,8 +235,9 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 	test.logNetwork = ats.Config.LogNetwork
 	test.logVerbose = ats.Config.LogVerbose
 
-	r.Name(test.Name)
-	success = test.runAPITestCase()
+	r.SetName(test.Name)
+
+	success = test.runAPITestCase(r)
 
 	if !success && !test.ContinueOnFailure {
 		return false
@@ -280,4 +260,31 @@ func (ats Suite) loadManifest() (res []byte, err error) {
 		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
 	}
 	return loader.Render(manifestTmpl, ats.manifestDir, nil)
+}
+
+func testGoRoutine(k, ki int, v json.RawMessage, ats Suite, testFilePath, manifestDir, dir string,
+	r *report.ReportElement, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
+	defer func() { <-waitCh }()
+	var success bool
+
+	//Check if is @ and if so load the test
+	if util.IsPathSpec(v) {
+		var sS string
+
+		err := cjson.Unmarshal(v, &sS)
+		if err != nil {
+			r.SaveToReportLog(err.Error())
+			log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+			succCh <- false
+			return
+
+		}
+		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r)
+	} else {
+		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
+			r, testFilePath, loader, ki)
+	}
+
+	succCh <- success
+
 }

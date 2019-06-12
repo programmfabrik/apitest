@@ -122,7 +122,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		suite, err := NewTestSuite(
 			testToolConfig,
 			manifestPath,
-			r,
+			r.Root(),
 			sDatastore,
 			0,
 		)

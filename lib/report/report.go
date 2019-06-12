@@ -2,12 +2,52 @@ package report
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
 type Report struct {
-	root           *ReportElement
-	currentElement *ReportElement
+	root *ReportElement
+	m    *sync.Mutex
+}
+
+func (r Report) Root() *ReportElement {
+	return r.root
+}
+
+func NewReport() *Report {
+	var report Report
+
+	newElem := ReportElement{}
+	newElem.SubTests = make([]*ReportElement, 0)
+	newElem.StartTime = time.Now()
+	newElem.report = &report
+	newElem.m = &sync.Mutex{}
+
+	report.root = &newElem
+	report.m = &sync.Mutex{}
+
+	return &report
+}
+
+//GetTestResult Parses the test report with the given function from the report root on
+func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
+
+	return parsingFunction(r.root.getTestResult())
+}
+
+//DidFail, Check if the testsuite did produce failures
+func (r Report) DidFail() bool {
+
+	if r.root.Failures > 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (r Report) GetLog() []string {
+	return r.root.GetLog()
 }
 
 type ReportElement struct {
@@ -19,66 +59,44 @@ type ReportElement struct {
 	LogStorage    []string         `json:"log,omitempty"`
 	SubTests      []*ReportElement `json:"sub_tests,omitempty"`
 	Parent        *ReportElement   `json:"-"`
+	report        *Report
+	m             *sync.Mutex
 }
 
-func NewReport() *Report {
-	var report Report
+//NewChild create new report element and return its reference
+func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
+	r.report.m.Lock()
+	defer r.report.m.Unlock()
 
-	newElem := ReportElement{}
+	newElem = &ReportElement{}
 	newElem.SubTests = make([]*ReportElement, 0)
-	newElem.StartTime = time.Now()
+	newElem.m = &sync.Mutex{}
 
-	report.root = &newElem
-	report.currentElement = report.root
-
-	return &report
-}
-
-//Navigate in tree functions
-func (r *Report) NewChild(name string) {
-	newElem := ReportElement{}
-	newElem.SubTests = make([]*ReportElement, 0)
-
-	newElem.Parent = r.currentElement
+	newElem.Parent = r
 	newElem.Name = name
 	newElem.StartTime = time.Now()
+	newElem.report = r.report
 
-	r.currentElement.SubTests = append(r.currentElement.SubTests, &newElem)
-	r.currentElement = &newElem
+	r.SubTests = append(r.SubTests, newElem)
+
+	return
 }
 
-func (r *Report) Name(name string) {
-	r.currentElement.Name = name
+func (r *ReportElement) SetName(name string) {
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	r.Name = name
 }
 
-func (r *Report) LeaveChild(result bool) {
+func (r *ReportElement) Leave(result bool) {
+	r.m.Lock()
+	defer r.m.Unlock()
+
 	if !result {
-		r.currentElement.Failures++
+		r.Failures++
 	}
-	r.goToParent()
-}
-
-func (r *Report) goToParent() {
-	if r.currentElement.Parent == nil {
-		return
-	}
-
-	r.currentElement.ExecutionTime = time.Since(r.currentElement.StartTime)
-	r.currentElement = r.currentElement.Parent
-}
-
-//Report only from root on
-func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
-	return parsingFunction(r.root.getTestResult())
-}
-
-//Check if the testsuite did produce failures
-func (r Report) DidFail() bool {
-	if r.root.Failures > 0 {
-		return true
-	} else {
-		return false
-	}
+	r.ExecutionTime = time.Since(r.StartTime)
 }
 
 //aggregate results of subtests
@@ -111,18 +129,23 @@ func (r ReportElement) GetLog() []string {
 	return errors
 }
 
-func (r *Report) SetTestCount(counter int) {
-	r.currentElement.TestCount = counter
+func (r *ReportElement) SetTestCount(counter int) {
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	r.TestCount = counter
 }
 
-func (r *Report) SaveToReportLog(v string) {
-	r.currentElement.LogStorage = append(r.currentElement.LogStorage, v)
+func (r *ReportElement) SaveToReportLog(v string) {
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	r.LogStorage = append(r.LogStorage, v)
 }
 
-func (r *Report) SaveToReportLogF(v string, args ...interface{}) {
-	r.currentElement.LogStorage = append(r.currentElement.LogStorage, fmt.Sprintf(v, args...))
-}
+func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
+	r.m.Lock()
+	defer r.m.Unlock()
 
-func (r Report) GetLog() []string {
-	return r.root.GetLog()
+	r.LogStorage = append(r.LogStorage, fmt.Sprintf(v, args...))
 }

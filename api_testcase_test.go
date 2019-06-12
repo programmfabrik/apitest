@@ -74,11 +74,10 @@ func TestCollectResponseShouldWork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	testResult := string(r.GetTestResult(report.ParseJSONResult))
 
@@ -127,11 +126,10 @@ func TestCollectLoadExternalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	testResult := string(r.GetTestResult(report.ParseJSONResult))
 
@@ -188,11 +186,10 @@ func TestCollectLoadExternalCollect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	testResult := string(r.GetTestResult(report.ParseJSONResult))
 
@@ -288,11 +285,10 @@ func TestCollectEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	testResult := string(r.GetTestResult(report.ParseJSONResult))
 
@@ -341,12 +337,10 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
 
-	r.NewChild(test.Name)
-	r.LeaveChild(test.runAPITestCase())
+	test.runAPITestCase(r.Root())
 
 	r.GetTestResult(report.ParseJSONResult)
 
@@ -404,14 +398,13 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 
 	test.dataStore = datastore.NewStore(false)
 	test.dataStore.Set("hallo[du]", "du index")
 	test.dataStore.Set("hallo[sie]", "sie index")
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	r.GetTestResult(report.ParseJSONResult)
 	if r.DidFail() {
@@ -455,7 +448,6 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 
 	test.dataStore = datastore.NewStore(false)
@@ -465,7 +457,7 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 	test.dataStore.Set("hallo[]", "es index")
 	test.dataStore.Set("hallo[]", "mama index")
 
-	test.runAPITestCase()
+	test.runAPITestCase(r.Root())
 
 	r.GetTestResult(report.ParseJSONResult)
 	if r.DidFail() {
