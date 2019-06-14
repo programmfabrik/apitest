@@ -21,7 +21,7 @@ func init() {
 
 type Request struct {
 	Endpoint        string                 `yaml:"endpoint" json:"endpoint"`
-	ServerURL       string                 `yaml:"serverurl" json:"serverurl"`
+	ServerURL       string                 `yaml:"server_url" json:"server_url"`
 	Method          string                 `yaml:"method" json:"method"`
 	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
 	Headers         map[string]*string     `yaml:"header" json:"header"`

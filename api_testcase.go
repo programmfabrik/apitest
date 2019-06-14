@@ -47,7 +47,7 @@ type Case struct {
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
 
-	ServerURL string
+	ServerURL string `json:"server_url"`
 }
 
 type CaseResponse struct {
