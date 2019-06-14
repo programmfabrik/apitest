@@ -2,6 +2,7 @@ package report
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -68,6 +69,8 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 	r.report.m.Lock()
 	defer r.report.m.Unlock()
 
+	name = strings.Replace(name, ".", "_", -1)
+
 	newElem = &ReportElement{}
 	newElem.SubTests = make([]*ReportElement, 0)
 	newElem.m = &sync.Mutex{}
@@ -85,7 +88,7 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 func (r *ReportElement) SetName(name string) {
 	r.m.Lock()
 	defer r.m.Unlock()
-
+	name = strings.Replace(name, ".", "_", -1)
 	r.Name = name
 }
 
