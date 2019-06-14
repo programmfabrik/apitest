@@ -48,7 +48,11 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 	}
 	//Render Request Url
+
 	requestUrl := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
+	if request.Endpoint == "" {
+		requestUrl = request.ServerURL
+	}
 
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {

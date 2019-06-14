@@ -2,7 +2,10 @@ package api
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"io"
@@ -49,26 +52,43 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 	var gj util.GenericJson
 	bodyBytes := response.Body()
-	if err = cjson.Unmarshal(bodyBytes, &gj); err != nil {
-		return res, err
-	}
 
-	responseJSON := ResponseSerialization{
-		StatusCode: response.statusCode,
-	}
-	if len(response.headers) > 0 {
-		responseJSON.Headers = response.headers
-	}
-	if gj != nil {
-		responseJSON.Body = &gj
-	}
+	//Check mimetype of body
+	bodyMimeType, _ := mimetype.Detect(bodyBytes)
+	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
+		// We have a json, and thereby try to unmarshal it into our body
+		if err = cjson.Unmarshal(bodyBytes, &gj); err != nil {
+			return res, err
+		}
 
-	responseBytes, err := cjson.Marshal(responseJSON)
-	if err != nil {
-		return res, err
+		responseJSON := ResponseSerialization{
+			StatusCode: response.statusCode,
+		}
+		if len(response.headers) > 0 {
+			responseJSON.Headers = response.headers
+		}
+		if gj != nil {
+			responseJSON.Body = &gj
+		}
+
+		responseBytes, err := cjson.Marshal(responseJSON)
+		if err != nil {
+			return res, err
+		}
+		cjson.Unmarshal(responseBytes, &res)
+		return res, nil
+	} else {
+		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
+		hasher := md5.New()
+		hasher.Write([]byte(bodyBytes))
+		jsonObject := util.JsonObject{
+			"statuscode": util.JsonNumber(response.statusCode),
+			"body": util.JsonObject{
+				"BinaryFileHash": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+			},
+		}
+		return jsonObject, nil
 	}
-	cjson.Unmarshal(responseBytes, &res)
-	return res, nil
 }
 
 func (response Response) ToJsonString() (string, error) {
@@ -111,5 +131,13 @@ func (response Response) ToString() (res string) {
 		}
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}
-	return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, string(response.Body()))
+
+	bodyMimeType, _ := mimetype.Detect(response.Body())
+	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
+		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, string(response.Body()))
+
+	} else {
+		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, "[BINARY DATA NOT DISPLAYED]")
+
+	}
 }

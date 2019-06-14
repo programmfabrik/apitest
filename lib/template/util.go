@@ -1,8 +1,11 @@
 package template
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
 	"io/ioutil"
 
 	"github.com/programmfabrik/fylr-apitest/lib/util"
@@ -37,23 +40,39 @@ func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader 
 			return "", res, fmt.Errorf("error loading fileFromPathSpec: %s", err)
 		}
 
-		requestBytes, err := loader.Render(requestTmpl, manifestDir, nil)
-		if err != nil {
-			return "", res, fmt.Errorf("error rendering request: %s", err)
-		}
-
-		var jsonObject util.JsonObject
-		var jsonArray util.JsonArray
-
-		if err = cjson.Unmarshal(requestBytes, &jsonObject); err != nil {
-			if err = cjson.Unmarshal(requestBytes, &jsonArray); err == nil {
-
-				return filepath, jsonArray, nil
+		//Check mimetype of requestTmp
+		tmplMimeType, _ := mimetype.Detect(requestTmpl)
+		if tmplMimeType == "text/plain" || tmplMimeType == "application/json" {
+			// We have json, and load it thereby into our apitest structure
+			requestBytes, err := loader.Render(requestTmpl, manifestDir, nil)
+			if err != nil {
+				return "", res, fmt.Errorf("error rendering request: %s", err)
 			}
-			return "", res, fmt.Errorf("error unmarshalling: %s", err)
+
+			var jsonObject util.JsonObject
+			var jsonArray util.JsonArray
+
+			if err = cjson.Unmarshal(requestBytes, &jsonObject); err != nil {
+				if err = cjson.Unmarshal(requestBytes, &jsonArray); err == nil {
+
+					return filepath, jsonArray, nil
+				}
+				return "", res, fmt.Errorf("error unmarshalling: %s", err)
+			}
+			return filepath, jsonObject, nil
+		} else {
+			// We have another file format (binary). We thereby take the md5 Hash of the file and use that later for
+			// comparison
+			hasher := md5.New()
+			hasher.Write([]byte(requestTmpl))
+			jsonObject := util.JsonObject{
+				"body": util.JsonObject{
+					"BinaryFileHash": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+				},
+			}
+			return filepath, jsonObject, nil
 		}
 
-		return filepath, jsonObject, nil
 	case util.JsonObject:
 		return "", typedData, nil
 	case util.JsonArray:
