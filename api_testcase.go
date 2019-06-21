@@ -35,14 +35,15 @@ type Case struct {
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
 
+	LogNetwork *bool `json:"log_network"`
+	LogVerbose *bool `json:"log_verbose"`
+
 	loader      template.Loader
 	manifestDir string
 	reporter    *report.Report
 	suiteIndex  int
 	index       int
 	dataStore   *datastore.Datastore
-	logNetwork  bool
-	logVerbose  bool
 
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
@@ -127,7 +128,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			if testCase.logVerbose {
+			if *testCase.LogVerbose {
 				log.Tracef("breakResponseIsPresent: %v", responsesMatch)
 			}
 
@@ -186,7 +187,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		if testCase.logVerbose {
+		if *testCase.LogVerbose {
 			log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		}
 
@@ -216,7 +217,7 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	//Log request on trace level (so only v2 will trigger this)
-	if testCase.logNetwork {
+	if *testCase.LogNetwork {
 		log.Tracef("[REQUEST]:\n%s", req.ToString())
 	}
 
@@ -278,13 +279,13 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+	if !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[RESPONSE]:\n%s\n", response.ToString())
 	}
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+	if !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[REQUEST]:\n%s\n", request.ToString())
 	}
 }
@@ -317,7 +318,7 @@ func (testCase Case) run() (success bool, err error) {
 		}
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
-		if testCase.logNetwork {
+		if *testCase.LogNetwork {
 			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
 		}
 

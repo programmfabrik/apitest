@@ -229,8 +229,13 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.Report, testFilePath 
 	test.ServerURL = ats.Config.ServerURL
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
-	test.logNetwork = ats.Config.LogNetwork
-	test.logVerbose = ats.Config.LogVerbose
+
+	if test.LogNetwork == nil {
+		test.LogNetwork = &ats.Config.LogNetwork
+	}
+	if test.LogVerbose == nil {
+		test.LogVerbose = &ats.Config.LogVerbose
+	}
 
 	r.Name(test.Name)
 	success = test.runAPITestCase()
