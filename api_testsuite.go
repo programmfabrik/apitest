@@ -231,8 +231,13 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFi
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
-	test.logNetwork = ats.Config.LogNetwork
-	test.logVerbose = ats.Config.LogVerbose
+
+	if test.LogNetwork == nil {
+		test.LogNetwork = &ats.Config.LogNetwork
+	}
+	if test.LogVerbose == nil {
+		test.LogVerbose = &ats.Config.LogVerbose
+	}
 
 	if test.ServerURL == "" {
 		test.ServerURL = ats.Config.ServerURL

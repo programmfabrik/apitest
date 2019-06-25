@@ -35,14 +35,15 @@ type Case struct {
 	BreakResponse   []util.GenericJson `json:"break_response"`
 	CollectResponse util.GenericJson   `json:"collect_response"`
 
+	LogNetwork *bool `json:"log_network"`
+	LogVerbose *bool `json:"log_verbose"`
+
 	loader      template.Loader
 	manifestDir string
 	ReportElem  *report.ReportElement
 	suiteIndex  int
 	index       int
 	dataStore   *datastore.Datastore
-	logNetwork  bool
-	logVerbose  bool
 
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
@@ -128,7 +129,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			if testCase.logVerbose {
+			if testCase.LogVerbose != nil && *testCase.LogVerbose {
 				log.Tracef("breakResponseIsPresent: %v", responsesMatch)
 			}
 
@@ -187,7 +188,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		if testCase.logVerbose {
+		if testCase.LogVerbose != nil && *testCase.LogVerbose {
 			log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		}
 
@@ -217,7 +218,7 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	//Log request on trace level (so only v2 will trigger this)
-	if testCase.logNetwork {
+	if testCase.LogNetwork != nil && *testCase.LogNetwork {
 		log.Tracef("[REQUEST]:\n%s", req.ToString())
 	}
 
@@ -279,13 +280,13 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[RESPONSE]:\n%s\n", response.ToString())
 	}
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	if !testCase.logNetwork && !testCase.ContinueOnFailure {
+	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[REQUEST]:\n%s\n", request.ToString())
 	}
 }
@@ -316,7 +317,7 @@ func (testCase Case) run() (success bool, err error) {
 		}
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
-		if testCase.logNetwork {
+		if testCase.LogNetwork != nil && *testCase.LogNetwork {
 			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
 		}
 
@@ -413,7 +414,7 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")))
+		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -426,12 +427,12 @@ func (testCase Case) loadResponse() (res api.Response, err error) {
 	return res, nil
 }
 
-func (testCase Case) responsesEqual(left, right api.Response) (equal compare.CompareResult, err error) {
-	leftJSON, err := left.ToGenericJson()
+func (testCase Case) responsesEqual(expected, got api.Response) (equal compare.CompareResult, err error) {
+	leftJSON, err := expected.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	rightJSON, err := right.ToGenericJson()
+	rightJSON, err := got.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
