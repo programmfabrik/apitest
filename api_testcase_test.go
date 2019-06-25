@@ -511,11 +511,9 @@ func TestBinaryComparisonValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
-	testOut := test.runAPITestCase()
-	r.LeaveChild(testOut)
+	test.runAPITestCase(r.Root())
 
 	r.GetTestResult(report.ParseJSONResult)
 	if r.DidFail() {
@@ -568,11 +566,9 @@ func TestBinaryComparisonInValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	test.reporter = r
 	test.ServerURL = ts.URL
 	test.dataStore = datastore.NewStore(false)
-	testOut := test.runAPITestCase()
-	r.LeaveChild(testOut)
+	test.runAPITestCase(r.Root())
 
 	t.Log(string(r.GetTestResult(report.ParseJSONResult)))
 	if !r.DidFail() {
