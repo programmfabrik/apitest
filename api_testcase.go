@@ -128,7 +128,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
 
-			if *testCase.LogVerbose {
+			if testCase.LogVerbose != nil && *testCase.LogVerbose {
 				log.Tracef("breakResponseIsPresent: %v", responsesMatch)
 			}
 
@@ -187,7 +187,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 
 		testCase.CollectResponse = leftResponses
 
-		if *testCase.LogVerbose {
+		if testCase.LogVerbose != nil && *testCase.LogVerbose {
 			log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		}
 
@@ -217,7 +217,7 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	//Log request on trace level (so only v2 will trigger this)
-	if *testCase.LogNetwork {
+	if testCase.LogNetwork != nil && *testCase.LogNetwork {
 		log.Tracef("[REQUEST]:\n%s", req.ToString())
 	}
 
@@ -279,13 +279,13 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	if !*testCase.LogNetwork && !testCase.ContinueOnFailure {
+	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[RESPONSE]:\n%s\n", response.ToString())
 	}
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	if !*testCase.LogNetwork && !testCase.ContinueOnFailure {
+	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf("[REQUEST]:\n%s\n", request.ToString())
 	}
 }
@@ -318,7 +318,7 @@ func (testCase Case) run() (success bool, err error) {
 		}
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
-		if *testCase.LogNetwork {
+		if testCase.LogNetwork != nil && *testCase.LogNetwork {
 			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
 		}
 
