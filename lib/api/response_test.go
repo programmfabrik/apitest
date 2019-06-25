@@ -65,13 +65,13 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 }
 
 func TestResponse_NewResponse(t *testing.T) {
-	response, err := NewResponse(200, nil, strings.NewReader("foo"))
+	response, err := NewResponse(200, nil, strings.NewReader("foo"), nil)
 	test_utils.CheckError(t, err, "unexpected error")
 	test_utils.AssertIntEquals(t, response.statusCode, 200)
 }
 
 func TestResponse_String(t *testing.T) {
-	response, err := NewResponse(200, nil, strings.NewReader("{\"foo\": \"bar\"}"))
+	response, err := NewResponse(200, nil, strings.NewReader("{\"foo\": \"bar\"}"), nil)
 	assertString := "200\n\n\n{\"foo\": \"bar\"}"
 	test_utils.CheckError(t, err, "error constructing response")
 	test_utils.AssertStringEquals(t, response.ToString(), assertString)

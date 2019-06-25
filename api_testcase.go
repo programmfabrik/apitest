@@ -415,7 +415,7 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")))
+		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -428,12 +428,12 @@ func (testCase Case) loadResponse() (res api.Response, err error) {
 	return res, nil
 }
 
-func (testCase Case) responsesEqual(left, right api.Response) (equal compare.CompareResult, err error) {
-	leftJSON, err := left.ToGenericJson()
+func (testCase Case) responsesEqual(expected, got api.Response) (equal compare.CompareResult, err error) {
+	leftJSON, err := expected.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	rightJSON, err := right.ToGenericJson()
+	rightJSON, err := got.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}

@@ -70,7 +70,7 @@ func TestBigIntRender(t *testing.T) {
 
 	inputNumber := "132132132182323"
 
-	resp, _ := api.NewResponse(200, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)))
+	resp, _ := api.NewResponse(200, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil)
 
 	respJson, _ := resp.ToJsonString()
 	store.SetWithQjson(respJson, map[string]string{"testINT": "body.bigINT"})
@@ -336,6 +336,7 @@ func Test_DataStore_QJson(t *testing.T) {
 		200,
 		map[string][]string{"x-header": {"foo", "bar"}},
 		strings.NewReader(`{"flib": ["flab", "flob"]}`),
+		nil,
 	)
 	store := datastore.NewStore(false)
 	jsonResponse, err := response.ToJsonString()

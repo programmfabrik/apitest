@@ -10,23 +10,25 @@ import (
 )
 
 type Response struct {
-	statusCode int
-	headers    map[string][]string
-	body       []byte
+	statusCode  int
+	headers     map[string][]string
+	body        []byte
+	bodyControl util.JsonObject
 }
 
 type ResponseSerialization struct {
-	StatusCode int                 `yaml:"statuscode" json:"statuscode"`
-	Headers    map[string][]string `yaml:"header" json:"header,omitempty"`
-	Body       util.GenericJson    `yaml:"body" json:"body,omitempty"`
+	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
+	Body        util.GenericJson    `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
 }
 
-func NewResponse(statusCode int, headers map[string][]string, body io.Reader) (res Response, err error) {
+func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject) (res Response, err error) {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return res, err
 	}
-	return Response{statusCode: statusCode, headers: headers, body: bodyBytes}, nil
+	return Response{statusCode: statusCode, headers: headers, body: bodyBytes, bodyControl: bodyControl}, nil
 }
 
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
@@ -40,9 +42,9 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	}
 
 	if spec.Headers != nil {
-		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes))
+		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl)
 	} else {
-		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes))
+		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl)
 	}
 }
 
@@ -54,7 +56,8 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 	}
 
 	responseJSON := ResponseSerialization{
-		StatusCode: response.statusCode,
+		StatusCode:  response.statusCode,
+		BodyControl: response.bodyControl,
 	}
 	if len(response.headers) > 0 {
 		responseJSON.Headers = response.headers
