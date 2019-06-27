@@ -256,11 +256,11 @@ To set data in custom store, you can use 4 methods:
 * Use `store`on the **manifest.json** top level, the data is set before the session authentication (if any)
 * Use `store_response_qjson`in `authentication.store_response_qjson`
 * Use `store`on the **test** level, the data is set before **request** and **response** are evaluated
-* Use `store_respsonse_qjson`on the test level, the data is set after each **response** 
+* Use `store_response_qjson`on the test level, the data is set after each **response**
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]`and Array is created if the key does not yet exists, or the value is appended to the Array if it does exist.
 
-The method `store_respsonse_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
+The method `store_response_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
 
 ### Get Data from Custom Store
 
