@@ -97,7 +97,7 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 func (response Response) ToJsonString() (string, error) {
 	gj, err := response.ToGenericJson()
 	if err != nil {
-		return "", fmt.Errorf("error formatting respsone: %s", err)
+		return "", fmt.Errorf("error formatting response: %s", err)
 	}
 	json, err := cjson.Marshal(gj)
 	if err != nil {
