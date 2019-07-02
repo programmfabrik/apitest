@@ -147,17 +147,18 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 		waitCh := make(chan bool, d)
 		succCh := make(chan bool, len(testCases))
 
-		for ki, v := range testCases {
+		go func() {
+			for ki, v := range testCases {
+				waitCh <- true
+				go testGoRoutine(k, ki, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec || runParallel)
+			}
 			waitCh <- true
-			go testGoRoutine(k, ki, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec)
-		}
-		waitCh <- true
+		}()
 
 		for i := 0; i < len(testCases); i++ {
 			select {
 			case succ := <-succCh:
 				if succ == false {
-
 					return false
 				}
 			}
@@ -183,7 +184,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 
 				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r)
 			} else {
-				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k)
+				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 			}
 		} else {
 			//Did not work -> Could be go template or a mallformed json
@@ -211,7 +212,7 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 	return true
 }
 
-func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int) (success bool) {
+func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int, isParallel bool) (success bool) {
 	r.SetName(testFilePath)
 
 	var test Case
@@ -231,7 +232,9 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFi
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
-
+	if isParallel {
+		test.ContinueOnFailure = true
+	}
 	if test.LogNetwork == nil {
 		test.LogNetwork = &ats.Config.LogNetwork
 	}
@@ -288,7 +291,7 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats Suite, testFilePath, manife
 		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r)
 	} else {
 		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
-			r, testFilePath, loader, ki)
+			r, testFilePath, loader, ki, runParallel)
 	}
 
 	succCh <- success
