@@ -21,7 +21,7 @@ func init() {
 
 type Request struct {
 	Endpoint        string                 `yaml:"endpoint" json:"endpoint"`
-	ServerURL       string                 `yaml:"serverurl" json:"serverurl"`
+	ServerURL       string                 `yaml:"server_url" json:"server_url"`
 	Method          string                 `yaml:"method" json:"method"`
 	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
 	Headers         map[string]*string     `yaml:"header" json:"header"`
@@ -48,7 +48,11 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 	}
 	//Render Request Url
+
 	requestUrl := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
+	if request.Endpoint == "" {
+		requestUrl = request.ServerURL
+	}
 
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
@@ -144,6 +148,12 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, err
 	}
+	defer func() {
+		lerr := httpResponse.Body.Close()
+		if lerr != nil {
+			fmt.Println("Could not close body: ", lerr)
+		}
+	}()
 
 	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body, nil)
 	if err != nil {
