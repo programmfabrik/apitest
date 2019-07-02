@@ -281,7 +281,7 @@ func (testCase Case) executeRequest(counter int) (
 
 func (testCase Case) LogResp(response api.Response) {
 	errString := fmt.Sprintf("[RESPONSE]:\n%s\n", response.ToString())
-	testCase.reporter.SaveToReportLogF(errString)
+	testCase.ReportElem.SaveToReportLogF(errString)
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		log.Debugf(errString)
@@ -290,7 +290,7 @@ func (testCase Case) LogResp(response api.Response) {
 
 func (testCase Case) LogReq(request api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n", request.ToString())
-	testCase.reporter.SaveToReportLogF(errString)
+	testCase.ReportElem.SaveToReportLogF(errString)
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		log.Debugf(errString)
 	}
