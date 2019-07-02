@@ -40,7 +40,7 @@ type Case struct {
 
 	loader      template.Loader
 	manifestDir string
-	reporter    *report.Report
+	ReportElem  *report.ReportElement
 	suiteIndex  int
 	index       int
 	dataStore   *datastore.Datastore
@@ -48,7 +48,7 @@ type Case struct {
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
 
-	ServerURL string
+	ServerURL string `json:"server_url"`
 }
 
 type CaseResponse struct {
@@ -56,15 +56,14 @@ type CaseResponse struct {
 	Body       util.GenericJson `json:"body"`
 }
 
-func (testCase Case) runAPITestCase() (success bool) {
-	r := testCase.reporter
-
+func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (success bool) {
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
 	log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 
-	r.NewChild(testCase.Name)
+	testCase.ReportElem = parentReportElem.NewChild(testCase.Name)
+	r := testCase.ReportElem
 
 	start := time.Now()
 
@@ -103,6 +102,8 @@ func (testCase Case) runAPITestCase() (success bool) {
 	} else {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
+
+	r.Leave(success)
 
 	return
 }
@@ -296,9 +297,7 @@ func (testCase Case) LogReq(request api.Request) {
 }
 
 func (testCase Case) run() (success bool, err error) {
-
-	r := testCase.reporter
-
+	r := testCase.ReportElem
 	var responsesMatch compare.CompareResult
 	var request api.Request
 	var apiResponse api.Response
@@ -457,8 +456,10 @@ func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
 	err = cjson.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
-	spec.ServerURL = testCase.ServerURL
 
+	if spec.ServerURL == "" {
+		spec.ServerURL = testCase.ServerURL
+	}
 	if len(spec.Headers) == 0 {
 		spec.Headers = make(map[string]*string, 0)
 	}

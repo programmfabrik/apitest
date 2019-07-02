@@ -118,7 +118,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	//Actually run the tests
 	//Run test function
-	runSingleTest := func(manifestPath string, r *report.Report) {
+	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
 		suite, err := NewTestSuite(
 			testToolConfig,
 			manifestPath,
@@ -130,7 +130,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 
-		suite.Run()
+		return suite.Run()
 	}
 
 	r := report.NewReport()
@@ -139,13 +139,15 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
-			runSingleTest(absManifestPath, r)
+			c := r.Root().NewChild(singleTest)
+			c.Leave(runSingleTest(absManifestPath, c))
 		}
 	} else {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
 			absManifestPath, _ := filepath.Abs(manifestPath)
-			runSingleTest(absManifestPath, r)
+			c := r.Root().NewChild(manifestPath)
+			c.Leave(runSingleTest(absManifestPath, c))
 		}
 	}
 

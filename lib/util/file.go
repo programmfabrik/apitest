@@ -17,8 +17,11 @@ var c = &http.Client{
 
 // OpenFileOrUrl opens either a local file or gives the resp.Body from a remote file
 func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
-	if []rune(path)[0] == '@' {
+	if strings.HasPrefix(path, "@") {
 		path = string([]rune(path)[1:])
+	}
+	if strings.HasPrefix(path, "p@") {
+		path = string([]rune(path)[2:])
 	}
 
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {

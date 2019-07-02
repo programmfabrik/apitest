@@ -13,17 +13,16 @@ import (
 func TestReportStructure(t *testing.T) {
 	r := NewReport()
 
-	r.NewChild("Level 1 - 1")
-	r.LeaveChild(true)
-	r.NewChild("Level 1 - 2")
-	r.NewChild("Level 2 - 1")
-	r.LeaveChild(true)
-	r.NewChild("Level 2 - 2")
-	r.NewChild("Level 3 - 1")
-	r.LeaveChild(true)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
+	r.Root().NewChild("Level 1 - 1").Leave(true)
+
+	child := r.Root().NewChild("Level 1 - 2")
+
+	child.NewChild("Level 2 - 1").Leave(true)
+
+	child2 := child.NewChild("Level 2 - 2")
+	child2.NewChild("Level 3 - 1").Leave(true)
+	child2.Leave(true)
+	child.Leave(true)
 
 	if r.root.SubTests[1].SubTests[0].Name != "Level 2 - 1" {
 		t.Error(r.root.SubTests[1].SubTests[0].Name, " != Level 2 - 1")
@@ -35,18 +34,18 @@ func TestReportStructure(t *testing.T) {
 
 func TestReportGetJSONResult(t *testing.T) {
 	r := NewReport()
-	r.NewChild("Level 1 - 1")
-	r.LeaveChild(false)
-	r.NewChild("Level 1 - 2")
-	r.NewChild("Level 2 - 1")
-	r.LeaveChild(true)
-	r.NewChild("Level 2 - 2")
-	r.NewChild("Level 3 - 1")
+	r.Root().NewChild("Level 1 - 1").Leave(false)
+
+	child := r.Root().NewChild("Level 1 - 2")
+
+	child.NewChild("Level 2 - 1").Leave(true)
+
+	child2 := child.NewChild("Level 2 - 2")
+	child3 := child2.NewChild("Level 3 - 1")
 	time.Sleep(50 * time.Microsecond)
-	r.LeaveChild(false)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
+	child3.Leave(false)
+	child2.Leave(true)
+	child.Leave(true)
 
 	jsonResult := r.GetTestResult(ParseJSONResult)
 	expResult := []byte(`{
@@ -93,17 +92,16 @@ func TestReportGetJSONResult(t *testing.T) {
 }
 func TestReportGetJUnitResult(t *testing.T) {
 	r := NewReport()
-	r.NewChild("Level 1 - 1")
-	r.LeaveChild(false)
-	r.NewChild("Level 1 - 2")
-	r.NewChild("Level 2 - 1")
-	r.LeaveChild(true)
-	r.NewChild("Level 2 - 2")
-	r.NewChild("Level 3 - 1")
+	r.Root().NewChild("Level 1 - 1").Leave(false)
+
+	child := r.Root().NewChild("Level 1 - 2")
+	child.NewChild("Level 2 - 1").Leave(true)
+
+	child2 := child.NewChild("Level 2 - 2")
+	child2.NewChild("Level 3 - 1").Leave(false)
 	time.Sleep(50 * time.Microsecond)
-	r.LeaveChild(false)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
+	child2.Leave(true)
+	child.Leave(true)
 
 	jsonResult := r.GetTestResult(ParseJUnitResult)
 	expResult := `<testsuites failures="2" tests="0">
@@ -152,24 +150,24 @@ func TestReportGetJUnitResult(t *testing.T) {
 func TestReportLog(t *testing.T) {
 	r := NewReport()
 
-	r.NewChild("Level 1 - 1")
-	r.SaveToReportLog("Log Level 1 - 1")
-	r.LeaveChild(true)
+	child := r.Root().NewChild("Level 1 - 1")
+	child.SaveToReportLog("Log Level 1 - 1")
+	child.Leave(true)
 
-	r.NewChild("Level 1 - 2")
-	r.NewChild("Level 2 - 1")
-	r.SaveToReportLog("Log Level 2 - 1 [1]")
-	r.SaveToReportLog("Log Level 2 - 1 [2]")
-	r.SaveToReportLog("Log Level 2 - 1 [3]")
-	r.LeaveChild(true)
-	r.NewChild("Level 2 - 2")
-	r.SaveToReportLog("Log Level 2 - 2 [1]")
-	r.NewChild("Level 3 - 1")
-	r.SaveToReportLog("Log Level 3 - 1 [1]")
-	r.LeaveChild(true)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
-	r.LeaveChild(true)
+	child2 := r.Root().NewChild("Level 1 - 2")
+
+	child21 := child2.NewChild("Level 2 - 1")
+	child21.SaveToReportLog("Log Level 2 - 1 [1]")
+	child21.SaveToReportLog("Log Level 2 - 1 [2]")
+	child21.SaveToReportLog("Log Level 2 - 1 [3]")
+	child21.Leave(true)
+	child22 := child2.NewChild("Level 2 - 2")
+	child22.SaveToReportLog("Log Level 2 - 2 [1]")
+	child3 := child22.NewChild("Level 3 - 1")
+	child3.SaveToReportLog("Log Level 3 - 1 [1]")
+	child3.Leave(true)
+	child22.Leave(true)
+	child2.Leave(true)
 
 	expectedReport := []string{"Log Level 1 - 1", "Log Level 2 - 1 [1]", "Log Level 2 - 1 [2]", "Log Level 2 - 1 [3]", "Log Level 2 - 2 [1]", "Log Level 3 - 1 [1]"}
 	realReport := r.GetLog()

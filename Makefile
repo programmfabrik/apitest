@@ -15,6 +15,8 @@ all: | code
 code: ensure
 	go build ${LDFLAGS} -o $(FYLR)
 
+race: ensure
+	go build ${LDFLAGS} -race -o $(FYLR)
 gox: ensure
 	gox ${LDFLAGS} -output="dist/fylr_{{.OS}}_{{.Arch}}"
 
