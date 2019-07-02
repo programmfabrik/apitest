@@ -82,7 +82,7 @@ func (ats Suite) Run() (success bool) {
 	log.Infof("[%2d] '%s'", ats.index, ats.Name)
 
 	//r.NewChild(ats.Name)
-	r.SetTestCount(len(ats.Tests))
+	//r.SetTestCount(len(ats.Tests))
 
 	start := time.Now()
 

@@ -96,8 +96,11 @@ func (r *ReportElement) Leave(result bool) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	if !result {
-		r.Failures++
+	if len(r.SubTests) == 0 {
+		r.TestCount++
+		if !result {
+			r.Failures++
+		}
 	}
 	r.ExecutionTime = time.Since(r.StartTime)
 }
@@ -132,13 +135,14 @@ func (r ReportElement) GetLog() []string {
 	return errors
 }
 
+/*
 func (r *ReportElement) SetTestCount(counter int) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
 	r.TestCount = counter
 }
-
+*/
 func (r *ReportElement) SaveToReportLog(v string) {
 	r.m.Lock()
 	defer r.m.Unlock()
