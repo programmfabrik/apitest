@@ -104,9 +104,9 @@ func TestReportGetJUnitResult(t *testing.T) {
 	child.Leave(true)
 
 	jsonResult := r.GetTestResult(ParseJUnitResult)
-	expResult := `<testsuites failures="2" tests="0">
-	<testsuite id="0" name="Level 1 - 1" tests="0" failures="1" ></testsuite>
-	<testsuite id="1" name="Level 1 - 2" tests="0" failures="1">
+	expResult := `<testsuites failures="2" tests="3">
+	<testsuite id="0" name="Level 1 - 1" tests="1" failures="1" ></testsuite>
+	<testsuite id="1" name="Level 1 - 2" tests="2" failures="1">
 		<testcase id="0" name="Level 2 - 1" ></testcase>
 		<testcase id="1" name="Level 2 - 2" >
 			<failure message="" type="ERROR"></failure>

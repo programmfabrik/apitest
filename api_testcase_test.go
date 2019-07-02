@@ -359,8 +359,8 @@ func TestCollectResponseShouldFail(t *testing.T) {
 		t.Errorf("Did not fail but it should")
 	}
 
-	if len(log) != 2 {
-		t.Fatalf("Length of log != 2. Log '%s'", log)
+	if len(log) != 4 {
+		t.Fatalf("Length of log != 4. Log '%s'", log)
 	}
 
 	if log[0] != "Pull Timeout '30ms' exceeded" {
