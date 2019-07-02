@@ -69,14 +69,14 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 			Time:     v.ExecutionTime.Seconds(),
 			Failures: v.Failures,
 			Tests:    v.TestCount,
-			Name:     strings.Replace(v.Name,".",":",-1),
+			Name:     strings.Replace(v.Name, ".", ":", -1),
 		}
 
 		for ik, iv := range v.SubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
 				Time: iv.ExecutionTime.Seconds(),
-			Name:     strings.Replace(v.Name,".",":",-1),
+				Name: strings.Replace(iv.Name, ".", ":", -1),
 			}
 
 			if iv.Failures > 0 {
