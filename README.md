@@ -1053,6 +1053,7 @@ error
 
 **Valid types**
 - int64
+- int
 - string
 - float64
 - bool

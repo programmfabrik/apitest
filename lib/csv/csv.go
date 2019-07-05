@@ -118,7 +118,7 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 }
 
 func isValidFormat(format string) bool {
-	validFormats := []string{"string", "int64", "float64", "bool"}
+	validFormats := []string{"string", "int64", "int", "float64", "bool"}
 	for _, v := range validFormats {
 		if format == v || format == v+",array" || format == "json" {
 			return true
@@ -139,6 +139,11 @@ func getTyped(value, format string) (interface{}, error) {
 			return int64(0), nil
 		}
 		return strconv.ParseInt(value, 10, 64)
+	case "int":
+		if value == "" {
+			return int(0), nil
+		}
+		return strconv.Atoi(value)
 	case "float64":
 		if value == "" {
 			return float64(0), nil
