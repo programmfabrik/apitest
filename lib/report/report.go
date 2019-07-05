@@ -147,7 +147,7 @@ func (r *ReportElement) SaveToReportLog(v string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	r.LogStorage = append(r.LogStorage, v)
+	r.LogStorage = append(r.LogStorage, fmt.Sprintf("[%t] %s", time.Now().Format("02.01.2006 15:04:05.000 -0700"), v))
 }
 
 func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
