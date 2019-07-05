@@ -340,6 +340,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
 
 	r := report.NewReport()
+	r.Root().NoLogTime = true
 
 	var test Case
 	err := json.Unmarshal(testManifest, &test)
@@ -401,6 +402,7 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
 
 	r := report.NewReport()
+	r.Root().NoLogTime = true
 
 	var test Case
 	err := json.Unmarshal(testManifest, &test)
@@ -451,6 +453,7 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
 
 	r := report.NewReport()
+	r.Root().NoLogTime = true
 
 	var test Case
 	err := json.Unmarshal(testManifest, &test)
@@ -503,6 +506,7 @@ func TestBinaryComparisonValid(t *testing.T) {
         }
 `)
 	r := report.NewReport()
+	r.Root().NoLogTime = true
 	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
 	afero.WriteFile(filesystem.Fs, "simple.bin", decoded, 644)
 
@@ -559,6 +563,7 @@ func TestBinaryComparisonInValid(t *testing.T) {
         }
 `)
 	r := report.NewReport()
+	r.Root().NoLogTime = true
 	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
 
 	var test Case

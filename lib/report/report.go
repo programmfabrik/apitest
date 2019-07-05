@@ -60,6 +60,7 @@ type ReportElement struct {
 	LogStorage    []string         `json:"log,omitempty"`
 	SubTests      []*ReportElement `json:"sub_tests,omitempty"`
 	Parent        *ReportElement   `json:"-"`
+	NoLogTime     bool             `json:"-"`
 	report        *Report
 	m             *sync.Mutex
 }
@@ -76,6 +77,7 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 	newElem.m = &sync.Mutex{}
 
 	newElem.Parent = r
+	newElem.NoLogTime = r.NoLogTime
 	newElem.Name = name
 	newElem.StartTime = time.Now()
 	newElem.report = r.report
@@ -147,7 +149,13 @@ func (r *ReportElement) SaveToReportLog(v string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	r.LogStorage = append(r.LogStorage, fmt.Sprintf("[%s] %s", time.Now().Format("02.01.2006 15:04:05.000 -0700"), v))
+	if r.NoLogTime {
+
+		r.LogStorage = append(r.LogStorage, v)
+	} else {
+		r.LogStorage = append(r.LogStorage, fmt.Sprintf("[%s] %s", time.Now().Format("02.01.2006 15:04:05.000 -0700"), v))
+
+	}
 }
 
 func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {

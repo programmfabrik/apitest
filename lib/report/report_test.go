@@ -12,6 +12,7 @@ import (
 
 func TestReportStructure(t *testing.T) {
 	r := NewReport()
+	r.Root().NoLogTime = true
 
 	r.Root().NewChild("Level 1 - 1").Leave(true)
 
@@ -34,6 +35,7 @@ func TestReportStructure(t *testing.T) {
 
 func TestReportGetJSONResult(t *testing.T) {
 	r := NewReport()
+	r.Root().NoLogTime = true
 	r.Root().NewChild("Level 1 - 1").Leave(false)
 
 	child := r.Root().NewChild("Level 1 - 2")
@@ -92,6 +94,7 @@ func TestReportGetJSONResult(t *testing.T) {
 }
 func TestReportGetJUnitResult(t *testing.T) {
 	r := NewReport()
+	r.Root().NoLogTime = true
 	r.Root().NewChild("Level 1 - 1").Leave(false)
 
 	child := r.Root().NewChild("Level 1 - 2")
@@ -149,6 +152,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 
 func TestReportLog(t *testing.T) {
 	r := NewReport()
+	r.Root().NoLogTime = true
 
 	child := r.Root().NewChild("Level 1 - 1")
 	child.SaveToReportLog("Log Level 1 - 1")
