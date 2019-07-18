@@ -141,12 +141,12 @@ func (request Request) ToString() (res string) {
 func (request Request) Send() (response Response, err error) {
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
-		return response, err
+		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
 	}
 
 	httpResponse, err := c.Do(httpRequest)
 	if err != nil {
-		return response, err
+		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
 	defer func() {
 		lerr := httpResponse.Body.Close()
