@@ -52,6 +52,8 @@ can configure the tool with additional log flags
 - `--log-network`: Log all network traffic
 - `--log-datastore`: Log datastore operations
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
+
+- `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
 	
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.

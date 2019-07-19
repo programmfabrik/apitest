@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	reportFormat, reportFile    string
-	logNetwork, logVerbose      bool
-	rootDirectorys, singleTests []string
+	reportFormat, reportFile             string
+	logNetwork, logVerbose, logTimeStamp bool
+	rootDirectorys, singleTests          []string
 )
 
 func init() {
@@ -43,6 +43,10 @@ func init() {
 		&logVerbose, "log-verbose", "v", false,
 		`log datastore operations and information about repeating request to console`)
 
+	TestCMD.PersistentFlags().BoolVarP(
+		&logTimeStamp, "log-timestamp", "t", false,
+		`log full timestamp into console`)
+
 	TestCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
 		"Defines where the log statements should be saved.")
@@ -54,6 +58,7 @@ func init() {
 	//Bind the flags to overwrite the yml config if they are set
 	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", TestCMD.PersistentFlags().Lookup("report-format"))
+
 }
 
 var TestCMD = &cobra.Command{
@@ -81,6 +86,11 @@ func setup(ccmd *cobra.Command, args []string) {
 
 	//Set log verbosity to trace
 	log.SetLevel(log.TraceLevel)
+
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: logTimeStamp,
+	})
+
 }
 
 func runApiTests(cmd *cobra.Command, args []string) {
