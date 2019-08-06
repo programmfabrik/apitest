@@ -272,6 +272,13 @@ For comparing a binary file, simply point the response to the binary file:
         }
 ```
 
+## XML Data comparison
+
+When the endpoint returns one of the content types for xml `text/xml` or `application/xml` we internally marshal that xml
+into json. (With github.com/clbanning/mxj `NewMapXmlSeq()`)
+On that json you can work as you are used to with the json syntax. For seeing how the convert json locks you can use the 
+`--log-verbose` command line flag
+
 ## Datastore
 
 The datastore is a storage for arbitrary data. It can be set directly or set using values received from a response. It has two parts:

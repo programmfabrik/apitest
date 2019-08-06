@@ -229,6 +229,16 @@ func (testCase Case) executeRequest(counter int) (
 		return
 	}
 
+	isXML, err := apiResp.CheckAndConvertXML()
+	if err != nil {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error converting xml: %s", err)
+		return
+	}
+	if isXML && testCase.LogVerbose != nil && *testCase.LogVerbose {
+		log.Trace("Did convert XML to following json:\n\n", string(apiResp.Body()))
+	}
+
 	apiRespJson, err := apiResp.ToJsonString()
 	if err != nil {
 		testCase.LogReq(req)

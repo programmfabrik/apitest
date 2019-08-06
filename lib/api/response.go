@@ -5,11 +5,14 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/clbanning/mxj"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/fylr-apitest/lib/cjson"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"io"
 	"io/ioutil"
+	"strings"
 )
 
 type Response struct {
@@ -57,22 +60,28 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 
 	//Check mimetype of body
 	bodyMimeType, _ := mimetype.Detect(bodyBytes)
-	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
+	contenTypeHeader, ok := response.headers["Content-Type"]
+	if ok && len(contenTypeHeader) > 0 {
+		bodyMimeType = strings.Split(contenTypeHeader[0], ";")[0]
+	}
+
+	switch bodyMimeType {
+	case "text/plain", "application/json":
 		// We have a json, and thereby try to unmarshal it into our body
 		if err = cjson.Unmarshal(bodyBytes, &gj); err != nil {
 			return res, err
 		}
 
-	responseJSON := ResponseSerialization{
-		StatusCode:  response.statusCode,
-		BodyControl: response.bodyControl,
-	}
-	if len(response.headers) > 0 {
-		responseJSON.Headers = response.headers
-	}
-	if gj != nil {
-		responseJSON.Body = &gj
-	}
+		responseJSON := ResponseSerialization{
+			StatusCode:  response.statusCode,
+			BodyControl: response.bodyControl,
+		}
+		if len(response.headers) > 0 {
+			responseJSON.Headers = response.headers
+		}
+		if gj != nil {
+			responseJSON.Body = &gj
+		}
 
 		responseBytes, err := cjson.Marshal(responseJSON)
 		if err != nil {
@@ -80,7 +89,7 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 		}
 		cjson.Unmarshal(responseBytes, &res)
 		return res, nil
-	} else {
+	default:
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(bodyBytes))
@@ -92,6 +101,35 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 		}
 		return jsonObject, nil
 	}
+}
+
+func (response *Response) CheckAndConvertXML() (gotXML bool, err error) {
+	bodyBytes := response.Body()
+
+	//Check mimetype of body
+	bodyMimeType, _ := mimetype.Detect(bodyBytes)
+	contenTypeHeader, ok := response.headers["Content-Type"]
+	if ok && len(contenTypeHeader) > 0 {
+		bodyMimeType = strings.Split(contenTypeHeader[0], ";")[0]
+	}
+
+	if bodyMimeType != "text/xml" && bodyMimeType != "application/xml" {
+		return false, nil
+	}
+
+	mv, err := mxj.NewMapXmlSeq(bodyBytes)
+	if err != nil {
+		return true, errors.Wrap(err, "Could not parse xml")
+	}
+
+	jData, err := mv.JsonIndent("", " ")
+	if err != nil {
+		return true, errors.Wrap(err, "Could not marshal xml to json")
+	}
+
+	response.body = jData
+
+	return true, nil
 }
 
 func (response Response) ToJsonString() (string, error) {
