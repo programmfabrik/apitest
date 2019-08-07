@@ -59,6 +59,8 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 			if ds.logDatastore {
 				log.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
 			}
+			// Remove value from datastore
+			ds.Delete(k)
 			continue
 		}
 		err := ds.Set(k, qValue.Value())
@@ -67,6 +69,9 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 		}
 	}
 	return nil
+}
+func (ds *Datastore) Delete(k string) {
+	delete(ds.storage,k)
 }
 
 // We store the response
