@@ -133,6 +133,7 @@ func (response *Response) CheckAndConvertXML() (gotXML bool, err error) {
 	}
 
 	response.body = jData
+	response.headers["Content-Type"] = []string{"application/json"}
 
 	return true, nil
 }
