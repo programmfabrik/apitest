@@ -12,6 +12,7 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"io"
 	"io/ioutil"
+	"regexp"
 	"strings"
 )
 
@@ -117,7 +118,11 @@ func (response *Response) CheckAndConvertXML() (gotXML bool, err error) {
 		return false, nil
 	}
 
-	mv, err := mxj.NewMapXmlSeq(bodyBytes)
+	//FIXME: Remove regex remove
+	xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
+	replacedXML := xmlDeclarationRegex.ReplaceAll(bodyBytes,[]byte{})
+
+	mv, err := mxj.NewMapXmlSeq(replacedXML)
 	if err != nil {
 		return true, errors.Wrap(err, "Could not parse xml")
 	}
