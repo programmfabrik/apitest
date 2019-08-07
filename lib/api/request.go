@@ -24,6 +24,7 @@ type Request struct {
 	ServerURL       string                 `yaml:"server_url" json:"server_url"`
 	Method          string                 `yaml:"method" json:"method"`
 	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
+	QueryParamsFromStore map[string]string      `yaml:"query_params_from_store" json:"query_params_from_store"`
 	Headers         map[string]*string     `yaml:"header" json:"header"`
 	HeaderFromStore map[string]string      `yaml:"header_from_store" json:"header_from_store"`
 	BodyType        string                 `yaml:"body_type" json:"body_type"`
@@ -64,12 +65,41 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	}
 
 	q := res.URL.Query()
+
+
+	for queryName, datastoreKey := range request.QueryParamsFromStore {
+		skipOnError := false
+		if datastoreKey[0] == '?'{
+			skipOnError = true
+			datastoreKey = datastoreKey[1:]
+		}
+
+		if request.DataStore == nil {
+			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+		}
+
+		queryParamInterface, err := request.DataStore.Get(datastoreKey)
+		if err != nil {
+			if skipOnError{
+				continue
+			}
+			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
+		}
+
+		stringVal, err := util.GetStringFromInterface(queryParamInterface)
+		if err != nil {
+			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
+		}
+
+		q.Add(queryName, stringVal)
+	}
+
 	for key, val := range request.QueryParams {
 		stringVal, err := util.GetStringFromInterface(val)
 		if err != nil {
 			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
-		q.Add(key, stringVal)
+		q.Set(key, stringVal)
 	}
 	res.URL.RawQuery = q.Encode()
 
@@ -78,12 +108,21 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	}
 
 	for headerName, datastoreKey := range request.HeaderFromStore {
+		skipOnError := false
+		if datastoreKey[0] == '?'{
+			skipOnError = true
+			datastoreKey = datastoreKey[1:]
+		}
+
 		if request.DataStore == nil {
 			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
 		}
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
 		if err != nil {
+			if skipOnError{
+				continue
+			}
 			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
 		}
 

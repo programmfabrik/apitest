@@ -160,6 +160,13 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "number": 2,
             "token": "testtoken"
         },
+		// With query_params_from_store set a query parameter to the value of the datastore field
+		"query_params_from_store": {
+		  "format": "formatFromDatastore",
+          // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
+          // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
+		  "test": "?a"
+		}
 		//Additional headers that should be added to the request
 		"header":{
 			"header1":"value",
@@ -170,6 +177,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 		// As "application/json" is stored as string in the datastore on index "contentType"
 		"header_from_store": {
 		  "Content-Type": "contentType"
+          // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
+          // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
+		  "Range": "?a"
 		}
 		//All the content you want to send in the http body. Is a JSON Object
 		"body":{
