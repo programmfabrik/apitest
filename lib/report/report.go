@@ -58,11 +58,24 @@ type ReportElement struct {
 	StartTime     time.Time        `json:"-"`
 	Name          string           `json:"name,omitempty"`
 	LogStorage    []string         `json:"log,omitempty"`
-	SubTests      []*ReportElement `json:"sub_tests,omitempty"`
+	SubTests      ReportElements `json:"sub_tests,omitempty"`
 	Parent        *ReportElement   `json:"-"`
 	NoLogTime     bool             `json:"-"`
 	report        *Report
 	m             *sync.Mutex
+}
+
+type ReportElements []*ReportElement
+func (re ReportElements) Flat() ReportElements{
+	rElements := ReportElements{}
+	for _,v := range re{
+		rElements = append(rElements,v)
+
+		if len(v.SubTests) != 0 {
+			rElements = append(rElements, v.SubTests.Flat()...)
+		}
+	}
+	return rElements
 }
 
 //NewChild create new report element and return its reference

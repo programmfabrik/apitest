@@ -72,7 +72,9 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 			Name:     strings.Replace(v.Name, ".", ":", -1),
 		}
 
-		for ik, iv := range v.SubTests {
+		flattenSubTests := v.SubTests.Flat()
+
+		for ik, iv := range flattenSubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
 				Time: iv.ExecutionTime.Seconds(),
