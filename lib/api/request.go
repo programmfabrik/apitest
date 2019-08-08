@@ -20,15 +20,15 @@ func init() {
 }
 
 type Request struct {
-	Endpoint        string                 `yaml:"endpoint" json:"endpoint"`
-	ServerURL       string                 `yaml:"server_url" json:"server_url"`
-	Method          string                 `yaml:"method" json:"method"`
-	QueryParams     map[string]interface{} `yaml:"query_params" json:"query_params"`
+	Endpoint             string                 `yaml:"endpoint" json:"endpoint"`
+	ServerURL            string                 `yaml:"server_url" json:"server_url"`
+	Method               string                 `yaml:"method" json:"method"`
+	QueryParams          map[string]interface{} `yaml:"query_params" json:"query_params"`
 	QueryParamsFromStore map[string]string      `yaml:"query_params_from_store" json:"query_params_from_store"`
-	Headers         map[string]*string     `yaml:"header" json:"header"`
-	HeaderFromStore map[string]string      `yaml:"header_from_store" json:"header_from_store"`
-	BodyType        string                 `yaml:"body_type" json:"body_type"`
-	Body            util.GenericJson       `yaml:"body" json:"body"`
+	Headers              map[string]*string     `yaml:"header" json:"header"`
+	HeaderFromStore      map[string]string      `yaml:"header_from_store" json:"header_from_store"`
+	BodyType             string                 `yaml:"body_type" json:"body_type"`
+	Body                 util.GenericJson       `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool
@@ -66,10 +66,9 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 	q := res.URL.Query()
 
-
 	for queryName, datastoreKey := range request.QueryParamsFromStore {
 		skipOnError := false
-		if len(datastoreKey) > 0 && datastoreKey[0] == '?'{
+		if len(datastoreKey) > 0 && datastoreKey[0] == '?' {
 			skipOnError = true
 			datastoreKey = datastoreKey[1:]
 		}
@@ -80,7 +79,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		queryParamInterface, err := request.DataStore.Get(datastoreKey)
 		if err != nil {
-			if skipOnError{
+			if skipOnError {
 				continue
 			}
 			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
@@ -91,6 +90,9 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 
+		if stringVal == "" {
+			continue
+		}
 		q.Add(queryName, stringVal)
 	}
 
@@ -109,7 +111,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 	for headerName, datastoreKey := range request.HeaderFromStore {
 		skipOnError := false
-		if len(datastoreKey) > 0 && datastoreKey[0] == '?'{
+		if len(datastoreKey) > 0 && datastoreKey[0] == '?' {
 			skipOnError = true
 			datastoreKey = datastoreKey[1:]
 		}
@@ -120,7 +122,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
 		if err != nil {
-			if skipOnError{
+			if skipOnError {
 				continue
 			}
 			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
@@ -131,6 +133,9 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			for _, val := range ownHeaders {
 				valString, ok := val.(string)
 				if ok {
+					if valString == "" {
+						continue
+					}
 					res.Header.Add(headerName, valString)
 				}
 			}
@@ -139,6 +144,9 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		ownHeader, ok := headersInt.(string)
 		if ok {
+			if ownHeader == "" {
+				continue
+			}
 			res.Header.Add(headerName, ownHeader)
 		} else {
 			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
