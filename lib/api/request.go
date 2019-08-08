@@ -69,7 +69,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 	for queryName, datastoreKey := range request.QueryParamsFromStore {
 		skipOnError := false
-		if datastoreKey[0] == '?'{
+		if len(datastoreKey) > 0 && datastoreKey[0] == '?'{
 			skipOnError = true
 			datastoreKey = datastoreKey[1:]
 		}
@@ -109,7 +109,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 	for headerName, datastoreKey := range request.HeaderFromStore {
 		skipOnError := false
-		if datastoreKey[0] == '?'{
+		if len(datastoreKey) > 0 && datastoreKey[0] == '?'{
 			skipOnError = true
 			datastoreKey = datastoreKey[1:]
 		}
