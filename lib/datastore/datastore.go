@@ -54,13 +54,20 @@ func (data DatastoreIndexError) Error() string {
 // SetWithQjson stores the given response driven by a map key => qjson
 func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]string) error {
 	for k, qv := range storeResponse {
+		setEmpty := false
+		if len(qv) > 0 && qv[0] == '!' {
+			setEmpty = true
+			qv = qv[1:]
+		}
 		qValue := gjson.Get(jsonResponse, qv)
 		if qValue.Value() == nil {
 			if ds.logDatastore {
 				log.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
 			}
 			// Remove value from datastore
-			ds.Delete(k)
+			if setEmpty {
+				ds.Delete(k)
+			}
 			continue
 		}
 		err := ds.Set(k, qValue.Value())
@@ -71,7 +78,7 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 	return nil
 }
 func (ds *Datastore) Delete(k string) {
-	delete(ds.storage,k)
+	delete(ds.storage, k)
 }
 
 // We store the response

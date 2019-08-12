@@ -324,7 +324,7 @@ To set data in custom store, you can use 4 methods:
 * Use `store`on the **manifest.json** top level, the data is set before the session authentication (if any)
 * Use `store_response_qjson`in `authentication.store_response_qjson`
 * Use `store`on the **test** level, the data is set before **request** and **response** are evaluated
-* Use `store_response_qjson`on the test level, the data is set after each **response**
+* Use `store_response_qjson`on the test level, the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with qjson. Just prepend the qjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json)
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]`and Array is created if the key does not yet exists, or the value is appended to the Array if it does exist.
 
