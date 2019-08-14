@@ -172,7 +172,11 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 			"header1":"value",
 			"header2":"value"
 		},
-		// With header_from_you set a header to the value of the datastore field
+        // Expected maximum time the test should take. Test will marked failed if it did take longer. THIS IS NOT A
+TIMEOUT. So if the test takes longer than the maximum time it will still run until it is done, but will marked failed afterwars
+        // Here we expect the test to run less than 500 milliseconds
+        "expected_max_run_time_ms":500,  
+		// With header_from_you set a header to the value of the dat astore field
 		// In this example we set the "Content-Type" header to the value "application/json"
 		// As "application/json" is stored as string in the datastore on index "contentType"
 		"header_from_store": {

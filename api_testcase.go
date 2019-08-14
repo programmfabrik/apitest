@@ -29,6 +29,7 @@ type Case struct {
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
 	Timeout         int                `json:"timeout_ms"`
+	ExpectedMaxRunTimeMS         int                `json:"expected_max_run_time_ms"`
 	WaitBefore      *int               `json:"wait_before_ms"`
 	WaitAfter       *int               `json:"wait_after_ms"`
 	Delay           *int               `json:"delay_ms"`
@@ -90,12 +91,20 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	}
 
 	elapsed := time.Since(start)
-
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		log.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
+
+	if testCase.ExpectedMaxRunTimeMS > 0 && elapsed > time.Duration(testCase.ExpectedMaxRunTimeMS) * time.Millisecond{
+		err := fmt.Sprintf("Testcase did run for '%d' ms. This is longer than the expected '%d' ms",
+			int(elapsed.Seconds()*1000),testCase.ExpectedMaxRunTimeMS)
+		r.SaveToReportLog(err)
+		log.Errorf("     [%2d] %s", testCase.index, err)
+		success = false
+	}
+
 
 	if !success {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
@@ -443,15 +452,15 @@ func (testCase Case) loadResponse() (res api.Response, err error) {
 }
 
 func (testCase Case) responsesEqual(expected, got api.Response) (equal compare.CompareResult, err error) {
-	leftJSON, err := expected.ToGenericJson()
+	expectedJSON, err := expected.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	rightJSON, err := got.ToGenericJson()
+	gotJSON, err := got.ToGenericJson()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	return compare.JsonEqual(leftJSON, rightJSON, compare.ComparisonContext{})
+	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
 func (testCase Case) loadRequestSerialization() (spec api.Request, err error) {
