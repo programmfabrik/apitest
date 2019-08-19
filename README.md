@@ -50,8 +50,8 @@ Per default request and response of a request will be logged on test failure. If
 can configure the tool with additional log flags
 	
 - `--log-network`: Log all network traffic
+- `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
-
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
 	
 

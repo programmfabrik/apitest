@@ -20,7 +20,7 @@ import (
 
 var (
 	reportFormat, reportFile             string
-	logNetwork, logVerbose, logTimeStamp bool
+	logNetwork,logDatastore, logVerbose, logTimeStamp bool
 	rootDirectorys, singleTests          []string
 )
 
@@ -42,6 +42,9 @@ func init() {
 	TestCMD.PersistentFlags().BoolVarP(
 		&logVerbose, "log-verbose", "v", false,
 		`log datastore operations and information about repeating request to console`)
+	TestCMD.PersistentFlags().BoolVar(
+		&logDatastore, "log-datastore",  false,
+		`log datastore operations`)
 
 	TestCMD.PersistentFlags().BoolVarP(
 		&logTimeStamp, "log-timestamp", "t", false,
@@ -118,7 +121,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	sDatastore := datastore.NewStore(logVerbose)
+	sDatastore := datastore.NewStore(logVerbose || logDatastore)
 	for k, v := range FylrConfig.Apitest.StoreInit {
 		err := sDatastore.Set(k, v)
 		if err != nil {
