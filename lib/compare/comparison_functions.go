@@ -3,6 +3,7 @@ package compare
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -261,7 +262,17 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 
 	if len(left) > len(right) {
 		res.Equal = false
-		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] len(expected response) > len(actual response) \nExpected response:\n%s\nActual response:\n%s\n", left, right)})
+
+		leftJson, err := json.MarshalIndent(left, "", " ")
+		if err != nil {
+			return CompareResult{}, errors.Wrap(err, "Could not marshal expected array")
+		}
+		rightJson, err := json.MarshalIndent(right, "", " ")
+		if err != nil {
+			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
+		}
+
+		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] len(expected response) > len(actual response) \nExpected response:\n%s\nActual response:\n%s\n", string(leftJson), string(rightJson))})
 		return res, nil
 	}
 
