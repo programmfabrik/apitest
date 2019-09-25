@@ -152,7 +152,6 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 				waitCh <- true
 				go testGoRoutine(k, ki, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec || runParallel)
 			}
-			waitCh <- true
 		}()
 
 		for i := 0; i < len(testCases); i++ {
@@ -163,7 +162,6 @@ func (ats Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath s
 				}
 			}
 		}
-
 	} else {
 		//We were not able unmarshal into array, so we try to unmarshal into raw message
 		var singleTest json.RawMessage
@@ -273,27 +271,27 @@ func (ats Suite) loadManifest() (res []byte, err error) {
 
 func testGoRoutine(k, ki int, v json.RawMessage, ats Suite, testFilePath, manifestDir, dir string,
 	r *report.ReportElement, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
-	defer func() { <-waitCh }()
-	var success bool
+	success := false
 
 	//Check if is @ and if so load the test
-	if util.IsPathSpec(v) {
+	switch util.IsPathSpec(v) {
+	case true:
 		var sS string
-
 		err := cjson.Unmarshal(v, &sS)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
 			log.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-			succCh <- false
-			return
-
+			success = false
+			break
 		}
 		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r)
-	} else {
+	default:
 		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
 			r, testFilePath, loader, ki, runParallel)
 	}
 
 	succCh <- success
-
+	if success {
+		<-waitCh
+	}
 }
