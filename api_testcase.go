@@ -28,13 +28,13 @@ type Case struct {
 	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
-	Timeout         int                `json:"timeout_ms"`
-	ExpectedMaxRunTimeMS         int                `json:"expected_max_run_time_ms"`
-	WaitBefore      *int               `json:"wait_before_ms"`
-	WaitAfter       *int               `json:"wait_after_ms"`
-	Delay           *int               `json:"delay_ms"`
-	BreakResponse   []util.GenericJson `json:"break_response"`
-	CollectResponse util.GenericJson   `json:"collect_response"`
+	Timeout              int                `json:"timeout_ms"`
+	ExpectedMaxRunTimeMS int                `json:"expected_max_run_time_ms"`
+	WaitBefore           *int               `json:"wait_before_ms"`
+	WaitAfter            *int               `json:"wait_after_ms"`
+	Delay                *int               `json:"delay_ms"`
+	BreakResponse        []util.GenericJson `json:"break_response"`
+	CollectResponse      util.GenericJson   `json:"collect_response"`
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
@@ -97,14 +97,13 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 		success = false
 	}
 
-	if testCase.ExpectedMaxRunTimeMS > 0 && elapsed > time.Duration(testCase.ExpectedMaxRunTimeMS) * time.Millisecond{
+	if testCase.ExpectedMaxRunTimeMS > 0 && elapsed > time.Duration(testCase.ExpectedMaxRunTimeMS)*time.Millisecond {
 		err := fmt.Sprintf("Testcase did run for '%d' ms. This is longer than the expected '%d' ms",
-			int(elapsed.Seconds()*1000),testCase.ExpectedMaxRunTimeMS)
+			int(elapsed.Seconds()*1000), testCase.ExpectedMaxRunTimeMS)
 		r.SaveToReportLog(err)
 		log.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
-
 
 	if !success {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
@@ -309,8 +308,8 @@ func (testCase Case) LogResp(response api.Response) {
 
 func (testCase Case) LogReq(request api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n", request.ToString())
-	testCase.ReportElem.SaveToReportLogF(errString)
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
+		testCase.ReportElem.SaveToReportLogF(errString)
 		log.Debugf(errString)
 	}
 }

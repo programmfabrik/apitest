@@ -52,24 +52,25 @@ func (r Report) GetLog() []string {
 }
 
 type ReportElement struct {
-	Failures      int              `json:"failures"`
-	TestCount     int              `json:"test_count,omitempty"`
-	ExecutionTime time.Duration    `json:"execution_time_ns"`
-	StartTime     time.Time        `json:"-"`
-	Name          string           `json:"name,omitempty"`
-	LogStorage    []string         `json:"log,omitempty"`
+	Failures      int            `json:"failures"`
+	TestCount     int            `json:"test_count,omitempty"`
+	ExecutionTime time.Duration  `json:"execution_time_ns"`
+	StartTime     time.Time      `json:"-"`
+	Name          string         `json:"name,omitempty"`
+	LogStorage    []string       `json:"log,omitempty"`
 	SubTests      ReportElements `json:"sub_tests,omitempty"`
-	Parent        *ReportElement   `json:"-"`
-	NoLogTime     bool             `json:"-"`
+	Parent        *ReportElement `json:"-"`
+	NoLogTime     bool           `json:"-"`
 	report        *Report
 	m             *sync.Mutex
 }
 
 type ReportElements []*ReportElement
-func (re ReportElements) Flat() ReportElements{
+
+func (re ReportElements) Flat() ReportElements {
 	rElements := ReportElements{}
-	for _,v := range re{
-		rElements = append(rElements,v)
+	for _, v := range re {
+		rElements = append(rElements, v)
 
 		if len(v.SubTests) != 0 {
 			rElements = append(rElements, v.SubTests.Flat()...)
@@ -144,9 +145,9 @@ func (r ReportElement) GetLog() []string {
 	}
 
 	//Child errors
-	for _, singleTest := range r.SubTests {
+	/*for _, singleTest := range r.SubTests {
 		errors = append(errors, singleTest.GetLog()...)
-	}
+	}*/
 	return errors
 }
 

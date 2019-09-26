@@ -243,7 +243,7 @@ func (ats Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFi
 	if test.ServerURL == "" {
 		test.ServerURL = ats.Config.ServerURL
 	}
-	r.SetName(test.Name)
+	//r.SetName(test.Name)
 	success = test.runAPITestCase(r)
 
 	if !success && !test.ContinueOnFailure {
