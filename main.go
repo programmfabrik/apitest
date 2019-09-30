@@ -5,10 +5,8 @@ package main
 import (
 	"fmt"
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
-
-	log "github.com/sirupsen/logrus"
-
 	"github.com/programmfabrik/fylr-apitest/lib/report"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 
 	"path/filepath"
@@ -19,9 +17,9 @@ import (
 )
 
 var (
-	reportFormat, reportFile             string
-	logNetwork,logDatastore, logVerbose, logTimeStamp bool
-	rootDirectorys, singleTests          []string
+	reportFormat, reportFile                           string
+	logNetwork, logDatastore, logVerbose, logTimeStamp bool
+	rootDirectorys, singleTests                        []string
 )
 
 func init() {
@@ -43,7 +41,7 @@ func init() {
 		&logVerbose, "log-verbose", "v", false,
 		`log datastore operations and information about repeating request to console`)
 	TestCMD.PersistentFlags().BoolVar(
-		&logDatastore, "log-datastore",  false,
+		&logDatastore, "log-datastore", false,
 		`log datastore operations`)
 
 	TestCMD.PersistentFlags().BoolVarP(
@@ -121,22 +119,22 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	sDatastore := datastore.NewStore(logVerbose || logDatastore)
-	for k, v := range FylrConfig.Apitest.StoreInit {
-		err := sDatastore.Set(k, v)
-		if err != nil {
-			log.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
-		}
-	}
-
 	//Actually run the tests
 	//Run test function
 	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
+		store := datastore.NewStore(logVerbose || logDatastore)
+		for k, v := range FylrConfig.Apitest.StoreInit {
+			err := store.Set(k, v)
+			if err != nil {
+				log.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
+			}
+		}
+
 		suite, err := NewTestSuite(
 			testToolConfig,
 			manifestPath,
 			r,
-			sDatastore,
+			store,
 			0,
 		)
 		if err != nil {
