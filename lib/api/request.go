@@ -63,6 +63,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	if err != nil {
 		return res, fmt.Errorf("error creating new request")
 	}
+	res.Close = true
 
 	q := res.URL.Query()
 
