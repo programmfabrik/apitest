@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
@@ -227,7 +229,7 @@ func (testCase Case) executeRequest(counter int) (
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		log.Tracef("[REQUEST]:\n%s", req.ToString())
+		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(), limitRequest))
 	}
 
 	apiResp, err = req.Send()
@@ -298,20 +300,35 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n", response.ToString())
-	testCase.ReportElem.SaveToReportLogF(errString)
+	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limitResponse))
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
+		testCase.ReportElem.SaveToReportLogF(errString)
 		log.Debugf(errString)
 	}
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n", request.ToString())
+	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(request.ToString(), limitRequest))
+
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		log.Debugf(errString)
 	}
+}
+
+func limitLines(in string, limit int) string {
+	if limit <= 0 {
+		return in
+	}
+	out := ""
+	scanner := bufio.NewScanner(strings.NewReader(in))
+	k := 0
+	for scanner.Scan() && k < limit {
+		out += scanner.Text() + "\n"
+		k++
+	}
+	return out
 }
 
 func (testCase Case) run() (success bool, err error) {
@@ -341,7 +358,7 @@ func (testCase Case) run() (success bool, err error) {
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
-			log.Debugf("[RESPONSE]:\n%s", apiResponse.ToString())
+			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limitRequest))
 		}
 
 		if err != nil {

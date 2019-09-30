@@ -120,7 +120,7 @@ func (response *Response) CheckAndConvertXML() (gotXML bool, err error) {
 
 	//FIXME: Remove regex remove
 	xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-	replacedXML := xmlDeclarationRegex.ReplaceAll(bodyBytes,[]byte{})
+	replacedXML := xmlDeclarationRegex.ReplaceAll(bodyBytes, []byte{})
 
 	mv, err := mxj.NewMapXmlSeq(replacedXML)
 	if err != nil {
@@ -174,7 +174,9 @@ func (response Response) ToString() (res string) {
 		value := ""
 		for _, iv := range v {
 			value = fmt.Sprintf("%s %s", value, iv)
-
+		}
+		if strings.TrimSpace(value) == "" {
+			continue
 		}
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}

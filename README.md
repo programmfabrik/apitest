@@ -53,7 +53,8 @@ can configure the tool with additional log flags
 - `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
-	
+- `--limit-request`: Limit the lines of request log output. No limit if set to 0
+- `--limit-response`: Limit the lines of response log output. No limit if set to 0
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.
 

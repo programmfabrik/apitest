@@ -20,6 +20,7 @@ var (
 	reportFormat, reportFile                           string
 	logNetwork, logDatastore, logVerbose, logTimeStamp bool
 	rootDirectorys, singleTests                        []string
+	limitRequest, limitResponse                        int
 )
 
 func init() {
@@ -55,6 +56,14 @@ func init() {
 	TestCMD.PersistentFlags().StringVar(
 		&reportFormat, "report-format", "",
 		"Defines how the report statements should be saved. [junit/json]")
+
+	TestCMD.PersistentFlags().IntVar(
+		&limitRequest, "limit-request", 0,
+		"Limit the lines of request log output. No limit if set to 0")
+
+	TestCMD.PersistentFlags().IntVar(
+		&limitResponse, "limit-response", 0,
+		"Limit the lines of response log output. No limit if set to 0")
 
 	//Bind the flags to overwrite the yml config if they are set
 	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))
