@@ -87,7 +87,7 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 					newTestCase.Failure.Message = fmt.Sprintf("%s\n\n%s", newTestCase.Failure.Message, jv)
 				}
 				if len(newTestCase.Failure.Message) == 0 {
-					newTestCase.Failure.Message = "Subtest failed"
+					newTestCase.Failure = nil
 				}
 			}
 
