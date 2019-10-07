@@ -229,7 +229,7 @@ func (testCase Case) executeRequest(counter int) (
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(), limitRequest))
+		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(), limit, FylrConfig.Apitest.Limit.Request))
 	}
 
 	apiResp, err = req.Send()
@@ -300,7 +300,7 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limitResponse))
+	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limit, FylrConfig.Apitest.Limit.Response))
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -309,7 +309,7 @@ func (testCase Case) LogResp(response api.Response) {
 }
 
 func (testCase Case) LogReq(request api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(request.ToString(), limitRequest))
+	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(request.ToString(), limit, FylrConfig.Apitest.Limit.Request))
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -317,16 +317,20 @@ func (testCase Case) LogReq(request api.Request) {
 	}
 }
 
-func limitLines(in string, limit int) string {
-	if limit <= 0 {
+func limitLines(in string, limit bool, limitCount int) string {
+	if !limit || limitCount <= 0 {
 		return in
 	}
 	out := ""
 	scanner := bufio.NewScanner(strings.NewReader(in))
 	k := 0
-	for scanner.Scan() && k < limit {
+	for scanner.Scan() && k < limitCount {
 		out += scanner.Text() + "\n"
 		k++
+	}
+	if k >= limitCount {
+		out += fmt.Sprintf("[Limited after '%d' lines. For more change limit in fylr.yml]", limitCount)
+
 	}
 	return out
 }
@@ -358,7 +362,7 @@ func (testCase Case) run() (success bool, err error) {
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
-			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limitRequest))
+			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, FylrConfig.Apitest.Limit.Response))
 		}
 
 		if err != nil {

@@ -22,7 +22,11 @@ type FylrConfigStruct struct {
 	Apitest struct {
 		Server    string                 `mapstructure:"server"`
 		StoreInit map[string]interface{} `mapstructure:"store"`
-		Report    struct {
+		Limit     struct {
+			Request  int `mapstructure:"request"`
+			Response int `mapstructure:"response"`
+		} `mapstructure:"limit"`
+		Report struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
 		} `mapstructure:"report"`
@@ -47,6 +51,11 @@ func LoadConfig(cfgFile string) {
 	}
 
 	viper.Unmarshal(&FylrConfig)
+
+	// Set default values
+	if FylrConfig.Apitest.Limit.Response == 0 {
+		FylrConfig.Apitest.Limit.Response = 20
+	}
 
 }
 
