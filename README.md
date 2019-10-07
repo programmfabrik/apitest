@@ -19,6 +19,11 @@ The report parametere of this config can be overwritten via a command line flag.
 ```yaml
 apitest:
    server: "http://5.simon.pf-berlin.de/api/v1" //The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
+   store:
+     hallo: "du"
+   limit:
+     request: 0
+     response: 10
    report: //Configures the maschine report. For usage with jenkis or any other CI tool
       file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the fylr binary
       format: "json" //Format of the report. (Supported formats: json or junit)
@@ -53,8 +58,7 @@ can configure the tool with additional log flags
 - `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
-- `--limit-request`: Limit the lines of request log output. No limit if set to 0
-- `--limit-response`: Limit the lines of response log output. No limit if set to 0
+- `-l`: Limit the lines of request log output. Configure limit in fylr.yml
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.
 
