@@ -329,7 +329,7 @@ func limitLines(in string, limit bool, limitCount int) string {
 		k++
 	}
 	if k >= limitCount {
-		out += fmt.Sprintf("[Limited after '%d' lines. For more change limit in fylr.yml]", limitCount)
+		out += fmt.Sprintf("[Limited after '%d' lines. For more, change limit in fylr.yml]", limitCount)
 
 	}
 	return out
