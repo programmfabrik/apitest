@@ -2,13 +2,14 @@ package api
 
 import (
 	"fmt"
+	"github.com/moul/http2curl"
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
-	"time"
-
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"strings"
+	"time"
 )
 
 var c http.Client
@@ -184,6 +185,17 @@ func (request Request) ToString() (res string) {
 		return fmt.Sprintf("could not dump httpRequest: %s", err)
 	}
 	return string(resBytes)
+}
+
+func (request Request) ToCurl() (res string) {
+	httpRequest, err := request.buildHttpRequest()
+	if err != nil {
+		return fmt.Sprintf("could not build httpRequest: %s", err)
+	}
+
+	curl, _ := http2curl.GetCurlCommand(httpRequest)
+
+	return strings.Replace(curl.String(), " -", " \\\n-", -1)
 }
 
 func (request Request) Send() (response Response, err error) {

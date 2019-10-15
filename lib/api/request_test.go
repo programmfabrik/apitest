@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -36,4 +37,24 @@ func TestRequestBuildHttp(t *testing.T) {
 	url := httpRequest.URL
 	test_utils.AssertStringEquals(t, url.RawQuery, "query_param=value")
 	test_utils.AssertStringEquals(t, url.Path, "serverUrl/endpoint")
+}
+
+func TestBuildCurl(t *testing.T) {
+	request := Request{
+		Endpoint: "endpoint",
+		Method:   "GET",
+		QueryParams: map[string]interface{}{
+			"query_param": "value",
+		},
+		ServerURL: "https://serverUrl",
+		Body: util.JsonObject{
+			"hey": 1,
+		},
+	}
+
+	t.Log(request.ToCurl())
+
+	if request.ToCurl() != `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'` {
+		t.Fatalf("Did not match right curl command. Expected '%s' != '%s' GOT", `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'`, request.ToCurl())
+	}
 }
