@@ -58,6 +58,7 @@ can configure the tool with additional log flags
 - `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
+- `--curl-bash`: Log the request as curl command
 - `-l`: Limit the lines of request log output. Configure limit in fylr.yml
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.

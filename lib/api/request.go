@@ -168,10 +168,17 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	return res, nil
 }
 
-func (request Request) ToString() (res string) {
+func (request Request) ToString(curl bool) (res string) {
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
 		return fmt.Sprintf("could not build httpRequest: %s", err)
+	}
+
+	if curl {
+		// Log as curl
+		r := strings.NewReplacer(" -", " \\\n-", "' '", "' \\\n'")
+		curl, _ := http2curl.GetCurlCommand(httpRequest)
+		return r.Replace(curl.String())
 	}
 
 	var dumpBody bool
@@ -185,17 +192,6 @@ func (request Request) ToString() (res string) {
 		return fmt.Sprintf("could not dump httpRequest: %s", err)
 	}
 	return string(resBytes)
-}
-
-func (request Request) ToCurl() (res string) {
-	httpRequest, err := request.buildHttpRequest()
-	if err != nil {
-		return fmt.Sprintf("could not build httpRequest: %s", err)
-	}
-
-	curl, _ := http2curl.GetCurlCommand(httpRequest)
-
-	return strings.Replace(curl.String(), " -", " \\\n-", -1)
 }
 
 func (request Request) Send() (response Response, err error) {

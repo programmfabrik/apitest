@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	reportFormat, reportFile                                  string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, limit bool
-	rootDirectorys, singleTests                               []string
+	reportFormat, reportFile                                           string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl bool
+	rootDirectorys, singleTests                                        []string
 )
 
 func init() {
@@ -59,6 +59,10 @@ func init() {
 	TestCMD.PersistentFlags().BoolVarP(
 		&limit, "limit", "l", false,
 		"Limit the lines of request log output. Set limits in fylr.yml")
+
+	TestCMD.PersistentFlags().BoolVar(
+		&logCurl, "curl-bash", false,
+		"Log network output as bash curl command")
 
 	//Bind the flags to overwrite the yml config if they are set
 	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))

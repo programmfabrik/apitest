@@ -52,9 +52,9 @@ func TestBuildCurl(t *testing.T) {
 		},
 	}
 
-	t.Log(request.ToCurl())
+	t.Log(request.ToString(true))
 
-	if request.ToCurl() != `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'` {
-		t.Fatalf("Did not match right curl command. Expected '%s' != '%s' GOT", `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'`, request.ToCurl())
+	if request.ToString(true) != `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'` {
+		t.Fatalf("Did not match right curl command. Expected '%s' != '%s' GOT", `curl -X 'GET' -d '{"hey":1}' -H 'Content-Type: application/json' 'https://serverUrl/endpoint?query_param=value'`, request.ToString(true))
 	}
 }
