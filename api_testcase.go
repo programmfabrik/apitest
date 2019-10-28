@@ -229,7 +229,7 @@ func (testCase Case) executeRequest(counter int) (
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToCurl(), limit, FylrConfig.Apitest.Limit.Request))
+		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, FylrConfig.Apitest.Limit.Request))
 	}
 
 	apiResp, err = req.Send()
@@ -308,8 +308,8 @@ func (testCase Case) LogResp(response api.Response) {
 	}
 }
 
-func (testCase Case) LogReq(request api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(request.ToCurl(), limit, FylrConfig.Apitest.Limit.Request))
+func (testCase Case) LogReq(req api.Request) {
+	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, FylrConfig.Apitest.Limit.Request))
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
