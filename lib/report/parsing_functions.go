@@ -74,11 +74,12 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 
 		flattenSubTests := v.SubTests.Flat()
 
+		padding := iterativeDigitsCount(len(flattenSubTests))
 		for ik, iv := range flattenSubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
 				Time: iv.ExecutionTime.Seconds(),
-				Name: strings.Replace(iv.Name, ".", ":", -1),
+				Name: fmt.Sprintf("[%0"+strconv.Itoa(padding)+"d] %s", ik, strings.Replace(iv.Name, ".", ":", -1)),
 			}
 
 			if iv.Failures > 0 {
@@ -99,4 +100,13 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 	xmlResult, _ := xml.MarshalIndent(result, "", "\t")
 
 	return xmlResult
+}
+
+func iterativeDigitsCount(number int) int {
+	count := 0
+	for number != 0 {
+		number /= 10
+		count += 1
+	}
+	return count
 }
