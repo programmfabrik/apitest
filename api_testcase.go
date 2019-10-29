@@ -364,9 +364,7 @@ func (testCase Case) run() (success bool, err error) {
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
 			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, FylrConfig.Apitest.Limit.Response))
 		}
-
 		if err != nil {
-			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
 			return false, err
 		}
