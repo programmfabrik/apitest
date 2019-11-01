@@ -64,7 +64,11 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
-	log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+	if testCase.Description == "" {
+		log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+	} else {
+		log.Infof("     [%2d] '%s': '%s'", testCase.index, testCase.Name, testCase.Description)
+	}
 
 	testCase.ReportElem = parentReportElem.NewChild(testCase.Name)
 	r := testCase.ReportElem
