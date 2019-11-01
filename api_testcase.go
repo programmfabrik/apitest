@@ -24,6 +24,7 @@ import (
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
 	Name              string                 `json:"name"`
+	Description       string                 `json:"description"`
 	RequestData       *util.GenericJson      `json:"request"`
 	ResponseData      util.GenericJson       `json:"response"`
 	ContinueOnFailure bool                   `json:"continue_on_failure"`
