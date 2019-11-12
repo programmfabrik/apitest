@@ -6,8 +6,10 @@ import (
 	"github.com/programmfabrik/fylr-apitest/lib/datastore"
 	"github.com/programmfabrik/fylr-apitest/lib/util"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"path"
 	"strings"
 	"time"
 )
@@ -174,19 +176,39 @@ func (request Request) ToString(curl bool) (res string) {
 		return fmt.Sprintf("could not build httpRequest: %s", err)
 	}
 
-	if curl {
-		// Log as curl
-		r := strings.NewReplacer(" -", " \\\n-", "' '", "' \\\n'")
-		curl, _ := http2curl.GetCurlCommand(httpRequest)
-		return r.Replace(curl.String())
-	}
-
 	var dumpBody bool
 	if request.BodyType == "multipart" {
 		dumpBody = false
 	} else {
 		dumpBody = true
 	}
+
+	if curl {
+		// Log as curl
+		r := strings.NewReplacer(" -", " \\\n-", "' '", "' \\\n'")
+
+		if dumpBody {
+			curl, _ := http2curl.GetCurlCommand(httpRequest)
+			return r.Replace(curl.String())
+		}
+
+		_, _ = io.Copy(ioutil.Discard, httpRequest.Body)
+		_ = httpRequest.Body.Close()
+
+		curl, _ := http2curl.GetCurlCommand(httpRequest)
+		cString := curl.String()
+
+		rep := ""
+		for key, val := range request.Body.(map[string]interface{}) {
+			pathSpec, ok := val.(util.JsonString)
+			if !ok {
+				panic(fmt.Errorf("pathSpec should be a string"))
+			}
+			rep = fmt.Sprintf(`%s -F "%s=@%s"`, rep, key, path.Join(request.ManifestDir, pathSpec[1:]))
+		}
+		return r.Replace(strings.Replace(cString, " -d ''", rep, 1))
+	}
+
 	resBytes, err := httputil.DumpRequestOut(httpRequest, dumpBody)
 	if err != nil {
 		return fmt.Sprintf("could not dump httpRequest: %s", err)
