@@ -37,18 +37,19 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - test
-  build-and-deploy:
+      - test:
+          filters:
+            branches:
+              ignore: master
+  crossbuild-and-deploy:
     jobs:
+      - test:
+          filters:
+            branches:
+              only: master
       - crosscompile:
           requires:
             - test
-          filters:
-            branches:
-              only: master
       - publish-github-release:
           requires:
             - crosscompile
-          filters:
-            branches:
-              only: master
