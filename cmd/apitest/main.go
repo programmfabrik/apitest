@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	reportFormat, reportFile                                           string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl bool
-	rootDirectorys, singleTests                                        []string
+	reportFormat, reportFile                                                       string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                                    []string
 )
 
 func init() {
@@ -65,6 +65,9 @@ func init() {
 	TestCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
 		"Log network output as bash curl command")
+	TestCMD.PersistentFlags().BoolVar(
+		&stopOnFail, "stop-on-fail", false,
+		"Stop execution of later test suites if a test suite fails")
 
 	//Bind the flags to overwrite the yml config if they are set
 	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))
@@ -161,14 +164,24 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
 			c := r.Root().NewChild(singleTest)
-			c.Leave(runSingleTest(absManifestPath, c))
+
+			success := runSingleTest(absManifestPath, c)
+			c.Leave(success)
+			if stopOnFail && !success {
+				break
+			}
 		}
 	} else {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
 			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := r.Root().NewChild(manifestPath)
-			c.Leave(runSingleTest(absManifestPath, c))
+
+			success := runSingleTest(absManifestPath, c)
+			c.Leave(success)
+			if stopOnFail && !success {
+				break
+			}
 		}
 	}
 

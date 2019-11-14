@@ -49,6 +49,10 @@ This starts the command with the following default settings:
 - `--directory testDirectory` or `-d testDirectory`: Defines which directory should be used for running the tests in it. The tool walks recursively trough all subdirectories and runs alls tests that have a "manifest.json" file in alphabetical order of the folder names. (Depth-First-Search)
 - `--single path/to/a/single/manifest.json` or `-s path/to/a/single/manifest.json`: Run only a single test. The path needs to point directly to the manifest file. (Not the directory containing it)
 
+### Stop on fail
+
+- `stop-on-fail`: Stop execution of later test suites if a test suite fails
+
 ### Configure logging
 
 Per default request and response of a request will be logged on test failure. If you want to see more information you 
