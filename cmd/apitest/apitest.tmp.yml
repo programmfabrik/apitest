@@ -1,0 +1,16 @@
+fylr:
+  log:
+    level: "debug"
+
+
+apitest:
+   server: "http://5.simon.pf-berlin.de/api/v1"
+   db-name: "easy5-simon"
+   store:
+     hallo: "du"
+   limit:
+     request: 0
+     response: 10
+   report:
+      file: "apitest_report.json" # default
+      format: "json" # default, other formats: txt, junit, ...
