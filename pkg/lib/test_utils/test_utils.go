@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var TestServer = test_utils.NewTestServer(test_utils.Routes{
+var TestServer = go_test_utils.NewTestServer(go_test_utils.Routes{
 	"/api/v1/session": func(w *http.ResponseWriter, r *http.Request) {
 		(*w).Write([]byte("{\"token\": \"mock\"}"))
 	},

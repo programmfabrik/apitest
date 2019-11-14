@@ -27,16 +27,16 @@ func TestRequestBuildHttp(t *testing.T) {
 		return ah, b, nil
 	}
 	httpRequest, err := request.buildHttpRequest()
-	test_utils.CheckError(t, err, fmt.Sprintf("error building http-request: %s", err))
-	test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
+	go_test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
 
 	assertBody, err := ioutil.ReadAll(httpRequest.Body)
-	test_utils.CheckError(t, err, fmt.Sprintf("error reading http-request body: %s", err))
-	test_utils.AssertStringEquals(t, string(assertBody), "mock_body")
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error reading http-request body: %s", err))
+	go_test_utils.AssertStringEquals(t, string(assertBody), "mock_body")
 
 	url := httpRequest.URL
-	test_utils.AssertStringEquals(t, url.RawQuery, "query_param=value")
-	test_utils.AssertStringEquals(t, url.Path, "serverUrl/endpoint")
+	go_test_utils.AssertStringEquals(t, url.RawQuery, "query_param=value")
+	go_test_utils.AssertStringEquals(t, url.Path, "serverUrl/endpoint")
 }
 
 func TestBuildCurl(t *testing.T) {

@@ -24,8 +24,8 @@ func TestRender_LoadFile_withParam(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
-	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
-	test_utils.AssertStringEquals(t, string(res), "bogus")
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), "bogus")
 }
 
 func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
@@ -40,8 +40,8 @@ func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "root", nil)
-	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
-	test_utils.AssertStringEquals(t, string(res), "bogus")
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), "bogus")
 }
 
 func TestRenderWithDataStore_LoadFile_TooManyParams(t *testing.T) {
@@ -93,9 +93,9 @@ func TestRowsToMapTemplate(t *testing.T) {
 	res, err := loader.Render(root, "some/path", nil)
 
 	t.Log(string(res))
-	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
 
-	test_utils.AssertStringContainsSubstringsNoOrder(t, string(res), []string{
+	go_test_utils.AssertStringContainsSubstringsNoOrder(t, string(res), []string{
 		"row1a:row1c",
 		"row2a:row2c",
 	})
@@ -112,8 +112,8 @@ func TestRender_LoadFile_QJson_Params(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
-	test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
-	test_utils.AssertStringEquals(t, string(res), "\"bar\"")
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), "\"bar\"")
 }
 
 func TestRender_LoadFile_CSV(t *testing.T) {
@@ -253,10 +253,10 @@ int64,string,"string,array","int64,array"
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
-			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
+			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
 
 			if err == nil {
-				test_utils.AssertStringEquals(t, string(res), testCase.expected)
+				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
 			}
 		})
 	}
@@ -288,10 +288,10 @@ int64,string,"string,array","int64,array"
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
-			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
+			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
 
 			if err == nil {
-				test_utils.AssertStringEquals(t, string(res), testCase.expected)
+				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
 			}
 		})
 	}
@@ -322,10 +322,10 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "some/path", nil)
-			test_utils.AssertErrorContains(t, err, testCase.expectedErr)
+			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
 
 			if err != nil {
-				test_utils.AssertStringEquals(t, string(res), testCase.expected)
+				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
 			}
 		})
 	}
@@ -365,8 +365,8 @@ func Test_DataStore_QJson(t *testing.T) {
 			root := []byte(fmt.Sprintf(`{{ datastore 0 | qjson "%s" }}`, testCase.path))
 			res, err := loader.Render(root, "some/path", nil)
 
-			test_utils.CheckError(t, err, fmt.Sprintf("%s", err))
-			test_utils.AssertStringEquals(t, string(res), testCase.expected)
+			go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+			go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
 		})
 	}
 

@@ -15,7 +15,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 		},
 	}
 	genericJson, err := response.ToGenericJson()
-	test_utils.CheckError(t, err, "error calling response.ToGenericJson")
+	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJson")
 
 	jsonObjResp, ok := genericJson.(map[string]interface{})
 	if !ok {
@@ -50,9 +50,9 @@ func TestResponse_NewResponseFromSpec(t *testing.T) {
 		Body: nil,
 	}
 	response, err := NewResponseFromSpec(responseSpec)
-	test_utils.CheckError(t, err, "unexpected error")
-	test_utils.AssertIntEquals(t, response.statusCode, responseSpec.StatusCode)
-	test_utils.AssertStringEquals(t, response.headers["foo"][0], "bar")
+	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.AssertIntEquals(t, response.statusCode, responseSpec.StatusCode)
+	go_test_utils.AssertStringEquals(t, response.headers["foo"][0], "bar")
 }
 
 func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
@@ -60,19 +60,19 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 		Body: nil,
 	}
 	response, err := NewResponseFromSpec(responseSpec)
-	test_utils.CheckError(t, err, "unexpected error")
-	test_utils.AssertIntEquals(t, response.statusCode, 200)
+	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.AssertIntEquals(t, response.statusCode, 200)
 }
 
 func TestResponse_NewResponse(t *testing.T) {
 	response, err := NewResponse(200, nil, strings.NewReader("foo"), nil)
-	test_utils.CheckError(t, err, "unexpected error")
-	test_utils.AssertIntEquals(t, response.statusCode, 200)
+	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.AssertIntEquals(t, response.statusCode, 200)
 }
 
 func TestResponse_String(t *testing.T) {
 	response, err := NewResponse(200, nil, strings.NewReader("{\"foo\": \"bar\"}"), nil)
+	go_test_utils.ExpectNoError(t, err, "error constructing response")
 	assertString := "200\n\n\n{\"foo\": \"bar\"}"
-	test_utils.CheckError(t, err, "error constructing response")
-	test_utils.AssertStringEquals(t, response.ToString(), assertString)
+	go_test_utils.AssertStringEquals(t, response.ToString(), assertString)
 }

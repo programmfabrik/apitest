@@ -9,17 +9,17 @@ import (
 
 func Test_QJson_String(t *testing.T) {
 	json := `{"foo": "bar"}`
-	test_utils.AssertStringEquals(t, qjson("foo", json), "\"bar\"")
+	go_test_utils.AssertStringEquals(t, qjson("foo", json), "\"bar\"")
 }
 
 func Test_QJson_Array(t *testing.T) {
 	json := `{"foo": ["bar", 1]}`
-	test_utils.AssertStringEquals(t, qjson("foo", json), "[\"bar\", 1]")
+	go_test_utils.AssertStringEquals(t, qjson("foo", json), "[\"bar\", 1]")
 }
 
 func Test_QJson_Object(t *testing.T) {
 	json := `{"foo": {"bar": 1}}`
-	test_utils.AssertStringEquals(t, qjson("foo", json), "{\"bar\": 1}")
+	go_test_utils.AssertStringEquals(t, qjson("foo", json), "{\"bar\": 1}")
 }
 
 func TestRowsToMap(t *testing.T) {
@@ -261,7 +261,7 @@ func TestRowsToMap(t *testing.T) {
 							t.Errorf("Value: Want '%s' != '%s' Got", v, aOut[k])
 						}
 					} else {
-						test_utils.AssertMapsEqual(t, aOut[k].(map[string]interface{}), mapV)
+						go_test_utils.AssertMapsEqual(t, aOut[k].(map[string]interface{}), mapV)
 					}
 				}
 			}

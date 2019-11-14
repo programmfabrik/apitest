@@ -28,17 +28,17 @@ func TestBuildMultipart(t *testing.T) {
 	}
 
 	httpRequest, err := testRequest.buildHttpRequest()
-	test_utils.CheckError(t, err, "error building multipart request")
+	go_test_utils.ExpectNoError(t, err, "error building multipart request")
 
 	testReader, err := httpRequest.MultipartReader()
-	test_utils.CheckError(t, err, "error getting multipart reader from request")
+	go_test_utils.ExpectNoError(t, err, "error getting multipart reader from request")
 	part, err := testReader.NextPart()
-	test_utils.CheckError(t, err, "error reading part from multipart reader")
+	go_test_utils.ExpectNoError(t, err, "error reading part from multipart reader")
 
-	test_utils.AssertStringEquals(t, part.FileName(), assertFilename)
+	go_test_utils.AssertStringEquals(t, part.FileName(), assertFilename)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(part)
-	test_utils.AssertStringEquals(t, assertContent, buf.String())
+	go_test_utils.AssertStringEquals(t, assertContent, buf.String())
 }
 
 func TestBuildMultipart_ErrPathSpec(t *testing.T) {

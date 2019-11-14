@@ -55,10 +55,10 @@ func TestLineAndCharacter(t *testing.T) {
 	for _, v := range testCases {
 		oLine, oCharacter, oErr := lineAndCharacter(v.iString, v.iOffset)
 
-		test_utils.AssertErrorEquals(t, oErr, v.eError)
+		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
-			test_utils.AssertIntEquals(t, oLine, v.eLine)
-			test_utils.AssertIntEquals(t, oCharacter, v.eCharacter)
+			go_test_utils.AssertIntEquals(t, oLine, v.eLine)
+			go_test_utils.AssertIntEquals(t, oCharacter, v.eCharacter)
 		}
 	}
 
@@ -110,7 +110,7 @@ welt:1
 		var out util.JsonObject
 		oErr := Unmarshal([]byte(v.iJson), &out)
 
-		test_utils.AssertErrorEquals(t, oErr, v.eError)
+		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 	}
 
 }
@@ -258,7 +258,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 		oObject := util.JsonObject{}
 		oErr := Unmarshal([]byte(v.cjsonString), &oObject)
 
-		test_utils.AssertErrorEquals(t, oErr, v.eError)
+		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
 
 			equal, _ := compare.JsonEqual(v.eObject, oObject, compare.ComparisonContext{})
@@ -287,7 +287,7 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 		&oObject,
 	)
 
-	test_utils.AsserErrorEqualsAny(
+	go_test_utils.AsserErrorEqualsAny(
 		t,
 		oErr,
 		[]error{

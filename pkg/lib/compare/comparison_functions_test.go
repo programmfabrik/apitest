@@ -646,7 +646,7 @@ func TestComparison(t *testing.T) {
 				haveFailures = append(haveFailures, fmt.Sprintf("%s", v))
 			}
 
-			test_utils.AssertStringArraysEqualNoOrder(t, wantFailures, haveFailures)
+			go_test_utils.AssertStringArraysEqualNoOrder(t, wantFailures, haveFailures)
 
 			if t.Failed() {
 				t.Log("EXPECTED ", wantFailures)

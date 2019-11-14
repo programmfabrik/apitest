@@ -23,7 +23,7 @@ var (
 
 func SetupFS() {
 	//Setup testserver
-	server = test_utils.NewTestServer(test_utils.Routes{
+	server = go_test_utils.NewTestServer(go_test_utils.Routes{
 		"/api/v1/session": func(w *http.ResponseWriter, r *http.Request) {
 			(*w).Write([]byte("{\"token\": \"mock\"}"))
 		},
@@ -54,11 +54,11 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 
 	//Invalid rootDirectory -> Expect error
 	_, err := NewTestToolConfig(server.URL+"/api/v1", []string{"invalid"}, false, false)
-	test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
+	go_test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
 
 	//Invalid rootDirectory -> Expect error
 	conf, err := NewTestToolConfig(server.URL+"/api/v1", []string{"path"}, false, false)
-	test_utils.CheckError(t, err, "NewTestToolConfig did fail on valid root directory")
+	go_test_utils.ExpectNoError(t, err, "NewTestToolConfig did fail on valid root directory")
 
 	expectedResults := []string{
 		filepath.Dir(manifestPath1),
