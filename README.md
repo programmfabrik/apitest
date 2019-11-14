@@ -12,7 +12,7 @@ A single testcase is also a perfect definition of an occuring problem and helps 
 # Configuration file
 For configuring the apitest tool, add the follwing section to your 'fylr.yml' configuration file.
 
-The report parametere of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
+The report parameters of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
 
  **After the first setup you don't need to touch the config again. (You should not do that, to prevent errors based on rash changes in the config)**
 
