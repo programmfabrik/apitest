@@ -145,9 +145,9 @@ func (r ReportElement) GetLog() []string {
 	}
 
 	//Child errors
-	/*for _, singleTest := range r.SubTests {
+	for _, singleTest := range r.SubTests {
 		errors = append(errors, singleTest.GetLog()...)
-	}*/
+	}
 	return errors
 }
 
