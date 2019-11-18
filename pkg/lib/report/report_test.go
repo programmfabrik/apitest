@@ -101,7 +101,8 @@ func TestReportGetJUnitResult(t *testing.T) {
 	child.NewChild("Level 2 - 1").Leave(true)
 
 	child2 := child.NewChild("Level 2 - 2")
-	child2.NewChild("Level 3 - 1").Leave(false)
+	child3 := child2.NewChild("Level 3 - 1")
+	child3.Leave(false)
 	time.Sleep(50 * time.Microsecond)
 	child2.Leave(true)
 	child.Leave(true)
@@ -110,10 +111,9 @@ func TestReportGetJUnitResult(t *testing.T) {
 	expResult := `<testsuites failures="2" tests="3">
 	<testsuite id="0" name="Level 1 - 1" tests="1" failures="1" ></testsuite>
 	<testsuite id="1" name="Level 1 - 2" tests="2" failures="1">
-		<testcase id="0" name="Level 2 - 1" ></testcase>
-		<testcase id="1" name="Level 2 - 2" >
-			<failure message="" type="ERROR"></failure>
-		</testcase>
+		<testcase id="0" name="[0] Level 2 - 1"></testcase>
+		<testcase id="1" name="[1] Level 2 - 2"></testcase>
+		<testcase id="2" name="[2] Level 3 - 1"></testcase>
 	</testsuite>
 </testsuites>`
 
@@ -144,7 +144,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
 	if !equal.Equal {
-		t.Error(equal.Failures)
+		//		t.Error(equal.Failures)
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expJBytes, realJBytes)
 		t.Fail()
 	}
