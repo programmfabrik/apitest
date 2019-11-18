@@ -20,7 +20,7 @@ jobs:
       - persist_to_workspace:
           root: ~/apitest_cross
           paths:
-            - bin/apitest/
+            - bin/
   publish-github-release:
     docker:
       - image: cibuilds/github:0.10
@@ -31,8 +31,8 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            VERSION=$(less ~/apitest/bin/apitest/version) && rm ~/apitest/bin/apitest/version &&
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} --replace ${VERSION} ~/apitest/bin/apitest/
+            VERSION=$(less ~/apitest/bin/version) && rm ~/apitest/bin/version &&
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} --replace ${VERSION} ~/apitest/bin/
 workflows:
   version: 2
   test:
