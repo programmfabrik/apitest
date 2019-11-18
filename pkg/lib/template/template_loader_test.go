@@ -253,7 +253,11 @@ int64,string,"string,array","int64,array"
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
-			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
+			eErrString := ""
+			if testCase.expectedErr != nil {
+				eErrString = testCase.expectedErr.Error()
+			}
+			go_test_utils.AssertErrorContains(t, err, eErrString)
 
 			if err == nil {
 				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
@@ -275,7 +279,7 @@ int64,string,"string,array","int64,array"
 		{`id,name,friends,ages
 int64,string,"string,array","int64,array"
 1,simon,"simon,jonas,stefan","21,24,12"
-2,stefan,"simon,jonas,stefan","21,24,12"`, `1.friends.2`, `"stefan"`, nil},
+2,stefan,"simon,jonas,stefan","21,24,12"`, `1.friends.2`, `"stefan"`, fmt.Errorf("")},
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
@@ -288,7 +292,11 @@ int64,string,"string,array","int64,array"
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "", nil)
-			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
+			eErrString := ""
+			if testCase.expectedErr != nil {
+				eErrString = testCase.expectedErr.Error()
+			}
+			go_test_utils.AssertErrorContains(t, err, eErrString)
 
 			if err == nil {
 				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
@@ -322,7 +330,11 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 
 			loader := NewLoader(datastore.NewStore(false))
 			res, err := loader.Render(root, "some/path", nil)
-			go_test_utils.AssertErrorContains(t, err, testCase.expectedErr.Error())
+			eErrString := ""
+			if testCase.expectedErr != nil {
+				eErrString = testCase.expectedErr.Error()
+			}
+			go_test_utils.AssertErrorContains(t, err, eErrString)
 
 			if err != nil {
 				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
