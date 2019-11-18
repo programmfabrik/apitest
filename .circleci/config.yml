@@ -16,7 +16,7 @@ jobs:
       - run: go get -u github.com/mitchellh/gox
       - run: GOOS=windows go get -u github.com/spf13/cobra
       - run: make gox
-      - run: cd bin/apitest/ && git tag -l 'v*' | tail -1 > version
+      - run: cd bin/ && git tag -l 'v*' | tail -1 > version
       - persist_to_workspace:
           root: ~/apitest_cross
           paths:
