@@ -12,14 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type FylrConfigStruct struct {
-	Fylr struct {
-		Log struct {
-			File   string `mapstructure:"file"`
-			Level  string `mapstructure:"level"`
-			Header bool   `mapstructure:"header"`
-		} `mapstructure:"log"`
-	}
+type ConfigStruct struct {
 	Apitest struct {
 		Server    string                 `mapstructure:"server"`
 		StoreInit map[string]interface{} `mapstructure:"store"`
@@ -34,7 +27,7 @@ type FylrConfigStruct struct {
 	}
 }
 
-var FylrConfig FylrConfigStruct
+var Config ConfigStruct
 
 var startTime time.Time
 
@@ -51,11 +44,11 @@ func LoadConfig(cfgFile string) {
 		log.Fatalf("Can't read config \"%s\": %s", cfgFile, err)
 	}
 
-	viper.Unmarshal(&FylrConfig)
+	viper.Unmarshal(&Config)
 
 	// Set default values
-	if FylrConfig.Apitest.Limit.Response == 0 {
-		FylrConfig.Apitest.Limit.Response = 20
+	if Config.Apitest.Limit.Response == 0 {
+		Config.Apitest.Limit.Response = 20
 	}
 
 }

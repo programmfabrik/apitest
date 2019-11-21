@@ -1,8 +1,3 @@
-fylr:
-  log:
-    level: "debug"
-
-
 apitest:
    server: "http://5.simon.pf-berlin.de/api/v1"
    db-name: "easy5-simon"

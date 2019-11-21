@@ -234,7 +234,7 @@ func (testCase Case) executeRequest(counter int) (
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, FylrConfig.Apitest.Limit.Request))
+		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
 	}
 
 	apiResp, err = req.Send()
@@ -305,7 +305,7 @@ func (testCase Case) executeRequest(counter int) (
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limit, FylrConfig.Apitest.Limit.Response))
+	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limit, Config.Apitest.Limit.Response))
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -314,7 +314,7 @@ func (testCase Case) LogResp(response api.Response) {
 }
 
 func (testCase Case) LogReq(req api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, FylrConfig.Apitest.Limit.Request))
+	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -367,7 +367,7 @@ func (testCase Case) run() (success bool, err error) {
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
-			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, FylrConfig.Apitest.Limit.Response))
+			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, Config.Apitest.Limit.Response))
 		}
 		if err != nil {
 			testCase.LogResp(apiResponse)

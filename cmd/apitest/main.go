@@ -25,7 +25,6 @@ var (
 )
 
 func init() {
-	//Configure all the flags that fylr-apitest offers
 	TestCMD.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./apitest.yml", "config file")
 
 	TestCMD.PersistentFlags().StringSliceVarP(
@@ -78,8 +77,8 @@ func init() {
 var TestCMD = &cobra.Command{
 	Args:             cobra.MaximumNArgs(0),
 	PersistentPreRun: setup,
-	Use:              "fylr apitest",
-	Short:            "flyr Apitester lets you define API tests on the go",
+	Use:              "apitest",
+	Short:            "Apitester lets you define API tests on the go",
 	Long:             `A fast and flexible API testing tool. Helping you to define API tests on the go`,
 	Run:              runApiTests,
 }
@@ -122,9 +121,9 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	serverUrl := FylrConfig.Apitest.Server
-	reportFormat = FylrConfig.Apitest.Report.Format
-	reportFile = FylrConfig.Apitest.Report.File
+	serverUrl := Config.Apitest.Server
+	reportFormat = Config.Apitest.Report.Format
+	reportFile = Config.Apitest.Report.File
 
 	//Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys, logNetwork, logVerbose)
@@ -136,7 +135,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	//Run test function
 	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
-		for k, v := range FylrConfig.Apitest.StoreInit {
+		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
 			if err != nil {
 				log.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)

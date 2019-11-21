@@ -7,8 +7,8 @@ vendor
 .*.sw*
 .\#*
 \#*#
-/fylr-apitest
-/fylr.yml
+/apitest
+/apitest.yml
 /website/public
 /public
 tmpl.go

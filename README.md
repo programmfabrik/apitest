@@ -1,16 +1,16 @@
-# fylr apitest
+# apitest
 
-[![CircleCI](https://circleci.com/gh/programmfabrik/fylr-apitest.svg?style=svg)](https://circleci.com/gh/programmfabrik/fylr-apitest)
+[![CircleCI](https://circleci.com/gh/programmfabrik/apitest.svg?style=svg)](https://circleci.com/gh/programmfabrik/apitest)
 [![Twitter](https://img.shields.io/twitter/follow/programmfabrik.svg?label=Follow&style=social)](https://twitter.com/programmfabrik)
-[![GoReportCard](https://goreportcard.com/badge/github.com/programmfabrik/fylr-apitest)](https://goreportcard.com/report/github.com/programmfabrik/fylr-apitest)
+[![GoReportCard](https://goreportcard.com/badge/github.com/programmfabrik/apitest)](https://goreportcard.com/report/github.com/programmfabrik/apitest)
 
 
-The fylr apitesting tool helps you to build automated apitests that can be run after every build to ensure a constant product quality.
+The apitesting tool helps you to build automated apitests that can be run after every build to ensure a constant product quality.
 
 A single testcase is also a perfect definition of an occuring problem and helps the developers to fix your issues faster!
 
 # Configuration file
-For configuring the apitest tool, add the follwing section to your 'fylr.yml' configuration file.
+For configuring the apitest tool, add the follwing section to your 'apitest.yml' configuration file.
 
 The report parameters of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
 
@@ -25,7 +25,7 @@ apitest:
      request: 0
      response: 10
    report: //Configures the maschine report. For usage with jenkis or any other CI tool
-      file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the fylr binary
+      file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the apitest binary
       format: "json" //Format of the report. (Supported formats: json or junit)
 ```
 
@@ -34,14 +34,14 @@ apitest:
 You start the apitest tool with the following command
 
 ```bash
-./fylr apitest
+./apitest
 ```
 
 This starts the command with the following default settings:
 
 - Runs all tests that are in the current directory, or in any of its subdirectories
 - Logs to console
-- Writes the machine log, to the given file in the fylr.yml
+- Writes the machine log, to the given file in the apitest.yml
 - Logs only the request & responses if a test fails
 
 ### Configure which tests should be run
@@ -63,7 +63,7 @@ can configure the tool with additional log flags
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
 - `--curl-bash`: Log the request as curl command
-- `-l`: Limit the lines of request log output. Configure limit in fylr.yml
+- `-l`: Limit the lines of request log output. Configure limit in apitest.yml
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.
 
@@ -87,22 +87,22 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 ### Overwrite config parameters
 
-- `--config subfolder/newConfigFile` or `-c subfolder/newConfigFile`: Overwrites the path of the fylr config file (default "./fylr.yml") with "subfolder/newConfigFile"
-- `--report-file newReportFile`: Overwrites the report file name from the fylr.yml config with "newReportFile"
-- `--report-format junit`: Overwrites the report format from the fylr.yml config with "junit"
+- `--config subfolder/newConfigFile` or `-c subfolder/newConfigFile`: Overwrites the path of the config file (default "./apitest.yml") with "subfolder/newConfigFile"
+- `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
+- `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
 
 ### Examples
 
 - Run all tests in the directory **apitests** display **all server communication** and safe the maschine report as **junit** for later parsing it with *jenkins*
 
 ```bash
-./fylr apitest --directory apitests --verbosity 2 --report-format junit
+./apitest --directory apitests --verbosity 2 --report-format junit
 ```
 
-- Only run a single test **apitests/test1/manifest.json** with **no console output** and save the maschine report to the standard file defined in the fylr.yml
+- Only run a single test **apitests/test1/manifest.json** with **no console output** and save the maschine report to the standard file defined in the apitest.yml
 
 ```bash
-./fylr apitest --single apitests/test1/manifest.json --log-console-enable false
+./apitest --single apitests/test1/manifest.json --log-console-enable false
 ```
 
 # Manifest
