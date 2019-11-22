@@ -418,7 +418,7 @@ func (testCase Case) run() (success bool, err error) {
 
 	if !responsesMatch.Equal || timedOutFlag {
 		for _, v := range responsesMatch.Failures {
-			log.Infof("[%s] %s", v.Key, v.Message)
+			log.Errorf("[%s] %s", v.Key, v.Message)
 			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
 		}
 
@@ -431,7 +431,7 @@ func (testCase Case) run() (success bool, err error) {
 					testCase.LogResp(apiResponse)
 					return false, err
 				}
-				log.Warnf("Collect response not found: %s", jsonV)
+				log.Errorf("Collect response not found: %s", jsonV)
 				r.SaveToReportLog(fmt.Sprintf("Collect response not found: %s", jsonV))
 			}
 		}
