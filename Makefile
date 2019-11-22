@@ -3,6 +3,8 @@ BUILDTIMESTAMP=`date -u +%d.%m.%Y_%H:%M:%S_%Z`
 GITVERSIONTAG=`git tag -l 'v*' | tail -1`
 LDFLAGS=-ldflags "-X main.buildTimeStamp=${BUILDTIMESTAMP} -X main.gitVersion=${GITVERSIONTAG} -X main.gitCommit=${GITCOMMIT}"
 
+all: build
+
 generate:
 	go generate ./...
 test: generate
