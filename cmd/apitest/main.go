@@ -64,6 +64,7 @@ func init() {
 	TestCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
 		"Log network output as bash curl command")
+
 	TestCMD.PersistentFlags().BoolVar(
 		&stopOnFail, "stop-on-fail", false,
 		"Stop execution of later test suites if a test suite fails")
