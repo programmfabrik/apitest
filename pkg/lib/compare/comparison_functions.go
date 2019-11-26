@@ -23,6 +23,10 @@ type ComparisonContext struct {
 	mustNotExist   bool
 	isObject       bool
 	isBool         bool
+	numberGT       *util.JsonNumber
+	numberGE       *util.JsonNumber
+	numberLT       *util.JsonNumber
+	numberLE       *util.JsonNumber
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -116,7 +120,46 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.isBool = tV
+		case "number_gt":
+			// Number must be bigger
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_gt is no number")
+				return
 
+			}
+			out.numberGT = &tV
+			out.isNumber = true
+		case "number_ge":
+			// Number must be equal or bigger
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_gt is no numbr")
+				return
+
+			}
+			out.numberGE = &tV
+			out.isNumber = true
+		case "number_lt":
+			// Number must be smaller
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_lt is no numbr")
+				return
+
+			}
+			out.numberLT = &tV
+			out.isNumber = true
+		case "number_le":
+			// Number must be equal or smaller
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_le is no numbr")
+				return
+
+			}
+			out.numberLE = &tV
+			out.isNumber = true
 		}
 	}
 
@@ -444,6 +487,32 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		rightLen := int64(len(rightArray))
 		if rightLen != *leftLen {
 			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *leftLen)
+		}
+	}
+
+	// Check for number range
+	if control.numberGE != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber >= *control.numberGE) {
+			return fmt.Errorf("actual number '%f' is not equal or greater than '%f'", rightNumber, *control.numberGE)
+		}
+	}
+	if control.numberGT != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber > *control.numberGT) {
+			return fmt.Errorf("actual number '%f' is not greater than '%f'", rightNumber, *control.numberGT)
+		}
+	}
+	if control.numberLE != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber <= *control.numberLE) {
+			return fmt.Errorf("actual number '%f' is not equal or less than '%f'", rightNumber, *control.numberLE)
+		}
+	}
+	if control.numberLT != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber < *control.numberLT) {
+			return fmt.Errorf("actual number '%f' is not less than '%f'", rightNumber, *control.numberLT)
 		}
 	}
 

@@ -160,18 +160,18 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "log_verbose": false,
     //Defines what gets send to the server
     "request": { 
- 	//What endpoint we want to target. You find all possible endpoints in the api documentation
+        //What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest", 
- 	//How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
+        //How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET", 
- 	//Parameters that will be added to the url. e.g. http://5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
+        //Parameters that will be added to the url. e.g. http://5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
         "query_params": { 
             "number": 2,
             "token": "testtoken"
         },
- 	// With query_params_from_store set a query parameter to the value of the datastore field
- 	"query_params_from_store": {
- 	  "format": "formatFromDatastore",
+        // With query_params_from_store set a query parameter to the value of the datastore field
+        "query_params_from_store": {
+           "format": "formatFromDatastore",
           // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
           // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
  	  "test": "?a"
@@ -605,7 +605,7 @@ type checking a value that does not exist.
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
-E.g. the following response would **fail**  as `"beANumber"` is no number in the actual response
+E.g. the following response would **fail**  as `"testNumber"` is no number in the actual response
 
 ##### expected response defined with is_number
 
@@ -625,6 +625,36 @@ E.g. the following response would **fail**  as `"beANumber"` is no number in the
 {
   "body":{
     "testNumber":false
+    }
+}
+```
+
+#### Number range checkers
+With `number_gt`(greater than >), `number_ge`(greater equal >), `number_lt` (less than <), `number_le` (less equal <=) you can check if your field of type number (implicit check) is in 
+certain number range
+
+This control can be used without a "real" key. So only the `:control` key is present.
+
+E.g. the following response would **fail**  as `"beGreater"` is smaller than expected
+
+##### expected response defined with is_number
+
+```yaml
+{
+  "body":{
+    "beGreater:control":{
+      "number_gt":5
+    }
+  }
+}
+```
+
+##### actual response
+
+```yaml
+{
+  "body":{
+    "beGreater":4
     }
 }
 ```
