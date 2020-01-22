@@ -57,7 +57,7 @@ This starts the command with the following default settings:
 
 Per default request and response of a request will be logged on test failure. If you want to see more information you 
 can configure the tool with additional log flags
-	
+  
 - `--log-network`: Log all network traffic
 - `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
@@ -72,18 +72,18 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 - `--log-console-enable false`: If you want to see a log in the console this parameter needs to be "true" (what is also the default)
 - `--log-console-level debug`: Sets the loglevel which controls what kind of output should be displayed in the console
-	- `--log-console-level info` (default): Shows only critical information
-	- `--log-console-level warn`: Shows more verbose log output
-	- `--log-console-level debug`: Shows all possible log output
+  - `--log-console-level info` (default): Shows only critical information
+  - `--log-console-level warn`: Shows more verbose log output
+  - `--log-console-level debug`: Shows all possible log output
 
 #### SQLite logging
 
 - `--log-sqlite-enable false`: If you want to save the into a sqlite databasethis parameter needs to be "true"
 - `--log-sqlite-file newLog.db`: Defines the filename in which the sqlite log should be saved
 - `--log-sqlite-level debug`: Sets the loglevel which controls what kind of output should be saved into the sqlite database
-	- `--log-sqlite-level info` (default): Saves only critical information
-	- `--log-sqlite-level warn`: Saves more verbose log output
-	- `--log-sqlite-level debug`: Saves all possible log output
+  - `--log-sqlite-level info` (default): Saves only critical information
+  - `--log-sqlite-level warn`: Saves more verbose log output
+  - `--log-sqlite-level debug`: Saves all possible log output
 
 ### Overwrite config parameters
 
@@ -112,28 +112,28 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 ```yaml
 {
     //General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
-    "description": "search api tests for filename", 
+    "description": "search api tests for filename",
     //Testname. Should be the ticket number if the test is based on a ticket
-    "name": "ticket_48565", 
+    "name": "ticket_48565",
     // init store
     "store": {
         "custom": "data"
     },
     //Testsuites your want to run upfront (e.g. a setup). Paths are relative to the current test manifest
-    "require": [ 
+    "require": [
         "setup_manifests/purge.yaml",
         "setup_manifests/config.yaml",
         "setup_manifests/upload_datamodel.yaml"
     ],
     //Array of single testcases. Add es much as you want. They get executed in chronological order
-    "tests": [         
+    "tests": [
         //[SINGLE TESTCASE]: See below for more information
         //[SINGLE TESTCASE]: See below for more information
         //[SINGLE TESTCASE]: See below for more information
-        
+
         //We also support the external loading of a complete test:
         "@pathToTest.json"
-        
+
         //By prefixing it with a p the testtool runs the tests all in parallel. All parallel tests are then set to ContinueOnFailure !
         "p@pathToTestsThatShouldRunInParallel.json"
     ]
@@ -147,9 +147,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 ```yaml
 {
     //Define if the testuite should continue even if this test fails. (default:false)
-    "continue_on_failure": true, 
+    "continue_on_failure": true,
     //Name to identify this single test. Is important for the log. Try to give an explaning name
-    "name": "Testname", 
+    "name": "Testname",
     // Store custom values to the datastore
     "store": {
         "key1": "value1",
@@ -159,75 +159,75 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "log_network":true,
     "log_verbose": false,
     //Defines what gets send to the server
-    "request": { 
-		//What endpoint we want to target. You find all possible endpoints in the api documentation
+    "request": {
+    //What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest", 
-		//How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
+    //How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET", 
-		//Parameters that will be added to the url. e.g. http://5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
+    //Parameters that will be added to the url. e.g. http://5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
         "query_params": { 
             "number": 2,
             "token": "testtoken"
         },
-		// With query_params_from_store set a query parameter to the value of the datastore field
-		"query_params_from_store": {
-		  "format": "formatFromDatastore",
+    // With query_params_from_store set a query parameter to the value of the datastore field
+    "query_params_from_store": {
+      "format": "formatFromDatastore",
           // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
           // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
-		  "test": "?a"
-		}
-		//Additional headers that should be added to the request
-		"header":{
-			"header1":"value",
-			"header2":"value"
-		},
+      "test": "?a"
+    }
+    //Additional headers that should be added to the request
+    "header":{
+      "header1":"value",
+      "header2":"value"
+    },
         // Expected maximum time the test should take. Test will marked failed if it did take longer. THIS IS NOT A
 TIMEOUT. So if the test takes longer than the maximum time it will still run until it is done, but will marked failed afterwars
         // Here we expect the test to run less than 500 milliseconds
         "expected_max_run_time_ms":500,  
-		// With header_from_you set a header to the value of the dat astore field
-		// In this example we set the "Content-Type" header to the value "application/json"
-		// As "application/json" is stored as string in the datastore on index "contentType"
-		"header_from_store": {
-		  "Content-Type": "contentType"
+    // With header_from_you set a header to the value of the dat astore field
+    // In this example we set the "Content-Type" header to the value "application/json"
+    // As "application/json" is stored as string in the datastore on index "contentType"
+    "header_from_store": {
+      "Content-Type": "contentType"
           // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
           // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
-		  "Range": "?a"
-		}
-		//All the content you want to send in the http body. Is a JSON Object
-		"body":{
-			"flower":"rose",
-			"animal":"dog"
-		},
-		//If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
-		"body_type":"urlencoded"
+      "Range": "?a"
+    }
+    //All the content you want to send in the http body. Is a JSON Object
+    "body":{
+      "flower":"rose",
+      "animal":"dog"
+    },
+    //If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
+    "body_type":"urlencoded"
     },
     //Define how the response should look like. Testtool checks against this response
     "response": { 
-    	//Expected http status code. See api documentation vor the right ones
+      //Expected http status code. See api documentation vor the right ones
         "statuscode": 200,
-		//If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
-		"header":{
-			"key1":[
-				"val1",
-				"val2",
-				"val3"
-			],
-			"x-easydb-token":[
-				"csdklmwerf8ßwji02kopwfjko2"
-			]
-		},
-		//The body we want to assert on
+    //If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
+    "header":{
+      "key1":[
+        "val1",
+        "val2",
+        "val3"
+      ],
+      "x-easydb-token":[
+        "csdklmwerf8ßwji02kopwfjko2"
+      ]
+    },
+    //The body we want to assert on
         "body": {
             "objecttypes": [
                 "pictures"
             ]
         }
     },
-	// Store parts of the repsonse into the datastore
+  // Store parts of the repsonse into the datastore
     "store_response_qjson": {
         "eas_id": "body.0.eas._id"
-	},
+  },
   // wait_before_ms pauses right before sending
   // the test request <n> milliseconds
   "wait_before_ms": 0,
@@ -236,8 +236,8 @@ TIMEOUT. So if the test takes longer than the maximum time it will still run unt
   // the test request <n> milliseconds
   "wait_after_ms": 0,
 
-	//Delay the request by x msec
-	 "delay_ms":5000,
+  //Delay the request by x msec
+   "delay_ms":5000,
     //With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
     // timeout_ms:* If this timeout is done, no new redo will be started
     //  -1: No timeout - run endless
@@ -247,7 +247,6 @@ TIMEOUT. So if the test takes longer than the maximum time it will still run unt
     "break_response":["@break_response.json"],
     "collect_response":["@continue_response_pending.json","@continue_response_processing.json"]
 }
-
 ```
 
 
@@ -264,12 +263,12 @@ sense**
 ```yaml
         {
             "name": "Binary Comparison",
-			"request":{
-				"endpoint": "suggest", 
-				"method": "GET"
-			},
-			// Path to binary file with @
-			"response":"@simple.bin"
+      "request":{
+        "endpoint": "suggest", 
+        "method": "GET"
+      },
+      // Path to binary file with @
+      "response":"@simple.bin"
         }
 ```
 
@@ -286,12 +285,12 @@ For comparing a binary file, simply point the response to the binary file:
 ```yaml
         {
             "name": "Binary Comparison",
-			"request":{
-				"endpoint": "suggest", 
-				"method": "GET"
-			},
-			// Path to binary file with @
-			"response":"@simple.bin"
+      "request":{
+        "endpoint": "suggest", 
+        "method": "GET"
+      },
+      // Path to binary file with @
+      "response":"@simple.bin"
         }
 ```
 
@@ -638,9 +637,9 @@ A single test could look as simple as following:
 
 ```yaml
 {
-	"name": "Test loading request & response from external file",
-	"request": "@path/to/requestFile.json",
-	"response": "@path/to/responseFile.json"
+  "name": "Test loading request & response from external file",
+  "request": "@path/to/requestFile.json",
+  "response": "@path/to/responseFile.json"
 }
 ```
 
@@ -1000,7 +999,7 @@ For `rows_to_map "column_a" "column_c" `:
 
 ```go
 {
-	"row1a":"row1c",
+  "row1a":"row1c",
     "row2a":"",
     "row3a":"row3c",
 }
@@ -1024,9 +1023,9 @@ template function. `{{ datastore 0  }}` will render to
     "statuscode": 200,
     "header": {
         "foo": [
-		"bar", 
-		"baz"
-	]
+    "bar", 
+    "baz"
+  ]
     },
     "body": "..."
 }
@@ -1246,7 +1245,7 @@ Returns a slice of n 0-sized elements, suitable for ranging over.
 Example how to range over 100 objects
 
 ```django
-        "body":	[
+        "body":  [
             {{ range $idx, $v := N 100 }}
             ...
             {{ end }}
