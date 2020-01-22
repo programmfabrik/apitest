@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
@@ -84,10 +85,17 @@ func (config *TestToolConfig) extractTestDirectories() error {
 	for _, rootDirectory := range config.rootDirectorys {
 		err := afero.Walk(filesystem.Fs, rootDirectory, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
-				//Skip directories not containing a manifest
-				if _, err := filesystem.Fs.Stat(filepath.Join(path, "manifest.json")); err == nil {
-					config.TestDirectories = append(config.TestDirectories, path)
+				// Skip directories starting with "_"
+				if strings.Contains(path, "/_") {
+					log.Infof("Skipping: %s", path)
+					return filepath.SkipDir
 				}
+				//Skip directories not containing a manifest
+				_, err := filesystem.Fs.Stat(filepath.Join(path, "manifest.json"))
+				if err != nil {
+					return nil
+				}
+				config.TestDirectories = append(config.TestDirectories, path)
 			}
 			return nil
 		})
