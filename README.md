@@ -141,19 +141,25 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```
 
-## Single Testcase Definition
+## Testcase Definition
 
-### Basic Format
+### manifest.json
 ```yaml
 {
-    //Define if the testuite should continue even if this test fails. (default:false)
+    // Define if the testuite should continue even if this test fails. (default:false)
     "continue_on_failure": true,
-    //Name to identify this single test. Is important for the log. Try to give an explaning name
+    // Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname",
     // Store custom values to the datastore
     "store": {
         "key1": "value1",
         "key2": "value2"
+    },
+    // Optional temporary HTTP Server (see below)
+    "http_server": {
+        "addr": ":1234",
+        "dir": ".",
+        "testmode": false
     },
     // Specify a unique log behavior only for this single test.
     "log_network":true,
@@ -1252,3 +1258,23 @@ Example how to range over 100 objects
         ]
     }
 ```
+
+## HTTP Server
+
+The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
+
+To configure a HTTP Server, the manifest need to include these lines:
+
+```yaml
+{
+  "http_server": {
+    "addr": ":8788", # address to listen on
+    "dir": "",       # directory to server, relative to the manifest.json
+                     # defaults to "."
+    "testmode": false, # boolean flag to switch test mode on / off
+  }
+}
+```
+
+The HTTP Server is started and stopped per test.
+

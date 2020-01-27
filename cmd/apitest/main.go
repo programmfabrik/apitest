@@ -104,7 +104,6 @@ func setup(ccmd *cobra.Command, args []string) {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: logTimeStamp,
 	})
-
 }
 
 func runApiTests(cmd *cobra.Command, args []string) {
