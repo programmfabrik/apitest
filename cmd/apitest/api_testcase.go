@@ -318,7 +318,7 @@ func (testCase Case) LogReq(req api.Request) {
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		log.Debugf(errString)
+		log.Debug(errString)
 	}
 }
 
