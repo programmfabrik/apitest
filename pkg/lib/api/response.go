@@ -5,15 +5,16 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"regexp"
+	"strings"
+
 	"github.com/clbanning/mxj"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-	"io"
-	"io/ioutil"
-	"regexp"
-	"strings"
 )
 
 type Response struct {
@@ -97,7 +98,7 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 		jsonObject := util.JsonObject{
 			"statuscode": util.JsonNumber(response.statusCode),
 			"body": util.JsonObject{
-				"BinaryFileHash": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+				"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 			},
 		}
 		return jsonObject, nil

@@ -20,6 +20,8 @@ func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
 	if strings.HasPrefix(path, "@") {
 		path = string([]rune(path)[1:])
 	}
+
+	// p@ -> parallel tests
 	if strings.HasPrefix(path, "p@") {
 		path = string([]rune(path)[2:])
 	}

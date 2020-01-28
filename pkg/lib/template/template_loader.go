@@ -2,11 +2,14 @@ package template
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
-	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -94,6 +97,21 @@ func (loader *Loader) Render(
 			}
 			return
 		},
+		"md5sum": func(path string) (string, error) {
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
+			if err != nil {
+				return "", err
+			}
+
+			fileBytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				return "", err
+			}
+
+			hasher := md5.New()
+			hasher.Write([]byte(fileBytes))
+			return hex.EncodeToString(hasher.Sum(nil)), nil
+		},
 		"file": func(path string, params ...interface{}) (string, error) {
 			tmplParams, err := newTemplateParams(params)
 			if err != nil {
@@ -104,6 +122,7 @@ func (loader *Loader) Render(
 			if err != nil {
 				return "", err
 			}
+
 			fileBytes, err := ioutil.ReadAll(file)
 			if err != nil {
 				return "", err

@@ -187,10 +187,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
       "header1":"value",
       "header2":"value"
     },
-        // Expected maximum time the test should take. Test will marked failed if it did take longer. THIS IS NOT A
-TIMEOUT. So if the test takes longer than the maximum time it will still run until it is done, but will marked failed afterwars
-        // Here we expect the test to run less than 500 milliseconds
-        "expected_max_run_time_ms":500,  
     // With header_from_you set a header to the value of the dat astore field
     // In this example we set the "Content-Type" header to the value "application/json"
     // As "application/json" is stored as string in the datastore on index "contentType"
@@ -284,20 +280,21 @@ sense**
 The tool is able to do a comparison with a binary file. Here we take a MD5 hash of the file and and then later compare
 that hash.
 
-Internaly the Hash will be represented as json attribute `BinaryFileHash` and compare it. 
-
 For comparing a binary file, simply point the response to the binary file: 
 
 ```yaml
-        {
-            "name": "Binary Comparison",
-      "request":{
-        "endpoint": "suggest", 
-        "method": "GET"
-      },
-      // Path to binary file with @
-      "response":"@simple.bin"
-        }
+  {
+   "name": "Binary Comparison",
+   "request":{
+   "endpoint": "suggest", 
+   "method": "GET"
+  },
+  // Path to binary file with @
+  "response": {
+    "body": {
+      "md5sum": {{ md5sum "@simple.bin" || marshal }}
+    }
+  }
 ```
 
 ## XML Data comparison
@@ -1235,6 +1232,10 @@ Returns a `util.GenericJson` Object (go: `interface{}`) of the unmarshalled  `JS
 ### marshal \[interface{}\]
 
 Returns a `string` of the marshalled  `interface{}` object.
+
+### md5sum [filepath]
+
+Returns a `string` of the MD5 sum of the file found in `filepath`.
 
 ### str_escape [string]
 
