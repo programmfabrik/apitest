@@ -31,13 +31,12 @@ type Case struct {
 	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
-	Timeout              int                `json:"timeout_ms"`
-	ExpectedMaxRunTimeMS int                `json:"expected_max_run_time_ms"`
-	WaitBefore           *int               `json:"wait_before_ms"`
-	WaitAfter            *int               `json:"wait_after_ms"`
-	Delay                *int               `json:"delay_ms"`
-	BreakResponse        []util.GenericJson `json:"break_response"`
-	CollectResponse      util.GenericJson   `json:"collect_response"`
+	Timeout         int                `json:"timeout_ms"`
+	WaitBefore      *int               `json:"wait_before_ms"`
+	WaitAfter       *int               `json:"wait_after_ms"`
+	Delay           *int               `json:"delay_ms"`
+	BreakResponse   []util.GenericJson `json:"break_response"`
+	CollectResponse util.GenericJson   `json:"collect_response"`
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
@@ -100,14 +99,6 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	elapsed := time.Since(start)
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
-		success = false
-	}
-
-	if testCase.ExpectedMaxRunTimeMS > 0 && elapsed > time.Duration(testCase.ExpectedMaxRunTimeMS)*time.Millisecond {
-		err := fmt.Sprintf("Testcase did run for '%d' ms. This is longer than the expected '%d' ms",
-			int(elapsed.Seconds()*1000), testCase.ExpectedMaxRunTimeMS)
-		r.SaveToReportLog(err)
 		log.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
@@ -250,6 +241,7 @@ func (testCase Case) executeRequest(counter int) (
 		err = fmt.Errorf("error converting xml: %s", err)
 		return
 	}
+
 	if isXML && testCase.LogVerbose != nil && *testCase.LogVerbose {
 		log.Trace("Did convert XML to following json:\n\n", string(apiResp.Body()))
 	}
@@ -295,6 +287,7 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	responsesMatch, err = testCase.responsesEqual(response, apiResp)
+
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error matching responses: %s", err)
@@ -318,7 +311,7 @@ func (testCase Case) LogReq(req api.Request) {
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		log.Debugf(errString)
+		log.Debug(errString)
 	}
 }
 

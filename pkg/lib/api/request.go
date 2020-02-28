@@ -2,9 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/moul/http2curl"
-	"github.com/programmfabrik/apitest/pkg/lib/datastore"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +9,10 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/moul/http2curl"
+	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 var c http.Client
@@ -107,6 +108,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 		q.Set(key, stringVal)
 	}
+
 	res.URL.RawQuery = q.Encode()
 
 	for key, val := range additionalHeaders {

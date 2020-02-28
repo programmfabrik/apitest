@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -22,21 +24,29 @@ import (
 // Suite defines the structure of our apitest
 // We do read this in with the config loader
 type Suite struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Tests       []util.GenericJson     `json:"tests"`
-	Store       map[string]interface{} `json:"store"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	HttpServer  *struct {
+		Addr     string `json:"addr"`
+		Dir      string `json:"dir"`
+		Testmode bool   `json:"testmode"`
+	} `json:"http_server,omitempty"`
+	Tests []util.GenericJson     `json:"tests"`
+	Store map[string]interface{} `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
 
-	Config       TestToolConfig
-	datastore    *datastore.Datastore
-	manifestDir  string
-	manifestPath string
-	reporterRoot *report.ReportElement
-	index        int
-	serverURL    string
+	Config          TestToolConfig
+	datastore       *datastore.Datastore
+	manifestDir     string
+	manifestPath    string
+	reporterRoot    *report.ReportElement
+	index           int
+	serverURL       string
+	httpServer      http.Server
+	httpServerDir   string
+	idleConnsClosed chan struct{}
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on
@@ -78,12 +88,73 @@ func NewTestSuite(
 	return suite, err
 }
 
+func (ats *Suite) StartHttpServer() {
+
+	if ats.HttpServer == nil {
+		return
+	}
+
+	ats.idleConnsClosed = make(chan struct{})
+	mux := http.NewServeMux()
+
+	if ats.HttpServer.Dir == "" {
+		ats.httpServerDir = ats.manifestDir
+	} else {
+		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
+	}
+	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
+
+	ats.httpServer = http.Server{
+		Addr:    ats.HttpServer.Addr,
+		Handler: mux,
+	}
+
+	run := func() {
+		log.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
+
+		err := ats.httpServer.ListenAndServe()
+		if err != http.ErrServerClosed {
+			// Error starting or closing listener:
+			log.Errorf("HTTP server ListenAndServe: %v", err)
+			return
+		}
+	}
+
+	if ats.HttpServer.Testmode {
+		// Run in foreground to test
+		log.Infof("Testmode for HTTP Server. Listening, not running tests...")
+		run()
+	} else {
+		go run()
+	}
+}
+
+func (ats *Suite) StopHttpServer() {
+
+	if ats.HttpServer == nil {
+		return
+	}
+
+	err := ats.httpServer.Shutdown(context.Background())
+	if err != nil {
+		// Error from closing listeners, or context timeout:
+		log.Errorf("HTTP server Shutdown: %v", err)
+		close(ats.idleConnsClosed)
+		<-ats.idleConnsClosed
+	} else {
+		log.Infof("Http Server stopped: %s", ats.httpServerDir)
+	}
+	return
+}
+
 func (ats Suite) Run() (success bool) {
 	r := ats.reporterRoot
 	log.Infof("[%2d] '%s'", ats.index, ats.Name)
 
 	//r.NewChild(ats.Name)
 	//r.SetTestCount(len(ats.Tests))
+
+	ats.StartHttpServer()
 
 	start := time.Now()
 
@@ -105,6 +176,9 @@ func (ats Suite) Run() (success bool) {
 	} else {
 		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 	}
+
+	ats.StopHttpServer()
+
 	return
 }
 
