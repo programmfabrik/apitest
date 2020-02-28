@@ -18,8 +18,23 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	var buf = bytes.NewBuffer([]byte{})
 	w := multipart.NewWriter(buf)
 
+	var replaceFilename *string
+	val, ok := request.Body.(map[string]interface{})["file:filename"]
+	if ok {
+		f, ok := val.(util.JsonString)
+		if !ok {
+			return additionalHeaders, body, fmt.Errorf("file:filename should be a string")
+		}
+		replaceFilename = &f
+	}
+
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
 	for key, val := range request.Body.(map[string]interface{}) {
+
+		if key == "file:filename" {
+			continue
+		}
+
 		pathSpec, ok := val.(util.JsonString)
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
@@ -28,11 +43,19 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid", pathSpec)
 		}
 
+		var err error
+
 		_, file, err := util.OpenFileOrUrl(pathSpec, request.ManifestDir)
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
-		part, err := w.CreateFormFile(key, pathSpec[1:])
+
+		var part io.Writer
+		if replaceFilename == nil {
+			part, err = w.CreateFormFile(key, pathSpec[1:])
+		} else {
+			part, err = w.CreateFormFile(key, *replaceFilename)
+		}
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
