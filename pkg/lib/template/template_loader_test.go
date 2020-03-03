@@ -2,14 +2,15 @@ package template
 
 import (
 	"fmt"
-	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/afero"
 )
@@ -72,7 +73,7 @@ func TestBigIntRender(t *testing.T) {
 
 	resp, _ := api.NewResponse(200, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil)
 
-	respJson, _ := resp.ToJsonString()
+	respJson, _ := resp.ServerResponseToJSONString()
 	store.SetWithQjson(respJson, map[string]string{"testINT": "body.bigINT"})
 
 	res, err := loader.Render([]byte(`{{ datastore "testINT" }}`), "", nil)
@@ -351,7 +352,7 @@ func Test_DataStore_QJson(t *testing.T) {
 		nil,
 	)
 	store := datastore.NewStore(false)
-	jsonResponse, err := response.ToJsonString()
+	jsonResponse, err := response.ServerResponseToJSONString()
 	if err != nil {
 		t.Fatal(err)
 	}

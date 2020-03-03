@@ -151,6 +151,21 @@ func (loader *Loader) Render(
 			}
 			return data, err
 		},
+		"parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
+			if err != nil {
+				return nil, err
+			}
+			fileBytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				return nil, err
+			}
+			data, err := csv.GenericCSVToMap(fileBytes, delimiter)
+			if err != nil {
+				return data, fmt.Errorf("'%s' %s", path, err)
+			}
+			return data, err
+		},
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string
 

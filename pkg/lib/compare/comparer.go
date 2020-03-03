@@ -59,6 +59,7 @@ func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res Com
 					},
 				},
 			}
+			panic("the actual response is no JsonObject")
 			return res, nil
 		}
 

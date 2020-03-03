@@ -235,7 +235,7 @@ func (request Request) Send() (response Response, err error) {
 		}
 	}()
 
-	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body, nil)
+	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}

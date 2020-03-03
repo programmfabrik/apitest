@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestResponse_ToGenericJson(t *testing.T) {
@@ -14,7 +14,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 			"foo": {"bar"},
 		},
 	}
-	genericJson, err := response.ToGenericJson()
+	genericJson, err := response.ToGenericJSON()
 	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJson")
 
 	jsonObjResp, ok := genericJson.(map[string]interface{})

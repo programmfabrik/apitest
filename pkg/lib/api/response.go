@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,8 +13,11 @@ import (
 
 	"github.com/clbanning/mxj"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
+
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
+	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -22,6 +26,7 @@ type Response struct {
 	headers     map[string][]string
 	body        []byte
 	bodyControl util.JsonObject
+	Format      ResponseFormat
 }
 
 type ResponseSerialization struct {
@@ -29,14 +34,22 @@ type ResponseSerialization struct {
 	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
 	Body        util.GenericJson    `yaml:"body" json:"body,omitempty"`
 	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
 }
 
-func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject) (res Response, err error) {
+type ResponseFormat struct {
+	Type string `json:"type"` // default "json", allowed: "csv", "json", "xml", "binary"
+	CSV  struct {
+		Comma string `json:"comma,omitempty"`
+	} `json:"csv,omitempty"`
+}
+
+func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return res, err
 	}
-	return Response{statusCode: statusCode, headers: headers, body: bodyBytes, bodyControl: bodyControl}, nil
+	return Response{statusCode: statusCode, headers: headers, body: bodyBytes, bodyControl: bodyControl, Format: bodyFormat}, nil
 }
 
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
@@ -50,39 +63,82 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	}
 
 	if spec.Headers != nil {
-		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl)
+		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
 	} else {
-		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl)
+		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
 	}
 }
 
-func (response Response) ToGenericJson() (res util.GenericJson, err error) {
-	var gj util.GenericJson
-	bodyBytes := response.Body()
+// ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
+func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat) (util.GenericJson, error) {
+	var (
+		gj, res util.GenericJson
+		err     error
+	)
 
-	//Check mimetype of body
-	bodyMimeType, _ := mimetype.Detect(bodyBytes)
-	contenTypeHeader, ok := response.headers["Content-Type"]
-	if ok && len(contenTypeHeader) > 0 {
-		bodyMimeType = strings.Split(contenTypeHeader[0], ";")[0]
-	}
+	pp.Println("*************************")
+	pp.Println("ServerResponseToGenericJSON", responseFormat.Type)
 
-	switch bodyMimeType {
-	case "text/plain", "application/json":
+	switch responseFormat.Type {
+	case "xml":
+		xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
+		replacedXML := xmlDeclarationRegex.ReplaceAll(response.Body(), []byte{})
+
+		mv, err := mxj.NewMapXmlSeq(replacedXML)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not parse xml")
+		}
+
+		responseJSON, err := mv.JsonIndent("", " ")
+		if err != nil {
+			return res, errors.Wrap(err, "Could not marshal xml to json")
+		}
+
+		pp.Println("responseJSON from XML:", responseJSON)
+		return responseJSON, nil
+	case "csv":
+		runeComma := ','
+		if response.Format.CSV.Comma != "" {
+			runeComma = []rune(response.Format.CSV.Comma)[0]
+		}
+
+		d, err := csv.GenericCSVToMap(response.Body(), runeComma)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not parse csv")
+		}
+
+		responseJSON, err := json.Marshal(d)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not marshal csv to json")
+		}
+
+		pp.Println("responseJSON from CSV:", responseJSON)
+		return responseJSON, nil
+	case "binary":
+		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
+		hasher := md5.New()
+		hasher.Write([]byte(response.Body()))
+		jsonObject := util.JsonObject{
+			"statuscode": util.JsonNumber(response.statusCode),
+			"body": util.JsonObject{
+				"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+			},
+		}
+		pp.Println("responseJSON from binary:", jsonObject)
+		return jsonObject, nil
+	default:
 		// We have a json, and thereby try to unmarshal it into our body
-		if err = cjson.Unmarshal(bodyBytes, &gj); err != nil {
+		if err = json.Unmarshal(response.Body(), &gj); err != nil {
 			return res, err
 		}
 
 		responseJSON := ResponseSerialization{
-			StatusCode:  response.statusCode,
-			BodyControl: response.bodyControl,
+			StatusCode: response.statusCode,
+			Body:       &gj,
 		}
+
 		if len(response.headers) > 0 {
 			responseJSON.Headers = response.headers
-		}
-		if gj != nil {
-			responseJSON.Body = &gj
 		}
 
 		responseBytes, err := cjson.Marshal(responseJSON)
@@ -90,65 +146,56 @@ func (response Response) ToGenericJson() (res util.GenericJson, err error) {
 			return res, err
 		}
 		cjson.Unmarshal(responseBytes, &res)
+
+		pp.Println("responseJSON for default format:", res)
 		return res, nil
-	default:
-		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
-		hasher := md5.New()
-		hasher.Write([]byte(bodyBytes))
-		jsonObject := util.JsonObject{
-			"statuscode": util.JsonNumber(response.statusCode),
-			"body": util.JsonObject{
-				"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
-			},
-		}
-		return jsonObject, nil
 	}
 }
 
-func (response *Response) CheckAndConvertXML() (gotXML bool, err error) {
-	bodyBytes := response.Body()
+// ToGenericJSON parse expected response
+func (response Response) ToGenericJSON() (util.GenericJson, error) {
+	var (
+		gj, res util.GenericJson
+		err     error
+	)
 
-	//Check mimetype of body
-	bodyMimeType, _ := mimetype.Detect(bodyBytes)
-	contenTypeHeader, ok := response.headers["Content-Type"]
-	if ok && len(contenTypeHeader) > 0 {
-		bodyMimeType = strings.Split(contenTypeHeader[0], ";")[0]
+	pp.Println("*************************")
+	pp.Println("ToGenericJSON")
+
+	// We have a json, and thereby try to unmarshal it into our body
+	if err = cjson.Unmarshal(response.Body(), &gj); err != nil {
+		return res, err
 	}
 
-	if bodyMimeType != "text/xml" && bodyMimeType != "application/xml" {
-		return false, nil
+	responseJSON := ResponseSerialization{
+		StatusCode:  response.statusCode,
+		BodyControl: response.bodyControl,
 	}
+	if len(response.headers) > 0 {
+		responseJSON.Headers = response.headers
+	}
+	responseJSON.Body = &gj
 
-	//FIXME: Remove regex remove
-	xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-	replacedXML := xmlDeclarationRegex.ReplaceAll(bodyBytes, []byte{})
-
-	mv, err := mxj.NewMapXmlSeq(replacedXML)
+	responseBytes, err := cjson.Marshal(responseJSON)
 	if err != nil {
-		return true, errors.Wrap(err, "Could not parse xml")
+		return res, err
 	}
+	cjson.Unmarshal(responseBytes, &res)
 
-	jData, err := mv.JsonIndent("", " ")
-	if err != nil {
-		return true, errors.Wrap(err, "Could not marshal xml to json")
-	}
-
-	response.body = jData
-	response.headers["Content-Type"] = []string{"application/json"}
-
-	return true, nil
+	pp.Println("responseJSON:", res)
+	return res, nil
 }
 
-func (response Response) ToJsonString() (string, error) {
-	gj, err := response.ToGenericJson()
+func (response Response) ServerResponseToJSONString() (string, error) {
+	gj, err := response.ServerResponseToGenericJSON(response.Format)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
-	json, err := cjson.Marshal(gj)
+	bytes, err := cjson.Marshal(gj)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
-	return string(json), nil
+	return string(bytes), nil
 }
 
 func (response Response) Body() []byte {

@@ -17,7 +17,7 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/report"
 	"github.com/programmfabrik/apitest/pkg/lib/template"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Case defines the structure of our single testcase
@@ -54,19 +54,14 @@ type Case struct {
 	ServerURL string `json:"server_url"`
 }
 
-type CaseResponse struct {
-	Statuscode int              `json:"statuscode"`
-	Body       util.GenericJson `json:"body"`
-}
-
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (success bool) {
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
 	if testCase.Description == "" {
-		log.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+		logrus.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
 	} else {
-		log.Infof("     [%2d] '%s': '%s'", testCase.index, testCase.Name, testCase.Description)
+		logrus.Infof("     [%2d] '%s': '%s'", testCase.index, testCase.Name, testCase.Description)
 	}
 
 	testCase.ReportElem = parentReportElem.NewChild(testCase.Name)
@@ -78,7 +73,7 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	if testCase.dataStore == nil && len(testCase.Store) > 0 {
 		err := fmt.Errorf("error setting datastore. Datastore is nil")
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
+		logrus.Errorf("     [%2d] %s", testCase.index, err)
 
 		return false
 	}
@@ -86,7 +81,7 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
+		logrus.Errorf("     [%2d] %s", testCase.index, err)
 
 		return false
 	}
@@ -99,14 +94,14 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 	elapsed := time.Since(start)
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		log.Errorf("     [%2d] %s", testCase.index, err)
+		logrus.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
 	}
 
 	if !success {
-		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
 	} else {
-		log.WithFields(log.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.Leave(success)
@@ -136,7 +131,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 			}
 
 			if testCase.LogVerbose != nil && *testCase.LogVerbose {
-				log.Tracef("breakResponseIsPresent: %v", responsesMatch)
+				logrus.Tracef("breakResponseIsPresent: %v", responsesMatch)
 			}
 
 			if responsesMatch.Equal {
@@ -195,7 +190,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 		testCase.CollectResponse = leftResponses
 
 		if testCase.LogVerbose != nil && *testCase.LogVerbose {
-			log.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
+			logrus.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
 		}
 
 		return len(leftResponses), nil
@@ -225,7 +220,7 @@ func (testCase Case) executeRequest(counter int) (
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		log.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
+		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
 	}
 
 	apiResp, err = req.Send()
@@ -235,18 +230,7 @@ func (testCase Case) executeRequest(counter int) (
 		return
 	}
 
-	isXML, err := apiResp.CheckAndConvertXML()
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error converting xml: %s", err)
-		return
-	}
-
-	if isXML && testCase.LogVerbose != nil && *testCase.LogVerbose {
-		log.Trace("Did convert XML to following json:\n\n", string(apiResp.Body()))
-	}
-
-	apiRespJson, err := apiResp.ToJsonString()
+	apiRespJSON, err := apiResp.ServerResponseToJSONString()
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error getting json from response: %s", err)
@@ -254,7 +238,7 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiRespJson, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiRespJSON, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
@@ -264,7 +248,7 @@ func (testCase Case) executeRequest(counter int) (
 	if !req.DoNotStore {
 		var json string
 
-		json, err = apiResp.ToJsonString()
+		json, err = apiResp.ServerResponseToJSONString()
 		if err != nil {
 			testCase.LogReq(req)
 			err = fmt.Errorf("error prepareing response for datastore: %s", err)
@@ -279,14 +263,14 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	//Compare Responses
-	response, err := testCase.loadResponse()
+	expectedResponse, err := testCase.loadResponse()
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error loading response: %s", err)
 		return
 	}
 
-	responsesMatch, err = testCase.responsesEqual(response, apiResp)
+	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
 
 	if err != nil {
 		testCase.LogReq(req)
@@ -302,7 +286,7 @@ func (testCase Case) LogResp(response api.Response) {
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		log.Debugf(errString)
+		logrus.Debugf(errString)
 	}
 }
 
@@ -311,7 +295,7 @@ func (testCase Case) LogReq(req api.Request) {
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		log.Debug(errString)
+		logrus.Debug(errString)
 	}
 }
 
@@ -347,7 +331,7 @@ func (testCase Case) run() (success bool, err error) {
 	collectPresent := testCase.CollectResponse != nil
 
 	if testCase.WaitBefore != nil {
-		log.Infof("wait_before_ms: %d", *testCase.WaitBefore)
+		logrus.Infof("wait_before_ms: %d", *testCase.WaitBefore)
 		time.Sleep(time.Duration(*testCase.WaitBefore) * time.Millisecond)
 	}
 
@@ -360,7 +344,7 @@ func (testCase Case) run() (success bool, err error) {
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
-			log.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, Config.Apitest.Limit.Response))
+			logrus.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, Config.Apitest.Limit.Response))
 		}
 		if err != nil {
 			testCase.LogResp(apiResponse)
@@ -399,7 +383,7 @@ func (testCase Case) run() (success bool, err error) {
 		//break if timeout or we do not have a repeater
 		if timedOut := time.Now().Sub(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
-				log.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
+				logrus.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				r.SaveToReportLogF("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				timedOutFlag = true
 			}
@@ -411,7 +395,7 @@ func (testCase Case) run() (success bool, err error) {
 
 	if !responsesMatch.Equal || timedOutFlag {
 		for _, v := range responsesMatch.Failures {
-			log.Errorf("[%s] %s", v.Key, v.Message)
+			logrus.Errorf("[%s] %s", v.Key, v.Message)
 			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
 		}
 
@@ -424,7 +408,7 @@ func (testCase Case) run() (success bool, err error) {
 					testCase.LogResp(apiResponse)
 					return false, err
 				}
-				log.Errorf("Collect response not found: %s", jsonV)
+				logrus.Errorf("Collect response not found: %s", jsonV)
 				r.SaveToReportLog(fmt.Sprintf("Collect response not found: %s", jsonV))
 			}
 		}
@@ -435,7 +419,7 @@ func (testCase Case) run() (success bool, err error) {
 	}
 
 	if testCase.WaitAfter != nil {
-		log.Infof("wait_after_ms: %d", *testCase.WaitAfter)
+		logrus.Infof("wait_after_ms: %d", *testCase.WaitAfter)
 		time.Sleep(time.Duration(*testCase.WaitAfter) * time.Millisecond)
 	}
 
@@ -454,7 +438,7 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil)
+		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil, api.ResponseFormat{})
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -468,14 +452,16 @@ func (testCase Case) loadResponse() (res api.Response, err error) {
 }
 
 func (testCase Case) responsesEqual(expected, got api.Response) (equal compare.CompareResult, err error) {
-	expectedJSON, err := expected.ToGenericJson()
+	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	gotJSON, err := got.ToGenericJson()
+	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format)
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
+	logrus.Debugf("expectedJSON, type: %T, %v", expectedJSON, expectedJSON)
+	logrus.Debugf("gotJSON,      type: %T, %v", gotJSON, gotJSON)
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
