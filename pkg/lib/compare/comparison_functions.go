@@ -3,11 +3,11 @@ package compare
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -427,7 +427,7 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonContext) (err error) {
 	if control.isString == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
@@ -435,7 +435,7 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		}
 	} else if control.isNumber == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Number" {
@@ -443,7 +443,7 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		}
 	} else if control.isBool == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Bool" {
@@ -451,7 +451,7 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		}
 	} else if control.isArray == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
@@ -459,7 +459,7 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		}
 	} else if control.isObject == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Object" {
@@ -469,7 +469,7 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 
 	//Check if exists
 	if rOK == false && control.mustExist == true {
-		return fmt.Errorf("actual response[%s] was not found, but should exists", lk)
+		return fmt.Errorf("actual response[%s] was not found, but should exist", lk)
 	}
 
 	if rOK == true && control.mustNotExist == true {

@@ -8,8 +8,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-
-	"github.com/k0kubun/pp"
 )
 
 //Get information
@@ -65,9 +63,6 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, err
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
-
-	pp.Println(inputCSV)
-	pp.Println(comma, string(comma))
 
 	records, err := renderCSV(bytes.NewReader(inputCSV), comma)
 	if err != nil {

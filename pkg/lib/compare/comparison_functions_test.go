@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
@@ -346,7 +346,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "MYobjecterino.3",
-					Message: "actual response[3] was not found, but should exists",
+					Message: "actual response[3] was not found, but should exist",
 				},
 				{
 					Key:     "MYobjecterino",
@@ -461,7 +461,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "body[0].henk",
-					Message: "actual response[henk] was not found, but should exists",
+					Message: "actual response[henk] was not found, but should exist",
 				},
 			},
 		},

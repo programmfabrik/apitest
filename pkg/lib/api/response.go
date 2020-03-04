@@ -13,7 +13,6 @@ import (
 
 	"github.com/clbanning/mxj"
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -72,12 +71,10 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
 func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat) (util.GenericJson, error) {
 	var (
-		gj, res util.GenericJson
-		err     error
+		res, bodyJSON util.GenericJson
+		bodyData      []byte
+		err           error
 	)
-
-	pp.Println("*************************")
-	pp.Println("ServerResponseToGenericJSON", responseFormat.Type)
 
 	switch responseFormat.Type {
 	case "xml":
@@ -89,31 +86,25 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, errors.Wrap(err, "Could not parse xml")
 		}
 
-		responseJSON, err := mv.JsonIndent("", " ")
+		bodyData, err = mv.JsonIndent("", " ")
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
-
-		pp.Println("responseJSON from XML:", responseJSON)
-		return responseJSON, nil
 	case "csv":
 		runeComma := ','
-		if response.Format.CSV.Comma != "" {
-			runeComma = []rune(response.Format.CSV.Comma)[0]
+		if responseFormat.CSV.Comma != "" {
+			runeComma = []rune(responseFormat.CSV.Comma)[0]
 		}
 
-		d, err := csv.GenericCSVToMap(response.Body(), runeComma)
+		csvData, err := csv.GenericCSVToMap(response.Body(), runeComma)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not parse csv")
 		}
 
-		responseJSON, err := json.Marshal(d)
+		bodyData, err = json.Marshal(csvData)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal csv to json")
 		}
-
-		pp.Println("responseJSON from CSV:", responseJSON)
-		return responseJSON, nil
 	case "binary":
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
@@ -124,46 +115,45 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 				"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 			},
 		}
-		pp.Println("responseJSON from binary:", jsonObject)
 		return jsonObject, nil
 	default:
 		// We have a json, and thereby try to unmarshal it into our body
-		if err = json.Unmarshal(response.Body(), &gj); err != nil {
-			return res, err
-		}
-
-		responseJSON := ResponseSerialization{
-			StatusCode: response.statusCode,
-			Body:       &gj,
-		}
-
-		if len(response.headers) > 0 {
-			responseJSON.Headers = response.headers
-		}
-
-		responseBytes, err := cjson.Marshal(responseJSON)
-		if err != nil {
-			return res, err
-		}
-		cjson.Unmarshal(responseBytes, &res)
-
-		pp.Println("responseJSON for default format:", res)
-		return res, nil
+		bodyData = response.Body()
 	}
+
+	// serialize the parsed/converted body
+	err = json.Unmarshal(bodyData, &bodyJSON)
+	if err != nil {
+		return res, err
+	}
+
+	responseJSON := ResponseSerialization{
+		StatusCode: response.statusCode,
+		Body:       &bodyJSON,
+	}
+	if len(response.headers) > 0 {
+		responseJSON.Headers = response.headers
+	}
+
+	responseBytes, err := cjson.Marshal(responseJSON)
+	if err != nil {
+		return res, err
+	}
+	cjson.Unmarshal(responseBytes, &res)
+
+	return res, nil
 }
 
 // ToGenericJSON parse expected response
 func (response Response) ToGenericJSON() (util.GenericJson, error) {
 	var (
-		gj, res util.GenericJson
-		err     error
+		bodyJSON, res util.GenericJson
+		err           error
 	)
 
-	pp.Println("*************************")
-	pp.Println("ToGenericJSON")
-
 	// We have a json, and thereby try to unmarshal it into our body
-	if err = cjson.Unmarshal(response.Body(), &gj); err != nil {
+	err = cjson.Unmarshal(response.Body(), &bodyJSON)
+	if err != nil {
 		return res, err
 	}
 
@@ -174,7 +164,11 @@ func (response Response) ToGenericJSON() (util.GenericJson, error) {
 	if len(response.headers) > 0 {
 		responseJSON.Headers = response.headers
 	}
-	responseJSON.Body = &gj
+
+	// necessary because check for <nil> against missing body would fail, but must succeed
+	if bodyJSON != nil {
+		responseJSON.Body = &bodyJSON
+	}
 
 	responseBytes, err := cjson.Marshal(responseJSON)
 	if err != nil {
@@ -182,16 +176,15 @@ func (response Response) ToGenericJSON() (util.GenericJson, error) {
 	}
 	cjson.Unmarshal(responseBytes, &res)
 
-	pp.Println("responseJSON:", res)
 	return res, nil
 }
 
-func (response Response) ServerResponseToJSONString() (string, error) {
-	gj, err := response.ServerResponseToGenericJSON(response.Format)
+func (response Response) ServerResponseToJSONString(format ResponseFormat) (string, error) {
+	genericJSON, err := response.ServerResponseToGenericJSON(format)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
-	bytes, err := cjson.Marshal(gj)
+	bytes, err := cjson.Marshal(genericJSON)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}

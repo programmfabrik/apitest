@@ -230,7 +230,14 @@ func (testCase Case) executeRequest(counter int) (
 		return
 	}
 
-	apiRespJSON, err := apiResp.ServerResponseToJSONString()
+	expectedResponse, err := testCase.loadResponse()
+	if err != nil {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error loading response: %s", err)
+		return
+	}
+
+	apiRespJSON, err := apiResp.ServerResponseToJSONString(expectedResponse.Format)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error getting json from response: %s", err)
@@ -246,30 +253,15 @@ func (testCase Case) executeRequest(counter int) (
 	}
 
 	if !req.DoNotStore {
-		var json string
-
-		json, err = apiResp.ServerResponseToJSONString()
-		if err != nil {
-			testCase.LogReq(req)
-			err = fmt.Errorf("error prepareing response for datastore: %s", err)
-			return
-		}
 		// Store in datastore -1 list
 		if counter == 0 {
-			testCase.dataStore.AppendResponse(json)
+			testCase.dataStore.AppendResponse(apiRespJSON)
 		} else {
-			testCase.dataStore.UpdateLastResponse(json)
+			testCase.dataStore.UpdateLastResponse(apiRespJSON)
 		}
 	}
 
 	//Compare Responses
-	expectedResponse, err := testCase.loadResponse()
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error loading response: %s", err)
-		return
-	}
-
 	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
 
 	if err != nil {
@@ -438,7 +430,7 @@ func (testCase Case) loadRequest() (req api.Request, err error) {
 func (testCase Case) loadResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil, api.ResponseFormat{})
+		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -460,8 +452,6 @@ func (testCase Case) responsesEqual(expected, got api.Response) (equal compare.C
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	logrus.Debugf("expectedJSON, type: %T, %v", expectedJSON, expectedJSON)
-	logrus.Debugf("gotJSON,      type: %T, %v", gotJSON, gotJSON)
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
@@ -507,6 +497,7 @@ func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (spec a
 	if err != nil {
 		return spec, fmt.Errorf("error loading response data: %s", err)
 	}
+
 	specBytes, err := cjson.Marshal(responseData)
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling res: %s", err)
