@@ -8,6 +8,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 //Get information
@@ -21,9 +23,9 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
 
-	records, err := renderCSV(bytes.NewReader(inputCSV), ',')
+	records, err := renderCSV(bytes.NewReader(inputCSV), comma)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "CSVToMap.renderCSV")
 	}
 
 	records = removeEmptyRowsAndComments(records)
