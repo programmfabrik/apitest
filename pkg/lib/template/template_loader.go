@@ -273,6 +273,9 @@ func (loader *Loader) Render(
 			}
 			return g_rows, nil
 		},
+		"match": func(regex, text string) (bool, error) {
+			return regexp.Match(regex, []byte(text))
+		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
 	if err != nil {

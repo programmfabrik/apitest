@@ -306,11 +306,11 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 	if len(left) > len(right) {
 		res.Equal = false
 
-		leftJson, err := json.MarshalIndent(left, "", " ")
+		leftJson, err := json.MarshalIndent(left, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal expected array")
 		}
-		rightJson, err := json.MarshalIndent(right, "", " ")
+		rightJson, err := json.MarshalIndent(right, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
 		}

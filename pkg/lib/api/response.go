@@ -15,7 +15,6 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/pkg/errors"
 
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
@@ -52,7 +51,7 @@ func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bo
 }
 
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
-	bodyBytes, err := cjson.Marshal(spec.Body)
+	bodyBytes, err := json.Marshal(spec.Body)
 	if err != nil {
 		return res, err
 	}
@@ -69,7 +68,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
-func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat) (util.GenericJson, error) {
+func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (util.GenericJson, error) {
 	var (
 		res, bodyJSON util.GenericJson
 		bodyData      []byte
@@ -127,6 +126,10 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		return res, err
 	}
 
+	if bodyOnly {
+		return bodyJSON, nil
+	}
+
 	responseJSON := ResponseSerialization{
 		StatusCode: response.statusCode,
 		Body:       &bodyJSON,
@@ -135,11 +138,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		responseJSON.Headers = response.headers
 	}
 
-	responseBytes, err := cjson.Marshal(responseJSON)
+	responseBytes, err := json.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
-	cjson.Unmarshal(responseBytes, &res)
+	json.Unmarshal(responseBytes, &res)
 
 	return res, nil
 }
@@ -152,7 +155,7 @@ func (response Response) ToGenericJSON() (util.GenericJson, error) {
 	)
 
 	// We have a json, and thereby try to unmarshal it into our body
-	err = cjson.Unmarshal(response.Body(), &bodyJSON)
+	err = json.Unmarshal(response.Body(), &bodyJSON)
 	if err != nil {
 		return res, err
 	}
@@ -170,21 +173,21 @@ func (response Response) ToGenericJSON() (util.GenericJson, error) {
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err := cjson.Marshal(responseJSON)
+	responseBytes, err := json.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
-	cjson.Unmarshal(responseBytes, &res)
+	json.Unmarshal(responseBytes, &res)
 
 	return res, nil
 }
 
-func (response Response) ServerResponseToJSONString(format ResponseFormat) (string, error) {
-	genericJSON, err := response.ServerResponseToGenericJSON(format)
+func (response Response) ServerResponseToJSONString(bodyOnly bool) (string, error) {
+	genericJSON, err := response.ServerResponseToGenericJSON(response.Format, bodyOnly)
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
-	bytes, err := cjson.Marshal(genericJSON)
+	bytes, err := json.MarshalIndent(genericJSON, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
@@ -203,7 +206,7 @@ func (response Response) Body() []byte {
 
 func (response *Response) marshalBodyInto(target interface{}) (err error) {
 	bodyBytes := response.Body()
-	if err = cjson.Unmarshal(bodyBytes, target); err != nil {
+	if err = json.Unmarshal(bodyBytes, target); err != nil {
 		return fmt.Errorf("error unmarshaling response: %s", err)
 	}
 	return nil
@@ -223,11 +226,14 @@ func (response Response) ToString() (res string) {
 	}
 
 	bodyMimeType, _ := mimetype.Detect(response.Body())
-	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
-		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, string(response.Body()))
 
+	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
+		bodyString, err := response.ServerResponseToJSONString(true) // only want the body in the specified format
+		if err != nil {
+			bodyString = string(response.Body())
+		}
+		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, bodyString)
 	} else {
 		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, "[BINARY DATA NOT DISPLAYED]")
-
 	}
 }
