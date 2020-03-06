@@ -109,12 +109,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		hasher := md5.New()
 		hasher.Write([]byte(response.Body()))
 		jsonObject := util.JsonObject{
-			"statuscode": util.JsonNumber(response.statusCode),
-			"body": util.JsonObject{
-				"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
-			},
+			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
-		return jsonObject, nil
+		bodyData, err = json.Marshal(jsonObject)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not marshal body with md5sum to json")
+		}
 	default:
 		// We have a json, and thereby try to unmarshal it into our body
 		bodyData = response.Body()
