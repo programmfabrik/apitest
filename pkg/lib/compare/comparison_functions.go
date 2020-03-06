@@ -27,6 +27,7 @@ type ComparisonContext struct {
 	numberGE       *util.JsonNumber
 	numberLT       *util.JsonNumber
 	numberLE       *util.JsonNumber
+	regexMatch     *util.JsonString
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -80,6 +81,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.isString = tV
+		case "match":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("match is no string")
+				return
+
+			}
+			out.regexMatch = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
@@ -182,7 +191,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	takenInRight := make(map[string]bool, 0)
 	takenInLeft := make(map[string]bool, 0)
 
-	//Iterate over normal fields
+	// Iterate over normal fields
 	for ck, cv := range left {
 		if takenInLeft[ck] {
 			continue
@@ -192,9 +201,9 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		control := &ComparisonContext{}
 		var k string
 
-		//Check which type of key we have
+		// Check which type of key we have
 		if strings.HasSuffix(ck, ":control") {
-			//We have a control key
+			// We have a control key
 			k = keyRegex.FindStringSubmatch(ck)[1]
 			if !takenInRight[k] {
 				rv, rOK = right[k]
@@ -215,7 +224,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 
 			delete(left, ck)
 		} else {
-			//Normal key
+			// Normal key
 			k = ck
 			if !takenInRight[k] {
 				rv, rOK = right[k]
@@ -240,22 +249,22 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			}
 		}
 
-		//If a value is present, it must exist
+		// If a value is present, it must exist
 		if lOK {
 			control.mustExist = true
 		}
 
-		//Check for the given key functions
+		// Check for the given key functions
 		err := keyChecks(k, rv, rOK, *control)
 		if err != nil {
 			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
 
-			//There is no use in checking the equality of the value if the preconditions do not work
+			// There is no use in checking the equality of the value if the preconditions do not work
 			continue
 		}
 
-		//If we have a left value, check if it is the same as right
+		// If we have a left value, check if it is the same as right
 		if lOK {
 			tmp, err := JsonEqual(lv, rv, *control)
 			if err != nil {
@@ -352,7 +361,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 				}
 
 				if tmp.Equal == true {
-					//Found an element fitting
+					// Found an element fitting
 					found = true
 					takenInRight[rk] = true
 
@@ -407,18 +416,18 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 
 	if control.orderMatters == true {
 		if control.noExtra == true {
-			//No extra with order
+			// No extra with order
 			return arrayComparison(left, right, true, true, emptyControl)
 		} else {
-			//with extra with order
+			// with extra with order
 			return arrayComparison(left, right, false, true, emptyControl)
 		}
 	} else {
 		if control.noExtra == true {
-			//No extra, no order
+			// No extra, no order
 			return arrayComparison(left, right, true, false, emptyControl)
 		} else {
-			//with extra, no order
+			// with extra, no order
 			return arrayComparison(left, right, false, false, emptyControl)
 		}
 	}
@@ -467,7 +476,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		}
 	}
 
-	//Check if exists
+	// Check if exists
 	if rOK == false && control.mustExist == true {
 		return fmt.Errorf("was not found, but should exist")
 	}
@@ -476,7 +485,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		return fmt.Errorf("was found, but should NOT exist")
 	}
 
-	//Check for array length
+	// Check for array length
 	if leftLen := control.elementCount; leftLen != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
@@ -516,6 +525,22 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		}
 	}
 
+	// Check if string matches regex
+	if regex := control.regexMatch; regex != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
+		}
+
+		doesMatch, err := regexp.Match(*regex, []byte(right.(util.JsonString)))
+		if err != nil {
+			return fmt.Errorf("could not match regex '%s': '%s'", *regex, err)
+		}
+		if !doesMatch {
+			return fmt.Errorf("does not match regex '%s'", *regex)
+		}
+	}
+
 	return nil
 }
 
@@ -536,7 +561,7 @@ func getJsonType(value interface{}) string {
 	}
 }
 
-func getAsInt64(value interface{}) (v int64, err error) {
+func getAsInt64(value interface{}) (int64, error) {
 	switch t := value.(type) {
 	case int64:
 		return t, nil

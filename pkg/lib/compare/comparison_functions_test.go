@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	go_test_utils "github.com/programmfabrik/go-test-utils"
-
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestComparison(t *testing.T) {
@@ -34,7 +33,6 @@ func TestComparison(t *testing.T) {
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be any string",
 			left: util.JsonObject{
@@ -51,6 +49,76 @@ func TestComparison(t *testing.T) {
 			eFailures: nil,
 		},
 		{
+			name: "String matches regex",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"match":     "\\d+\\..+",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "String does not match regex",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"match":     "\\d+\\.\\d+",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "xyz-456",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "does not match regex '\\d+\\.\\d+'",
+				},
+			},
+		},
+		{
+			name: "String match with invalid regex (must fail)",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"match":     ".+[",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "could not match regex '.+[': 'error parsing regexp: missing closing ]: `[`'",
+				},
+			},
+		},
+		{
+			name: "String match tried on integer (must fail)",
+			left: util.JsonObject{
+				"numberino:control": util.JsonObject{
+					"match": ".+",
+				},
+			},
+			right: util.JsonObject{
+				"numberino": util.JsonNumber(123),
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "numberino",
+					Message: "should be 'String' for regex match but is 'Number'",
+				},
+			},
+		},
+		{
 			name: "There should be any number",
 			left: util.JsonObject{
 				"numberino:control": util.JsonObject{
@@ -58,14 +126,12 @@ func TestComparison(t *testing.T) {
 					"is_number":  true,
 				},
 			},
-
 			right: util.JsonObject{
 				"numberino": util.JsonNumber(99999999),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be any bool",
 			left: util.JsonObject{
@@ -74,14 +140,12 @@ func TestComparison(t *testing.T) {
 					"is_bool":    true,
 				},
 			},
-
 			right: util.JsonObject{
 				"boolerino": util.JsonBool(false),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be any array",
 			left: util.JsonObject{
@@ -90,14 +154,12 @@ func TestComparison(t *testing.T) {
 					"is_array":   true,
 				},
 			},
-
 			right: util.JsonObject{
 				"arrayerino": util.JsonArray(nil),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be an empty object",
 			left: util.JsonObject{
@@ -114,7 +176,6 @@ func TestComparison(t *testing.T) {
 				{"objecterino", `extra elements found in object`},
 			},
 		},
-
 		{
 			name: "There should be empty array",
 			left: util.JsonObject{
@@ -123,7 +184,6 @@ func TestComparison(t *testing.T) {
 					"no_extra": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"arrayerino": util.JsonArray{"1", "2", "3"},
 			},
@@ -132,7 +192,6 @@ func TestComparison(t *testing.T) {
 				{"arrayerino", `extra elements found in array`},
 			},
 		},
-
 		{
 			name: "There should be any object",
 			left: util.JsonObject{
@@ -141,14 +200,12 @@ func TestComparison(t *testing.T) {
 					"is_object":  true,
 				},
 			},
-
 			right: util.JsonObject{
 				"objecterino": util.JsonObject(nil),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "Token match with wrong order",
 			left: util.JsonObject{
@@ -164,7 +221,6 @@ func TestComparison(t *testing.T) {
 					},
 				},
 			},
-
 			right: util.JsonObject{
 				"tokens": util.JsonArray{
 					util.JsonObject{
@@ -181,7 +237,6 @@ func TestComparison(t *testing.T) {
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be no object",
 			left: util.JsonObject{
@@ -189,12 +244,10 @@ func TestComparison(t *testing.T) {
 					"must_not_exist": true,
 				},
 			},
-
 			right:     util.JsonObject{},
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be no object but it exists",
 			left: util.JsonObject{
@@ -202,7 +255,6 @@ func TestComparison(t *testing.T) {
 					"must_not_exist": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"objecterino": util.JsonObject(nil),
 			},
@@ -210,11 +262,10 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "objecterino",
-					Message: "response[objecterino] was found, but should NOT exist",
+					Message: "was found, but should NOT exist",
 				},
 			},
 		},
-
 		{
 			name: "There should be no deeper object but it exists",
 			left: util.JsonObject{
@@ -226,7 +277,6 @@ func TestComparison(t *testing.T) {
 					},
 				},
 			},
-
 			right: util.JsonObject{
 				"it": util.JsonArray{
 					util.JsonObject{
@@ -238,11 +288,10 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
-					Message: "response[objecterino] was found, but should NOT exist",
+					Message: "was found, but should NOT exist",
 				},
 			},
 		},
-
 		{
 			name: "There should be no deeper object but it exists2",
 			left: util.JsonObject{
@@ -257,7 +306,6 @@ func TestComparison(t *testing.T) {
 					"order_matters": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"it": util.JsonArray{
 					util.JsonObject{
@@ -269,11 +317,10 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
-					Message: "response[objecterino] was found, but should NOT exist",
+					Message: "was found, but should NOT exist",
 				},
 			},
 		},
-
 		{
 			name: "There should be a exact object match",
 			left: util.JsonObject{
@@ -286,7 +333,6 @@ func TestComparison(t *testing.T) {
 					"no_extra": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"objecterino": util.JsonObject{
 					"1": util.JsonNumber(1),
@@ -297,7 +343,6 @@ func TestComparison(t *testing.T) {
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "There should be a exact object match even if order is mixed",
 			left: util.JsonObject{
@@ -310,7 +355,6 @@ func TestComparison(t *testing.T) {
 					"no_extra": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"objecterino": util.JsonObject{
 					"2": util.JsonNumber(2),
@@ -321,7 +365,6 @@ func TestComparison(t *testing.T) {
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "Exact match is not present",
 			left: util.JsonObject{
@@ -334,7 +377,6 @@ func TestComparison(t *testing.T) {
 					"no_extra": true,
 				},
 			},
-
 			right: util.JsonObject{
 				"MYobjecterino": util.JsonObject{
 					"2": util.JsonNumber(2),
@@ -527,7 +569,6 @@ func TestComparison(t *testing.T) {
 			eEqual:    true,
 			eFailures: nil,
 		},
-
 		{
 			name: "Check array length",
 			left: util.JsonObject{
@@ -650,7 +691,7 @@ func TestComparison(t *testing.T) {
 
 			if t.Failed() {
 				t.Log("EXPECTED ", wantFailures)
-				t.Log("GOT ", haveFailures)
+				t.Log("GOT      ", haveFailures)
 			}
 		})
 	}
