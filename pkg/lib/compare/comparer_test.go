@@ -213,7 +213,7 @@ var trivialComparerTestData = []struct {
 		`{"body":[{}]}`,
 		false,
 		"ticket #51342. Error msg",
-		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exist"),
+		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 
@@ -225,7 +225,7 @@ var trivialComparerTestData = []struct {
 		`{"body":[{}]}`,
 		false,
 		"ticket #52417. check value null. Null not found",
-		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exist"),
+		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 

@@ -210,7 +210,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "objecterino",
-					Message: "actual response[objecterino] was found, but should NOT exist",
+					Message: "response[objecterino] was found, but should NOT exist",
 				},
 			},
 		},
@@ -238,7 +238,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
-					Message: "actual response[objecterino] was found, but should NOT exist",
+					Message: "response[objecterino] was found, but should NOT exist",
 				},
 			},
 		},
@@ -269,7 +269,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
-					Message: "actual response[objecterino] was found, but should NOT exist",
+					Message: "response[objecterino] was found, but should NOT exist",
 				},
 			},
 		},
@@ -346,7 +346,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "MYobjecterino.3",
-					Message: "actual response[3] was not found, but should exist",
+					Message: "was not found, but should exist",
 				},
 				{
 					Key:     "MYobjecterino",
@@ -461,7 +461,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "body[0].henk",
-					Message: "actual response[henk] was not found, but should exist",
+					Message: "was not found, but should exist",
 				},
 			},
 		},

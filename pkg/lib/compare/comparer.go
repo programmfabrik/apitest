@@ -39,7 +39,7 @@ func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res Com
 			[]CompareFailure{
 				{
 					"$",
-					"actual response == nil && expected response != nil",
+					"response == nil && expected response != nil",
 				},
 			},
 		}

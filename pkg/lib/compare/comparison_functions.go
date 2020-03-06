@@ -427,60 +427,60 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonContext) (err error) {
 	if control.isString == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
-			return fmt.Errorf("actual response[%s] should be 'String' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'String' but is '%s'", jsonType)
 		}
 	} else if control.isNumber == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Number" {
-			return fmt.Errorf("actual response[%s] should be 'Number' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Number' but is '%s'", jsonType)
 		}
 	} else if control.isBool == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Bool" {
-			return fmt.Errorf("actual response[%s] should be 'Bool' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Bool' but is '%s'", jsonType)
 		}
 	} else if control.isArray == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
-			return fmt.Errorf("actual response[%s] should be 'Array' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
 	} else if control.isObject == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exist", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Object" {
-			return fmt.Errorf("actual response[%s] should be 'Object' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Object' but is '%s'", jsonType)
 		}
 	}
 
 	//Check if exists
 	if rOK == false && control.mustExist == true {
-		return fmt.Errorf("actual response[%s] was not found, but should exist", lk)
+		return fmt.Errorf("was not found, but should exist")
 	}
 
 	if rOK == true && control.mustNotExist == true {
-		return fmt.Errorf("actual response[%s] was found, but should NOT exist", lk)
+		return fmt.Errorf("was found, but should NOT exist")
 	}
 
 	//Check for array length
 	if leftLen := control.elementCount; leftLen != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
-			return fmt.Errorf("actual response[%s] should be 'Array' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
 
 		rightArray := right.(util.JsonArray)
