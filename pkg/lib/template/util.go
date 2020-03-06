@@ -30,7 +30,7 @@ func loadFileFromPathSpec(pathSpec, manifestDir string) (string, []byte, error) 
 	return filepath, requestTmpl, nil
 }
 
-func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader Loader) (filepath string, res util.GenericJson, err error) {
+func LoadManifestDataAsObject(data interface{}, manifestDir string, loader Loader) (filepath string, res interface{}, err error) {
 	switch typedData := data.(type) {
 	case string:
 		filepath, requestTmpl, err := loadFileFromPathSpec(typedData, manifestDir)
@@ -64,7 +64,7 @@ func LoadManifestDataAsObject(data util.GenericJson, manifestDir string, loader 
 	}
 }
 
-func LoadManifestDataAsRawJson(data util.GenericJson, manifestDir string) (filepath string, res json.RawMessage, err error) {
+func LoadManifestDataAsRawJson(data interface{}, manifestDir string) (filepath string, res json.RawMessage, err error) {
 	switch typedData := data.(type) {
 	case []byte:
 		err = res.UnmarshalJSON(typedData)

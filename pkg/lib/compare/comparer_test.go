@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 var trivialComparerTestData = []struct {
@@ -213,7 +212,7 @@ var trivialComparerTestData = []struct {
 		`{"body":[{}]}`,
 		false,
 		"ticket #51342. Error msg",
-		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exists"),
+		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 
@@ -225,7 +224,7 @@ var trivialComparerTestData = []struct {
 		`{"body":[{}]}`,
 		false,
 		"ticket #52417. check value null. Null not found",
-		fmt.Errorf("[body[0].henk] actual response[henk] was not found, but should exists"),
+		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 
@@ -258,7 +257,7 @@ var trivialComparerTestData = []struct {
 }
 
 func TestTrivialJsonComparer(t *testing.T) {
-	var json1, json2 util.GenericJson
+	var json1, json2 interface{}
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
 			cjson.Unmarshal([]byte(td.want), &json1)

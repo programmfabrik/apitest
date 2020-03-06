@@ -5,87 +5,89 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
-	log "github.com/sirupsen/logrus"
 
-	"path/filepath"
-
-	"os"
-
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	reportFormat, reportFile                                                       string
+	reportFormat, reportFile, serverURL                                            string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                                    []string
 )
 
 func init() {
-	TestCMD.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./apitest.yml", "config file")
+	testCMD.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./apitest.yml", "config file")
 
-	TestCMD.PersistentFlags().StringSliceVarP(
+	testCMD.PersistentFlags().StringVar(
+		&serverURL, "server", "",
+		"URL of the Server. Overwrites server URL in yml config.")
+
+	testCMD.PersistentFlags().StringSliceVarP(
 		&rootDirectorys, "directory", "d", []string{"."},
 		"path to directory containing the tests.")
 
-	TestCMD.PersistentFlags().StringSliceVarP(
+	testCMD.PersistentFlags().StringSliceVarP(
 		&singleTests, "single", "s", []string{},
 		"path to a single manifest. Runs only that specified testsuite")
 
-	TestCMD.PersistentFlags().BoolVarP(
+	testCMD.PersistentFlags().BoolVarP(
 		&logNetwork, "log-network", "n", false,
-		`log all network traffic to console`)
-	TestCMD.PersistentFlags().BoolVarP(
+		"log all network traffic to console")
+	testCMD.PersistentFlags().BoolVarP(
 		&logVerbose, "log-verbose", "v", false,
-		`log datastore operations and information about repeating request to console`)
-	TestCMD.PersistentFlags().BoolVar(
+		"log datastore operations and information about repeating request to console")
+	testCMD.PersistentFlags().BoolVar(
 		&logDatastore, "log-datastore", false,
-		`log datastore operations`)
+		"log datastore operations")
 
-	TestCMD.PersistentFlags().BoolVarP(
+	testCMD.PersistentFlags().BoolVarP(
 		&logTimeStamp, "log-timestamp", "t", false,
-		`log full timestamp into console`)
+		"log full timestamp into console")
 
-	TestCMD.PersistentFlags().StringVar(
+	testCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
 		"Defines where the log statements should be saved.")
 
-	TestCMD.PersistentFlags().StringVar(
+	testCMD.PersistentFlags().StringVar(
 		&reportFormat, "report-format", "",
 		"Defines how the report statements should be saved. [junit/json]")
 
-	TestCMD.PersistentFlags().BoolVarP(
+	testCMD.PersistentFlags().BoolVarP(
 		&limit, "limit", "l", false,
 		"Limit the lines of request log output. Set limits in apitest.yml")
 
-	TestCMD.PersistentFlags().BoolVar(
+	testCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
 		"Log network output as bash curl command")
 
-	TestCMD.PersistentFlags().BoolVar(
+	testCMD.PersistentFlags().BoolVar(
 		&stopOnFail, "stop-on-fail", false,
 		"Stop execution of later test suites if a test suite fails")
 
-	//Bind the flags to overwrite the yml config if they are set
-	viper.BindPFlag("apitest.report.file", TestCMD.PersistentFlags().Lookup("report-file"))
-	viper.BindPFlag("apitest.report.format", TestCMD.PersistentFlags().Lookup("report-format"))
-
+	// Bind the flags to overwrite the yml config if they are set
+	viper.BindPFlag("apitest.report.file", testCMD.PersistentFlags().Lookup("report-file"))
+	viper.BindPFlag("apitest.report.format", testCMD.PersistentFlags().Lookup("report-format"))
+	viper.BindPFlag("apitest.server", testCMD.PersistentFlags().Lookup("server"))
 }
 
-var TestCMD = &cobra.Command{
+var testCMD = &cobra.Command{
 	Args:             cobra.MaximumNArgs(0),
 	PersistentPreRun: setup,
 	Use:              "apitest",
 	Short:            "Apitester lets you define API tests on the go",
-	Long:             `A fast and flexible API testing tool. Helping you to define API tests on the go`,
+	Long:             "A fast and flexible API testing tool. Helping you to define API tests on the go",
 	Run:              runApiTests,
 }
 
 func main() {
-	err := TestCMD.Execute()
+	err := testCMD.Execute()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -95,62 +97,55 @@ func main() {
 var cfgFile string
 
 func setup(ccmd *cobra.Command, args []string) {
-	//Load yml config
+	// Load yml config
 	LoadConfig(cfgFile)
 
-	//Set log verbosity to trace
-	log.SetLevel(log.TraceLevel)
+	// Set log verbosity to trace
+	logrus.SetLevel(logrus.TraceLevel)
 
-	log.SetFormatter(&log.TextFormatter{
+	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: logTimeStamp,
 	})
 }
 
 func runApiTests(cmd *cobra.Command, args []string) {
 
-	//Check if paths are valid
-
+	// Check if paths are valid
 	for _, rootDirectory := range rootDirectorys {
 		if _, err := os.Stat(rootDirectory); rootDirectory != "." && os.IsNotExist(err) {
-			log.Fatalf("The path '%s' for the test folders is not valid", rootDirectory)
+			logrus.Fatalf("The path '%s' for the test folders is not valid", rootDirectory)
 		}
 	}
 	for _, singleTest := range singleTests {
 		if _, err := os.Stat(singleTest); singleTest != "" && os.IsNotExist(err) {
-			log.Fatalf("The path '%s' for the single test is not valid", singleTest)
+			logrus.Fatalf("The path '%s' for the single test is not valid", singleTest)
 		}
 	}
 
-	serverUrl := Config.Apitest.Server
+	server := Config.Apitest.Server
 	reportFormat = Config.Apitest.Report.Format
 	reportFile = Config.Apitest.Report.File
 
-	//Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(serverUrl, rootDirectorys, logNetwork, logVerbose)
+	// Save the config into TestToolConfig
+	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
-	//Actually run the tests
-	//Run test function
+	// Actually run the tests
+	// Run test function
 	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
 			if err != nil {
-				log.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
+				logrus.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
 			}
 		}
 
-		suite, err := NewTestSuite(
-			testToolConfig,
-			manifestPath,
-			r,
-			store,
-			0,
-		)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, r, store, 0)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 		return suite.Run()
@@ -158,7 +153,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	r := report.NewReport()
 
-	//Decide if run only one test
+	// Decide if run only one test
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
@@ -184,7 +179,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//Create report
+	// Create report
 	if reportFile != "" {
 		var parsingFunction func(baseResult *report.ReportElement) []byte
 		switch reportFormat {
@@ -193,7 +188,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		case "json":
 			parsingFunction = report.ParseJSONResult
 		default:
-			log.Errorf(
+			logrus.Errorf(
 				"Given report format '%s' not supported. Saving report '%s' as json",
 				reportFormat,
 				reportFile)
@@ -203,7 +198,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 		err = ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 		if err != nil {
-			log.Errorf("Could not save report into file: %s", err)
+			logrus.Errorf("Could not save report into file: %s", err)
 		}
 	}
 

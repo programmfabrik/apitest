@@ -3,11 +3,11 @@ package compare
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -23,6 +23,11 @@ type ComparisonContext struct {
 	mustNotExist   bool
 	isObject       bool
 	isBool         bool
+	numberGT       *util.JsonNumber
+	numberGE       *util.JsonNumber
+	numberLT       *util.JsonNumber
+	numberLE       *util.JsonNumber
+	regexMatch     *util.JsonString
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -76,6 +81,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.isString = tV
+		case "match":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("match is no string")
+				return
+
+			}
+			out.regexMatch = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
@@ -116,7 +129,46 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.isBool = tV
+		case "number_gt":
+			// Number must be bigger
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_gt is no number")
+				return
 
+			}
+			out.numberGT = &tV
+			out.isNumber = true
+		case "number_ge":
+			// Number must be equal or bigger
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_gt is no numbr")
+				return
+
+			}
+			out.numberGE = &tV
+			out.isNumber = true
+		case "number_lt":
+			// Number must be smaller
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_lt is no numbr")
+				return
+
+			}
+			out.numberLT = &tV
+			out.isNumber = true
+		case "number_le":
+			// Number must be equal or smaller
+			tV, ok := v.(util.JsonNumber)
+			if !ok {
+				err = fmt.Errorf("number_le is no numbr")
+				return
+
+			}
+			out.numberLE = &tV
+			out.isNumber = true
 		}
 	}
 
@@ -139,19 +191,19 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	takenInRight := make(map[string]bool, 0)
 	takenInLeft := make(map[string]bool, 0)
 
-	//Iterate over normal fields
+	// Iterate over normal fields
 	for ck, cv := range left {
 		if takenInLeft[ck] {
 			continue
 		}
-		var rv, lv util.GenericJson
+		var rv, lv interface{}
 		var rOK, lOK bool
 		control := &ComparisonContext{}
 		var k string
 
-		//Check which type of key we have
+		// Check which type of key we have
 		if strings.HasSuffix(ck, ":control") {
-			//We have a control key
+			// We have a control key
 			k = keyRegex.FindStringSubmatch(ck)[1]
 			if !takenInRight[k] {
 				rv, rOK = right[k]
@@ -172,7 +224,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 
 			delete(left, ck)
 		} else {
-			//Normal key
+			// Normal key
 			k = ck
 			if !takenInRight[k] {
 				rv, rOK = right[k]
@@ -197,22 +249,22 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			}
 		}
 
-		//If a value is present, it must exist
+		// If a value is present, it must exist
 		if lOK {
 			control.mustExist = true
 		}
 
-		//Check for the given key functions
+		// Check for the given key functions
 		err := keyChecks(k, rv, rOK, *control)
 		if err != nil {
 			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
 
-			//There is no use in checking the equality of the value if the preconditions do not work
+			// There is no use in checking the equality of the value if the preconditions do not work
 			continue
 		}
 
-		//If we have a left value, check if it is the same as right
+		// If we have a left value, check if it is the same as right
 		if lOK {
 			tmp, err := JsonEqual(lv, rv, *control)
 			if err != nil {
@@ -263,11 +315,11 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 	if len(left) > len(right) {
 		res.Equal = false
 
-		leftJson, err := json.MarshalIndent(left, "", " ")
+		leftJson, err := json.MarshalIndent(left, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal expected array")
 		}
-		rightJson, err := json.MarshalIndent(right, "", " ")
+		rightJson, err := json.MarshalIndent(right, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
 		}
@@ -309,7 +361,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 				}
 
 				if tmp.Equal == true {
-					//Found an element fitting
+					// Found an element fitting
 					found = true
 					takenInRight[rk] = true
 
@@ -364,80 +416,80 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 
 	if control.orderMatters == true {
 		if control.noExtra == true {
-			//No extra with order
+			// No extra with order
 			return arrayComparison(left, right, true, true, emptyControl)
 		} else {
-			//with extra with order
+			// with extra with order
 			return arrayComparison(left, right, false, true, emptyControl)
 		}
 	} else {
 		if control.noExtra == true {
-			//No extra, no order
+			// No extra, no order
 			return arrayComparison(left, right, true, false, emptyControl)
 		} else {
-			//with extra, no order
+			// with extra, no order
 			return arrayComparison(left, right, false, false, emptyControl)
 		}
 	}
 }
 
-func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonContext) (err error) {
+func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext) (err error) {
 	if control.isString == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
-			return fmt.Errorf("actual response[%s] should be 'String' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'String' but is '%s'", jsonType)
 		}
 	} else if control.isNumber == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Number" {
-			return fmt.Errorf("actual response[%s] should be 'Number' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Number' but is '%s'", jsonType)
 		}
 	} else if control.isBool == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Bool" {
-			return fmt.Errorf("actual response[%s] should be 'Bool' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Bool' but is '%s'", jsonType)
 		}
 	} else if control.isArray == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
-			return fmt.Errorf("actual response[%s] should be 'Array' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
 	} else if control.isObject == true {
 		if right == nil {
-			return fmt.Errorf("actual response[%s] == nil but should exists", lk)
+			return fmt.Errorf("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Object" {
-			return fmt.Errorf("actual response[%s] should be 'Object' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Object' but is '%s'", jsonType)
 		}
 	}
 
-	//Check if exists
+	// Check if exists
 	if rOK == false && control.mustExist == true {
-		return fmt.Errorf("actual response[%s] was not found, but should exists", lk)
+		return fmt.Errorf("was not found, but should exist")
 	}
 
 	if rOK == true && control.mustNotExist == true {
-		return fmt.Errorf("actual response[%s] was found, but should NOT exist", lk)
+		return fmt.Errorf("was found, but should NOT exist")
 	}
 
-	//Check for array length
+	// Check for array length
 	if leftLen := control.elementCount; leftLen != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
-			return fmt.Errorf("actual response[%s] should be 'Array' but is '%s'", lk, jsonType)
+			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
 
 		rightArray := right.(util.JsonArray)
@@ -447,10 +499,52 @@ func keyChecks(lk string, right util.GenericJson, rOK bool, control ComparisonCo
 		}
 	}
 
+	// Check for number range
+	if control.numberGE != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber >= *control.numberGE) {
+			return fmt.Errorf("actual number '%f' is not equal or greater than '%f'", rightNumber, *control.numberGE)
+		}
+	}
+	if control.numberGT != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber > *control.numberGT) {
+			return fmt.Errorf("actual number '%f' is not greater than '%f'", rightNumber, *control.numberGT)
+		}
+	}
+	if control.numberLE != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber <= *control.numberLE) {
+			return fmt.Errorf("actual number '%f' is not equal or less than '%f'", rightNumber, *control.numberLE)
+		}
+	}
+	if control.numberLT != nil {
+		rightNumber := right.(util.JsonNumber)
+		if !(rightNumber < *control.numberLT) {
+			return fmt.Errorf("actual number '%f' is not less than '%f'", rightNumber, *control.numberLT)
+		}
+	}
+
+	// Check if string matches regex
+	if regex := control.regexMatch; regex != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
+		}
+
+		doesMatch, err := regexp.Match(*regex, []byte(right.(util.JsonString)))
+		if err != nil {
+			return fmt.Errorf("could not match regex '%s': '%s'", *regex, err)
+		}
+		if !doesMatch {
+			return fmt.Errorf("does not match regex '%s'", *regex)
+		}
+	}
+
 	return nil
 }
 
-func getJsonType(value util.GenericJson) string {
+func getJsonType(value interface{}) string {
 	switch value.(type) {
 	case util.JsonObject:
 		return "Object"
@@ -467,7 +561,7 @@ func getJsonType(value util.GenericJson) string {
 	}
 }
 
-func getAsInt64(value util.GenericJson) (v int64, err error) {
+func getAsInt64(value interface{}) (int64, error) {
 	switch t := value.(type) {
 	case int64:
 		return t, nil

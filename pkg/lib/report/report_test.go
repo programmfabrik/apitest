@@ -1,13 +1,13 @@
 package report
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"testing"
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 func TestReportStructure(t *testing.T) {
@@ -80,7 +80,7 @@ func TestReportGetJSONResult(t *testing.T) {
  ]
 }`)
 
-	var expJ, realJ util.GenericJson
+	var expJ, realJ interface{}
 
 	cjson.Unmarshal(jsonResult, &realJ)
 	cjson.Unmarshal(expResult, &expJ)
@@ -133,10 +133,10 @@ func TestReportGetJUnitResult(t *testing.T) {
 		}
 	}
 
-	expJBytes, _ := cjson.Marshal(expX)
-	realJBytes, _ := cjson.Marshal(realX)
+	expJBytes, _ := json.Marshal(expX)
+	realJBytes, _ := json.Marshal(realX)
 
-	var expJ, realJ util.GenericJson
+	var expJ, realJ interface{}
 
 	cjson.Unmarshal(expJBytes, &expJ)
 	cjson.Unmarshal(realJBytes, &realJ)

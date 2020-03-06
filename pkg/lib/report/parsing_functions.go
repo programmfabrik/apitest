@@ -1,9 +1,9 @@
 package report
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"strconv"
 	"strings"
 	"time"
@@ -44,14 +44,14 @@ type JUnitReporter struct {
 	report Report
 }
 
-//Print the result to the console
+//ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
-	jsonResult, _ := cjson.MarshalIndent(baseResult, "", " ")
+	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
 
 	return jsonResult
 }
 
-//Print the result to the console
+//ParseJUnitResult Print the result to the console
 func ParseJUnitResult(baseResult *ReportElement) []byte {
 
 	testName := time.Now().Format("2006-01-02 15:04")
@@ -97,7 +97,7 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 		result.Testsuites = append(result.Testsuites, newTestSuite)
 	}
 
-	xmlResult, _ := xml.MarshalIndent(result, "", "\t")
+	xmlResult, _ := xml.MarshalIndent(result, "", "  ")
 
 	return xmlResult
 }
@@ -106,7 +106,7 @@ func iterativeDigitsCount(number int) int {
 	count := 0
 	for number != 0 {
 		number /= 10
-		count += 1
+		count++
 	}
 	return count
 }
