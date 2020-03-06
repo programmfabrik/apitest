@@ -30,7 +30,7 @@ type Response struct {
 type ResponseSerialization struct {
 	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
 	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
-	Body        util.GenericJson    `yaml:"body" json:"body,omitempty"`
+	Body        interface{}         `yaml:"body" json:"body,omitempty"`
 	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
 }
@@ -68,9 +68,9 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
-func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (util.GenericJson, error) {
+func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (interface{}, error) {
 	var (
-		res, bodyJSON util.GenericJson
+		res, bodyJSON interface{}
 		bodyData      []byte
 		err           error
 	)
@@ -148,9 +148,9 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 }
 
 // ToGenericJSON parse expected response
-func (response Response) ToGenericJSON() (util.GenericJson, error) {
+func (response Response) ToGenericJSON() (interface{}, error) {
 	var (
-		bodyJSON, res util.GenericJson
+		bodyJSON, res interface{}
 		err           error
 	)
 

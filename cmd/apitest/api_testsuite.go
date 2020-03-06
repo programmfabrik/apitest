@@ -29,7 +29,7 @@ type Suite struct {
 		Dir      string `json:"dir"`
 		Testmode bool   `json:"testmode"`
 	} `json:"http_server,omitempty"`
-	Tests []util.GenericJson     `json:"tests"`
+	Tests []interface{}          `json:"tests"`
 	Store map[string]interface{} `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
@@ -178,7 +178,7 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v util.GenericJson, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
+func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
 

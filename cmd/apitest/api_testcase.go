@@ -25,18 +25,18 @@ import (
 type Case struct {
 	Name              string                 `json:"name"`
 	Description       string                 `json:"description"`
-	RequestData       *util.GenericJson      `json:"request"`
-	ResponseData      util.GenericJson       `json:"response"`
+	RequestData       *interface{}           `json:"request"`
+	ResponseData      interface{}            `json:"response"`
 	ContinueOnFailure bool                   `json:"continue_on_failure"`
 	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
 	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
 
-	Timeout         int                `json:"timeout_ms"`
-	WaitBefore      *int               `json:"wait_before_ms"`
-	WaitAfter       *int               `json:"wait_after_ms"`
-	Delay           *int               `json:"delay_ms"`
-	BreakResponse   []util.GenericJson `json:"break_response"`
-	CollectResponse util.GenericJson   `json:"collect_response"`
+	Timeout         int           `json:"timeout_ms"`
+	WaitBefore      *int          `json:"wait_before_ms"`
+	WaitAfter       *int          `json:"wait_after_ms"`
+	Delay           *int          `json:"delay_ms"`
+	BreakResponse   []interface{} `json:"break_response"`
+	CollectResponse interface{}   `json:"collect_response"`
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
@@ -474,7 +474,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	if err != nil {
 		return spec, fmt.Errorf("error loading request data: %s", err)
 	}
-	specBytes, err := cjson.Marshal(requestData)
+	specBytes, err := json.Marshal(requestData)
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling req: %s", err)
 	}
@@ -506,7 +506,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	return spec, nil
 }
 
-func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (api.ResponseSerialization, error) {
+func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.ResponseSerialization, error) {
 	var (
 		spec api.ResponseSerialization
 	)
@@ -516,7 +516,7 @@ func (testCase Case) loadResponseSerialization(genJSON util.GenericJson) (api.Re
 		return spec, fmt.Errorf("error loading response data: %s", err)
 	}
 
-	specBytes, err := cjson.Marshal(responseData)
+	specBytes, err := json.Marshal(responseData)
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling res: %s", err)
 	}

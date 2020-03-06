@@ -32,7 +32,7 @@ type Request struct {
 	Headers              map[string]*string     `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string      `yaml:"header_from_store" json:"header_from_store"`
 	BodyType             string                 `yaml:"body_type" json:"body_type"`
-	Body                 util.GenericJson       `yaml:"body" json:"body"`
+	Body                 interface{}            `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 var trivialComparerTestData = []struct {
@@ -258,7 +257,7 @@ var trivialComparerTestData = []struct {
 }
 
 func TestTrivialJsonComparer(t *testing.T) {
-	var json1, json2 util.GenericJson
+	var json1, json2 interface{}
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
 			cjson.Unmarshal([]byte(td.want), &json1)

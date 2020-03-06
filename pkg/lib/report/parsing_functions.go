@@ -1,13 +1,12 @@
 package report
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 )
 
 type XMLRoot struct {
@@ -47,7 +46,7 @@ type JUnitReporter struct {
 
 //ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
-	jsonResult, _ := cjson.MarshalIndent(baseResult, "", "  ")
+	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
 
 	return jsonResult
 }

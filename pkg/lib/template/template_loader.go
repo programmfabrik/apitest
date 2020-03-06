@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -183,8 +184,8 @@ func (loader *Loader) Render(
 
 			return loader.datastore.Get(key)
 		},
-		"unmarshal": func(s string) (util.GenericJson, error) {
-			var gj util.GenericJson
+		"unmarshal": func(s string) (interface{}, error) {
+			var gj interface{}
 			err := cjson.Unmarshal([]byte(s), &gj)
 			if err != nil {
 				return nil, err
@@ -193,7 +194,7 @@ func (loader *Loader) Render(
 		},
 		"N": N,
 		"marshal": func(data interface{}) (string, error) {
-			bytes, err := cjson.Marshal(data)
+			bytes, err := json.Marshal(data)
 			if err != nil {
 				return "", err
 			}
