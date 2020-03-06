@@ -107,7 +107,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 Manifest is loaded as **template**, so you can use variables, Go **range** and **if** and others.
 
-```json
+```yaml
 {
     // General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename",
@@ -141,7 +141,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 ## Testcase Definition
 
 ### manifest.json
-```json
+```yaml
 {
     // Define if the testuite should continue even if this test fails. (default:false)
     "continue_on_failure": true,
@@ -286,7 +286,7 @@ The `p@` indicates to load that external file and run all tests in it in paralle
 **All tests that are run in parallel are implicit set to ContinueOnFailure as otherwise the log and report would make no
 sense**
 
-```json
+```yaml
 {
     "name": "Binary Comparison",
     "request": {
@@ -304,7 +304,7 @@ that hash.
 
 For comparing a binary file, simply point the response to the binary file:
 
-```json
+```yaml
 {
     "name": "Binary Comparison",
     "request": {
@@ -339,7 +339,7 @@ On that json you can work as you are used to with the json syntax. For seeing ho
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
-```json
+```yaml
 {
     "name": "CSV comparison",
     "request": {
@@ -374,7 +374,7 @@ The custom store uses a **string** as index and can store any type of data.
 
 **Map**: If an key ends in `[key]`, the value is assumed to be an map, and writes the data into the map at that key. If no map exists, an map is created.
 
-```json
+```yaml
 {
     "store": {
         "eas_ids[]": 15,
@@ -427,7 +427,7 @@ In the example we use the jsonObject `test` and define some control structures o
 is attached to plus `:control`. So for our case it would be `test:control`. The tool gets that this two keys `test` and
 `test:control` are in relationship with each other.
 
-```json
+```yaml
 {
     "test": {
         "hallo": 2,
@@ -459,7 +459,7 @@ The following response would **fail**  as their are to many fields in the actual
 
 #### expected response defined with no_extra
 
-```json
+```yaml
 {
     "body": {
         "testObject": {
@@ -475,7 +475,7 @@ The following response would **fail**  as their are to many fields in the actual
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "testObject": {
@@ -497,7 +497,7 @@ E.g. the following response would **fail**  as the order in the actual response 
 
 #### expected response defined with order_matters
 
-```json
+```yaml
 {
     "body": {
         "testArray": [
@@ -514,7 +514,7 @@ E.g. the following response would **fail**  as the order in the actual response 
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "testArray": [
@@ -538,7 +538,7 @@ E.g. the following response would **fail**  as `"iShouldExists"` is  **not** in 
 
 #### expected response defined with must_exist
 
-```json
+```yaml
 {
     "body": {
         "iShouldExists:control": {
@@ -560,7 +560,7 @@ E.g. the following response would **fail**  as `"count"` is has the wrong length
 
 #### expected response defined with must_exist
 
-```json
+```yaml
 {
     "body": {
         "count:control": {
@@ -572,7 +572,7 @@ E.g. the following response would **fail**  as `"count"` is has the wrong length
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "count": [
@@ -596,7 +596,7 @@ E.g. the following response would **fail**  as `"hasExtra"` is has extras
 
 #### expected response defined with must_exist
 
-```json
+```yaml
 {
     "body": {
         "count": [
@@ -613,7 +613,7 @@ E.g. the following response would **fail**  as `"hasExtra"` is has extras
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "count": [
@@ -638,7 +638,7 @@ E.g. the following response would **fail**  as `"iShouldNotExists"` is in the ac
 
 #### expected response defined with must_exist
 
-```json
+```yaml
 {
     "body": {
         "iShouldNotExists:control": {
@@ -650,7 +650,7 @@ E.g. the following response would **fail**  as `"iShouldNotExists"` is in the ac
 
 ##### actual response
 
-```json
+```yaml
 {
     "body": {
         "iShouldNotExists": "i exist, hahahah"
@@ -664,7 +664,7 @@ Check if a string value matches a given [regular expression](https://gobyexample
 
 #### expected string response checked with regex
 
-```json
+```yaml
 {
     "body": {
         "text:control": {
@@ -676,7 +676,7 @@ Check if a string value matches a given [regular expression](https://gobyexample
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "text": "valid_string-123"
@@ -697,7 +697,7 @@ E.g. the following response would **fail**  as `"testNumber"` is no number in th
 
 #### expected response defined with `is_number`
 
-```json
+```yaml
 {
     "body": {
         "testNumber:control": {
@@ -709,7 +709,7 @@ E.g. the following response would **fail**  as `"testNumber"` is no number in th
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "testNumber": false
@@ -727,7 +727,7 @@ E.g. the following response would **fail**  as `"beGreater"` is smaller than exp
 
 #### expected response defined with `number_gt`
 
-```json
+```yaml
 {
     "body": {
         "beGreater:control": {
@@ -739,7 +739,7 @@ E.g. the following response would **fail**  as `"beGreater"` is smaller than exp
 
 #### actual response
 
-```json
+```yaml
 {
     "body": {
         "beGreater": 4
@@ -754,7 +754,7 @@ This is exspecially helpfull for keeping the manifest file simpler/smaller and k
 
 A single test could look as simple as following:
 
-```json
+```yaml
 {
     "name": "Test loading request & response from external file",
     "request": "@path/to/requestFile.json",
@@ -769,7 +769,7 @@ The content of the request and response file are execatly the same as if you wou
 
 ## Request:
 
-```json
+```yaml
 {
     "body": {
         "animal": "dog",
@@ -791,7 +791,7 @@ The content of the request and response file are execatly the same as if you wou
 
 ## Response:
 
-```json
+```yaml
 {
     "body": {
         "objecttypes": [
@@ -846,12 +846,12 @@ The loaded file will be rendered with the (up to) 4 provided parameters, that ca
 ### Example
 
 Content of file at `some/path/example.tmpl`:
-```json
+```yaml
 {{ load_file "../target.tmpl" "hello" }}
 ```
 
 Content of file at `some/target.tmpl`:
-```json
+```yaml
 {{ .Param1 }} world`
 ```
 
@@ -870,7 +870,7 @@ Assume you have the following structure in your sheet:
 
 If you parse this now to CSV and then load it via `file_csv` you get the following JSON structure:
 
-```json
+```yaml
 [
     {
         "column_a": "row1a",
@@ -887,7 +887,7 @@ If you parse this now to CSV and then load it via `file_csv` you get the followi
 
 For mapping now certain values to a map you can use ` rows_to_map "column_a" "column_c" `  and the output will be a map with the following content:
 
-```json
+```yaml
 {
     "row1a": "row1c",
     "row2a": 22
@@ -919,7 +919,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```json
+```yaml
 [
     [
         {
@@ -972,7 +972,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```json
+```yaml
 {
     "one": [
         {
@@ -1015,7 +1015,7 @@ The `keyColumn`  **must** be of the type string, as it functions as map index (w
 ```
 
 Rendering that will give you :
-```json
+```yaml
 {
     "row1a": "row1c",
     "row2a": "row2c"
@@ -1137,7 +1137,7 @@ If the `key` is a string, the datastore is accessed directly, allowing access to
 The datastore stores all responses in a list. We can retrieve the response (as a json string) by using this
 template function. `{{ datastore 0  }}` will render to
 
-```json
+```yaml
 {
     "statuscode": 200,
     "header": {
@@ -1377,7 +1377,7 @@ The apitest tool includes an HTTP Server. It can be used to serve files from the
 
 To configure a HTTP Server, the manifest need to include these lines:
 
-```json
+```yaml
 {
     "http_server": {
         "addr": ":8788", // address to listen on
