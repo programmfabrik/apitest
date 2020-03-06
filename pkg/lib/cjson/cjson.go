@@ -31,14 +31,6 @@ func Unmarshal(input []byte, output interface{}) error {
 	return nil
 }
 
-func Marshal(v interface{}) ([]byte, error) {
-	return json.Marshal(v)
-}
-
-func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
-	return json.MarshalIndent(v, prefix, indent)
-}
-
 func getIndepthJsonError(input []byte, inputError error) (err error) {
 
 	err = inputError

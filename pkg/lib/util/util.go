@@ -13,8 +13,8 @@ func Max(x, y int) int {
 	return y
 }
 
-func RemoveFromJsonArray(input []GenericJson, removeIndex int) (output []GenericJson) {
-	output = make([]GenericJson, len(input))
+func RemoveFromJsonArray(input []interface{}, removeIndex int) (output []interface{}) {
+	output = make([]interface{}, len(input))
 	copy(output, input)
 
 	// Remove the element at index i from a.

@@ -21,7 +21,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
 
-	records, err := renderCSV(bytes.NewReader(inputCSV), ',')
+	records, err := renderCSV(bytes.NewReader(inputCSV), comma)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +59,48 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 
 }
 
-func extractHeaderInformation(names, formats []string) (infos []info, err error) {
-	infos = make([]info, 0)
+func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
+	if len(inputCSV) == 0 {
+		return nil, fmt.Errorf("The given input csv was empty")
+	}
+
+	records, err := renderCSV(bytes.NewReader(inputCSV), comma)
+	if err != nil {
+		return nil, err
+	}
+
+	infos := make([]info, 0)
+	for _, v := range records[0] {
+		infos = append(infos, info{name: strings.TrimSpace(v)})
+	}
+
+	output := []map[string]interface{}{}
+
+	//Iterate over the records with skipping the first two lines (as they contain the infos)
+	for _, v := range records[1:] {
+		tmpRow := make(map[string]interface{}, 0)
+
+		for ki, vi := range v {
+			if ki >= len(infos) {
+				continue
+			}
+
+			value, err := getTyped(vi, "string")
+			if err != nil {
+				return nil, err
+			}
+
+			tmpRow[infos[ki].name] = value
+
+		}
+		output = append(output, tmpRow)
+	}
+
+	return output, nil
+}
+
+func extractHeaderInformation(names, formats []string) ([]info, error) {
+	infos := make([]info, 0)
 
 	for k, v := range names {
 		if k >= len(formats) {
@@ -80,7 +120,8 @@ func extractHeaderInformation(names, formats []string) (infos []info, err error)
 
 		infos = append(infos, info{format: formats[k], name: strings.TrimSpace(v)})
 	}
-	return
+
+	return infos, nil
 }
 
 func removeEmptyRowsAndComments(input [][]string) (output [][]string) {
@@ -109,6 +150,7 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 	reader := csv.NewReader(read)
 	reader.Comma = comma
 	reader.FieldsPerRecord = -1
+	reader.LazyQuotes = true
 
 	records, err := reader.ReadAll()
 	if err != nil {

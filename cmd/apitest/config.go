@@ -38,11 +38,11 @@ func LoadConfig(cfgFile string) {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		log.Fatalf("Must provide a config file")
+		log.Infof("No config file provided (will only use command line parameters)")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Can't read config \"%s\": %s", cfgFile, err)
+		log.Infof("No config \"%s\" read (will only use command line parameters): %s", cfgFile, err)
 	}
 
 	viper.Unmarshal(&Config)

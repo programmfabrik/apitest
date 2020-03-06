@@ -2,13 +2,13 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/url"
 	"strings"
 
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -84,7 +84,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
-	bodyBytes, err := cjson.Marshal(request.Body)
+	bodyBytes, err := json.Marshal(request.Body)
 	if err != nil {
 		return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
 	}

@@ -18,16 +18,13 @@ The report parameters of this config can be overwritten via a command line flag.
 
 ```yaml
 apitest:
-   server: "http://5.simon.pf-berlin.de/api/v1" //The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
-   store:
-     hallo: "du"
-   limit:
-     request: 0
-     response: 10
-   report: //Configures the maschine report. For usage with jenkis or any other CI tool
-      file: "apitest_report" //Filename of the report file. The file gets saved in the same directory of the apitest binary
-      format: "json" //Format of the report. (Supported formats: json or junit)
+  server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
+  report: # Configures the maschine report. For usage with jenkis or any other CI tool
+    file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
+    format: "json.junit"       # Format of the report. (Supported formats: json or junit)
 ```
+
+The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
 
 ## Command line interface
 
@@ -88,6 +85,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ### Overwrite config parameters
 
 - `--config subfolder/newConfigFile` or `-c subfolder/newConfigFile`: Overwrites the path of the config file (default "./apitest.yml") with "subfolder/newConfigFile"
+- `--server URL`: Overwrites base url to the api
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
 
@@ -111,34 +109,33 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```yaml
 {
-    //General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
+    // General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename",
-    //Testname. Should be the ticket number if the test is based on a ticket
+    // Testname. Should be the ticket number if the test is based on a ticket
     "name": "ticket_48565",
     // init store
     "store": {
         "custom": "data"
     },
-    //Testsuites your want to run upfront (e.g. a setup). Paths are relative to the current test manifest
+    // Testsuites your want to run upfront (e.g. a setup). Paths are relative to the current test manifest
     "require": [
         "setup_manifests/purge.yaml",
         "setup_manifests/config.yaml",
         "setup_manifests/upload_datamodel.yaml"
     ],
-    //Array of single testcases. Add es much as you want. They get executed in chronological order
+    // Array of single testcases. Add es much as you want. They get executed in chronological order
     "tests": [
-        //[SINGLE TESTCASE]: See below for more information
-        //[SINGLE TESTCASE]: See below for more information
-        //[SINGLE TESTCASE]: See below for more information
+        // [SINGLE TESTCASE]: See below for more information
+        // [SINGLE TESTCASE]: See below for more information
+        // [SINGLE TESTCASE]: See below for more information
 
-        //We also support the external loading of a complete test:
+        // We also support the external loading of a complete test:
         "@pathToTest.json"
 
-        //By prefixing it with a p the testtool runs the tests all in parallel. All parallel tests are then set to ContinueOnFailure !
+        // By prefixing it with a p the testtool runs the tests all in parallel. All parallel tests are then set to ContinueOnFailure !
         "p@pathToTestsThatShouldRunInParallel.json"
     ]
 }
-
 ```
 
 ## Testcase Definition
@@ -150,104 +147,133 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "continue_on_failure": true,
     // Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname",
+
     // Store custom values to the datastore
     "store": {
         "key1": "value1",
         "key2": "value2"
     },
+
     // Optional temporary HTTP Server (see below)
     "http_server": {
         "addr": ":1234",
         "dir": ".",
         "testmode": false
     },
+
     // Specify a unique log behavior only for this single test.
-    "log_network":true,
+    "log_network": true,
     "log_verbose": false,
-    //Defines what gets send to the server
+
+    // Defines what gets send to the server
     "request": {
-    //What endpoint we want to target. You find all possible endpoints in the api documentation
+
+        // What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest",
-    //How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
+
+        // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET",
-    //Parameters that will be added to the url. e.g. http://5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
+
+        // Parameters that will be added to the url. e.g. http:// 5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
         "query_params": {
             "number": 2,
             "token": "testtoken"
         },
-    // With query_params_from_store set a query parameter to the value of the datastore field
-    "query_params_from_store": {
-      "format": "formatFromDatastore",
-          // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
-          // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
-      "test": "?a"
-    }
-    //Additional headers that should be added to the request
-    "header":{
-      "header1":"value",
-      "header2":"value"
+
+        // With query_params_from_store set a query parameter to the value of the datastore field
+        "query_params_from_store": {
+            "format": "formatFromDatastore",
+            // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
+            // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
+            "test": "?a"
+        },
+
+        // Additional headers that should be added to the request
+        "header": {
+            "header1": "value",
+            "header2": "value"
+        },
+
+        // With header_from_you set a header to the value of the dat astore field
+        // In this example we set the "Content-Type" header to the value "application/json"
+        // As "application/json" is stored as string in the datastore on index "contentType"
+        "header_from_store": {
+            "Content-Type": "contentType",
+            // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
+            // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
+            "Range": "?a"
+        },
+
+        // All the content you want to send in the http body. Is a JSON Object
+        "body": {
+            "flower": "rose",
+            "animal": "dog"
+        },
+
+        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
+        "body_type": "urlencoded"
     },
-    // With header_from_you set a header to the value of the dat astore field
-    // In this example we set the "Content-Type" header to the value "application/json"
-    // As "application/json" is stored as string in the datastore on index "contentType"
-    "header_from_store": {
-      "Content-Type": "contentType"
-          // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
-          // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
-      "Range": "?a"
-    }
-    //All the content you want to send in the http body. Is a JSON Object
-    "body":{
-      "flower":"rose",
-      "animal":"dog"
-    },
-    //If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
-    "body_type":"urlencoded"
-    },
-    //Define how the response should look like. Testtool checks against this response
+    // Define how the response should look like. Testtool checks against this response
     "response": {
-      //Expected http status code. See api documentation vor the right ones
+
+        // Expected http status code. See api documentation vor the right ones
         "statuscode": 200,
-    //If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
-    "header":{
-      "key1":[
-        "val1",
-        "val2",
-        "val3"
-      ],
-      "x-easydb-token":[
-        "csdklmwerf8ßwji02kopwfjko2"
-      ]
-    },
-    //The body we want to assert on
+
+        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
+        "header": {
+            "key1": [
+                "val1",
+                "val2",
+                "val3"
+            ],
+            "x-easydb-token": [
+                "csdklmwerf8ßwji02kopwfjko2"
+            ]
+        },
+
+        // optionally, the expected format of the response can be specified so that it can be converted into json and can be checked
+        "format": {
+            "type": "csv",
+            "csv": {
+                "comma": ";"
+            }
+        },
+
+        // The body we want to assert on
         "body": {
             "objecttypes": [
                 "pictures"
             ]
         }
     },
-  // Store parts of the repsonse into the datastore
+
+    // Store parts of the repsonse into the datastore
     "store_response_qjson": {
         "eas_id": "body.0.eas._id"
-  },
-  // wait_before_ms pauses right before sending
-  // the test request <n> milliseconds
-  "wait_before_ms": 0,
+    },
 
-  // wait_after_ms pauses right before sending
-  // the test request <n> milliseconds
-  "wait_after_ms": 0,
+    // wait_before_ms pauses right before sending the test request <n> milliseconds
+    "wait_before_ms": 0,
+    // wait_after_ms pauses right before sending the test request <n> milliseconds
+    "wait_after_ms": 0,
 
-  //Delay the request by x msec
-   "delay_ms":5000,
-    //With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
+    // Delay the request by x msec
+    "delay_ms": 5000,
+    // With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
     // timeout_ms:* If this timeout is done, no new redo will be started
-    //  -1: No timeout - run endless
+    // -1: No timeout - run endless
     // break_response: [Array] [Logical OR] If one of this responses occures, the tool fails the test and tells it found a break repsponse
     // collect_response:  [Array] [Logical AND] If this is set, the tool will check if all reponses occure in the response (even in different poll runs)
-    "timeout_ms":5000,
-    "break_response":["@break_response.json"],
-    "collect_response":["@continue_response_pending.json","@continue_response_processing.json"]
+    "timeout_ms": 5000,
+
+    "break_response": [
+        "@break_response.json"
+    ],
+
+    "collect_response": [
+        "@continue_response_pending.json",
+        "@continue_response_processing.json"
+    ]
 }
 ```
 
@@ -260,21 +286,17 @@ The `p@` indicates to load that external file and run all tests in it in paralle
 **All tests that are run in parallel are implicit set to ContinueOnFailure as otherwise the log and report would make no
 sense**
 
-
-
 ```yaml
-        {
-            "name": "Binary Comparison",
-      "request":{
+{
+    "name": "Binary Comparison",
+    "request": {
         "endpoint": "suggest",
         "method": "GET"
-      },
-      // Path to binary file with @
-      "response":"@simple.bin"
-        }
+    },
+    // Path to binary file with @
+    "response": "@simple.bin"
+}
 ```
-
-
 ## Binary data comparison
 
 The tool is able to do a comparison with a binary file. Here we take a MD5 hash of the file and and then later compare
@@ -283,28 +305,61 @@ that hash.
 For comparing a binary file, simply point the response to the binary file:
 
 ```yaml
-  {
-   "name": "Binary Comparison",
-   "request":{
-   "endpoint": "suggest",
-   "method": "GET"
-  },
-  // Path to binary file with @
-  "response": {
-    "body": {
-      "md5sum": {{ md5sum "@simple.bin" || marshal }}
+{
+    "name": "Binary Comparison",
+    "request": {
+        "endpoint": "suggest",
+        "method": "GET"
+    },
+    // Path to binary file with @
+    "response": {
+        "format": {
+            "type": "binary"
+        },
+        "body": {
+            "md5sum": {{ md5sum "@simple.bin" || marshal }}
+        }
     }
-  }
+}
 ```
+
+> The format must be specified as `"type": "binary"`
 
 ## XML Data comparison
 
-When the endpoint returns one of the content types for xml `text/xml` or `application/xml` we internally marshal that xml
-into json. (With github.com/clbanning/mxj `NewMapXmlSeq()`)
-On that json you can work as you are used to with the json syntax. For seeing how the convert json locks you can use the
-`--log-verbose` command line flag
+If the response format is specified as `"type": "xml"`, we internally marshal that XML into json. (With github.com/clbanning/mxj `NewMapXmlSeq()`).
 
-## Datastore
+On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+
+## CSV Data comparison
+
+If the response format is specified as `"type": "csv"`, we internally marshal that CSV into json.
+
+On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+
+You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
+
+```yaml
+{
+    "name": "CSV comparison",
+    "request": {
+        "endpoint": "export/1/files/file.csv",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "type": "csv",
+            "csv": {
+                "comma": ";"
+            }
+        },
+        "body": {
+        }
+    }
+}
+```
+
+# Datastore
 
 The datastore is a storage for arbitrary data. It can be set directly or set using values received from a response. It has two parts:
 
@@ -321,10 +376,10 @@ The custom store uses a **string** as index and can store any type of data.
 
 ```yaml
 {
-  "store": {
-    "eas_ids[]": 15,
-    "mapStorage[keyIWantToStore]": "value"
-  }
+    "store": {
+        "eas_ids[]": 15,
+        "mapStorage[keyIWantToStore]": "value"
+    }
 }
 ```
 
@@ -332,7 +387,7 @@ This example would create an Array in index **eas_ids** and append **15** to it.
 
 Arrays are useful using the Go-Template **range** function.
 
-### Set Data in Custom Store
+## Set Data in Custom Store
 
 To set data in custom store, you can use 4 methods:
 
@@ -345,7 +400,7 @@ All methods use a Map as value, the keys of the map are **string**, the values c
 
 The method `store_response_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
 
-### Get Data from Custom Store
+## Get Data from Custom Store
 
 The data from the custom store is retrieved using the `datastore <key>`Template function. `key`must be used in any store method before it is requested. If the key is unset, the datastore function returns an empty **string**. Use the special key `-` to return the entire datastore.
 
@@ -354,11 +409,11 @@ element in the slice (original index `2`)
 
 If you access an invalid index for datastore `map[index]` or `slice[]` you get an empty string. No error is thrown.
 
-### Get Data from Sequential Store
+## Get Data from Sequential Store
 
 To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
-## Use control structures
+# Use control structures
 
 We support certain control structures in the **response definition**. You can use this control structures when ever you
 are able to set keys in the json (so you have to be inside a object).
@@ -367,33 +422,34 @@ without a second key with some weird value. When you give a value the tool alway
 correct and present in the actual reponse. So be aware of this behavior as it could interfere with your intended test
 behavior.
 
-### Define a control structure
+## Define a control structure
 In the example we use the jsonObject `test` and define some control structures on it. A control structure uses the key it
 is attached to plus `:control`. So for our case it would be `test:control`. The tool gets that this two keys `test` and
 `test:control` are in relationship with each other.
 
 ```yaml
 {
-  "test":{
-    "hallo":2,
-    "hello":3
-  },
-  "test:control":{
-    "is_object":true,
-    "no_extra":true
-  }
+    "test": {
+        "hallo": 2,
+        "hello": 3
+    },
+    "test:control": {
+        "is_object": true,
+        "no_extra": true
+    }
 }
 ```
 
 
-### Available controls
+## Available controls
 
 Their are several controls available. The first two `no_extra` and `order_matters` always need their responding real key
 and value to function as intended. The others can be used without a real key.
 
 Default behavior for all keys is `=false`. So you only have to set them if you want to explicit use them as `true`
 
-#### no_extra
+### `no_extra`
+
 This commands defines an exact match, if it is set, their are no more fields allowed in the response as defined in the
 testcase.
 
@@ -401,73 +457,77 @@ testcase.
 
 The following response would **fail**  as their are to many fields in the actual response
 
-##### expected response defined with no_extra
+#### expected response defined with no_extra
 
 ```yaml
 {
-  "body":{
-    "testObject":{
-      "a":"z",
-      "b":"y"
-    },
-    "testObject:control":{
-      "no_extra":true
+    "body": {
+        "testObject": {
+            "a": "z",
+            "b": "y"
+        },
+        "testObject:control": {
+            "no_extra": true
+        }
     }
-  }
 }
 ```
-##### actual response
+
+#### actual response
 
 ```yaml
 {
-  "body":{
-    "testObject":{
-      "a":"z",
-      "b":"y",
-      "c":"to much, so we fail"
+    "body": {
+        "testObject": {
+            "a": "z",
+            "b": "y",
+            "c": "to much, so we fail"
+        }
     }
-  }
 }
 ```
 
-#### order_matters
+### `order_matters`
+
 This commands defines that the order in an array should be checked.
 
 `order_matters` is available **only for arrays**
 
 E.g. the following response would **fail**  as the order in the actual response is wrong
 
-##### expected response defined with order_matters
+#### expected response defined with order_matters
 
 ```yaml
 {
-  "body":{
-    "testArray":[
-      "a",
-      "b",
-      "c"
-    ],
-    "testArray:control":{
-      "order_matters":true
+    "body": {
+        "testArray": [
+            "a",
+            "b",
+            "c"
+        ],
+        "testArray:control": {
+            "order_matters": true
+        }
     }
-  }
 }
 ```
-##### actual response
+
+#### actual response
+
 ```yaml
 {
-  "body":{
-    "testArray":[
-      "c",
-      "b",
-      "a"
-    ]
-  }
+    "body": {
+        "testArray": [
+            "c",
+            "b",
+            "a"
+        ]
+    }
 }
 ```
 
+### `must_exist`
 
-#### must_exist
 Check if a certain value does exist in the reponse (no matter what its content is)
 
 `must_exist` is available for all types.
@@ -476,21 +536,20 @@ This control can be used without a "real" key. So only the `:control` key is pre
 
 E.g. the following response would **fail**  as `"iShouldExists"` is  **not** in the actual response
 
-
-##### expected response defined with must_exist
+#### expected response defined with must_exist
 
 ```yaml
 {
-  "body":{
-    "iShouldExists:control":{
-      "must_exist":true
+    "body": {
+        "iShouldExists:control": {
+            "must_exist": true
+        }
     }
-  }
 }
 ```
 
+### `element_count`
 
-#### element_count
 Check if the size of an array equals the element_count
 
 `element_count` is available only for arrays
@@ -499,34 +558,34 @@ This control can be used without a "real" key. So only the `:control` key is pre
 
 E.g. the following response would **fail**  as `"count"` is has the wrong length
 
-
-##### expected response defined with must_exist
+#### expected response defined with must_exist
 
 ```yaml
 {
-  "body":{
-    "count:control":{
-      "element_count":2
+    "body": {
+        "count:control": {
+            "element_count": 2
+        }
     }
-  }
 }
 ```
 
-##### actual response
+#### actual response
 
 ```yaml
 {
-  "body":{
-    "count":[
-      1,
-      2,
-      3
-    ]
-   }
+    "body": {
+        "count": [
+            1,
+            2,
+            3
+        ]
+    }
 }
 ```
 
-#### element_no_extra
+### `element_no_extra`
+
 Passes the no extra to the underlying structure in an array
 
 `must_exist` is available only for arrays
@@ -535,40 +594,40 @@ This control can be used without a "real" key. So only the `:control` key is pre
 
 E.g. the following response would **fail**  as `"hasExtra"` is has extras
 
-
-##### expected response defined with must_exist
+#### expected response defined with must_exist
 
 ```yaml
 {
-  "body":{
-    "count":[
-      {
-       "fine": true,
-      }
-    ],
-    "count:control":{
-      "element_no_extra":true
+    "body": {
+        "count": [
+            {
+                "fine": true,
+            }
+        ],
+        "count:control": {
+            "element_no_extra": true
+        }
     }
-  }
 }
 ```
 
-##### actual response
+#### actual response
 
 ```yaml
 {
-  "body":{
-    "count":[
-      {
-       "fine": true,
-       "extra": "shouldNotBeHere"
-      }
-    ]
-   }
+    "body": {
+        "count": [
+            {
+                "fine": true,
+                "extra": "shouldNotBeHere"
+            }
+        ]
+    }
 }
 ```
 
-#### must_not_exist
+### `must_not_exist`
+
 Check if a certain value does not exist in the reponse
 
 `must_not_exist` is available for all types.
@@ -577,15 +636,15 @@ This control can be used without a "real" key. So only the `:control` key is pre
 
 E.g. the following response would **fail**  as `"iShouldNotExists"` is in the actual response
 
-##### expected response defined with must_exist
+#### expected response defined with must_exist
 
 ```yaml
 {
-  "body":{
-    "iShouldNotExists:control":{
-      "must_not_exist":true
+    "body": {
+        "iShouldNotExists:control": {
+            "must_not_exist": true
+        }
     }
-  }
 }
 ```
 
@@ -593,13 +652,40 @@ E.g. the following response would **fail**  as `"iShouldNotExists"` is in the ac
 
 ```yaml
 {
-  "body":{
-    "iShouldNotExists":"i exist, hahahah"
-   }
+    "body": {
+        "iShouldNotExists": "i exist, hahahah"
+    }
 }
 ```
 
-#### Type checkers
+### `match`
+
+Check if a string value matches a given [regular expression](https://gobyexample.com/regular-expressions)
+
+#### expected string response checked with regex
+
+```yaml
+{
+    "body": {
+        "text:control": {
+            "match": ".+-\\d+"
+        }
+    }
+}
+```
+
+#### actual response
+
+```yaml
+{
+    "body": {
+        "text": "valid_string-123"
+    }
+}
+```
+
+### Type checkers
+
 With `is_string`, `is_bool`, `is_object`, `is_array` and `is_number` you can check if your field has a certain type
 
 The type checkers are available for all types. It implicit also checks `must_exist` for the value as there is no sense in
@@ -609,59 +695,59 @@ This control can be used without a "real" key. So only the `:control` key is pre
 
 E.g. the following response would **fail**  as `"testNumber"` is no number in the actual response
 
-##### expected response defined with is_number
+#### expected response defined with `is_number`
 
 ```yaml
 {
-  "body":{
-    "testNumber:control":{
-      "is_number":true
-    }
-  }
-}
-```
-
-##### actual response
-
-```yaml
-{
-  "body":{
-    "testNumber":false
+    "body": {
+        "testNumber:control": {
+            "is_number": true
+        }
     }
 }
 ```
 
-#### Number range checkers
-With `number_gt`(greater than >), `number_ge`(greater equal >), `number_lt` (less than <), `number_le` (less equal <=) you can check if your field of type number (implicit check) is in
-certain number range
+#### actual response
+
+```yaml
+{
+    "body": {
+        "testNumber": false
+    }
+}
+```
+
+### Number range checkers
+
+With `number_gt`(greater than `>`), `number_ge`(greater equal `>=`), `number_lt` (less than `<`), `number_le` (less equal `<=`) you can check if your field of type number (implicit check) is in certain number range
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
 E.g. the following response would **fail**  as `"beGreater"` is smaller than expected
 
-##### expected response defined with is_number
+#### expected response defined with `number_gt`
 
 ```yaml
 {
-  "body":{
-    "beGreater:control":{
-      "number_gt":5
-    }
-  }
-}
-```
-
-##### actual response
-
-```yaml
-{
-  "body":{
-    "beGreater":4
+    "body": {
+        "beGreater:control": {
+            "number_gt": 5
+        }
     }
 }
 ```
 
-## Use external file
+#### actual response
+
+```yaml
+{
+    "body": {
+        "beGreater": 4
+    }
+}
+```
+
+# Use external file
 
 In the request and response part of the single testcase you also can load the content from an external file
 This is exspecially helpfull for keeping the manifest file simpler/smaller and keep a better overview. **On top: You can use so called template functions in the external file.** (We will dig deeper into the template functions later)
@@ -670,9 +756,9 @@ A single test could look as simple as following:
 
 ```yaml
 {
-  "name": "Test loading request & response from external file",
-  "request": "@path/to/requestFile.json",
-  "response": "@path/to/responseFile.json"
+    "name": "Test loading request & response from external file",
+    "request": "@path/to/requestFile.json",
+    "response": "@path/to/responseFile.json"
 }
 ```
 
@@ -680,7 +766,8 @@ A single test could look as simple as following:
 can be web urls e.g. https://programmfabrik.de/testfile.json**
 
 The content of the request and response file are execatly the same as if you would place the json code inline:
-**Request:**
+
+## Request:
 
 ```yaml
 {
@@ -702,7 +789,7 @@ The content of the request and response file are execatly the same as if you wou
 }
 ```
 
-**Response:**
+## Response:
 
 ```yaml
 {
@@ -727,6 +814,7 @@ The content of the request and response file are execatly the same as if you wou
 ```
 
 # Template functions
+
 As described before, if you use an external file you can make use of so called template functions. What they are and how they work for the apitesting tool is described in the following part.
 
 Template Functions are invoked using the tags `{{ }}` and upon returning substitutes the function call with
@@ -740,33 +828,36 @@ another file->external file: return rendered template "hello world"
 external file->manifest.json: return rendered template
 ```
 
-#### Example
+### Example
 Assume that the template function `myfunc`, given the arguments `1 "foo"`, returns
 `"bar"`. The call `{{ myfunc 1 "foo" }}` would translate to `bar`.
 Consequently, rendering `Lets meet at the {{ myfunc 1 "foo" }}` results in an invitation to the `bar`.
 
 We provide the following functions:
 
-### file "relative/path/" [param1] ... [param4]
-```
-Helper function to load contents of a file; if this file contains templates; it will render these templates
-with the up to 4 parameters provided in the call
-@param1-4: string; can be accessed from the loaded file via {{ .Param1-4 }}; see example below
-```
-Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl
-e.g. https://docs.google.com/test/tmpl.txt
+## `file "relative/path/" [param1] ... [param4]`
+
+Helper function to load contents of a file; if this file contains templates; it will render these templates with the up to 4 parameters provided in the call `@param1-4: string;` can be accessed from the loaded file via `{{ .Param1-4 }};` see example below
+
+Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
+
 The loaded file will be rendered with the (up to) 4 provided parameters, that can be accessed using .Param1-4.
-#### Example
+
+### Example
 
 Content of file at `some/path/example.tmpl`:
-`{{ load_file "../target.tmpl" "hello" }}`
+```yaml
+{{ load_file "../target.tmpl" "hello" }}
+```
 
 Content of file at `some/target.tmpl`:
-`{{ .Param1 }} world`
+```yaml
+{{ .Param1 }} world`
+```
 
 Rendering `example.tmpl` will result in `hello world`
 
-### rows_to_map "keyColumn" "valueColumn" [input]
+## `rows_to_map "keyColumn" "valueColumn" [input]`
 
 Generates a key-value map from your input rows.
 
@@ -784,12 +875,12 @@ If you parse this now to CSV and then load it via `file_csv` you get the followi
     {
         "column_a": "row1a",
         "column_b": "row1b",
-        "column_c": "row1c",
+        "column_c": "row1c"
     },
     {
         "column_a": "row2a",
         "column_b": "row2b",
-        "column_c": 22,
+        "column_c": 22
     }
 ]
 ```
@@ -798,12 +889,12 @@ For mapping now certain values to a map you can use ` rows_to_map "column_a" "co
 
 ```yaml
 {
-    "row1a":"row1c",
-    "row2a":22,
+    "row1a": "row1c",
+    "row2a": 22
 }
 ```
 
-### group_rows "groupColumn" [rows]
+## `group_rows "groupColumn" [rows]`
 
 Generates an Array of rows from input rows. The **groupColumn** needs to be set to a column which will be used for grouping the rows into the Array.
 
@@ -814,7 +905,7 @@ The column needs to:
 
 The Array will group all rows with identical values in the **groupColumn**.
 
-#### Example
+### Example
 
 The CSV can look at follows, use **file_csv** to read it and pipe into **group_rows**
 
@@ -841,16 +932,14 @@ Produces this output (presented as **json** for better readability:
             "reference": "ref1b",
             "title": "title1b"
         }
-    ]
-    ,
+    ],
     [
         {
             "batch": 3,
             "reference": "ref3",
             "title": "title3"
         }
-    ]
-    ,
+    ],
     [
         {
             "batch": 4,
@@ -861,7 +950,7 @@ Produces this output (presented as **json** for better readability:
 ]
 ```
 
-### group_map_rows "groupColumn" [rows]
+## `group_map_rows "groupColumn" [rows]`
 
 Generates an Map of rows from input rows. The **groupColumn** needs to be set to a column which will be used for grouping the rows into the Array.
 
@@ -869,7 +958,7 @@ The column needs to be a **string** column.
 
 The Map will group all rows with identical values in the **groupColumn**.
 
-#### Example
+### Example
 
 The CSV can look at follows, use **file_csv** to read it and pipe into **group_rows**
 
@@ -896,28 +985,25 @@ Produces this output (presented as **json** for better readability:
             "reference": "ref1b",
             "title": "title1b"
         }
-    ]
-    ,
+    ],
     "4": [
         {
             "batch": "4",
             "reference": "ref3",
             "title": "title3"
         }
-    ]
-    ,
+    ],
     "3": [
         {
-            "batch": "3"
+            "batch": "3",
             "reference": "ref4",
             "title": "title4"
         }
     ]
-]
+}
 ```
 
-
-#### Template Example
+### Template Example
 
 With the parameters `keyColumn` and `valueColumn` you can select the two columns you want to use for map. (Only two are supported)
 
@@ -931,14 +1017,14 @@ The `keyColumn`  **must** be of the type string, as it functions as map index (w
 Rendering that will give you :
 ```yaml
 {
-    "row1a":"row1c",
-    "row2a":"row2c"
+    "row1a": "row1c",
+    "row2a": "row2c"
 }
 ```
 
-#### Behavior in corner cases
+### Behavior in corner cases
 
-##### No keyColumn given
+#### No keyColumn given
 
 The function returns an empty map
 
@@ -948,7 +1034,7 @@ For `rows_to_map`:
 {}
 ```
 
-##### No valueColumn given
+#### No valueColumn given
 
 The complete row gets mapped
 
@@ -969,7 +1055,7 @@ For `rows_to_map "column_a"`:
 }
 ```
 
-##### A row does not contain a key column
+#### A row does not contain a key column
 
 The row does get skipped
 
@@ -998,12 +1084,12 @@ For `rows_to_map "column_a" "column_c" `:
 
 ```go
 {
-    "row1a":"row1c",
-    "row3a":"row3c",
+    row1a: "row1c",
+    row3a: "row3c",
 }
 ```
 
-##### A row does not contain a value column
+#### A row does not contain a value column
 
 The value will be set to `""` (empty string)
 
@@ -1032,13 +1118,13 @@ For `rows_to_map "column_a" "column_c" `:
 
 ```go
 {
-  "row1a":"row1c",
-    "row2a":"",
-    "row3a":"row3c",
+    row1a": "row1c",
+    row2a: "",
+    row3a: "row3c",
 }
 ```
 
-### datastore \[key\]
+## `datastore [key]`
 
 Helper function to query the datastore; used most of the time in conjunction with `qjson`.
 
@@ -1056,30 +1142,26 @@ template function. `{{ datastore 0  }}` will render to
     "statuscode": 200,
     "header": {
         "foo": [
-    "bar",
-    "baz"
-  ]
+            "bar",
+            "baz"
+        ]
     },
     "body": "..."
 }
-
 ```
 
 This function is intended to be used with the `qjson` template function.
 
 The key `-` has a special meaning, it returns the entire custom datastore (not the sequentially stored responses)
 
-### qjson \[path\] \[json\]
+## `qjson [path] [json]`
 
-```
 Helper function to extract fields from the 'json'.
-@path: string; a description of the location of the field to extract. For array access use integers; for object
-access use keys. Example: 'body.1.field'; see below for more details
-@json_string: string; a valid json blob to be queried; can supplied via pipes from 'datastore idx'
-@result: the content of the json blob at the specified path
-```
+- `@path`: string; a description of the location of the field to extract. For array access use integers; for object access use keys. Example: 'body.1.field'; see below for more details
+- `@json_string`: string; a valid json blob to be queried; can supplied via pipes from 'datastore idx'
+- `@result`: the content of the json blob at the specified path
 
-#### Example
+### Example
 The call
 
 ```django
@@ -1100,7 +1182,7 @@ See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
 
 
-### file_csv [path] [delimiter]
+## `file_csv [path] [delimiter]`
 
 ```
 Helper function to load a csv file.
@@ -1127,7 +1209,7 @@ error
 - bool,array
 - json
 
-#### Example
+### Example
 
 Content of file at `some/path/example.csv`:
 ```csv
@@ -1157,11 +1239,11 @@ As an example with pipes, the call
 
  would result in `martin` given the response above.
 
-#### Cornercases
+### Cornercases
 
 There are some corner cases that trigger a certain behavior you should keep in mind
 
-##### No format for a column given
+#### No format for a column given
 
 The column gets skipped in every row
 
@@ -1182,7 +1264,7 @@ int64,
 
 
 
-##### No name for a column given
+#### No name for a column given
 
 The column gets skipped in every row
 
@@ -1203,7 +1285,7 @@ int64,string
 
 
 
-##### Comment or empty line
+#### Comment or empty line
 
 If there is a comment marked with `#` , or a empty line that does not get rendered into the result
 
@@ -1229,68 +1311,67 @@ int64,string
 [map[name:simon] map[name:martin] map[name:roman] map[name:klaus] map[name:sebastian]]
 ```
 
-
-
-### slice \[parms...\]
+## `slice [parms...]`
 
 Returns a slice with the given parameters as elements. Use this for **range** in templates.
 
-### add \[a\] \[b\]
+## `add [a] [b]`
 
-Returns the sum of `a`and `b`. `a,b`can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+Returns the sum of `a`and `b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.
 
+## `subtract [a] [b]`
 
-### subtract \[a\] \[b\]
+Returns `a - b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.
 
-Returns `a - b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+## `multiply [a] [b]`
 
+Returns `a * b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.
 
-### multiply \[a\] \[b\]
+## `divide [a] [b]`
 
-Returns `a * b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
+Returns `a / b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.
 
-
-### divide \[a\] \[b\]
-
-Returns `a / b`. `a,b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string`we return `int64`.
-
-
-### unmarshal \[string\]
+## `unmarshal [string]`
 
 Returns a `util.GenericJson` Object (go: `interface{}`) of the unmarshalled  `JSON` string.
 
-### marshal \[interface{}\]
+## `marshal [interface{}]`
 
 Returns a `string` of the marshalled  `interface{}` object.
 
-### md5sum [filepath]
+## `md5sum [filepath]`
 
 Returns a `string` of the MD5 sum of the file found in `filepath`.
 
-### str_escape [string]
+## `str_escape [string]`
 
-Returns a `string`where all `"`are escaped to `\"`. This is useful in Strings which need to be concatenated.
+Returns a `string` where all `"` are escaped to `\"`. This is useful in Strings which need to be concatenated.
 
-### printf [interface{}...]
+## `match [regex] [text]`
+
+Returns a `bool` value. If `text` matches the [regular expression](https://gobyexample.com/regular-expressions) `regex`, it returns `true`, else `false`. This is useful inside `{{ if ... }}` templates.
+
+## `printf [interface{}...]`
 
 Just for reference, this is a Go Template [built-in](https://golang.org/pkg/text/template/#hdr-Functions).
 
-### N [float64|int64|int]
+## `N [float64|int64|int]`
 
 Returns a slice of n 0-sized elements, suitable for ranging over.
 
 Example how to range over 100 objects
 
 ```django
-        "body":  [
-            {{ range $idx, $v := N 100 }}
-            ...
-            {{ end }}
-        ]
-    }
+{
+    "body":  [
+        {{ range $idx, $v := N 100 }}
+        ...
+        {{ end }}
+    ]
+}
 ```
 
-## HTTP Server
+# HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
 
@@ -1298,12 +1379,11 @@ To configure a HTTP Server, the manifest need to include these lines:
 
 ```yaml
 {
-  "http_server": {
-    "addr": ":8788", # address to listen on
-    "dir": "",       # directory to server, relative to the manifest.json
-                     # defaults to "."
-    "testmode": false, # boolean flag to switch test mode on / off
-  }
+    "http_server": {
+        "addr": ":8788", // address to listen on
+        "dir": "", // directory to server, relative to the manifest.json, defaults to "."
+        "testmode": false, // boolean flag to switch test mode on / off
+    }
 }
 ```
 

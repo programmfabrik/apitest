@@ -24,7 +24,7 @@ func (f CompareFailure) Error() string {
 	return f.String()
 }
 
-func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res CompareResult, err error) {
+func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareResult, err error) {
 
 	//left may be nil, because we dont specify the content of the field
 	if left == nil && right == nil {
@@ -39,7 +39,7 @@ func JsonEqual(left, right util.GenericJson, control ComparisonContext) (res Com
 			[]CompareFailure{
 				{
 					"$",
-					"actual response == nil && expected response != nil",
+					"response == nil && expected response != nil",
 				},
 			},
 		}
