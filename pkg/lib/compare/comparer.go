@@ -110,7 +110,7 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 				Failures: []CompareFailure{
 					{
 						"",
-						fmt.Sprintf("Expected '%s' != '%s' Got", typedLeft, rightAsString),
+						fmt.Sprintf("Got '%s', expected '%s'", rightAsString, typedLeft),
 					},
 				},
 			}
@@ -140,7 +140,7 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 				Failures: []CompareFailure{
 					{
 						"",
-						fmt.Sprintf("Expected '%v' != '%v' Got", typedLeft, rightAsNumber),
+						fmt.Sprintf("Got '%v', expected '%v'", rightAsNumber, typedLeft),
 					},
 				},
 			}
@@ -172,7 +172,7 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 				Failures: []CompareFailure{
 					{
 						"",
-						fmt.Sprintf("Expected '%t' != '%t' Got", typedLeft, rightAsBool),
+						fmt.Sprintf("Got '%t', expected '%t'", rightAsBool, typedLeft),
 					},
 				},
 			}
@@ -185,7 +185,7 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 			[]CompareFailure{
 				{
 					"",
-					fmt.Sprintf("the type of the expected response is invalid. Expected '%T' != '%T' Got", left, right),
+					fmt.Sprintf("the type of the expected response is invalid. Got '%T', expected '%T'", right, left),
 				},
 			},
 		}

@@ -17,3 +17,5 @@ apitest_report.json
 /commands/server/assets/tmpl.go
 *.code-workspace
 /bin/
+*.vscode
+*.sh

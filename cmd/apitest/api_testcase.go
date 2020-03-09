@@ -120,12 +120,14 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error loading check response serilization: %s", err)
 			}
 
-			eResp, err := api.NewResponseFromSpec(spec)
+			expectedResponse, err := api.NewResponseFromSpec(spec)
 			if err != nil {
 				return false, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			responsesMatch, err := testCase.responsesEqual(eResp, response)
+			expectedResponse.Format = response.Format
+
+			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
 				return false, fmt.Errorf("error matching break responses: %s", err)
 			}
@@ -172,12 +174,14 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 				return -1, fmt.Errorf("error loading check response serilization: %s", err)
 			}
 
-			eResp, err := api.NewResponseFromSpec(spec)
+			expectedResponse, err := api.NewResponseFromSpec(spec)
 			if err != nil {
 				return -1, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			responsesMatch, err := testCase.responsesEqual(eResp, response)
+			expectedResponse.Format = response.Format
+
+			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
 				return -1, fmt.Errorf("error matching check responses: %s", err)
 			}
@@ -523,6 +527,11 @@ func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.Respons
 	err = cjson.Unmarshal(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("error unmarshaling res: %s", err)
+	}
+
+	// the body must not be parsed if it is not expected in the response, or should not be stored
+	if spec.Body == nil && len(testCase.StoreResponse) < 1 {
+		spec.Format.IgnoreBody = true
 	}
 
 	return spec, nil

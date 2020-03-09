@@ -44,7 +44,7 @@ func TestCollectResponseShouldWork(t *testing.T) {
         {
             "name": "CollectTest",
 				"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 				},
 		        "timeout_ms":3000,
@@ -70,7 +70,7 @@ func TestCollectResponseShouldWork(t *testing.T) {
 						}]
 					}
 				]
-			
+
         }
 `)
 
@@ -118,7 +118,7 @@ func TestCollectLoadExternalFile(t *testing.T) {
         {
             "name": "CollectTest",
 				"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 				},
 		        "timeout_ms":300,
@@ -178,7 +178,7 @@ func TestCollectLoadExternalCollect(t *testing.T) {
         {
             "name": "CollectTest",
 				"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 				},
 		        "timeout_ms":3000,
@@ -277,7 +277,7 @@ func TestCollectEvents(t *testing.T) {
         {
             "name": "CollectTest",
 				"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 				},
 		        "timeout_ms":6000,
@@ -322,7 +322,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
         {
             "name": "CollectTest",
 				"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 				},
 		        "timeout_ms":30,
@@ -333,7 +333,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 						}]
 					}
 				]
-			
+
         }
 `)
 
@@ -366,11 +366,11 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	}
 
 	if log[0] != "Pull Timeout '30ms' exceeded" {
-		t.Errorf("Expected 'Pull Timeout '30ms' exceeded' != '%s' Got", log[0])
+		t.Errorf("Got '%s', expected 'Pull Timeout '30ms' exceeded'", log[0])
 	}
 
 	if log[1] != `Collect response not found: {"body":[{"ID":1}]}` {
-		t.Errorf(`Expected 'Collect response not found: {"body":[{"ID":1}]}' != '%s' Got`, log[1])
+		t.Errorf(`Got '%s', exptected 'Collect response not found: {"body":[{"ID":1}]}'`, log[1])
 	}
 }
 
@@ -385,7 +385,7 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
         {
             "name": "CollectTest",
 			"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET",
 				"header_from_store":{
 					"authHeader":"hallo[du]"
@@ -436,7 +436,7 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
         {
             "name": "CollectTest",
 			"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET",
 				"header_from_store":{
 					"authHeader":"hallo[3]"
@@ -500,7 +500,7 @@ func TestBinaryComparisonValid(t *testing.T) {
         {
             "name": "Binary Conversion Valid",
 			"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 			},
 			"response":"@simple.bin"
@@ -557,7 +557,7 @@ func TestBinaryComparisonInValid(t *testing.T) {
         {
             "name": "Binary Conversion Invalid",
 			"request":{
-				"endpoint": "suggest", 
+				"endpoint": "suggest",
 				"method": "GET"
 			},
 			"response":"@simple.bin"

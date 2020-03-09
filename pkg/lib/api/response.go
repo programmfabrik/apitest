@@ -36,8 +36,9 @@ type ResponseSerialization struct {
 }
 
 type ResponseFormat struct {
-	Type string `json:"type"` // default "json", allowed: "csv", "json", "xml", "binary"
-	CSV  struct {
+	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
+	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "binary"
+	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
 }
@@ -60,11 +61,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		spec.StatusCode = 200
 	}
 
-	if spec.Headers != nil {
-		return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
-	} else {
-		return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
-	}
+	return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -116,26 +113,29 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, errors.Wrap(err, "Could not marshal body with md5sum to json")
 		}
 	default:
-		// We have a json, and thereby try to unmarshal it into our body
+		// We assume a json, and thereby try to unmarshal it into our body
 		bodyData = response.Body()
-	}
-
-	// serialize the parsed/converted body
-	err = json.Unmarshal(bodyData, &bodyJSON)
-	if err != nil {
-		return res, err
-	}
-
-	if bodyOnly {
-		return bodyJSON, nil
 	}
 
 	responseJSON := ResponseSerialization{
 		StatusCode: response.statusCode,
-		Body:       &bodyJSON,
 	}
 	if len(response.headers) > 0 {
 		responseJSON.Headers = response.headers
+	}
+
+	// if the body should not be ignored, serialize the parsed/converted body
+	if !responseFormat.IgnoreBody {
+		err = json.Unmarshal(bodyData, &bodyJSON)
+		if err != nil {
+			return res, err
+		}
+
+		if bodyOnly {
+			return bodyJSON, nil
+		}
+
+		responseJSON.Body = &bodyJSON
 	}
 
 	responseBytes, err := json.Marshal(responseJSON)
@@ -212,8 +212,13 @@ func (response *Response) marshalBodyInto(target interface{}) (err error) {
 	return nil
 }
 
-func (response Response) ToString() (res string) {
-	headersString := ""
+func (response Response) ToString() string {
+	var (
+		headersString string
+		bodyString    string
+		err           error
+	)
+
 	for k, v := range response.headers {
 		value := ""
 		for _, iv := range v {
@@ -225,15 +230,52 @@ func (response Response) ToString() (res string) {
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}
 
+	// try to determine the mime type from the body and header
 	bodyMimeType, _ := mimetype.Detect(response.Body())
+	if bodyMimeType == "text/plain" {
+		contentType, ok := response.headers["Content-Type"]
+		if ok {
+			bodyMimeType = contentType[0]
+		}
+	}
 
-	if bodyMimeType == "text/plain" || bodyMimeType == "application/json" {
-		bodyString, err := response.ServerResponseToJSONString(true) // only want the body in the specified format
+	// for logging, always show the body
+	response.Format.IgnoreBody = false
+
+	// try to format the body for known mime types, else show the md5 sum of binary data
+	switch bodyMimeType {
+	case "text/plain":
+		bodyString = string(response.Body())
+	case "application/json":
+		bodyString, err = response.ServerResponseToJSONString(true)
 		if err != nil {
 			bodyString = string(response.Body())
 		}
-		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, bodyString)
-	} else {
-		return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, "[BINARY DATA NOT DISPLAYED]")
+	case "application/xml", "text/xml", "text/xml; charset=utf-8":
+		response.Format.Type = "xml"
+		xmlData, err := response.ServerResponseToJSONString(true)
+		if err != nil {
+			bodyString = string(response.Body())
+		} else {
+			bodyString = fmt.Sprintf("[MIME TYPE '%s' => PARSED XML TO JSON]\n\n%s", bodyMimeType, xmlData)
+		}
+	case "text/csv":
+		response.Format.Type = "csv"
+		csvData, err := response.ServerResponseToJSONString(true)
+		if err != nil {
+			bodyString = string(response.Body())
+		} else {
+			bodyString = fmt.Sprintf("[MIME TYPE '%s' => PARSED CSV TO JSON]\n\n%s", bodyMimeType, csvData)
+		}
+	default:
+		response.Format.Type = "binary"
+		md5, err := response.ServerResponseToJSONString(true)
+		if err != nil {
+			bodyString = string(response.Body())
+		} else {
+			bodyString = fmt.Sprintf("[MIME TYPE '%s' => MD5 SUM DISPLAYED]\n\n%s", bodyMimeType, md5)
+		}
 	}
+
+	return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, bodyString)
 }

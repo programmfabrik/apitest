@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 
@@ -67,12 +67,12 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 	}
 
 	if len(expectedResults) != len(conf.TestDirectories) {
-		t.Errorf("Len: Got %d != %d Expected", len(conf.TestDirectories), len(expectedResults))
+		t.Errorf("Len: Got %d, expected %d", len(conf.TestDirectories), len(expectedResults))
 	}
 
 	for k, v := range expectedResults {
 		if conf.TestDirectories[k] != v {
-			t.Errorf("Got %s != %s Expected", conf.TestDirectories[k], v)
+			t.Errorf("Got %s, exptected != %s", conf.TestDirectories[k], v)
 		}
 	}
 
