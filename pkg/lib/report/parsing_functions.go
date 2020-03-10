@@ -86,8 +86,14 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 		for ik, iv := range flattenSubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
-				Time: iv.ExecutionTime.Seconds(),
 				Name: fmt.Sprintf("[%0"+strconv.Itoa(padding)+"d] %s", ik, strings.Replace(iv.Name, ".", ":", -1)),
+			}
+
+			// only save the time if a test has no sub tests, so the total times are only included once in the report
+			if len(iv.SubTests) == 0 {
+				newTestCase.Time = iv.ExecutionTime.Seconds()
+			} else {
+				newTestCase.Time = 0
 			}
 
 			if iv.Failures > 0 {
