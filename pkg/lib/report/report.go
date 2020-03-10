@@ -2,9 +2,12 @@ package report
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Report struct {
@@ -61,6 +64,7 @@ type ReportElement struct {
 	SubTests      ReportElements `json:"sub_tests,omitempty"`
 	Parent        *ReportElement `json:"-"`
 	NoLogTime     bool           `json:"-"`
+	Failure       string         `json:"failure,omitempty"`
 	report        *Report
 	m             *sync.Mutex
 }
@@ -151,14 +155,6 @@ func (r ReportElement) GetLog() []string {
 	return errors
 }
 
-/*
-func (r *ReportElement) SetTestCount(counter int) {
-	r.m.Lock()
-	defer r.m.Unlock()
-
-	r.TestCount = counter
-}
-*/
 func (r *ReportElement) SaveToReportLog(v string) {
 	r.m.Lock()
 	defer r.m.Unlock()
@@ -177,4 +173,30 @@ func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
 	defer r.m.Unlock()
 
 	r.LogStorage = append(r.LogStorage, fmt.Sprintf(v, args...))
+}
+
+// WriteToFile write the report into the report file
+func (r *Report) WriteToFile(reportFile, reportFormat string) error {
+	var parsingFunction func(baseResult *ReportElement) []byte
+	switch reportFormat {
+	case "junit":
+		parsingFunction = ParseJUnitResult
+	case "json":
+		parsingFunction = ParseJSONResult
+	default:
+		logrus.Errorf(
+			"Given report format '%s' not supported. Saving report '%s' as json",
+			reportFormat,
+			reportFile)
+
+		parsingFunction = ParseJSONResult
+	}
+
+	err := ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
+	if err != nil {
+		logrus.Errorf("Could not save report into file: %s", err)
+		return err
+	}
+
+	return nil
 }

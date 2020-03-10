@@ -26,6 +26,7 @@ type testsuite struct {
 	Failures  int        `xml:"failures,attr"`
 	Time      float64    `xml:"time,attr"`
 	Testcases []testcase `xml:"testcase"`
+	Failure   *failure   `xml:"failure,omitempty"`
 }
 
 type testcase struct {
@@ -70,6 +71,13 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 			Failures: v.Failures,
 			Tests:    v.TestCount,
 			Name:     strings.Replace(v.Name, ".", ":", -1),
+		}
+
+		if v.Failure != "" {
+			newTestSuite.Failure = &failure{
+				Type:    "ERROR",
+				Message: v.Failure,
+			}
 		}
 
 		flattenSubTests := v.SubTests.Flat()

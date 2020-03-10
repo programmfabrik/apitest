@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -126,15 +125,20 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	reportFormat = Config.Apitest.Report.Format
 	reportFile = Config.Apitest.Report.File
 
+	rep := report.NewReport()
+
 	// Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
+		if reportFile != "" {
+			rep.WriteToFile(reportFile, reportFormat)
+		}
 	}
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
+	runSingleTest := func(manifestPath string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
@@ -143,24 +147,31 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, r, store, 0)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, reportElem, store, 0)
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+			return false
 		}
 
 		return suite.Run()
 	}
 
-	r := report.NewReport()
-
 	// Decide if run only one test
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
-			c := r.Root().NewChild(singleTest)
+			c := rep.Root().NewChild(singleTest)
 
 			success := runSingleTest(absManifestPath, c)
 			c.Leave(success)
+
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+
 			if stopOnFail && !success {
 				break
 			}
@@ -169,40 +180,22 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
 			absManifestPath, _ := filepath.Abs(manifestPath)
-			c := r.Root().NewChild(manifestPath)
+			c := rep.Root().NewChild(manifestPath)
 
 			success := runSingleTest(absManifestPath, c)
 			c.Leave(success)
+
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+
 			if stopOnFail && !success {
 				break
 			}
 		}
 	}
 
-	// Create report
-	if reportFile != "" {
-		var parsingFunction func(baseResult *report.ReportElement) []byte
-		switch reportFormat {
-		case "junit":
-			parsingFunction = report.ParseJUnitResult
-		case "json":
-			parsingFunction = report.ParseJSONResult
-		default:
-			logrus.Errorf(
-				"Given report format '%s' not supported. Saving report '%s' as json",
-				reportFormat,
-				reportFile)
-
-			parsingFunction = report.ParseJSONResult
-		}
-
-		err = ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
-		if err != nil {
-			logrus.Errorf("Could not save report into file: %s", err)
-		}
-	}
-
-	if r.DidFail() {
+	if rep.DidFail() {
 		os.Exit(1)
 	}
 }
