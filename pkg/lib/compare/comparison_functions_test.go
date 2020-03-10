@@ -414,7 +414,7 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "array[1]",
-					Message: "Expected 'val3' != 'val1' Got",
+					Message: "Got 'val1', expected 'val3'",
 				},
 			},
 		},
@@ -440,11 +440,11 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "array[0]",
-					Message: "Expected 'val3' != 'val2' Got",
+					Message: "Got 'val2', expected 'val3'",
 				},
 				{
 					Key:     "array[1]",
-					Message: "Expected 'val2' != 'val3' Got",
+					Message: "Got 'val3', expected 'val2'",
 				},
 			},
 		},
@@ -477,11 +477,11 @@ func TestComparison(t *testing.T) {
 			eFailures: []CompareFailure{
 				{
 					Key:     "array.inner.deeper[0]",
-					Message: "Expected 'val4' != 'val5' Got",
+					Message: "Got 'val5', expected 'val4'",
 				},
 				{
 					Key:     "array.inner.deeper[1]",
-					Message: "Expected 'val5' != 'val4' Got",
+					Message: "Got 'val4', expected 'val5'",
 				},
 			},
 		},

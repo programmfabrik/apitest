@@ -238,7 +238,7 @@ var trivialComparerTestData = []struct {
 }]}`,
 		false,
 		"ticket #52417. check value null. Other value than null",
-		fmt.Errorf("[body[0].henk] the type of the expected response is invalid. Expected '<nil>' != 'string' Got"),
+		fmt.Errorf("[body[0].henk] the type of the expected response is invalid. Got 'string', expected '<nil>'"),
 	},
 	{
 
@@ -267,12 +267,12 @@ func TestTrivialJsonComparer(t *testing.T) {
 				t.Fatal("Error occurred: ", err)
 			}
 			if td.match != tjcMatch.Equal {
-				t.Errorf("got %t, want %t", tjcMatch.Equal, td.match)
+				t.Errorf("Got %t, expected %t", tjcMatch.Equal, td.match)
 			}
 
 			if td.err != nil {
 				if len(tjcMatch.Failures) != 1 || td.err.Error() != tjcMatch.Failures[0].String() {
-					t.Errorf("Error missmatch. Want '%s' != '%s' Got", td.err, tjcMatch.Failures[0].String())
+					t.Errorf("Error missmatch. Got '%s', epected '%s'", tjcMatch.Failures[0].String(), td.err)
 
 				}
 			}
