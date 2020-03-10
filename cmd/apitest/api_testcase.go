@@ -208,7 +208,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		responsesMatch    compare.CompareResult
 		req               api.Request
 		apiResp           api.Response
-		apiRespJSONString string
+		apiRespJsonString string
 		err               error
 	)
 
@@ -245,7 +245,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	apiRespJSONString, err = apiResp.ServerResponseToJSONString(false)
+	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error getting json from response: %s", err)
@@ -253,7 +253,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 
 	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiRespJSONString, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
@@ -263,9 +263,9 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	if !req.DoNotStore {
 		// Store in datastore -1 list
 		if counter == 0 {
-			testCase.dataStore.AppendResponse(apiRespJSONString)
+			testCase.dataStore.AppendResponse(apiRespJsonString)
 		} else {
-			testCase.dataStore.UpdateLastResponse(apiRespJSONString)
+			testCase.dataStore.UpdateLastResponse(apiRespJsonString)
 		}
 	}
 
