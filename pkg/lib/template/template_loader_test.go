@@ -370,8 +370,16 @@ func Test_DataStore_QJson(t *testing.T) {
 		{"statuscode", `200`},
 		{"body.flib.0", `"flab"`},
 		{"body.flib.1", `"flob"`},
-		{"body.flib", `["flab","flob"]`},
-		{"body", `{"flib":["flab","flob"]}`},
+		{"body.flib", `[
+      "flab",
+      "flob"
+    ]`},
+		{"body", `{
+    "flib": [
+      "flab",
+      "flob"
+    ]
+  }`},
 	}
 
 	for i, testCase := range testCases {
