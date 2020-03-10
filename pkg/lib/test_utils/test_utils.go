@@ -3,10 +3,11 @@ package test_utils
 import (
 	"bytes"
 	"fmt"
-	"github.com/programmfabrik/go-test-utils"
 	"net/http"
 	"regexp"
 	"strings"
+
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 var TestServer = go_test_utils.NewTestServer(go_test_utils.Routes{
@@ -75,11 +76,11 @@ func assertLoggingMessageEqualsRegex(logMsg LoggingMessage, ass LoggingRegexAsse
 
 func AssertLoggingEqualsRegex(log bytes.Buffer, want []LoggingRegexAssertion) (bool, []string) {
 	success := true
-	notMatched := make([]string, 0)
+	notMatched := []string{}
 
 	logMessages := getMessagesFromLogBuffer(log)
 	if len(logMessages) != len(want) {
-		return false, []string{fmt.Sprintf("Len: Exp %d != %d Got", len(want), len(logMessages))}
+		return false, []string{fmt.Sprintf("Len: go %d, expected %d", len(logMessages), len(want))}
 	}
 
 	for i := range logMessages {

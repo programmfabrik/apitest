@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
-func Test_QJson_String(t *testing.T) {
+func Test_QJSON_String(t *testing.T) {
 	json := `{"foo": "bar"}`
 	go_test_utils.AssertStringEquals(t, qjson("foo", json), "\"bar\"")
 }
 
-func Test_QJson_Array(t *testing.T) {
+func Test_QJSON_Array(t *testing.T) {
 	json := `{"foo": ["bar", 1]}`
 	go_test_utils.AssertStringEquals(t, qjson("foo", json), "[\"bar\", 1]")
 }
 
-func Test_QJson_Object(t *testing.T) {
+func Test_QJSON_Object(t *testing.T) {
 	json := `{"foo": {"bar": 1}}`
 	go_test_utils.AssertStringEquals(t, qjson("foo", json), "{\"bar\": 1}")
 }
@@ -249,7 +249,7 @@ func TestRowsToMap(t *testing.T) {
 			if err != nil {
 
 				if v.ExpErr == nil || err.Error() != v.ExpErr.Error() {
-					t.Fatalf("Error: Want '%s' != '%s' Got", v.ExpErr, err)
+					t.Fatalf("Error: got '%s', expected '%s'", err, v.ExpErr)
 				}
 			} else {
 				for k, v := range v.Out {
@@ -258,7 +258,7 @@ func TestRowsToMap(t *testing.T) {
 					if !ok {
 
 						if aOut[k] != v {
-							t.Errorf("Value: Want '%s' != '%s' Got", v, aOut[k])
+							t.Errorf("Value: got '%s', expected '%s'", aOut[k], v)
 						}
 					} else {
 						go_test_utils.AssertMapsEqual(t, aOut[k].(map[string]interface{}), mapV)

@@ -17,7 +17,7 @@ func init() {
 }
 
 func Unmarshal(input []byte, output interface{}) error {
-	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
+	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*(#|// ).*$`)
 	inputNoComments := []byte(commentRegex.ReplaceAllString(string(input), ``))
 
 	dec := json.NewDecoder(bytes.NewReader(inputNoComments))
@@ -26,12 +26,12 @@ func Unmarshal(input []byte, output interface{}) error {
 	// unmarshal into object
 	err := dec.Decode(output)
 	if err != nil {
-		return getIndepthJsonError(inputNoComments, err)
+		return getIndepthJSONError(inputNoComments, err)
 	}
 	return nil
 }
 
-func getIndepthJsonError(input []byte, inputError error) (err error) {
+func getIndepthJSONError(input []byte, inputError error) (err error) {
 
 	err = inputError
 
@@ -43,7 +43,7 @@ func getIndepthJsonError(input []byte, inputError error) (err error) {
 		}
 
 		err = fmt.Errorf("Cannot parse JSON '%s' schema due to a syntax error at line %d, character %d: %v",
-			getErrorJsonWithLineNumbers(string(input), line), line, character, jsonError.Error())
+			getErrorJSONWithLineNumbers(string(input), line), line, character, jsonError.Error())
 		return
 	}
 
@@ -55,13 +55,13 @@ func getIndepthJsonError(input []byte, inputError error) (err error) {
 		}
 
 		return fmt.Errorf(`In JSON '%s', the type '%v' cannot be converted into the Go '%v' type on struct '%s', field '%v'. See input file line %d, character %d`,
-			getErrorJsonWithLineNumbers(string(input), line), jsonError.Value, jsonError.Type.Name(), jsonError.Struct, jsonError.Field, line, character)
+			getErrorJSONWithLineNumbers(string(input), line), jsonError.Value, jsonError.Type.Name(), jsonError.Struct, jsonError.Field, line, character)
 	}
 
 	return
 }
 
-func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers string) {
+func getErrorJSONWithLineNumbers(input string, errLn int) (jsonWithLineNumbers string) {
 	jsonWithLineNumbers = "\n"
 	inputString := input
 
@@ -89,9 +89,9 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 
 func lineAndCharacter(input string, offset int) (line int, character int, err error) {
 	if offset > len(input) || offset < 0 {
-		return 0, 0, fmt.Errorf("Couldn't find offset %d within the input.", offset)
+		return 0, 0, fmt.Errorf("couldn't find offset %d within the input", offset)
 	}
-	//humans count line from 1
+	// humans count line from 1
 	line = 1
 	for _, b := range input[:offset] {
 		if b == rune('\n') {

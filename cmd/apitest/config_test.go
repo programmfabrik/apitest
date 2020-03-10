@@ -72,7 +72,7 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 
 	for k, v := range expectedResults {
 		if conf.TestDirectories[k] != v {
-			t.Errorf("Got %s, exptected != %s", conf.TestDirectories[k], v)
+			t.Errorf("Got %s, exptected %s", conf.TestDirectories[k], v)
 		}
 	}
 

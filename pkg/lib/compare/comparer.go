@@ -6,37 +6,37 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-type CompareResult struct {
+type Result struct {
 	Equal    bool
-	Failures []CompareFailure
+	Failures []Failure
 }
 
-type CompareFailure struct {
+type Failure struct {
 	Key     string
 	Message string
 }
 
-func (f CompareFailure) String() string {
+func (f Failure) String() string {
 	return fmt.Sprintf("[%s] %s", f.Key, f.Message)
 }
 
-func (f CompareFailure) Error() string {
+func (f Failure) Error() string {
 	return f.String()
 }
 
-func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareResult, err error) {
+func JSONEqual(left, right interface{}, control ComparisonContext) (res Result, err error) {
 
-	//left may be nil, because we dont specify the content of the field
+	// left may be nil, because we dont specify the content of the field
 	if left == nil && right == nil {
-		res := CompareResult{
+		res := Result{
 			Equal: true,
 		}
 		return res, nil
 	}
 	if right == nil && left != nil {
-		res := CompareResult{
+		res := Result{
 			false,
-			[]CompareFailure{
+			[]Failure{
 				{
 					"$",
 					"response == nil && expected response != nil",
@@ -47,15 +47,15 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 	}
 
 	switch typedLeft := left.(type) {
-	case util.JsonObject:
-		rightAsObject, ok := right.(util.JsonObject)
+	case util.JSONObject:
+		rightAsObject, ok := right.(util.JSONObject)
 		if !ok {
-			res := CompareResult{
+			res := Result{
 				false,
-				[]CompareFailure{
+				[]Failure{
 					{
 						"$",
-						"the actual response is no JsonObject",
+						"the actual response is no JSONObject",
 					},
 				},
 			}
@@ -63,22 +63,22 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 		}
 
 		return ObjectEqualWithControl(typedLeft, rightAsObject, control)
-	case util.JsonArray:
+	case util.JSONArray:
 		/*if len(typedLeft) == 0 {
-			res := CompareResult{
+			res := Result{
 				Equal: true,
 			}
 			return res, nil
 		}*/
 
-		rightAsArray, ok := right.(util.JsonArray)
+		rightAsArray, ok := right.(util.JSONArray)
 		if !ok {
-			res := CompareResult{
+			res := Result{
 				false,
-				[]CompareFailure{
+				[]Failure{
 					{
 						"$",
-						"the actual response is no JsonArray",
+						"the actual response is no JSONArray",
 					},
 				},
 			}
@@ -86,28 +86,28 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 		}
 		return ArrayEqualWithControl(typedLeft, rightAsArray, control)
 
-	case util.JsonString:
-		rightAsString, ok := right.(util.JsonString)
+	case util.JSONString:
+		rightAsString, ok := right.(util.JSONString)
 		if !ok {
-			res := CompareResult{
+			res := Result{
 				false,
-				[]CompareFailure{
+				[]Failure{
 					{
 						"$",
-						"the actual response is no JsonString",
+						"the actual response is no JSONString",
 					},
 				},
 			}
 			return res, nil
 		}
 		if typedLeft == rightAsString {
-			res = CompareResult{
+			res = Result{
 				Equal: true,
 			}
 		} else {
-			res = CompareResult{
+			res = Result{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []Failure{
 					{
 						"",
 						fmt.Sprintf("Got '%s', expected '%s'", rightAsString, typedLeft),
@@ -116,28 +116,28 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 			}
 		}
 		return res, nil
-	case util.JsonNumber:
-		rightAsNumber, ok := right.(util.JsonNumber)
+	case util.JSONNumber:
+		rightAsNumber, ok := right.(util.JSONNumber)
 		if !ok {
-			res := CompareResult{
+			res := Result{
 				false,
-				[]CompareFailure{
+				[]Failure{
 					{
 						"$",
-						"the actual response is no JsonNumber",
+						"the actual response is no JSONNumber",
 					},
 				},
 			}
 			return res, nil
 		}
 		if typedLeft == rightAsNumber {
-			res = CompareResult{
+			res = Result{
 				Equal: true,
 			}
 		} else {
-			res = CompareResult{
+			res = Result{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []Failure{
 					{
 						"",
 						fmt.Sprintf("Got '%v', expected '%v'", rightAsNumber, typedLeft),
@@ -147,15 +147,15 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 		}
 		return res, nil
 
-	case util.JsonBool:
-		rightAsBool, ok := right.(util.JsonBool)
+	case util.JSONBool:
+		rightAsBool, ok := right.(util.JSONBool)
 		if !ok {
-			res := CompareResult{
+			res := Result{
 				false,
-				[]CompareFailure{
+				[]Failure{
 					{
 						"$",
-						"the actual response is no JsonBool",
+						"the actual response is no JSONBool",
 					},
 				},
 			}
@@ -163,13 +163,13 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 		}
 
 		if typedLeft == rightAsBool {
-			res = CompareResult{
+			res = Result{
 				Equal: true,
 			}
 		} else {
-			res = CompareResult{
+			res = Result{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []Failure{
 					{
 						"",
 						fmt.Sprintf("Got '%t', expected '%t'", rightAsBool, typedLeft),
@@ -180,9 +180,9 @@ func JsonEqual(left, right interface{}, control ComparisonContext) (res CompareR
 		return res, nil
 
 	default:
-		res := CompareResult{
+		res := Result{
 			false,
-			[]CompareFailure{
+			[]Failure{
 				{
 					"",
 					fmt.Sprintf("the type of the expected response is invalid. Got '%T', expected '%T'", right, left),

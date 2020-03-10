@@ -15,7 +15,7 @@ func loadFileFromPathSpec(pathSpec, manifestDir string) (string, []byte, error) 
 		return "", nil, fmt.Errorf("spec was expected to be path spec, got %s instead", pathSpec)
 	}
 
-	filepath, requestFile, err := util.OpenFileOrUrl(pathSpec, manifestDir)
+	filepath, requestFile, err := util.OpenFileOrURL(pathSpec, manifestDir)
 	if err != nil {
 		return "", nil, fmt.Errorf("error opening path: %s", err)
 	}
@@ -44,8 +44,8 @@ func LoadManifestDataAsObject(data interface{}, manifestDir string, loader Loade
 			return "", res, fmt.Errorf("error rendering request: %s", err)
 		}
 
-		var jsonObject util.JsonObject
-		var jsonArray util.JsonArray
+		var jsonObject util.JSONObject
+		var jsonArray util.JSONArray
 
 		if err = cjson.Unmarshal(requestBytes, &jsonObject); err != nil {
 			if err = cjson.Unmarshal(requestBytes, &jsonArray); err == nil {
@@ -55,16 +55,16 @@ func LoadManifestDataAsObject(data interface{}, manifestDir string, loader Loade
 			return "", res, fmt.Errorf("error unmarshalling: %s", err)
 		}
 		return filepath, jsonObject, nil
-	case util.JsonObject:
+	case util.JSONObject:
 		return "", typedData, nil
-	case util.JsonArray:
+	case util.JSONArray:
 		return "", typedData, nil
 	default:
 		return "", res, fmt.Errorf("specification needs to be string[@...] or jsonObject but is: %s", data)
 	}
 }
 
-func LoadManifestDataAsRawJson(data interface{}, manifestDir string) (filepath string, res json.RawMessage, err error) {
+func LoadManifestDataAsRawJSON(data interface{}, manifestDir string) (filepath string, res json.RawMessage, err error) {
 	switch typedData := data.(type) {
 	case []byte:
 		err = res.UnmarshalJSON(typedData)
@@ -75,7 +75,7 @@ func LoadManifestDataAsRawJson(data interface{}, manifestDir string) (filepath s
 			return "", res, fmt.Errorf("error loading fileFromPathSpec: %s", err)
 		}
 		return filepath, res, nil
-	case util.JsonObject, util.JsonArray:
+	case util.JSONObject, util.JSONArray:
 		jsonMar, err := json.Marshal(typedData)
 		if err != nil {
 			return "", res, fmt.Errorf("error marshaling: %s", err)

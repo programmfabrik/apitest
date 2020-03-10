@@ -24,7 +24,7 @@ import (
 type Suite struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	HttpServer  *struct {
+	HTTPServer  *struct {
 		Addr     string `json:"addr"`
 		Dir      string `json:"dir"`
 		Testmode bool   `json:"testmode"`
@@ -39,7 +39,7 @@ type Suite struct {
 	datastore       *datastore.Datastore
 	manifestDir     string
 	manifestPath    string
-	reporterRoot    *report.ReportElement
+	reporterRoot    *report.Element
 	index           int
 	serverURL       string
 	httpServer      http.Server
@@ -48,7 +48,7 @@ type Suite struct {
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
+func NewTestSuite(config TestToolConfig, manifestPath string, r *report.Element, datastore *datastore.Datastore, index int) (*Suite, error) {
 	suite := Suite{
 		Config:       config,
 		manifestDir:  filepath.Dir(manifestPath),
@@ -72,7 +72,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		return &suite, err
 	}
 
-	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
+	// Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
 	// init store
@@ -86,30 +86,30 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	return &suite, nil
 }
 
-// StartHttpServer start a simple http server that can server local test resources during the testsuite is running
-func (ats *Suite) StartHttpServer() {
+// StartHTTPServer start a simple http server that can server local test resources during the testsuite is running
+func (ats *Suite) StartHTTPServer() {
 
-	if ats.HttpServer == nil {
+	if ats.HTTPServer == nil {
 		return
 	}
 
 	ats.idleConnsClosed = make(chan struct{})
 	mux := http.NewServeMux()
 
-	if ats.HttpServer.Dir == "" {
+	if ats.HTTPServer.Dir == "" {
 		ats.httpServerDir = ats.manifestDir
 	} else {
-		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
+		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HTTPServer.Dir)
 	}
 	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
 
 	ats.httpServer = http.Server{
-		Addr:    ats.HttpServer.Addr,
+		Addr:    ats.HTTPServer.Addr,
 		Handler: mux,
 	}
 
 	run := func() {
-		logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
+		logrus.Infof("Starting HTTP Server: %s: %s", ats.HTTPServer.Addr, ats.httpServerDir)
 
 		err := ats.httpServer.ListenAndServe()
 		if err != http.ErrServerClosed {
@@ -119,7 +119,7 @@ func (ats *Suite) StartHttpServer() {
 		}
 	}
 
-	if ats.HttpServer.Testmode {
+	if ats.HTTPServer.Testmode {
 		// Run in foreground to test
 		logrus.Infof("Testmode for HTTP Server. Listening, not running tests...")
 		run()
@@ -128,10 +128,10 @@ func (ats *Suite) StartHttpServer() {
 	}
 }
 
-// StopHttpServer stop the http server that was started for this test suite
-func (ats *Suite) StopHttpServer() {
+// StopHTTPServer stop the http server that was started for this test suite
+func (ats *Suite) StopHTTPServer() {
 
-	if ats.HttpServer == nil {
+	if ats.HTTPServer == nil {
 		return
 	}
 
@@ -152,7 +152,7 @@ func (ats *Suite) Run() bool {
 	r := ats.reporterRoot
 	logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 
-	ats.StartHttpServer()
+	ats.StartHTTPServer()
 
 	start := time.Now()
 
@@ -175,7 +175,7 @@ func (ats *Suite) Run() bool {
 		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 	}
 
-	ats.StopHttpServer()
+	ats.StopHTTPServer()
 
 	return success
 }
@@ -185,8 +185,8 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
-	//Init variables
+func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.Element) bool {
+	// Init variables
 	loader := template.NewLoader(ats.datastore)
 
 	isParallelPathSpec := false
@@ -195,19 +195,19 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		isParallelPathSpec = util.IsParallelPathSpec([]byte(t))
 	}
 
-	//Get the Manifest with @ logic
-	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	// Get the Manifest with @ logic
+	fileh, testObj, err := template.LoadManifestDataAsRawJSON(v, manifestDir)
 	dir := filepath.Dir(fileh)
 	if fileh != "" {
 		testFilePath = filepath.Join(filepath.Dir(testFilePath), fileh)
 	}
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
+		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJSON (%s): %s", testFilePath, err))
 		return false
 	}
 
-	//Try to directly unmarshal the manifest into testcase array
+	// Try to directly unmarshal the manifest into testcase array
 	var testCases []json.RawMessage
 	err = cjson.Unmarshal(testObj, &testCases)
 	if err == nil {
@@ -235,13 +235,13 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 			}
 		}
 	} else {
-		//We were not able unmarshal into array, so we try to unmarshal into raw message
+		// We were not able unmarshal into array, so we try to unmarshal into raw message
 		var singleTest json.RawMessage
 		err = cjson.Unmarshal(testObj, &singleTest)
 		if err == nil {
-			//Did work to unmarshal -> no go template
+			// Did work to unmarshal -> no go template
 
-			//Check if is @ and if so load the test
+			// Check if is @ and if so load the test
 			if util.IsPathSpec(testObj) {
 				var sS string
 
@@ -253,36 +253,33 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 				}
 
 				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r)
-			} else {
-				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 			}
-		} else {
-			//Did not work -> Could be go template or a mallformed json
-			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-			if lErr != nil {
-				r.SaveToReportLog(lErr.Error())
-				logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
-				return false
-			}
-
-			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
-			if string(requestBytes) == string(testObj) {
-				r.SaveToReportLog(err.Error())
-				logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-				return false
-			}
-
-			//We have a template -> One level deeper with rendered bytes
-			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-				testFilePath, k, isParallelPathSpec, r)
-
+			return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 		}
+
+		// Did not work -> Could be go template or a mallformed json
+		requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+		if lErr != nil {
+			r.SaveToReportLog(lErr.Error())
+			logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
+			return false
+		}
+
+		// If the both objects are the same we did not have a template, but a mallformed json -> Call error
+		if string(requestBytes) == string(testObj) {
+			r.SaveToReportLog(err.Error())
+			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+			return false
+		}
+
+		// We have a template -> One level deeper with rendered bytes
+		return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r)
 	}
 
 	return true
 }
 
-func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int, isParallel bool) bool {
+func (ats *Suite) runSingleTest(tc TestContainer, r *report.Element, testFilePath string, loader template.Loader, k int, isParallel bool) bool {
 	r.SetName(testFilePath)
 
 	var test Case
@@ -341,10 +338,10 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	return loader.Render(manifestTmpl, ats.manifestDir, nil)
 }
 
-func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manifestDir, dir string, r *report.ReportElement, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
+func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manifestDir, dir string, r *report.Element, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
 	success := false
 
-	//Check if is @ and if so load the test
+	// Check if is @ and if so load the test
 	switch util.IsPathSpec(v) {
 	case true:
 		var sS string

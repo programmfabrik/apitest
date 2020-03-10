@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )
@@ -38,11 +38,11 @@ func LoadConfig(cfgFile string) {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		log.Infof("No config file provided (will only use command line parameters)")
+		logrus.Infof("No config file provided (will only use command line parameters)")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Infof("No config \"%s\" read (will only use command line parameters): %s", cfgFile, err)
+		logrus.Infof("No config \"%s\" read (will only use command line parameters): %s", cfgFile, err)
 	}
 
 	viper.Unmarshal(&Config)
@@ -87,10 +87,10 @@ func (config *TestToolConfig) extractTestDirectories() error {
 			if info.IsDir() {
 				// Skip directories starting with "_"
 				if strings.Contains(path, "/_") {
-					log.Infof("Skipping: %s", path)
+					logrus.Infof("Skipping: %s", path)
 					return filepath.SkipDir
 				}
-				//Skip directories not containing a manifest
+				// Skip directories not containing a manifest
 				_, err := filesystem.Fs.Stat(filepath.Join(path, "manifest.json"))
 				if err != nil {
 					return nil

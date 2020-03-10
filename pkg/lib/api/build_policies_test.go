@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 
 	"github.com/spf13/afero"
 )
@@ -27,7 +27,7 @@ func TestBuildMultipart(t *testing.T) {
 		BodyType:    "multipart",
 	}
 
-	httpRequest, err := testRequest.buildHttpRequest()
+	httpRequest, err := testRequest.buildHTTPRequest()
 	go_test_utils.ExpectNoError(t, err, "error building multipart request")
 
 	testReader, err := httpRequest.MultipartReader()

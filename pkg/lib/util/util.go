@@ -13,7 +13,7 @@ func Max(x, y int) int {
 	return y
 }
 
-func RemoveFromJsonArray(input []interface{}, removeIndex int) (output []interface{}) {
+func RemoveFromJSONArray(input []interface{}, removeIndex int) (output []interface{}) {
 	output = make([]interface{}, len(input))
 	copy(output, input)
 

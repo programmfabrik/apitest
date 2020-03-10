@@ -11,19 +11,19 @@ import (
 )
 
 type Report struct {
-	root *ReportElement
+	root *Element
 	m    *sync.Mutex
 }
 
-func (r Report) Root() *ReportElement {
+func (r Report) Root() *Element {
 	return r.root
 }
 
 func NewReport() *Report {
 	var report Report
 
-	newElem := ReportElement{}
-	newElem.SubTests = make([]*ReportElement, 0)
+	newElem := Element{}
+	newElem.SubTests = []*Element{}
 	newElem.StartTime = time.Now()
 	newElem.report = &report
 	newElem.m = &sync.Mutex{}
@@ -34,45 +34,44 @@ func NewReport() *Report {
 	return &report
 }
 
-//GetTestResult Parses the test report with the given function from the report root on
-func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
+// GetTestResult Parses the test report with the given function from the report root on
+func (r Report) GetTestResult(parsingFunction func(baseResult *Element) []byte) []byte {
 
 	return parsingFunction(r.root.getTestResult())
 }
 
-//DidFail, Check if the testsuite did produce failures
+// DidFail Check if the testsuite did produce failures
 func (r Report) DidFail() bool {
 
 	if r.root.Failures > 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func (r Report) GetLog() []string {
 	return r.root.GetLog()
 }
 
-type ReportElement struct {
-	Failures      int            `json:"failures"`
-	TestCount     int            `json:"test_count,omitempty"`
-	ExecutionTime time.Duration  `json:"execution_time_ns"`
-	StartTime     time.Time      `json:"-"`
-	Name          string         `json:"name,omitempty"`
-	LogStorage    []string       `json:"log,omitempty"`
-	SubTests      ReportElements `json:"sub_tests,omitempty"`
-	Parent        *ReportElement `json:"-"`
-	NoLogTime     bool           `json:"-"`
-	Failure       string         `json:"failure,omitempty"`
+type Element struct {
+	Failures      int           `json:"failures"`
+	TestCount     int           `json:"test_count,omitempty"`
+	ExecutionTime time.Duration `json:"execution_time_ns"`
+	StartTime     time.Time     `json:"-"`
+	Name          string        `json:"name,omitempty"`
+	LogStorage    []string      `json:"log,omitempty"`
+	SubTests      Elements      `json:"sub_tests,omitempty"`
+	Parent        *Element      `json:"-"`
+	NoLogTime     bool          `json:"-"`
+	Failure       string        `json:"failure,omitempty"`
 	report        *Report
 	m             *sync.Mutex
 }
 
-type ReportElements []*ReportElement
+type Elements []*Element
 
-func (re ReportElements) Flat() ReportElements {
-	rElements := ReportElements{}
+func (re Elements) Flat() Elements {
+	rElements := Elements{}
 	for _, v := range re {
 		rElements = append(rElements, v)
 
@@ -83,15 +82,15 @@ func (re ReportElements) Flat() ReportElements {
 	return rElements
 }
 
-//NewChild create new report element and return its reference
-func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
+// NewChild create new report element and return its reference
+func (r *Element) NewChild(name string) (newElem *Element) {
 	r.report.m.Lock()
 	defer r.report.m.Unlock()
 
 	name = strings.Replace(name, ".", "_", -1)
 
-	newElem = &ReportElement{}
-	newElem.SubTests = make([]*ReportElement, 0)
+	newElem = &Element{}
+	newElem.SubTests = []*Element{}
 	newElem.m = &sync.Mutex{}
 
 	newElem.Parent = r
@@ -105,14 +104,14 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 	return
 }
 
-func (r *ReportElement) SetName(name string) {
+func (r *Element) SetName(name string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 	name = strings.Replace(name, ".", "_", -1)
 	r.Name = name
 }
 
-func (r *ReportElement) Leave(result bool) {
+func (r *Element) Leave(result bool) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -125,8 +124,8 @@ func (r *ReportElement) Leave(result bool) {
 	r.ExecutionTime = time.Since(r.StartTime)
 }
 
-//aggregate results of subtests
-func (r *ReportElement) getTestResult() *ReportElement {
+// aggregate results of subtests
+func (r *Element) getTestResult() *Element {
 	for _, v := range r.SubTests {
 		subResults := v.getTestResult()
 		r.TestCount += subResults.TestCount
@@ -140,22 +139,22 @@ func (r *ReportElement) getTestResult() *ReportElement {
 	return r
 }
 
-func (r ReportElement) GetLog() []string {
-	errors := make([]string, 0)
+func (r Element) GetLog() []string {
+	var errors []string
 
-	//root Errors
+	// root Errors
 	for _, singleMessage := range r.LogStorage {
 		errors = append(errors, singleMessage)
 	}
 
-	//Child errors
+	// Child errors
 	for _, singleTest := range r.SubTests {
 		errors = append(errors, singleTest.GetLog()...)
 	}
 	return errors
 }
 
-func (r *ReportElement) SaveToReportLog(v string) {
+func (r *Element) SaveToReportLog(v string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -168,7 +167,7 @@ func (r *ReportElement) SaveToReportLog(v string) {
 	}
 }
 
-func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
+func (r *Element) SaveToReportLogF(v string, args ...interface{}) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -177,7 +176,7 @@ func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
 
 // WriteToFile write the report into the report file
 func (r *Report) WriteToFile(reportFile, reportFormat string) error {
-	var parsingFunction func(baseResult *ReportElement) []byte
+	var parsingFunction func(baseResult *Element) []byte
 	switch reportFormat {
 	case "junit":
 		parsingFunction = ParseJUnitResult

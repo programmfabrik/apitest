@@ -256,13 +256,13 @@ var trivialComparerTestData = []struct {
 	},
 }
 
-func TestTrivialJsonComparer(t *testing.T) {
+func TestTrivialJSONComparer(t *testing.T) {
 	var json1, json2 interface{}
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
 			cjson.Unmarshal([]byte(td.want), &json1)
 			cjson.Unmarshal([]byte(td.have), &json2)
-			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
+			tjcMatch, err := JSONEqual(json1, json2, ComparisonContext{})
 			if err != nil {
 				t.Fatal("Error occurred: ", err)
 			}

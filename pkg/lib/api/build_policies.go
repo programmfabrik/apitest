@@ -13,7 +13,7 @@ import (
 )
 
 func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string, 0)
+	additionalHeaders = map[string]string{}
 
 	var buf = bytes.NewBuffer([]byte{})
 	w := multipart.NewWriter(buf)
@@ -21,7 +21,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	var replaceFilename *string
 	val, ok := request.Body.(map[string]interface{})["file:filename"]
 	if ok {
-		f, ok := val.(util.JsonString)
+		f, ok := val.(util.JSONString)
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("file:filename should be a string")
 		}
@@ -35,7 +35,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			continue
 		}
 
-		pathSpec, ok := val.(util.JsonString)
+		pathSpec, ok := val.(util.JSONString)
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
 		}
@@ -45,7 +45,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 
 		var err error
 
-		_, file, err := util.OpenFileOrUrl(pathSpec, request.ManifestDir)
+		_, file, err := util.OpenFileOrURL(pathSpec, request.ManifestDir)
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
@@ -70,7 +70,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 }
 
 func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string, 0)
+	additionalHeaders = map[string]string{}
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
 	for key, value := range request.Body.(map[string]string) {
@@ -82,7 +82,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 }
 
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
-	additionalHeaders = make(map[string]string, 0)
+	additionalHeaders = map[string]string{}
 	additionalHeaders["Content-Type"] = "application/json"
 	bodyBytes, err := json.Marshal(request.Body)
 	if err != nil {

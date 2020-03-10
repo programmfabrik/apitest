@@ -22,7 +22,7 @@ func TestLoadManifest(t *testing.T) {
 	}
 
 	if string(res) != `{"testload": "loaded"}` {
-		t.Errorf(`Exp '{"testload": "loaded"}' != '%s' Got`, res)
+		t.Errorf(`Got '%s', expected '{"testload": "loaded"}'`, res)
 	}
 
 }
