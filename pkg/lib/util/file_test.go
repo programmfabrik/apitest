@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-
 	"github.com/spf13/afero"
 )
 
@@ -58,14 +57,10 @@ func TestOpenFileOrUrl(t *testing.T) {
 
 	for _, v := range tests {
 		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
-			_, io, err := OpenFileOrURL(v.filename, "")
+			_, io, err := OpenFileOrUrl(v.filename, "")
 			if err != nil {
-				if v.expError == nil {
-					t.Errorf("Got '%s', expected nil", err)
-				} else {
-					if err.Error() != v.expError.Error() {
-						t.Errorf("Got '%s', expected '%s'", err, v.expError)
-					}
+				if err.Error() != v.expError.Error() {
+					t.Errorf("Got '%s' != '%s' Exp", err, v.expError)
 				}
 			} else {
 				data, err := ioutil.ReadAll(io)
@@ -74,7 +69,7 @@ func TestOpenFileOrUrl(t *testing.T) {
 				}
 
 				if md5.Sum(data) != v.expHash {
-					t.Errorf("Got '%s', expected '%s'", md5.Sum(data), v.expHash)
+					t.Errorf("Got '%s' != '%s' Exp", md5.Sum(data), v.expHash)
 				}
 			}
 		})

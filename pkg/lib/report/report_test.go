@@ -85,7 +85,7 @@ func TestReportGetJSONResult(t *testing.T) {
 	cjson.Unmarshal(jsonResult, &realJ)
 	cjson.Unmarshal(expResult, &expJ)
 
-	equal, _ := compare.JSONEqual(expJ, realJ, compare.ComparisonContext{})
+	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
 	if !equal.Equal {
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expResult, jsonResult)
@@ -122,13 +122,13 @@ func TestReportGetJUnitResult(t *testing.T) {
 	xml.Unmarshal([]byte(expResult), &expX)
 	xml.Unmarshal(jsonResult, &realX)
 
-	realX.ID = ""
+	realX.Id = ""
 	realX.Name = ""
 	realX.Time = 0
 
 	for k, v := range realX.Testsuites {
 		realX.Testsuites[k].Time = 0
-		for ik := range v.Testcases {
+		for ik, _ := range v.Testcases {
 			realX.Testsuites[k].Testcases[ik].Time = 0
 		}
 	}
@@ -141,7 +141,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	cjson.Unmarshal(expJBytes, &expJ)
 	cjson.Unmarshal(realJBytes, &realJ)
 
-	equal, _ := compare.JSONEqual(expJ, realJ, compare.ComparisonContext{})
+	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
 	if !equal.Equal {
 		//		t.Error(equal.Failures)

@@ -11,7 +11,7 @@ import (
 
 type XMLRoot struct {
 	XMLName    xml.Name    `xml:"testsuites"`
-	ID         string      `xml:"id,attr"`
+	Id         string      `xml:"id,attr"`
 	Name       string      `xml:"name,attr"`
 	Failures   int         `xml:"failures,attr"`
 	Time       float64     `xml:"time,attr"`
@@ -20,7 +20,7 @@ type XMLRoot struct {
 }
 
 type testsuite struct {
-	ID        string     `xml:"id,attr"`
+	Id        string     `xml:"id,attr"`
 	Name      string     `xml:"name,attr"`
 	Tests     int        `xml:"tests,attr"`
 	Failures  int        `xml:"failures,attr"`
@@ -30,7 +30,7 @@ type testsuite struct {
 }
 
 type testcase struct {
-	ID      string   `xml:"id,attr"`
+	Id      string   `xml:"id,attr"`
 	Name    string   `xml:"name,attr"`
 	Time    float64  `xml:"time,attr"`
 	Failure *failure `xml:"failure,omitempty"`
@@ -45,20 +45,20 @@ type JUnitReporter struct {
 	report Report
 }
 
-// ParseJSONResult Print the result to the console
-func ParseJSONResult(baseResult *Element) []byte {
+//ParseJSONResult Print the result to the console
+func ParseJSONResult(baseResult *ReportElement) []byte {
 	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
 
 	return jsonResult
 }
 
-// ParseJUnitResult Print the result to the console
-func ParseJUnitResult(baseResult *Element) []byte {
+//ParseJUnitResult Print the result to the console
+func ParseJUnitResult(baseResult *ReportElement) []byte {
 
 	testName := time.Now().Format("2006-01-02 15:04")
 	result := XMLRoot{
 		Name:     testName,
-		ID:       testName,
+		Id:       testName,
 		Failures: baseResult.Failures,
 		Tests:    baseResult.TestCount,
 		Time:     baseResult.ExecutionTime.Seconds(),
@@ -66,7 +66,7 @@ func ParseJUnitResult(baseResult *Element) []byte {
 
 	for k, v := range baseResult.SubTests {
 		newTestSuite := testsuite{
-			ID:       strconv.Itoa(k),
+			Id:       strconv.Itoa(k),
 			Time:     v.ExecutionTime.Seconds(),
 			Failures: v.Failures,
 			Tests:    v.TestCount,
@@ -85,15 +85,9 @@ func ParseJUnitResult(baseResult *Element) []byte {
 		padding := iterativeDigitsCount(len(flattenSubTests))
 		for ik, iv := range flattenSubTests {
 			newTestCase := testcase{
-				ID:   strconv.Itoa(ik),
+				Id:   strconv.Itoa(ik),
+				Time: iv.ExecutionTime.Seconds(),
 				Name: fmt.Sprintf("[%0"+strconv.Itoa(padding)+"d] %s", ik, strings.Replace(iv.Name, ".", ":", -1)),
-			}
-
-			// only save the time if a test has no sub tests, so the total times are only included once in the report
-			if len(iv.SubTests) == 0 {
-				newTestCase.Time = iv.ExecutionTime.Seconds()
-			} else {
-				newTestCase.Time = 0
 			}
 
 			if iv.Failures > 0 {

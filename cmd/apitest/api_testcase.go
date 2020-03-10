@@ -8,10 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/programmfabrik/apitest/pkg/lib/api"
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
-	"github.com/programmfabrik/apitest/pkg/lib/compare"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+
+	"github.com/programmfabrik/apitest/pkg/lib/cjson"
+
+	"github.com/programmfabrik/apitest/pkg/lib/api"
+	"github.com/programmfabrik/apitest/pkg/lib/compare"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
 	"github.com/programmfabrik/apitest/pkg/lib/template"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -41,7 +43,7 @@ type Case struct {
 
 	loader      template.Loader
 	manifestDir string
-	ReportElem  *report.Element
+	ReportElem  *report.ReportElement
 	suiteIndex  int
 	index       int
 	dataStore   *datastore.Datastore
@@ -52,7 +54,7 @@ type Case struct {
 	ServerURL string `json:"server_url"`
 }
 
-func (testCase Case) runAPITestCase(parentReportElem *report.Element) bool {
+func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
@@ -154,18 +156,18 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 			return -1, fmt.Errorf("error loading check response: %s", err)
 		}
 
-		jsonRespArray := util.JSONArray{}
+		jsonRespArray := util.JsonArray{}
 		switch t := loadedResponses.(type) {
-		case util.JSONArray:
+		case util.JsonArray:
 			jsonRespArray = t
-		case util.JSONObject:
-			jsonRespArray = util.JSONArray{t}
+		case util.JsonObject:
+			jsonRespArray = util.JsonArray{t}
 		default:
 			return -1, fmt.Errorf("error loading check response no valid typew")
 
 		}
 
-		leftResponses := util.JSONArray{}
+		leftResponses := make(util.JsonArray, 0)
 		for _, v := range jsonRespArray {
 			spec, err := testCase.loadResponseSerialization(v)
 			if err != nil {
@@ -201,9 +203,9 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 	return 0, nil
 }
 
-func (testCase Case) executeRequest(counter int) (compare.Result, api.Request, api.Response, error) {
+func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Request, api.Response, error) {
 	var (
-		responsesMatch    compare.Result
+		responsesMatch    compare.CompareResult
 		req               api.Request
 		apiResp           api.Response
 		apiRespJSONString string
@@ -216,14 +218,14 @@ func (testCase Case) executeRequest(counter int) (compare.Result, api.Request, a
 		err = fmt.Errorf("error setting datastore map:%s", err)
 	}
 
-	// Do Request
+	//Do Request
 	req, err = testCase.loadRequest()
 	if err != nil {
 		err = fmt.Errorf("error loading request: %s", err)
 		return responsesMatch, req, apiResp, err
 	}
 
-	// Log request on trace level (so only v2 will trigger this)
+	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
 		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
 	}
@@ -267,7 +269,7 @@ func (testCase Case) executeRequest(counter int) (compare.Result, api.Request, a
 		}
 	}
 
-	// Compare Responses
+	//Compare Responses
 	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
 
 	if err != nil {
@@ -317,7 +319,7 @@ func limitLines(in string, limit bool, limitCount int) string {
 
 func (testCase Case) run() (bool, error) {
 	var (
-		responsesMatch compare.Result
+		responsesMatch compare.CompareResult
 		request        api.Request
 		apiResponse    api.Response
 		timedOutFlag   bool
@@ -334,7 +336,7 @@ func (testCase Case) run() (bool, error) {
 		time.Sleep(time.Duration(*testCase.WaitBefore) * time.Millisecond)
 	}
 
-	// Poll repeats the request until the right response is found, or a timeout triggers
+	//Poll repeats the request until the right response is found, or a timeout triggers
 	for {
 		// delay between repeating a request
 		if testCase.Delay != nil {
@@ -379,7 +381,7 @@ func (testCase Case) run() (bool, error) {
 
 		}
 
-		// break if timeout or we do not have a repeater
+		//break if timeout or we do not have a repeater
 		if timedOut := time.Now().Sub(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
 				logrus.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
@@ -398,7 +400,7 @@ func (testCase Case) run() (bool, error) {
 			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
 		}
 
-		collectArray, ok := testCase.CollectResponse.(util.JSONArray)
+		collectArray, ok := testCase.CollectResponse.(util.JsonArray)
 		if ok {
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
@@ -455,16 +457,16 @@ func (testCase Case) loadResponse() (api.Response, error) {
 	return res, nil
 }
 
-func (testCase Case) responsesEqual(expected, got api.Response) (compare.Result, error) {
+func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
 	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
-		return compare.Result{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {
-		return compare.Result{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
 	}
-	return compare.JSONEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
+	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
 func (testCase Case) loadRequestSerialization() (api.Request, error) {
@@ -488,7 +490,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.ServerURL = testCase.ServerURL
 	}
 	if len(spec.Headers) == 0 {
-		spec.Headers = map[string]*string{}
+		spec.Headers = make(map[string]*string, 0)
 	}
 	for k, v := range testCase.standardHeader {
 		if spec.Headers[k] == nil {
@@ -497,7 +499,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	}
 
 	if len(spec.HeaderFromStore) == 0 {
-		spec.HeaderFromStore = map[string]string{}
+		spec.HeaderFromStore = make(map[string]string, 0)
 	}
 	for k, v := range testCase.standardHeaderFromStore {
 		if spec.HeaderFromStore[k] == "" {

@@ -29,15 +29,15 @@ func N(n interface{}) ([]struct{}, error) {
 // rowsToMap creates a new map, maps "key" column of each to the "value" column of that row. #51482
 // if "value" is empty "", the whole row is mapped
 func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map[string]interface{}, err error) {
-	retMap = map[string]interface{}{}
+	retMap = make(map[string]interface{})
 
-	// If there is no keyCol, return empty map
+	//If there is no keyCol, return empty map
 	if keyCol == "" {
 		return
 	}
 
 	for _, singlewRow := range rows {
-		// Get typed map index
+		//Get typed map index
 		if singlewRow[keyCol] == nil {
 			continue
 		}
@@ -47,14 +47,14 @@ func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map
 		}
 
 		if valCol != "" {
-			// Normal row
+			//Normal row
 			val := singlewRow[valCol]
 			if val == nil {
 				val = ""
 			}
 			retMap[mapIndex] = val
 		} else {
-			// Row with not valCol
+			//Row with not valCol
 			retMap[mapIndex] = singlewRow
 		}
 	}
@@ -62,7 +62,7 @@ func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map
 	return
 }
 
-// functions copied from: https:// github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
+// functions copied from: https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // add returns the sum of a and b.
 func add(b, a interface{}) (interface{}, error) {
@@ -206,7 +206,7 @@ func multiply(b, a interface{}) (interface{}, error) {
 	}
 }
 
-// FROM https:// github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
+// FROM https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // divide returns the division of b from a.
 func divide(b, a interface{}) (interface{}, error) {

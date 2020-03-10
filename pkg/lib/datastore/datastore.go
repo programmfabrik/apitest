@@ -2,50 +2,52 @@ package datastore
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
+	// "reflect"
+	// "github.com/programmfabrik/apitest/pkg/lib/cjson"
 )
 
 type Datastore struct {
 	storage      map[string]interface{} // custom storage
-	responseJSON []string               // store the responses
+	responseJson []string               // store the responses
 	logDatastore bool
 }
 
 func NewStore(logDatastore bool) *Datastore {
 	ds := Datastore{}
-	ds.storage = map[string]interface{}{}
-	ds.responseJSON = []string{}
+	ds.storage = make(map[string]interface{}, 0)
+	ds.responseJson = make([]string, 0)
 	ds.logDatastore = logDatastore
 	return &ds
 }
 
-type KeyNotFoundError struct {
+type DatastoreKeyNotFoundError struct {
 	error string
 }
 
-func (data KeyNotFoundError) Error() string {
+func (data DatastoreKeyNotFoundError) Error() string {
 	return data.error
 }
 
-type IndexOutOfBoundsError struct {
+type DatastoreIndexOutOfBoundsError struct {
 	error string
 }
 
-func (data IndexOutOfBoundsError) Error() string {
+func (data DatastoreIndexOutOfBoundsError) Error() string {
 	return data.error
 }
 
-type IndexError struct {
+type DatastoreIndexError struct {
 	error string
 }
 
-func (data IndexError) Error() string {
+func (data DatastoreIndexError) Error() string {
 	return data.error
 }
 
@@ -60,7 +62,7 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 		qValue := gjson.Get(jsonResponse, qv)
 		if qValue.Value() == nil {
 			if ds.logDatastore {
-				logrus.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
+				log.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
 			}
 			// Remove value from datastore
 			if setEmpty {
@@ -79,14 +81,14 @@ func (ds *Datastore) Delete(k string) {
 	delete(ds.storage, k)
 }
 
-// UpdateLastResponse We store the response
+// We store the response
 func (ds *Datastore) UpdateLastResponse(s string) {
-	ds.responseJSON[len(ds.responseJSON)-1] = s
+	ds.responseJson[len(ds.responseJson)-1] = s
 }
 
-// AppendResponse We store the response
+// We store the response
 func (ds *Datastore) AppendResponse(s string) {
-	ds.responseJSON = append(ds.responseJSON, s)
+	ds.responseJson = append(ds.responseJson, s)
 }
 
 func (ds *Datastore) SetMap(smap map[string]interface{}) error {
@@ -102,66 +104,67 @@ func (ds *Datastore) SetMap(smap map[string]interface{}) error {
 func (ds *Datastore) Set(index string, value interface{}) error {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
-	// typeswitch for checking if float is actually int
+	//typeswitch for checking if float is actually int
 	switch t := value.(type) {
 	case float64:
 		if math.Mod(t, 1.0) == 0 {
-			// is int
+			//is int
 			value = int(t)
 		}
 	}
 
-	// Slice in datastore
+	//Slice in datastore
 	if strings.HasSuffix(index, "[]") {
 		// do a push to an array
-		useIndex := index[:len(index)-2]
-		_, ok := ds.storage[useIndex]
+		use_index := index[:len(index)-2]
+		_, ok := ds.storage[use_index]
 		if !ok {
-			ds.storage[useIndex] = []interface{}{}
+			ds.storage[use_index] = make([]interface{}, 0)
 		}
 
-		s, ok := ds.storage[useIndex].([]interface{})
+		s, ok := ds.storage[use_index].([]interface{})
 		if !ok {
-			tmp := ds.storage[useIndex]
-			ds.storage[useIndex] = []interface{}{}
-			s = ds.storage[useIndex].([]interface{})
+			tmp := ds.storage[use_index]
+			ds.storage[use_index] = make([]interface{}, 0)
+			s = ds.storage[use_index].([]interface{})
 
 			if tmp != nil {
-				ds.storage[useIndex] = append(s, tmp)
+				ds.storage[use_index] = append(s, tmp)
 			}
 		}
 
-		ds.storage[useIndex] = append(s, value)
+		ds.storage[use_index] = append(s, value)
 
 	} else if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
 		// do a push to an array
-		useIndex := rego[1]
-		_, ok := ds.storage[useIndex]
+		use_index := rego[1]
+		_, ok := ds.storage[use_index]
 		if !ok {
-			ds.storage[useIndex] = map[string]interface{}{}
+			ds.storage[use_index] = make(map[string]interface{}, 0)
 		}
 
-		s, ok := ds.storage[useIndex].(map[string]interface{})
+		s, ok := ds.storage[use_index].(map[string]interface{})
 		if !ok {
-			ds.storage[useIndex] = map[string]interface{}{}
-			s = ds.storage[useIndex].(map[string]interface{})
+			ds.storage[use_index] = make(map[string]interface{}, 0)
+			s = ds.storage[use_index].(map[string]interface{})
 		}
 		s[rego[2]] = value
-		ds.storage[useIndex] = s
+		ds.storage[use_index] = s
 
 	} else {
 		ds.storage[index] = value
 	}
 
 	if ds.logDatastore {
-		logrus.Tracef("Set datastore[\"%s\"]=%#v", index, value)
+		log.Tracef("Set datastore[\"%s\"]=%#v", index, value)
 	}
 
 	return nil
 }
 
 func (ds Datastore) Get(index string) (res interface{}, err error) {
-	// strings are evalulated as int, so that we can support "-<int>" notations
+	// strings are evalulated as int, so
+	// that we can support "-<int>" notations
 
 	if index == "-" {
 		// return the entire custom store
@@ -171,33 +174,34 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
 	if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
-		// we have a map or slice
+		//we have a map or slice
 		useIndex := rego[1]
 		mapIndex := rego[2]
 
 		tmpRes, ok := ds.storage[useIndex]
 		if !ok {
-			logrus.Errorf("datastore: key: %s not found.", useIndex)
-			return "", KeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
+			log.Errorf("datastore: key: %s not found.", useIndex)
+			return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
 		}
 
 		tmpResMap, ok := tmpRes.(map[string]interface{})
 		if ok {
-			// We have a map
+			//We have a map
 			mapVal, ok := tmpResMap[mapIndex]
 			if !ok {
-				// Value not found in map, so return empty string
+				//Value not found in map, so return empty string
 				return "", nil
+			} else {
+				return mapVal, nil
 			}
-			return mapVal, nil
 		}
 
 		tmpResSlice, ok := tmpRes.([]interface{})
 		if ok {
-			// We have a slice
+			//We have a slice
 			sliceIdx, err := strconv.Atoi(mapIndex)
 			if err != nil {
-				return "", IndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
+				return "", DatastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
 			}
 
 			if sliceIdx < 0 {
@@ -206,21 +210,24 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 
 			if len(tmpResSlice) <= sliceIdx || sliceIdx < 0 {
 				return "", nil
+			} else {
+				return tmpResSlice[sliceIdx], nil
 			}
-			return tmpResSlice[sliceIdx], nil
 		}
+
 	} else {
+
 		idx, err := strconv.Atoi(index)
 		if err == nil {
 			if idx < 0 {
-				idx = idx + len(ds.responseJSON)
+				idx = idx + len(ds.responseJson)
 			}
-			if idx >= len(ds.responseJSON) || idx < 0 {
+			if idx >= len(ds.responseJson) || idx < 0 {
 				// index out of range
 
-				return "", IndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJSON))}
+				return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
 			}
-			return ds.responseJSON[idx], nil
+			return ds.responseJson[idx], nil
 		}
 		var ok bool
 		res, ok = ds.storage[index]

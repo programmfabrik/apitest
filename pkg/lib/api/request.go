@@ -40,9 +40,9 @@ type Request struct {
 	DataStore   *datastore.Datastore
 }
 
-func (request Request) buildHTTPRequest() (res *http.Request, err error) {
+func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	if request.buildPolicy == nil {
-		// Set Build policy
+		//Set Build policy
 		switch request.BodyType {
 		case "multipart":
 			request.buildPolicy = buildMultipart
@@ -52,18 +52,18 @@ func (request Request) buildHTTPRequest() (res *http.Request, err error) {
 			request.buildPolicy = buildRegular
 		}
 	}
-	// Render Request Url
+	//Render Request Url
 
-	requestURL := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
+	requestUrl := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
 	if request.Endpoint == "" {
-		requestURL = request.ServerURL
+		requestUrl = request.ServerURL
 	}
 
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
 		return res, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
-	res, err = http.NewRequest(request.Method, requestURL, body)
+	res, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
 		return res, fmt.Errorf("error creating new request")
 	}
@@ -161,10 +161,10 @@ func (request Request) buildHTTPRequest() (res *http.Request, err error) {
 
 	for key, val := range request.Headers {
 		if *val == "" {
-			// Unset header explicit
+			//Unset header explicit
 			res.Header.Del(key)
 		} else {
-			// ADD header
+			//ADD header
 			res.Header.Set(key, *val)
 		}
 	}
@@ -173,7 +173,7 @@ func (request Request) buildHTTPRequest() (res *http.Request, err error) {
 }
 
 func (request Request) ToString(curl bool) (res string) {
-	httpRequest, err := request.buildHTTPRequest()
+	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
 		return fmt.Sprintf("could not build httpRequest: %s", err)
 	}
@@ -202,7 +202,7 @@ func (request Request) ToString(curl bool) (res string) {
 
 		rep := ""
 		for key, val := range request.Body.(map[string]interface{}) {
-			pathSpec, ok := val.(util.JSONString)
+			pathSpec, ok := val.(util.JsonString)
 			if !ok {
 				panic(fmt.Errorf("pathSpec should be a string"))
 			}
@@ -219,9 +219,9 @@ func (request Request) ToString(curl bool) (res string) {
 }
 
 func (request Request) Send() (response Response, err error) {
-	httpRequest, err := request.buildHTTPRequest()
+	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
-		return response, fmt.Errorf("Could not buildHTTPRequest: %s", err)
+		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
 	}
 
 	httpResponse, err := c.Do(httpRequest)

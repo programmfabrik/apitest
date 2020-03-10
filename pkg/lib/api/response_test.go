@@ -7,30 +7,30 @@ import (
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
-func TestResponse_ToGenericJSON(t *testing.T) {
+func TestResponse_ToGenericJson(t *testing.T) {
 	response := Response{
 		statusCode: 200,
 		headers: map[string][]string{
 			"foo": {"bar"},
 		},
 	}
-	genericJSON, err := response.ToGenericJSON()
-	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJSON")
+	genericJson, err := response.ToGenericJSON()
+	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJson")
 
-	jsonObjResp, ok := genericJSON.(map[string]interface{})
+	jsonObjResp, ok := genericJson.(map[string]interface{})
 	if !ok {
-		t.Fatalf("responseJSON should be object")
+		t.Fatalf("responseJson should be object")
 	}
 	statusCode, ok := jsonObjResp["statuscode"]
 	if !ok {
-		t.Fatalf("responseJSONObj should have status code field")
+		t.Fatalf("responseJsonObj should have status code field")
 	}
 	if statusCode != float64(200) {
-		t.Errorf("responseJSON had wrong statuscode, expected 200, got: %d", statusCode)
+		t.Errorf("responseJson had wrong statuscode, expected 200, got: %d", statusCode)
 	}
 	jsonHeaders, ok := jsonObjResp["header"]
 	if !ok {
-		t.Fatalf("responseJSONObj should have headers")
+		t.Fatalf("responseJsonObj should have headers")
 	}
 	headersMap, ok := jsonHeaders.(map[string]interface{})
 	if !ok {
@@ -73,6 +73,6 @@ func TestResponse_NewResponse(t *testing.T) {
 func TestResponse_String(t *testing.T) {
 	response, err := NewResponse(200, nil, strings.NewReader("{\"foo\": \"bar\"}"), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "error constructing response")
-	assertString := "200\n\n\n{\n  \"foo\": \"bar\"\n}"
+	assertString := "200\n\n\n{\"foo\": \"bar\"}"
 	go_test_utils.AssertStringEquals(t, response.ToString(), assertString)
 }

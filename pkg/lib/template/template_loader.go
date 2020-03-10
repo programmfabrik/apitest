@@ -78,9 +78,9 @@ func (loader *Loader) Render(
 	rootDir string,
 	ctx interface{}) (res []byte, err error) {
 
-	// Remove comments from template
+	//Remove comments from template
 
-	var re = regexp.MustCompile(`(?m)^[\t ]*(#|// ).*$`)
+	var re = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
 	tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), `$1`))
 
 	var funcMap template.FuncMap
@@ -99,7 +99,7 @@ func (loader *Loader) Render(
 			return
 		},
 		"md5sum": func(path string) (string, error) {
-			_, file, err := util.OpenFileOrURL(path, rootDir)
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return "", err
 			}
@@ -119,7 +119,7 @@ func (loader *Loader) Render(
 				return "", err
 			}
 
-			_, file, err := util.OpenFileOrURL(path, rootDir)
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return "", err
 			}
@@ -138,7 +138,7 @@ func (loader *Loader) Render(
 		},
 		"file_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
 
-			_, file, err := util.OpenFileOrURL(path, rootDir)
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return nil, err
 			}
@@ -146,14 +146,14 @@ func (loader *Loader) Render(
 			if err != nil {
 				return nil, err
 			}
-			data, err := csv.ToMap(fileBytes, delimiter)
+			data, err := csv.CSVToMap(fileBytes, delimiter)
 			if err != nil {
 				return data, fmt.Errorf("'%s' %s", path, err)
 			}
 			return data, err
 		},
 		"parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-			_, file, err := util.OpenFileOrURL(path, rootDir)
+			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return nil, err
 			}
@@ -221,58 +221,58 @@ func (loader *Loader) Render(
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
 		"group_map_rows": func(groupColumn string, rowsInput interface{}) (map[string][]map[string]interface{}, error) {
-			groupedRows := make(map[string][]map[string]interface{}, 1000)
+			grouped_rows := make(map[string][]map[string]interface{}, 1000)
 			rows := getRowsFromInput(rowsInput)
 			for _, row := range rows {
-				groupKey, ok := row[groupColumn]
+				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("group column \"%s\" does not exist in row", groupColumn)
+					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
 				}
-				switch idx := groupKey.(type) {
+				switch idx := group_key.(type) {
 				case string:
-					_, ok := groupedRows[idx]
+					_, ok := grouped_rows[idx]
 					if !ok {
-						groupedRows[idx] = []map[string]interface{}{}
+						grouped_rows[idx] = make([]map[string]interface{}, 0)
 					}
-					groupedRows[idx] = append(groupedRows[idx], row)
+					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("group column \"%s\" needs to be int64 but is %t", groupColumn, idx)
+					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
-			return groupedRows, nil
+			return grouped_rows, nil
 		},
 		"group_rows": func(groupColumn string, rowsInput interface{}) ([][]map[string]interface{}, error) {
-			groupedRows := make([][]map[string]interface{}, 1000)
+			grouped_rows := make([][]map[string]interface{}, 1000)
 			rows := getRowsFromInput(rowsInput)
 
 			for _, row := range rows {
-				groupKey, ok := row[groupColumn]
+				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("group column \"%s\" does not exist in row", groupColumn)
+					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
 				}
-				switch idx := groupKey.(type) {
+				switch idx := group_key.(type) {
 				case int64:
 					if idx <= 0 {
-						return nil, fmt.Errorf("group column \"%s\" needs to be >= 0 and < 1000 but is %d", groupColumn, idx)
+						return nil, fmt.Errorf("Group column \"%s\" needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
 					}
-					rows2 := groupedRows[idx]
+					rows2 := grouped_rows[idx]
 					if rows2 == nil {
-						groupedRows[idx] = []map[string]interface{}{}
+						grouped_rows[idx] = make([]map[string]interface{}, 0)
 					}
-					groupedRows[idx] = append(groupedRows[idx], row)
+					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("group column \"%s\" needs to be int64 but is %t", groupColumn, idx)
+					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
 			// remove empty rows
-			gRows := [][]map[string]interface{}{}
-			for _, row := range groupedRows {
+			g_rows := make([][]map[string]interface{}, 0)
+			for _, row := range grouped_rows {
 				if row == nil {
 					continue
 				}
-				gRows = append(gRows, row)
+				g_rows = append(g_rows, row)
 			}
-			return gRows, nil
+			return g_rows, nil
 		},
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
@@ -292,7 +292,7 @@ func (loader *Loader) Render(
 }
 
 func getRowsFromInput(rowsInput interface{}) []map[string]interface{} {
-	rows := []map[string]interface{}{}
+	rows := make([]map[string]interface{}, 0)
 	switch t := rowsInput.(type) {
 	case []map[string]interface{}:
 		rows = t

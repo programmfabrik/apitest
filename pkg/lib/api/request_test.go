@@ -2,13 +2,13 @@ package api
 
 import (
 	"fmt"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"io"
 	"io/ioutil"
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
-	go_test_utils "github.com/programmfabrik/go-test-utils"
+	"github.com/programmfabrik/go-test-utils"
 )
 
 func TestRequestBuildHttp(t *testing.T) {
@@ -26,7 +26,7 @@ func TestRequestBuildHttp(t *testing.T) {
 		b = strings.NewReader("mock_body")
 		return ah, b, nil
 	}
-	httpRequest, err := request.buildHTTPRequest()
+	httpRequest, err := request.buildHttpRequest()
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
 	go_test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
 
@@ -47,7 +47,7 @@ func TestBuildCurl(t *testing.T) {
 			"query_param": "value",
 		},
 		ServerURL: "https://serverUrl",
-		Body: util.JSONObject{
+		Body: util.JsonObject{
 			"hey": 1,
 		},
 	}
@@ -59,6 +59,6 @@ func TestBuildCurl(t *testing.T) {
 'https://serverUrl/endpoint?query_param=value'`
 
 	if request.ToString(true) != exp {
-		t.Fatalf("Did not match right curl command. Got '%s', expected '%s'", request.ToString(true), exp)
+		t.Fatalf("Did not match right curl command. Expected '%s' != '%s' GOT", exp, request.ToString(true))
 	}
 }

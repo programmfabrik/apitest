@@ -82,7 +82,7 @@ var testCMD = &cobra.Command{
 	Use:              "apitest",
 	Short:            "Apitester lets you define API tests on the go",
 	Long:             "A fast and flexible API testing tool. Helping you to define API tests on the go",
-	Run:              runAPITests,
+	Run:              runApiTests,
 }
 
 func main() {
@@ -107,7 +107,7 @@ func setup(ccmd *cobra.Command, args []string) {
 	})
 }
 
-func runAPITests(cmd *cobra.Command, args []string) {
+func runApiTests(cmd *cobra.Command, args []string) {
 
 	// Check if paths are valid
 	for _, rootDirectory := range rootDirectorys {
@@ -138,7 +138,7 @@ func runAPITests(cmd *cobra.Command, args []string) {
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, reportElem *report.Element) (success bool) {
+	runSingleTest := func(manifestPath string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)

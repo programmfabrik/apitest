@@ -10,13 +10,13 @@ import (
 	"strings"
 )
 
-// Get information
+//Get information
 type info struct {
 	name   string
 	format string
 }
 
-func ToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
+func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
@@ -35,9 +35,9 @@ func ToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 
 	output := []map[string]interface{}{}
 
-	// Iterate over the records with skipping the first two lines (as they contain the infos)
+	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[2:] {
-		tmpRow := map[string]interface{}{}
+		tmpRow := make(map[string]interface{}, 0)
 
 		for ki, vi := range v {
 			if ki >= len(infos) || infos[ki].format == "SKIP_COLUMN" {
@@ -69,16 +69,16 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, err
 		return nil, err
 	}
 
-	infos := []info{}
+	infos := make([]info, 0)
 	for _, v := range records[0] {
 		infos = append(infos, info{name: strings.TrimSpace(v)})
 	}
 
 	output := []map[string]interface{}{}
 
-	// Iterate over the records with skipping the first two lines (as they contain the infos)
+	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[1:] {
-		tmpRow := map[string]interface{}{}
+		tmpRow := make(map[string]interface{}, 0)
 
 		for ki, vi := range v {
 			if ki >= len(infos) {
@@ -100,7 +100,7 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, err
 }
 
 func extractHeaderInformation(names, formats []string) ([]info, error) {
-	infos := []info{}
+	infos := make([]info, 0)
 
 	for k, v := range names {
 		if k >= len(formats) {
@@ -125,7 +125,7 @@ func extractHeaderInformation(names, formats []string) ([]info, error) {
 }
 
 func removeEmptyRowsAndComments(input [][]string) (output [][]string) {
-	output = [][]string{}
+	output = make([][]string, 0)
 	for _, v := range input {
 		empty := true
 		for idx, vi := range v {
@@ -207,12 +207,12 @@ func getTyped(value, format string) (interface{}, error) {
 			return nil, err
 		}
 
-		// Check if we only have one row. If not return error
+		//Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'string,array'")
 		}
 
-		retArray := []string{}
+		retArray := make([]string, 0)
 		for _, v := range records[0] {
 			retArray = append(retArray, strings.TrimSpace(v))
 		}
@@ -227,12 +227,12 @@ func getTyped(value, format string) (interface{}, error) {
 			return nil, err
 		}
 
-		// Check if we only have one row. If not return error
+		//Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'int64,array'")
 		}
 
-		retArray := []int64{}
+		retArray := make([]int64, 0)
 		for _, v := range records[0] {
 			vi := int64(0)
 			if v != "" {
@@ -254,12 +254,12 @@ func getTyped(value, format string) (interface{}, error) {
 			return nil, err
 		}
 
-		// Check if we only have one row. If not return error
+		//Check if we only have one row. If not return error
 		if len(records) > 1 {
 
 			return nil, fmt.Errorf("Only one row is allowed for type 'float64,array'")
 		}
-		retArray := []float64{}
+		retArray := make([]float64, 0)
 		for _, v := range records[0] {
 			vi := float64(0)
 			if v != "" {
@@ -281,12 +281,12 @@ func getTyped(value, format string) (interface{}, error) {
 			return nil, err
 		}
 
-		// Check if we only have one row. If not return error
+		//Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'bool,array'")
 		}
 
-		retArray := []bool{}
+		retArray := make([]bool, 0)
 		for _, v := range records[0] {
 			retArray = append(retArray, strings.TrimSpace(v) == "true")
 		}

@@ -15,8 +15,8 @@ var c = &http.Client{
 	Timeout: time.Second * 10,
 }
 
-// OpenFileOrURL opens either a local file or gives the resp.Body from a remote file
-func OpenFileOrURL(path, rootDir string) (string, io.ReadCloser, error) {
+// OpenFileOrUrl opens either a local file or gives the resp.Body from a remote file
+func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
 	if strings.HasPrefix(path, "@") {
 		path = string([]rune(path)[1:])
 	}
@@ -26,12 +26,13 @@ func OpenFileOrURL(path, rootDir string) (string, io.ReadCloser, error) {
 		path = string([]rune(path)[2:])
 	}
 
-	if strings.HasPrefix(path, "http:// ") || strings.HasPrefix(path, "https:// ") {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 		io, err := openRemoteFile(path)
 		return path, io, err
+	} else {
+		io, err := openLocalFile(path, rootDir)
+		return path, io, err
 	}
-	io, err := openLocalFile(path, rootDir)
-	return path, io, err
 }
 
 func openRemoteFile(absPath string) (io.ReadCloser, error) {
@@ -45,10 +46,10 @@ func openRemoteFile(absPath string) (io.ReadCloser, error) {
 func openLocalFile(path, rootDir string) (io.ReadCloser, error) {
 	var absPath string
 	if strings.HasPrefix(path, "./") {
-		// Path relative to binary
+		//Path relative to binary
 		absPath = path
 	} else if strings.HasPrefix(path, "/") {
-		// Absolute Path
+		//Absolute Path
 		absPath = filepath.Join("/", path)
 	} else {
 		absPath = filepath.Join(rootDir, path)

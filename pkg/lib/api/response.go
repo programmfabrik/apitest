@@ -23,7 +23,7 @@ type Response struct {
 	statusCode  int
 	headers     map[string][]string
 	body        []byte
-	bodyControl util.JSONObject
+	bodyControl util.JsonObject
 	Format      ResponseFormat
 }
 
@@ -31,7 +31,7 @@ type ResponseSerialization struct {
 	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
 	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
 	Body        interface{}         `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JSONObject     `yaml:"body:control" json:"body:control,omitempty"`
+	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
 }
 
@@ -43,7 +43,7 @@ type ResponseFormat struct {
 	} `json:"csv,omitempty"`
 }
 
-func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JSONObject, bodyFormat ResponseFormat) (res Response, err error) {
+func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return res, err
@@ -61,7 +61,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		spec.StatusCode = 200
 	}
 
-	return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
+	return NewResponse(spec.StatusCode, nil, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -105,8 +105,8 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(response.Body()))
-		jsonObject := util.JSONObject{
-			"md5sum": util.JSONString(hex.EncodeToString(hasher.Sum(nil))),
+		jsonObject := util.JsonObject{
+			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
 		bodyData, err = json.Marshal(jsonObject)
 		if err != nil {
@@ -195,9 +195,9 @@ func (response Response) ServerResponseToJSONString(bodyOnly bool) (string, erro
 }
 
 func (response Response) Body() []byte {
-	// some endpoints return empty strings;
-	// since that is no valid json so we interpret it as the json null literal to
-	// establish the invariant that api endpoints return json responses
+	//some endpoints return empty strings;
+	//since that is no valid json so we interpret it as the json null literal to
+	//establish the invariant that api endpoints return json responses
 	if bytes.Compare(response.body, []byte("")) == 0 {
 		return []byte("null")
 	}

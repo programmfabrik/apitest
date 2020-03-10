@@ -1,7 +1,7 @@
 package util
 
-type JSONObject = map[string]interface{}
-type JSONArray = []interface{}
-type JSONString = string
-type JSONNumber = float64
-type JSONBool = bool
+type JsonObject = map[string]interface{}
+type JsonArray = []interface{}
+type JsonString = string
+type JsonNumber = float64
+type JsonBool = bool

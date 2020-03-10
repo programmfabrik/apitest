@@ -11,21 +11,21 @@ import (
 func TestComparison(t *testing.T) {
 	testData := []struct {
 		name      string
-		left      util.JSONObject
-		right     util.JSONObject
+		left      util.JsonObject
+		right     util.JsonObject
 		eEqual    bool
-		eFailures []Failure
+		eFailures []CompareFailure
 	}{
 		{
 			name: "Should be equal",
-			left: util.JSONObject{
-				"array": util.JSONArray{
+			left: util.JsonObject{
+				"array": util.JsonArray{
 					"val2",
 					"val3",
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
 					"val2",
 					"val3",
 				},
@@ -35,14 +35,14 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be any string",
-			left: util.JSONObject{
-				"stringerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
 					"must_exist": true,
 					"is_string":  true,
 				},
 			},
 
-			right: util.JSONObject{
+			right: util.JsonObject{
 				"stringerino": "not equal",
 			},
 			eEqual:    true,
@@ -50,13 +50,13 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "String matches regex",
-			left: util.JSONObject{
-				"stringerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
 					"match":     "\\d+\\..+",
 					"is_string": true,
 				},
 			},
-			right: util.JSONObject{
+			right: util.JsonObject{
 				"stringerino": "123.abc",
 			},
 			eEqual:    true,
@@ -64,17 +64,17 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "String does not match regex",
-			left: util.JSONObject{
-				"stringerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
 					"match":     "\\d+\\.\\d+",
 					"is_string": true,
 				},
 			},
-			right: util.JSONObject{
+			right: util.JsonObject{
 				"stringerino": "xyz-456",
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "stringerino",
 					Message: "does not match regex '\\d+\\.\\d+'",
@@ -83,17 +83,17 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "String match with invalid regex (must fail)",
-			left: util.JSONObject{
-				"stringerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
 					"match":     ".+[",
 					"is_string": true,
 				},
 			},
-			right: util.JSONObject{
+			right: util.JsonObject{
 				"stringerino": "",
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "stringerino",
 					Message: "could not match regex '.+[': 'error parsing regexp: missing closing ]: `[`'",
@@ -102,16 +102,16 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "String match tried on integer (must fail)",
-			left: util.JSONObject{
-				"numberino:control": util.JSONObject{
+			left: util.JsonObject{
+				"numberino:control": util.JsonObject{
 					"match": ".+",
 				},
 			},
-			right: util.JSONObject{
-				"numberino": util.JSONNumber(123),
+			right: util.JsonObject{
+				"numberino": util.JsonNumber(123),
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "numberino",
 					Message: "should be 'String' for regex match but is 'Number'",
@@ -120,116 +120,116 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be any number",
-			left: util.JSONObject{
-				"numberino:control": util.JSONObject{
+			left: util.JsonObject{
+				"numberino:control": util.JsonObject{
 					"must_exist": true,
 					"is_number":  true,
 				},
 			},
-			right: util.JSONObject{
-				"numberino": util.JSONNumber(99999999),
+			right: util.JsonObject{
+				"numberino": util.JsonNumber(99999999),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "There should be any bool",
-			left: util.JSONObject{
-				"boolerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"boolerino:control": util.JsonObject{
 					"must_exist": true,
 					"is_bool":    true,
 				},
 			},
-			right: util.JSONObject{
-				"boolerino": util.JSONBool(false),
+			right: util.JsonObject{
+				"boolerino": util.JsonBool(false),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "There should be any array",
-			left: util.JSONObject{
-				"arrayerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"arrayerino:control": util.JsonObject{
 					"must_exist": true,
 					"is_array":   true,
 				},
 			},
-			right: util.JSONObject{
-				"arrayerino": util.JSONArray(nil),
+			right: util.JsonObject{
+				"arrayerino": util.JsonArray(nil),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "There should be an empty object",
-			left: util.JSONObject{
-				"objecterino": util.JSONObject{},
-				"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"objecterino": util.JsonObject{},
+				"objecterino:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"objecterino": util.JSONObject{"1": 1, "2": 2, "3": 3},
+			right: util.JsonObject{
+				"objecterino": util.JsonObject{"1": 1, "2": 2, "3": 3},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{"objecterino", `extra elements found in object`},
 			},
 		},
 		{
 			name: "There should be empty array",
-			left: util.JSONObject{
-				"arrayerino": util.JSONArray{},
-				"arrayerino:control": util.JSONObject{
+			left: util.JsonObject{
+				"arrayerino": util.JsonArray{},
+				"arrayerino:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"arrayerino": util.JSONArray{"1", "2", "3"},
+			right: util.JsonObject{
+				"arrayerino": util.JsonArray{"1", "2", "3"},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{"arrayerino", `extra elements found in array`},
 			},
 		},
 		{
 			name: "There should be any object",
-			left: util.JSONObject{
-				"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"objecterino:control": util.JsonObject{
 					"must_exist": true,
 					"is_object":  true,
 				},
 			},
-			right: util.JSONObject{
-				"objecterino": util.JSONObject(nil),
+			right: util.JsonObject{
+				"objecterino": util.JsonObject(nil),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "Token match with wrong order",
-			left: util.JSONObject{
-				"tokens": util.JSONArray{
-					util.JSONObject{
+			left: util.JsonObject{
+				"tokens": util.JsonArray{
+					util.JsonObject{
 						"suggest": "<b>a</b>",
 					},
-					util.JSONObject{
+					util.JsonObject{
 						"suggest": "<b>a</b>b",
 					},
-					util.JSONObject{
+					util.JsonObject{
 						"suggest": "<b>a</b>bc",
 					},
 				},
 			},
-			right: util.JSONObject{
-				"tokens": util.JSONArray{
-					util.JSONObject{
+			right: util.JsonObject{
+				"tokens": util.JsonArray{
+					util.JsonObject{
 						"suggest": "<b>a</b>",
 					},
-					util.JSONObject{
+					util.JsonObject{
 						"suggest": "<b>a</b>bc",
 					},
-					util.JSONObject{
+					util.JsonObject{
 						"suggest": "<b>a</b>b",
 					},
 				},
@@ -239,27 +239,27 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be no object",
-			left: util.JSONObject{
-				"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"objecterino:control": util.JsonObject{
 					"must_not_exist": true,
 				},
 			},
-			right:     util.JSONObject{},
+			right:     util.JsonObject{},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "There should be no object but it exists",
-			left: util.JSONObject{
-				"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"objecterino:control": util.JsonObject{
 					"must_not_exist": true,
 				},
 			},
-			right: util.JSONObject{
-				"objecterino": util.JSONObject(nil),
+			right: util.JsonObject{
+				"objecterino": util.JsonObject(nil),
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "objecterino",
 					Message: "was found, but should NOT exist",
@@ -268,24 +268,24 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be no deeper object but it exists",
-			left: util.JSONObject{
-				"it": util.JSONArray{
-					util.JSONObject{
-						"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"it": util.JsonArray{
+					util.JsonObject{
+						"objecterino:control": util.JsonObject{
 							"must_not_exist": true,
 						},
 					},
 				},
 			},
-			right: util.JSONObject{
-				"it": util.JSONArray{
-					util.JSONObject{
-						"objecterino": util.JSONString("I AM HERE"),
+			right: util.JsonObject{
+				"it": util.JsonArray{
+					util.JsonObject{
+						"objecterino": util.JsonString("I AM HERE"),
 					},
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
 					Message: "was found, but should NOT exist",
@@ -294,27 +294,27 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be no deeper object but it exists2",
-			left: util.JSONObject{
-				"it": util.JSONArray{
-					util.JSONObject{
-						"objecterino:control": util.JSONObject{
+			left: util.JsonObject{
+				"it": util.JsonArray{
+					util.JsonObject{
+						"objecterino:control": util.JsonObject{
 							"must_not_exist": true,
 						},
 					},
 				},
-				"it:control": util.JSONObject{
+				"it:control": util.JsonObject{
 					"order_matters": true,
 				},
 			},
-			right: util.JSONObject{
-				"it": util.JSONArray{
-					util.JSONObject{
-						"objecterino": util.JSONString("I AM HERE"),
+			right: util.JsonObject{
+				"it": util.JsonArray{
+					util.JsonObject{
+						"objecterino": util.JsonString("I AM HERE"),
 					},
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "it[0].objecterino",
 					Message: "was found, but should NOT exist",
@@ -323,21 +323,21 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be a exact object match",
-			left: util.JSONObject{
-				"objecterino": util.JSONObject{
-					"1": util.JSONNumber(1),
-					"2": util.JSONNumber(2),
-					"3": util.JSONNumber(3),
+			left: util.JsonObject{
+				"objecterino": util.JsonObject{
+					"1": util.JsonNumber(1),
+					"2": util.JsonNumber(2),
+					"3": util.JsonNumber(3),
 				},
-				"objecterino:control": util.JSONObject{
+				"objecterino:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"objecterino": util.JSONObject{
-					"1": util.JSONNumber(1),
-					"3": util.JSONNumber(3),
-					"2": util.JSONNumber(2),
+			right: util.JsonObject{
+				"objecterino": util.JsonObject{
+					"1": util.JsonNumber(1),
+					"3": util.JsonNumber(3),
+					"2": util.JsonNumber(2),
 				},
 			},
 			eEqual:    true,
@@ -345,21 +345,21 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "There should be a exact object match even if order is mixed",
-			left: util.JSONObject{
-				"objecterino": util.JSONObject{
-					"1": util.JSONNumber(1),
-					"2": util.JSONNumber(2),
-					"3": util.JSONNumber(3),
+			left: util.JsonObject{
+				"objecterino": util.JsonObject{
+					"1": util.JsonNumber(1),
+					"2": util.JsonNumber(2),
+					"3": util.JsonNumber(3),
 				},
-				"objecterino:control": util.JSONObject{
+				"objecterino:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"objecterino": util.JSONObject{
-					"2": util.JSONNumber(2),
-					"3": util.JSONNumber(3),
-					"1": util.JSONNumber(1),
+			right: util.JsonObject{
+				"objecterino": util.JsonObject{
+					"2": util.JsonNumber(2),
+					"3": util.JsonNumber(3),
+					"1": util.JsonNumber(1),
 				},
 			},
 			eEqual:    true,
@@ -367,25 +367,25 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Exact match is not present",
-			left: util.JSONObject{
-				"MYobjecterino": util.JSONObject{
-					"1": util.JSONNumber(1),
-					"2": util.JSONNumber(2),
-					"3": util.JSONNumber(3),
+			left: util.JsonObject{
+				"MYobjecterino": util.JsonObject{
+					"1": util.JsonNumber(1),
+					"2": util.JsonNumber(2),
+					"3": util.JsonNumber(3),
 				},
-				"MYobjecterino:control": util.JSONObject{
+				"MYobjecterino:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"MYobjecterino": util.JSONObject{
-					"2": util.JSONNumber(2),
-					"4": util.JSONNumber(4),
-					"1": util.JSONNumber(1),
+			right: util.JsonObject{
+				"MYobjecterino": util.JsonObject{
+					"2": util.JsonNumber(2),
+					"4": util.JsonNumber(4),
+					"1": util.JsonNumber(1),
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "MYobjecterino.3",
 					Message: "was not found, but should exist",
@@ -398,20 +398,20 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Not all contained",
-			left: util.JSONObject{
-				"array": util.JSONArray{
+			left: util.JsonObject{
+				"array": util.JsonArray{
 					"val2",
 					"val3",
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
 					"val1",
 					"val2",
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "array[1]",
 					Message: "Got 'val1', expected 'val3'",
@@ -420,24 +420,24 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Wrong order",
-			left: util.JSONObject{
-				"array": util.JSONArray{
+			left: util.JsonObject{
+				"array": util.JsonArray{
 					"val3",
 					"val2",
 				},
-				"array:control": util.JSONObject{
+				"array:control": util.JsonObject{
 					"order_matters": true,
 					"no_extra":      true,
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
 					"val2",
 					"val3",
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "array[0]",
 					Message: "Got 'val2', expected 'val3'",
@@ -450,23 +450,23 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Wrong order deeper with map",
-			left: util.JSONObject{
-				"array": util.JSONObject{
-					"inner": util.JSONObject{
-						"deeper": util.JSONArray{
+			left: util.JsonObject{
+				"array": util.JsonObject{
+					"inner": util.JsonObject{
+						"deeper": util.JsonArray{
 							"val4",
 							"val5",
 						},
-						"deeper:control": util.JSONObject{
+						"deeper:control": util.JsonObject{
 							"order_matters": true,
 						},
 					},
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONObject{
-					"inner": util.JSONObject{
-						"deeper": util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonObject{
+					"inner": util.JsonObject{
+						"deeper": util.JsonArray{
 							"val5",
 							"val4",
 						},
@@ -474,7 +474,7 @@ func TestComparison(t *testing.T) {
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "array.inner.deeper[0]",
 					Message: "Got 'val5', expected 'val4'",
@@ -487,42 +487,79 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Right error message for array",
-			left: util.JSONObject{
-				"body": util.JSONArray{
-					util.JSONObject{
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
 						"henk": "denk",
 					},
 				},
 			},
-			right: util.JSONObject{
-				"body": util.JSONArray{
-					util.JSONObject{},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{},
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "body[0].henk",
 					Message: "was not found, but should exist",
 				},
 			},
 		},
+		/*	{
+			name: "Wrong order deeper with arrays",
+			left: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
+						util.JsonArray{
+							"val9",
+							"val10",
+						},
+					},
+				},
+				"array:control": util.JsonObject{
+					"order_matters": true,
+				},
+			},
+			right: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
+						util.JsonArray{
+							"val10",
+							"val9",
+						},
+					},
+				},
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "array",
+					Message: "[0][0][0]Expected 'val9' != 'val10' Got",
+				},
+				{
+					Key:     "array",
+					Message: "[0][0][1]Expected 'val10' != 'val9' Got",
+				},
+			},
+		},*/
 		{
 			name: "All fine deeper with arrays",
-			left: util.JSONObject{
-				"array": util.JSONArray{
-					util.JSONArray{
-						util.JSONArray{
+			left: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
+						util.JsonArray{
 							"val9",
 							"val10",
 						},
 					},
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
-					util.JSONArray{
-						util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
+						util.JsonArray{
 							"val9",
 							"val10",
 						},
@@ -534,22 +571,22 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check array length",
-			left: util.JSONObject{
-				"array:control": util.JSONObject{
+			left: util.JsonObject{
+				"array:control": util.JsonObject{
 					"element_count": 3,
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
-					util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
 						"val9",
 						"val10",
 					},
-					util.JSONArray{
+					util.JsonArray{
 						"val9",
 						"val10",
 					},
-					util.JSONArray{
+					util.JsonArray{
 						"val9",
 						"val10",
 					},
@@ -560,18 +597,18 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check array length and fail",
-			left: util.JSONObject{
-				"array:control": util.JSONObject{
+			left: util.JsonObject{
+				"array:control": util.JsonObject{
 					"element_count": 2,
 				},
-				"array": util.JSONArray{
-					util.JSONArray{},
+				"array": util.JsonArray{
+					util.JsonArray{},
 				},
 			},
-			right: util.JSONObject{
-				"array": util.JSONArray{
-					util.JSONArray{
-						util.JSONArray{
+			right: util.JsonObject{
+				"array": util.JsonArray{
+					util.JsonArray{
+						util.JsonArray{
 							"val9",
 							"val10",
 						},
@@ -579,7 +616,7 @@ func TestComparison(t *testing.T) {
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "array",
 					Message: "length of the actual response array '1' != '2' expected length",
@@ -588,35 +625,35 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check body no extra",
-			left: util.JSONObject{
-				"body": util.JSONArray{
-					util.JSONObject{
-						"pool": util.JSONObject{
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
 							"reference": "system:root",
 						},
 					},
 				},
-				"body:control": util.JSONObject{
+				"body:control": util.JsonObject{
 					"no_extra": true,
 				},
 			},
-			right: util.JSONObject{
-				"body": util.JSONArray{
-					util.JSONObject{
-						"pool": util.JSONObject{
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
 							"reference":  "system:root",
 							"reference2": "system:root",
 						},
 					},
-					util.JSONObject{
-						"pool": util.JSONObject{
+					util.JsonObject{
+						"pool": util.JsonObject{
 							"reference": "system:root",
 						},
 					},
 				},
 			},
 			eEqual: false,
-			eFailures: []Failure{
+			eFailures: []CompareFailure{
 				{
 					Key:     "body",
 					Message: "extra elements found in array",
@@ -627,17 +664,17 @@ func TestComparison(t *testing.T) {
 
 	for _, data := range testData {
 		t.Run(data.name, func(t *testing.T) {
-			equal, err := JSONEqual(data.left, data.right, ComparisonContext{})
+			equal, err := JsonEqual(data.left, data.right, ComparisonContext{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if equal.Equal != data.eEqual {
-				t.Errorf("Equal: got '%t', expected '%t'", equal.Equal, data.eEqual)
+				t.Errorf("Expected equal '%t' != '%t' Got equal", data.eEqual, equal.Equal)
 			}
 
 			if (equal.Failures != nil && data.eFailures == nil) || (equal.Failures == nil && data.eFailures != nil) {
-				t.Errorf("Failure: got '%v', expected '%v'", equal.Failures, data.eFailures)
+				t.Errorf("Expected Failure '%v' != '%v' Got Failure", data.eFailures, equal.Failures)
 				return
 			}
 

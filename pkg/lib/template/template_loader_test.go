@@ -73,8 +73,8 @@ func TestBigIntRender(t *testing.T) {
 
 	resp, _ := api.NewResponse(200, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil, api.ResponseFormat{})
 
-	respJSON, _ := resp.ServerResponseToJSONString(false)
-	store.SetWithQjson(respJSON, map[string]string{"testINT": "body.bigINT"})
+	respJson, _ := resp.ServerResponseToJSONString(false)
+	store.SetWithQjson(respJson, map[string]string{"testINT": "body.bigINT"})
 
 	res, err := loader.Render([]byte(`{{ datastore "testINT" }}`), "", nil)
 	if err != nil {
@@ -86,9 +86,9 @@ func TestBigIntRender(t *testing.T) {
 }
 
 func TestRowsToMapTemplate(t *testing.T) {
-	inputJSON := `[{\"column_a\": \"row1a\",\"column_b\": \"row1b\",\"column_c\": \"row1c\"},{\"column_a\": \"row2a\",\"column_b\": \"row2b\",\"column_c\": \"row2c\"}]`
+	inputJson := `[{\"column_a\": \"row1a\",\"column_b\": \"row1b\",\"column_c\": \"row1c\"},{\"column_a\": \"row2a\",\"column_b\": \"row2b\",\"column_c\": \"row2c\"}]`
 
-	root := []byte(`{{ unmarshal "` + inputJSON + `" | rows_to_map "column_a" "column_c" }}`)
+	root := []byte(`{{ unmarshal "` + inputJson + `" | rows_to_map "column_a" "column_c" }}`)
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
@@ -102,7 +102,7 @@ func TestRowsToMapTemplate(t *testing.T) {
 	})
 }
 
-func TestRender_LoadFile_QJSON_Params(t *testing.T) {
+func TestRender_LoadFile_QJson_Params(t *testing.T) {
 	root := []byte(
 		"{{ file \"somefile.json\" \"foo\" \"bar\" | qjson \"key.1\" }}")
 	target := []byte("{ \"key\": [\"{{ .Param1 }}\", \"{{ .Param2 }}\"]}")
@@ -306,7 +306,7 @@ int64,string,"string,array","int64,array"
 	}
 }
 
-func TestRender_LoadFile_QJSON(t *testing.T) {
+func TestRender_LoadFile_QJson(t *testing.T) {
 	testCases := []struct {
 		path        string
 		json        string
@@ -344,7 +344,7 @@ func TestRender_LoadFile_QJSON(t *testing.T) {
 	}
 }
 
-func Test_DataStore_QJSON(t *testing.T) {
+func Test_DataStore_QJson(t *testing.T) {
 	response, _ := api.NewResponse(
 		200,
 		map[string][]string{"x-header": {"foo", "bar"}},
@@ -370,16 +370,8 @@ func Test_DataStore_QJSON(t *testing.T) {
 		{"statuscode", `200`},
 		{"body.flib.0", `"flab"`},
 		{"body.flib.1", `"flob"`},
-		{"body.flib", `[
-      "flab",
-      "flob"
-    ]`},
-		{"body", `{
-    "flib": [
-      "flab",
-      "flob"
-    ]
-  }`},
+		{"body.flib", `["flab","flob"]`},
+		{"body", `{"flib":["flab","flob"]}`},
 	}
 
 	for i, testCase := range testCases {
