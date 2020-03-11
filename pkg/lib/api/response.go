@@ -13,9 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/clbanning/mxj"
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -114,9 +112,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal body with md5sum to json")
 		}
-	default:
-		// We assume a json, and thereby try to unmarshal it into our body
+	case "":
+		// no specific format, we assume a json, and thereby try to unmarshal it into our body
 		bodyData = response.Body()
+	default:
+		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
 	responseJSON := ResponseSerialization{
@@ -232,22 +232,29 @@ func (response Response) ToString() string {
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}
 
-	// try to determine the mime type from the body
-	bodyMimeType, _ := mimetype.Detect(response.Body())
-	switch bodyMimeType {
-	case "text/plain":
-		bodyString = string(response.Body())
-	case "application/json":
-		// for logging, always show the body
+	// for logging, always show the body
+	response.Format.IgnoreBody = false
+
+	body := response.Body()
+	switch response.Format.Type {
+	case "xml", "csv":
+		if utf8.Valid(body) {
+			bodyString, err = response.ServerResponseToJsonString(true)
+			if err != nil {
+				bodyString = string(body)
+			}
+		} else {
+			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
+		}
+	case "binary":
 		response.Format.IgnoreBody = false
 		bodyString, err = response.ServerResponseToJsonString(true)
 		if err != nil {
-			logrus.Warnf("could not parse JSON response body: %s", err)
-			bodyString = string(response.Body())
+			bodyString = string(body)
 		}
 	default:
-		if utf8.Valid(response.Body()) {
-			bodyString = string(response.Body())
+		if utf8.Valid(body) {
+			bodyString = string(body)
 		} else {
 			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
 		}
