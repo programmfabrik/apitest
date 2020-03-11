@@ -26,6 +26,7 @@ type testsuite struct {
 	Failures  int        `xml:"failures,attr"`
 	Time      float64    `xml:"time,attr"`
 	Testcases []testcase `xml:"testcase"`
+	Failure   *failure   `xml:"failure,omitempty"`
 }
 
 type testcase struct {
@@ -72,14 +73,27 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 			Name:     strings.Replace(v.Name, ".", ":", -1),
 		}
 
+		if v.Failure != "" {
+			newTestSuite.Failure = &failure{
+				Type:    "ERROR",
+				Message: v.Failure,
+			}
+		}
+
 		flattenSubTests := v.SubTests.Flat()
 
 		padding := iterativeDigitsCount(len(flattenSubTests))
 		for ik, iv := range flattenSubTests {
 			newTestCase := testcase{
 				Id:   strconv.Itoa(ik),
-				Time: iv.ExecutionTime.Seconds(),
 				Name: fmt.Sprintf("[%0"+strconv.Itoa(padding)+"d] %s", ik, strings.Replace(iv.Name, ".", ":", -1)),
+			}
+
+			// only save the time if a test has no sub tests, so the total times are only included once in the report
+			if len(iv.SubTests) == 0 {
+				newTestCase.Time = iv.ExecutionTime.Seconds()
+			} else {
+				newTestCase.Time = 0
 			}
 
 			if iv.Failures > 0 {

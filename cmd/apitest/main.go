@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -17,9 +16,10 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL                                            string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                                    []string
+	reportFormat, reportFile, serverURL                                     string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                             []string
+	limitRequest, limitResponse                                             int
 )
 
 func init() {
@@ -59,9 +59,12 @@ func init() {
 		&reportFormat, "report-format", "",
 		"Defines how the report statements should be saved. [junit/json]")
 
-	testCMD.PersistentFlags().BoolVarP(
-		&limit, "limit", "l", false,
-		"Limit the lines of request log output. Set limits in apitest.yml")
+	testCMD.PersistentFlags().IntVarP(
+		&limitRequest, "limit-request", "", 0,
+		"Limit the lines of request log output to n lines (set to 0 for no limit)")
+	testCMD.PersistentFlags().IntVarP(
+		&limitResponse, "limit-response", "", 0,
+		"Limit the lines of response log output to n lines (set to 0 for no limit)")
 
 	testCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
@@ -75,6 +78,8 @@ func init() {
 	viper.BindPFlag("apitest.report.file", testCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", testCMD.PersistentFlags().Lookup("report-format"))
 	viper.BindPFlag("apitest.server", testCMD.PersistentFlags().Lookup("server"))
+	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
+	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 }
 
 var testCMD = &cobra.Command{
@@ -126,15 +131,20 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	reportFormat = Config.Apitest.Report.Format
 	reportFile = Config.Apitest.Report.File
 
+	rep := report.NewReport()
+
 	// Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
+		if reportFile != "" {
+			rep.WriteToFile(reportFile, reportFormat)
+		}
 	}
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, r *report.ReportElement) (success bool) {
+	runSingleTest := func(manifestPath string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
@@ -143,24 +153,31 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, r, store, 0)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, reportElem, store, 0)
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+			return false
 		}
 
 		return suite.Run()
 	}
 
-	r := report.NewReport()
-
 	// Decide if run only one test
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
-			c := r.Root().NewChild(singleTest)
+			c := rep.Root().NewChild(singleTest)
 
 			success := runSingleTest(absManifestPath, c)
 			c.Leave(success)
+
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+
 			if stopOnFail && !success {
 				break
 			}
@@ -169,40 +186,22 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
 			absManifestPath, _ := filepath.Abs(manifestPath)
-			c := r.Root().NewChild(manifestPath)
+			c := rep.Root().NewChild(manifestPath)
 
 			success := runSingleTest(absManifestPath, c)
 			c.Leave(success)
+
+			if reportFile != "" {
+				rep.WriteToFile(reportFile, reportFormat)
+			}
+
 			if stopOnFail && !success {
 				break
 			}
 		}
 	}
 
-	// Create report
-	if reportFile != "" {
-		var parsingFunction func(baseResult *report.ReportElement) []byte
-		switch reportFormat {
-		case "junit":
-			parsingFunction = report.ParseJUnitResult
-		case "json":
-			parsingFunction = report.ParseJSONResult
-		default:
-			logrus.Errorf(
-				"Given report format '%s' not supported. Saving report '%s' as json",
-				reportFormat,
-				reportFile)
-
-			parsingFunction = report.ParseJSONResult
-		}
-
-		err = ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
-		if err != nil {
-			logrus.Errorf("Could not save report into file: %s", err)
-		}
-	}
-
-	if r.DidFail() {
+	if rep.DidFail() {
 		os.Exit(1)
 	}
 }

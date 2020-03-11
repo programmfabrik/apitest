@@ -413,6 +413,10 @@ If you access an invalid index for datastore `map[index]` or `slice[]` you get a
 
 To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
+The sequential store stores the body and header of all responses. Use `qjson` to access values in the responses. See template functions [`datastore`](#datastore-key) and [`qjson`](#qjson-path-json).
+
+When using relative indices (negative indices), use the same index to get values from the datastore to use in the request and response definition. Especially, for evaluating the current response, it has not yet been stored. So, `datastore "-1"` will still return the last response in the datastore. The current response will be appended after it was evaluated, and then will be returned with `datastore "-1"`.
+
 # Use control structures
 
 We support certain control structures in the **response definition**. You can use this control structures when ever you
@@ -1184,15 +1188,12 @@ See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
 ## `file_csv [path] [delimiter]`
 
-```
 Helper function to load a csv file.
-@path: string; a path to the csv file that should be loaded. The path is either relative to the manifest or a weburl
-@delimiter: rune; The delimiter that is used in the given csv e.g. ','
-@result: the content of the csv as json array so we can work on this data with qjson
-```
+- `@path`: string; a path to the csv file that should be loaded. The path is either relative to the manifest or a weburl
+- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ','
+- `@result`: the content of the csv as json array so we can work on this data with qjson
 
-The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a
-error
+The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error
 
 - In the first row must be the names of the fields
 - In the seconds row must be the types of the fields

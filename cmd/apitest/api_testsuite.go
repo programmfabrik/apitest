@@ -60,11 +60,16 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 
 	manifest, err := suite.loadManifest()
 	if err != nil {
-		return nil, fmt.Errorf("error loading manifest: %s", err)
+		err = fmt.Errorf("error loading manifest: %s", err)
+		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		return &suite, err
 	}
 
-	if err = cjson.Unmarshal(manifest, &suite); err != nil {
-		return nil, fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
+	err = cjson.Unmarshal(manifest, &suite)
+	if err != nil {
+		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
+		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		return &suite, err
 	}
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
@@ -74,9 +79,11 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
+		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		return &suite, err
 	}
 
-	return &suite, err
+	return &suite, nil
 }
 
 // StartHttpServer start a simple http server that can server local test resources during the testsuite is running

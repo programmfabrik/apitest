@@ -208,7 +208,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		responsesMatch    compare.CompareResult
 		req               api.Request
 		apiResp           api.Response
-		apiRespJSONString string
+		apiRespJsonString string
 		err               error
 	)
 
@@ -227,7 +227,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 
 	//Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
-		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
+		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 	}
 
 	apiResp, err = req.Send()
@@ -245,7 +245,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	apiRespJSONString, err = apiResp.ServerResponseToJSONString(false)
+	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error getting json from response: %s", err)
@@ -253,7 +253,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 
 	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiRespJSONString, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithQjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error store repsonse with qjson: %s", err)
@@ -263,9 +263,9 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	if !req.DoNotStore {
 		// Store in datastore -1 list
 		if counter == 0 {
-			testCase.dataStore.AppendResponse(apiRespJSONString)
+			testCase.dataStore.AppendResponse(apiRespJsonString)
 		} else {
-			testCase.dataStore.UpdateLastResponse(apiRespJSONString)
+			testCase.dataStore.UpdateLastResponse(apiRespJsonString)
 		}
 	}
 
@@ -282,7 +282,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 }
 
 func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), limit, Config.Apitest.Limit.Response))
+	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -291,7 +291,7 @@ func (testCase Case) LogResp(response api.Response) {
 }
 
 func (testCase Case) LogReq(req api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), limit, Config.Apitest.Limit.Request))
+	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 
 	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
@@ -299,8 +299,8 @@ func (testCase Case) LogReq(req api.Request) {
 	}
 }
 
-func limitLines(in string, limit bool, limitCount int) string {
-	if !limit || limitCount <= 0 {
+func limitLines(in string, limitCount int) string {
+	if limitCount <= 0 {
 		return in
 	}
 	out := ""
@@ -311,8 +311,7 @@ func limitLines(in string, limit bool, limitCount int) string {
 		k++
 	}
 	if k >= limitCount {
-		out += fmt.Sprintf("[Limited after '%d' lines. For more, change limit in apitest.yml]", limitCount)
-
+		out += fmt.Sprintf("[Limited after %d lines]", limitCount)
 	}
 	return out
 }
@@ -345,7 +344,7 @@ func (testCase Case) run() (bool, error) {
 
 		responsesMatch, request, apiResponse, err = testCase.executeRequest(requestCounter)
 		if testCase.LogNetwork != nil && *testCase.LogNetwork {
-			logrus.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), limit, Config.Apitest.Limit.Response))
+			logrus.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), Config.Apitest.Limit.Response))
 		}
 		if err != nil {
 			testCase.LogResp(apiResponse)
