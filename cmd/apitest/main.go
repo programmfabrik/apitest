@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL                                            string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, limit, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                                    []string
+	reportFormat, reportFile, serverURL                                     string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                             []string
+	limitRequest, limitResponse                                             int
 )
 
 func init() {
@@ -58,9 +59,12 @@ func init() {
 		&reportFormat, "report-format", "",
 		"Defines how the report statements should be saved. [junit/json]")
 
-	testCMD.PersistentFlags().BoolVarP(
-		&limit, "limit", "l", false,
-		"Limit the lines of request log output. Set limits in apitest.yml")
+	testCMD.PersistentFlags().IntVarP(
+		&limitRequest, "limit-request", "", 0,
+		"Limit the lines of request log output to n lines (set to 0 for no limit)")
+	testCMD.PersistentFlags().IntVarP(
+		&limitResponse, "limit-response", "", 0,
+		"Limit the lines of response log output to n lines (set to 0 for no limit)")
 
 	testCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
@@ -74,6 +78,8 @@ func init() {
 	viper.BindPFlag("apitest.report.file", testCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", testCMD.PersistentFlags().Lookup("report-format"))
 	viper.BindPFlag("apitest.server", testCMD.PersistentFlags().Lookup("server"))
+	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
+	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 }
 
 var testCMD = &cobra.Command{
