@@ -2,15 +2,13 @@ package datastore
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-	// "reflect"
-	// "github.com/programmfabrik/apitest/pkg/lib/cjson"
 )
 
 type Datastore struct {
@@ -62,7 +60,7 @@ func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]
 		qValue := gjson.Get(jsonResponse, qv)
 		if qValue.Value() == nil {
 			if ds.logDatastore {
-				log.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
+				logrus.Tracef("'%s' was not found in '%s'", qv, jsonResponse)
 			}
 			// Remove value from datastore
 			if setEmpty {
@@ -156,7 +154,7 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 	}
 
 	if ds.logDatastore {
-		log.Tracef("Set datastore[\"%s\"]=%#v", index, value)
+		logrus.Tracef("Set datastore[\"%s\"]=%#v", index, value)
 	}
 
 	return nil
@@ -180,7 +178,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 
 		tmpRes, ok := ds.storage[useIndex]
 		if !ok {
-			log.Errorf("datastore: key: %s not found.", useIndex)
+			logrus.Errorf("datastore: key: %s not found.", useIndex)
 			return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
 		}
 
