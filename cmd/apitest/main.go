@@ -19,7 +19,7 @@ var (
 	reportFormat, reportFile, serverURL                                     string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                             []string
-	limitRequest, limitResponse                                             int
+	limitRequest, limitResponse                                             uint
 )
 
 func init() {
@@ -59,11 +59,11 @@ func init() {
 		&reportFormat, "report-format", "",
 		"Defines how the report statements should be saved. [junit/json]")
 
-	testCMD.PersistentFlags().IntVarP(
-		&limitRequest, "limit-request", "", 0,
+	testCMD.PersistentFlags().UintVarP(
+		&limitRequest, "limit-request", "", 20,
 		"Limit the lines of request log output to n lines (set to 0 for no limit)")
-	testCMD.PersistentFlags().IntVarP(
-		&limitResponse, "limit-response", "", 0,
+	testCMD.PersistentFlags().UintVarP(
+		&limitResponse, "limit-response", "", 20,
 		"Limit the lines of response log output to n lines (set to 0 for no limit)")
 
 	testCMD.PersistentFlags().BoolVar(
