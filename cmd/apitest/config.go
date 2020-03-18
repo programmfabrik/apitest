@@ -47,12 +47,6 @@ func LoadConfig(cfgFile string) {
 	}
 
 	viper.Unmarshal(&Config)
-
-	// Set default values
-	if Config.Apitest.Limit.Response == 0 {
-		Config.Apitest.Limit.Response = 20
-	}
-
 }
 
 // TestToolConfig gives us the basic testtool infos
