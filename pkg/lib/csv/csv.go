@@ -173,7 +173,6 @@ func isValidFormat(format string) bool {
 }
 
 func getTyped(value, format string) (interface{}, error) {
-	value = strings.TrimSpace(value)
 
 	switch format {
 	case "string":
