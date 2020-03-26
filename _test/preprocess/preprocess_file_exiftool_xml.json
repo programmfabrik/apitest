@@ -1,0 +1,83 @@
+[
+    {
+        "name": "preprocess asset {{ datastore "eas_id" }} with exiftool in xml format",
+        "request": {
+            "endpoint": "eas/download/{{ datastore "eas_id" }}/original",
+            "method": "GET"
+        },
+        "response": {
+            "format": {
+                "pre_process": {
+                    "cmd": {
+                        "name": "exiftool",
+                        "args": [
+                            "-X",
+                            "-"
+                        ]
+                    }
+                },
+                "type": "xml"
+            },
+            "body": {
+                "rdf:RDF": {
+                    "rdf:Description": {
+                        "#attr": {
+                            "et:toolkit": {
+                                "#text:control": {
+                                    "is_string": true
+                                }
+                            },
+                            "xmlns:Composite": {
+                                "#text": "http://ns.exiftool.ca/Composite/1.0/"
+                            },
+                            "xmlns:ExifTool": {
+                                "#text": "http://ns.exiftool.ca/ExifTool/1.0/"
+                            },
+                            "xmlns:File": {
+                                "#text": "http://ns.exiftool.ca/File/1.0/"
+                            },
+                            "xmlns:ICC_Profile": {
+                                "#text": "http://ns.exiftool.ca/ICC_Profile/ICC_Profile/1.0/"
+                            },
+                            "xmlns:JFIF": {
+                                "#text": "http://ns.exiftool.ca/JFIF/JFIF/1.0/"
+                            },
+                            "xmlns:et": {
+                                "#text": "http://ns.exiftool.ca/1.0/"
+                            }
+                        },
+                        "Composite:ImageSize": {
+                            "#text:control": {
+                                "is_string": true
+                            }
+                        },
+                        "ExifTool:ExifToolVersion": {
+                            "#text:control": {
+                                "is_string": true
+                            }
+                        },
+                        "File:FileType": {
+                            "#text": "JPEG"
+                        },
+                        "File:FileTypeExtension": {
+                            "#text": "jpg"
+                        },
+                        "File:MIMEType": {
+                            "#text": "image/jpeg"
+                        },
+                        "ICC_Profile:ProfileDescription": {
+                            "#text:control": {
+                                "is_string": true
+                            }
+                        },
+                        "JFIF:JFIFVersion": {
+                            "#text:control": {
+                                "is_string": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]

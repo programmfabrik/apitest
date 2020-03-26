@@ -1,0 +1,85 @@
+{
+    "name": "new feature pre_process",
+    "tests": [
+        "@../../../fylr/test/api/_setup/root_session.json",
+        {
+            "name": "simple preprocess: pipe response through cat, the response must be unchanged",
+            "request": {
+                "endpoint": "settings",
+                "method": "GET"
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "cat"
+                        }
+                    }
+                },
+                "statuscode": 200,
+                "body": {
+                    "name:control": {
+                        "is_string": true
+                    },
+                    "solution:control": {
+                        "is_string": true
+                    },
+                    "easydb_version:control": {
+                        "is_string": true
+                    },
+                    "startup_time:control": {
+                        "is_string": true
+                    },
+                    "instance:control": {
+                        "is_string": true
+                    },
+                    "server_version:control": {
+                        "is_number": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "test errors for command with invalid args",
+            "request": {
+                "endpoint": "settings",
+                "method": "GET"
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "cat",
+                            "args": [
+                                "--INVALID"
+                            ]
+                        }
+                    }
+                },
+                "body": {
+                    "error": "exit status 1",
+                    "stderr:control": {
+                        "match": "cat: unrecognized option '--INVALID'.*"
+                    }
+                }
+            }
+        },
+        {
+            "name": "post 'camera.jpg' to eas/put",
+            "request": {
+                "body": {
+                    "file": "@../../../fylr/test/api/_assets/images/camera.jpg"
+                },
+                "body_type": "multipart",
+                "endpoint": "eas/put",
+                "method": "POST"
+            },
+            "store_response_qjson": {
+                "eas_id": "body.0._id"
+            }
+        },
+        "@wait_for_eas.json",
+        "@preprocess_file_exiftool_json.json",
+        "@preprocess_file_exiftool_xml.json"
+    ]
+}

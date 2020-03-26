@@ -1,0 +1,36 @@
+[
+    {
+        "name": "preprocess asset {{ datastore "eas_id" }} with exiftool in json format",
+        "request": {
+            "endpoint": "eas/download/{{ datastore "eas_id" }}/original",
+            "method": "GET"
+        },
+        "response": {
+            "format": {
+                "pre_process": {
+                    "cmd": {
+                        "name": "exiftool",
+                        "args": [
+                            "-j",
+                            "-g",
+                            "-"
+                        ]
+                    }
+                }
+            },
+            "body": [
+                {
+                    "Composite": {},
+                    "ExifTool": {},
+                    "File": {
+                        "FileType": "JPEG",
+                        "FileTypeExtension": "jpg",
+                        "MIMEType": "image/jpeg"
+                    },
+                    "ICC_Profile": {},
+                    "JFIF": {}
+                }
+            ]
+        }
+    }
+]

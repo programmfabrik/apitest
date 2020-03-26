@@ -1,0 +1,34 @@
+[
+    {
+        "name": "check for all versions on file {{ datastore "eas_id" }}",
+        "request": {
+            "endpoint": "eas",
+            "method": "GET",
+            "query_params": {
+                "ids": [
+                    {{ datastore "eas_id" }}
+                ],
+                "format": "long"
+            }
+        },
+        "response": {
+            "body": {
+                "{{ datastore "eas_id" }}": {
+                    "_id": {{ datastore "eas_id" }},
+                    "status": "done",
+                    "versions": {
+                        "original": {
+                            "status": "done",
+                            "url:control": {
+                                "is_string": true,
+                                "match": "/.+/api/v1/eas/download/{{ datastore "eas_id" }}/original"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "timeout_ms": 60000,
+        "delay_ms": 1000
+    }
+]
