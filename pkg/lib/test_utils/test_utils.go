@@ -2,11 +2,16 @@ package test_utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/programmfabrik/go-test-utils"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
+	"testing"
+
+	go_test_utils "github.com/programmfabrik/go-test-utils"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 var TestServer = go_test_utils.NewTestServer(go_test_utils.Routes{
@@ -97,4 +102,37 @@ func AssertLoggingEqualsRegex(log bytes.Buffer, want []LoggingRegexAssertion) (b
 	}
 
 	return success, notMatched
+}
+
+// AssertJsonStringEquals checks if two json strings are equal when minified
+func AssertJsonStringEquals(t testing.TB, expected, got string) {
+
+	var (
+		expectedJson, gotJson        interface{}
+		expectedMinified, gotMinifed []byte
+	)
+
+	err := json.Unmarshal([]byte(expected), &expectedJson)
+	if err != nil {
+		t.Error(err)
+	}
+	expectedMinified, err = json.MarshalIndent(expectedJson, "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal([]byte(got), &gotJson)
+	if err != nil {
+		t.Error(err)
+	}
+	gotMinifed, err = json.MarshalIndent(gotJson, "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if string(expectedMinified) != string(gotMinifed) {
+		dmp := diffmatchpatch.New()
+		diffs := dmp.DiffMain(expected, got, false)
+		t.Error(dmp.DiffPrettyText(diffs))
+	}
 }

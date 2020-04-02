@@ -624,6 +624,115 @@ func TestComparison(t *testing.T) {
 			},
 		},
 		{
+			name: "Check controls in array (1 element)",
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference:control": util.JsonObject{
+								"is_number": true,
+							},
+						},
+					},
+				},
+			},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": "system:root",
+						},
+					},
+				},
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "body[0].pool.reference",
+					Message: "should be 'Number' but is 'String'",
+				},
+			},
+		},
+		{
+			name: "Check controls in array (more elements)",
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference:control": util.JsonObject{
+								"is_number": true,
+							},
+						},
+					},
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference:control": util.JsonObject{
+								"is_number": true,
+							},
+						},
+					},
+				},
+			},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": "system:root",
+						},
+					},
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": 123,
+						},
+					},
+				},
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "body[1].pool.reference",
+					Message: "should be 'Number' but is 'String'",
+				},
+			},
+		},
+		{
+			name: "Check controls in array (more elements, different order)",
+			left: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference:control": util.JsonObject{
+								"is_number": true,
+							},
+						},
+					},
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference:control": util.JsonObject{
+								"is_string": true,
+							},
+						},
+					},
+				},
+			},
+			right: util.JsonObject{
+				"body": util.JsonArray{
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": "system:root",
+						},
+					},
+					util.JsonObject{
+						"pool": util.JsonObject{
+							"reference": 123,
+						},
+					},
+				},
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
 			name: "Check body no extra",
 			left: util.JsonObject{
 				"body": util.JsonArray{

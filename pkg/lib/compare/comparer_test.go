@@ -15,76 +15,143 @@ var trivialComparerTestData = []struct {
 	err   error
 }{
 	{
-		`{"1":[1,2,3]}`,
-		`{"2":"a","1":[1,2,3]}`,
+		`{
+			"1": [
+				1,
+				2,
+				3
+			]
+		}`,
+		`{
+			"1": [
+				1,
+				2,
+				3
+			],
+			"2": "a"
+		}`,
 		true,
 		"Left is SubMap of Right",
 		nil,
 	},
 	{
 		`{
-    "statuscode": 200,
-    "body": [
-        {
-            "pool": {
-                "reference": "system:root"
-            }
-        }
-    ],
-    "body:control": {
-        "no_extra": true
-    }
-}`,
+			"body": [
+				{
+					"pool": {
+						"reference": "system:root"
+					}
+				}
+			],
+			"body:control": {
+				"no_extra": true
+			},
+			"statuscode": 200
+		}`,
 		`{
-    "statuscode": 200,
-    "body": [
-        {
-            "pool": {
-                "reference": "system:root"
-            }
-        },
-        {
-            "pool2": {
-                "reference": "system:root"
-            }
-        }
-    ]
-}`,
+			"body": [
+				{
+					"pool": {
+						"reference": "system:root"
+					}
+				},
+				{
+					"pool2": {
+						"reference": "system:root"
+					}
+				}
+			],
+			"statuscode": 200
+		}`,
 		false,
 		"Body has more elements",
 		nil,
 	},
 	{
-		`[1, 2, 3]`,
-		`[1, 2, 3, 4]`,
+		`[
+			1,
+			2,
+			3
+		]`,
+		`[
+			1,
+			2,
+			3,
+			4
+		]`,
 		true,
 		"Left is SubArray of Right",
 		nil,
 	},
 	{
-		`[1, 2, 3]`,
-		`[1, 2]`,
+		`[
+			1,
+			2,
+			3
+		]`,
+		`[
+			1,
+			2
+		]`,
 		false,
 		"Left is SuperArray of Right",
 		nil,
 	},
 	{
 		`1`,
-		`[1, 2, 3, 4]`,
+		`[
+			1,
+			2,
+			3,
+			4
+		]`,
 		false,
 		"Different Types Number and Array",
 		nil,
 	},
 	{
-		`{"1": {"1": [1, 2, 3]}}`,
-		`{"1": {"1": [1, 2]}}`,
+		`{
+			"1": {
+				"1": [
+					1,
+					2,
+					3
+				]
+			}
+		}`,
+		`{
+			"1": {
+				"1": [
+					1,
+					2
+				]
+			}
+		}`,
 		false,
 		"Nested List is not contained",
 		nil,
 	},
 	{
-		`{"1": {"1": [1, 2, true]}}`,
-		`{"2": "something", "1": {"1": [1, 2, true, false]}}`,
+		`{
+			"1": {
+				"1": [
+					1,
+					2,
+					true
+				]
+			}
+		}`,
+		`{
+			"1": {
+				"1": [
+					1,
+					2,
+					true,
+					false
+				]
+			},
+			"2": "something"
+		}`,
 		true,
 		"Nested Dicts and Arrays are contained",
 		nil,
@@ -97,7 +164,9 @@ var trivialComparerTestData = []struct {
 		nil,
 	},
 	{
-		`["something"]`,
+		`[
+			"something"
+		]`,
 		`null`,
 		false,
 		"null should not match to array",
@@ -111,8 +180,21 @@ var trivialComparerTestData = []struct {
 		nil,
 	},
 	{
-		`[1, 2, {"1": null}]`,
-		`[1, 2, {"1": null, "2": "a"}]`,
+		`[
+			1,
+			2,
+			{
+				"1": null
+			}
+		]`,
+		`[
+			1,
+			2,
+			{
+				"1": null,
+				"2": "a"
+			}
+		]`,
 		true,
 		"nested null should match to nested null",
 		nil,
@@ -132,124 +214,155 @@ var trivialComparerTestData = []struct {
 		nil,
 	},
 	{
-		`[{"event":{"object_id":118}}] `,
 		`[
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 959,
-            "object_version": 0,
-            "object_id": 1000832836,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:26+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 960,
-            "object_version": 1,
-            "object_id": 117,
-            "schema": "USER",
-            "objecttype": "pictures",
-            "global_object_id": "117@8367e587-f999-4e72-b69d-b5742eb4d5f4",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 961,
-            "object_version": 1,
-            "object_id": 118,
-            "schema": "USER",
-            "objecttype": "pictures",
-            "global_object_id": "118@8367e587-f999-4e72-b69d-b5742eb4d5f4",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 962,
-            "object_version": 0,
-            "object_id": 1000832836,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 963,
-            "object_version": 0,
-            "object_id": 1000832835,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    }
-]
-`,
+			{
+				"event": {
+					"object_id": 118
+				}
+			}
+		]`,
+		`[
+			{
+				"event": {
+					"_id": 959,
+					"basetype": "asset",
+					"object_id": 1000832836,
+					"object_version": 0,
+					"pollable": true,
+					"schema": "BASE",
+					"timestamp": "2018-11-28T17:37:26+01:00",
+					"type": "OBJECT_INDEX"
+				}
+			},
+			{
+				"event": {
+					"_id": 960,
+					"global_object_id": "117@8367e587-f999-4e72-b69d-b5742eb4d5f4",
+					"object_id": 117,
+					"object_version": 1,
+					"objecttype": "pictures",
+					"pollable": true,
+					"schema": "USER",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"type": "OBJECT_INDEX"
+				}
+			},
+			{
+				"event": {
+					"_id": 961,
+					"global_object_id": "118@8367e587-f999-4e72-b69d-b5742eb4d5f4",
+					"object_id": 118,
+					"object_version": 1,
+					"objecttype": "pictures",
+					"pollable": true,
+					"schema": "USER",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"type": "OBJECT_INDEX"
+				}
+			},
+			{
+				"event": {
+					"_id": 962,
+					"basetype": "asset",
+					"object_id": 1000832836,
+					"object_version": 0,
+					"pollable": true,
+					"schema": "BASE",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"type": "OBJECT_INDEX"
+				}
+			},
+			{
+				"event": {
+					"_id": 963,
+					"basetype": "asset",
+					"object_id": 1000832835,
+					"object_version": 0,
+					"pollable": true,
+					"schema": "BASE",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"type": "OBJECT_INDEX"
+				}
+			}
+		]`,
 		true,
 		"Match events",
 		nil,
 	},
 	{
 
-		` {
-                "body": [{
-                    "henk": "denk"
-                }]
-            }`,
-		`{"body":[{}]}`,
+		`{
+			"body": [
+				{
+					"henk": "denk"
+				}
+			]
+		}`,
+		`{
+			"body": [
+				{
+				}
+			]
+		}`,
 		false,
 		"ticket #51342. Error msg",
 		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 
-		` {
-                "body": [{
-                    "henk": null
-                }]
-            }`,
-		`{"body":[{}]}`,
+		`{
+			"body": [
+				{
+					"henk": null
+				}
+			]
+		}`,
+		`{
+			"body": [
+				{
+				}
+			]
+		}`,
 		false,
 		"ticket #52417. check value null. Null not found",
 		fmt.Errorf("[body[0].henk] was not found, but should exist"),
 	},
 	{
 
-		` {
-                "body": [{
-                    "henk": null
-                }]
-            }`,
-		`{"body":[{
-                    "henk": "2"
-}]}`,
+		`{
+			"body": [
+				{
+					"henk": null
+				}
+			]
+		}`,
+		`{
+			"body": [
+				{
+					"henk": "2"
+				}
+			]
+		}`,
 		false,
 		"ticket #52417. check value null. Other value than null",
 		fmt.Errorf("[body[0].henk] the type of the expected response is invalid. Got 'string', expected '<nil>'"),
 	},
 	{
 
-		` {
-                "body": [{
-                    "henk": null
-                }]
-            }`,
-		`{"body":[{
-                    "henk": null
-}]}`,
+		`{
+			"body": [
+				{
+					"henk": null
+				}
+			]
+		}`,
+		`{
+			"body": [
+				{
+					"henk": null
+				}
+			]
+		}`,
 		true,
 		"ticket #52417. check value null. Null found",
 		nil,
@@ -273,7 +386,6 @@ func TestTrivialJsonComparer(t *testing.T) {
 			if td.err != nil {
 				if len(tjcMatch.Failures) != 1 || td.err.Error() != tjcMatch.Failures[0].String() {
 					t.Errorf("Error missmatch. Got '%s', epected '%s'", tjcMatch.Failures[0].String(), td.err)
-
 				}
 			}
 		})
