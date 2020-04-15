@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,11 +16,18 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-var c http.Client
+var httpClient *http.Client
 
 func init() {
-	c = http.Client{
-		Timeout: time.Minute * 5,
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	httpClient = &http.Client{
+		Timeout:   time.Minute * 5,
+		Transport: tr,
 	}
 }
 
@@ -224,7 +232,7 @@ func (request Request) Send() (response Response, err error) {
 		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
 	}
 
-	httpResponse, err := c.Do(httpRequest)
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
