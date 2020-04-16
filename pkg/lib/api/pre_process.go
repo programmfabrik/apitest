@@ -15,8 +15,9 @@ type PreProcess struct {
 }
 
 type preProcessError struct {
-	Error  string `json:"error"`
-	StdErr string `json:"stderr"`
+	Error    string `json:"error"`
+	ExitCode int    `json:"exit_code"`
+	StdErr   string `json:"stderr"`
 }
 
 func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
@@ -42,10 +43,24 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		var err2 error
+		var (
+			err2        error
+			exitCode    int
+			stderrBytes []byte
+		)
+
+		stderrBytes = stderr.Bytes()
+
+		exitError, ok := err.(*exec.ExitError)
+		if ok {
+			exitCode = exitError.ExitCode()
+			stderrBytes = append(stderrBytes, exitError.Stderr...)
+		}
+
 		response.body, err2 = json.MarshalIndent(preProcessError{
-			Error:  err.Error(),
-			StdErr: string(stderr.Bytes()),
+			Error:    err.Error(),
+			ExitCode: exitCode,
+			StdErr:   string(stderrBytes),
 		}, "", "  ")
 		return response, err2
 	}
