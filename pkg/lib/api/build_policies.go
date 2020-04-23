@@ -86,11 +86,16 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
-	bodyBytes, err := json.Marshal(request.Body)
-	if err != nil {
-		return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
+
+	if request.Body == nil {
+		body = bytes.NewBuffer([]byte{})
+	} else {
+		bodyBytes, err := json.Marshal(request.Body)
+		if err != nil {
+			return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
+		}
+		body = bytes.NewBuffer(bodyBytes)
 	}
-	body = bytes.NewBuffer(bodyBytes)
 	return additionalHeaders, body, nil
 }
 
