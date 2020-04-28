@@ -1,12 +1,23 @@
 {
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
     "name": "new feature pre_process",
     "tests": [
-        "@../_setup/root_session.json",
         {
             "name": "simple preprocess: pipe response through cat, the response must be unchanged",
             "request": {
-                "endpoint": "settings",
-                "method": "GET"
+                // internal HTTP endpoint /bounce: returns the request body
+                "endpoint": "bounce",
+                "method": "POST",
+                "body": {
+                    "name": "Test HTTP Server",
+                    "easydb_version": "1",
+                    "instance": "test_instance",
+                    "server_version": 6
+                }
             },
             "response": {
                 "format": {
@@ -21,13 +32,7 @@
                     "name:control": {
                         "is_string": true
                     },
-                    "solution:control": {
-                        "is_string": true
-                    },
                     "easydb_version:control": {
-                        "is_string": true
-                    },
-                    "startup_time:control": {
                         "is_string": true
                     },
                     "instance:control": {
@@ -40,10 +45,66 @@
             }
         },
         {
+            "name": "simple preprocess: pipe response through cat, the response must be unchanged",
+            "request": {
+                // internal HTTP endpoint /bounce-query: returns query parameters in response body
+                "endpoint": "bounce-query",
+                "method": "GET",
+                "query_params": {
+                    "name": "Test HTTP Server",
+                    "easydb_version": "1",
+                    "instance": "test_instance",
+                    "server_version": 6,
+                    "test_bool": true
+                }
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "cat"
+                        }
+                    }
+                },
+                "statuscode": 200,
+                "body": {
+                    "name": "Test HTTP Server",
+                    "easydb_version": "1",
+                    "instance": "test_instance",
+                    // the integer will be stored as a string in the url query parameters, so it will not be returned as an integer
+                    "server_version": "6",
+                    // the boolean will be stored as a string in the url query parameters, so it will not be returned as an boolean
+                    "test_bool": "true"
+                }
+            }
+        },
+        {
+            "name": "simple preprocess: pipe response through cat, the response must be unchanged",
+            "request": {
+                // internal HTTP endpoint /bounce-header: returns header in response body
+                "endpoint": "bounce-header",
+                "method": "GET"
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "cat"
+                        }
+                    }
+                },
+                "statuscode": 200,
+                "body": {
+                    "Accept-Encoding": "gzip",
+                    "Content-Type": "application/json"
+                }
+            }
+        },
+        {
             "name": "test errors for command with invalid args",
             "request": {
-                "endpoint": "settings",
-                "method": "GET"
+                "endpoint": "bounce",
+                "method": "POST"
             },
             "response": {
                 "format": {
@@ -65,20 +126,56 @@
             }
         },
         {
-            "name": "post 'camera.jpg' to eas/put",
+            "name": "test load-file endpoint (invalid query_params)",
             "request": {
-                "body": {
-                    "file": "@../../../fylr/test/api/_assets/images/camera.jpg"
-                },
-                "body_type": "multipart",
-                "endpoint": "eas/put",
-                "method": "POST"
+                // internal HTTP endpoint /load-file: returns header in response body
+                "endpoint": "load-file",
+                "method": "GET"
             },
-            "store_response_qjson": {
-                "eas_id": "body.0._id"
+            "response": {
+                "statuscode": 400,
+                "body": {
+                    "error": "path not found in query_params"
+                }
             }
         },
-        "@wait_for_eas.json",
+        {
+            "name": "test load-file endpoint (invalid query_params)",
+            "request": {
+                // internal HTTP endpoint /load-file: returns header in response body
+                "endpoint": "load-file",
+                "method": "GET",
+                "query_params": {
+                    "something": "wrong"
+                }
+            },
+            "response": {
+                "statuscode": 400,
+                "body": {
+                    "error": "path not found in query_params"
+                }
+            }
+        },
+        {
+            "name": "test load-file endpoint (file not found)",
+            "request": {
+                // internal HTTP endpoint /load-file: returns header in response body
+                "endpoint": "load-file",
+                "method": "GET",
+                "query_params": {
+                    "path": "wrong/path.jpg"
+                }
+            },
+            "response": {
+                "statuscode": 404,
+                "body": {
+                    "error:control": {
+                        "is_string": true,
+                        "match": "file .+/wrong/path.jpg not found"
+                    }
+                }
+            }
+        },
         "@preprocess_file_exiftool_json.json",
         "@preprocess_file_exiftool_xml.json"
     ]

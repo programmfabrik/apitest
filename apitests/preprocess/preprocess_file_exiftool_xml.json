@@ -1,9 +1,13 @@
 [
     {
-        "name": "preprocess asset {{ datastore "eas_id" }} with exiftool in xml format",
+        "name": "preprocess asset _res/assets/camera.jpg with exiftool in xml format",
         "request": {
-            "endpoint": "eas/download/{{ datastore "eas_id" }}/original",
-            "method": "GET"
+            // internal HTTP endpoint /load-file: returns header in response body
+            "endpoint": "load-file",
+            "method": "GET",
+            "query_params": {
+                "path": "assets/camera.jpg"
+            }
         },
         "response": {
             "format": {
