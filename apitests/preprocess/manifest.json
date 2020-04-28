@@ -1,7 +1,7 @@
 {
     "name": "new feature pre_process",
     "tests": [
-        "@../../../fylr/test/api/_setup/root_session.json",
+        "@../_setup/root_session.json",
         {
             "name": "simple preprocess: pipe response through cat, the response must be unchanged",
             "request": {
