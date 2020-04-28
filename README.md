@@ -359,6 +359,112 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 }
 ```
 
+## Preprocessing responses
+
+Responses in other formats than JSON can be preprocessed by calling any command line tool that can produce JSON output. The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked. This only works, if the command line tool produces valid JSON.
+
+To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "...",
+                    "args": [ ]
+                }
+            }
+        }
+    }
+}
+```
+
+* `format.pre_process.cmd.name`: (string, mandatory) name of the command line tool
+* `format.pre_process.cmd.args`: (string array, optional) list of command line parameters
+
+### Examples
+
+#### Basic usage: pipe response without changes
+
+This basic example shows how to use the `pre_process` feature. The response is piped through `cat` which returns the input without any changes. This command takes no arguments.
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "cat"
+                }
+            }
+        }
+    }
+}
+```
+
+#### Reading metadata from a file
+
+To check the file metadata of a file that is directly downloaded as a binary file using the `eas/download` API, use `exiftool` to read the file and output the metadata in JSON format.
+
+If there is a file with the asset ID `1`, and the apitest needs to check that the MIME type is `image/jpeg`, create the following test case:
+
+```yaml
+{
+    "request": {
+        "endpoint": "eas/download/1/original",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "exiftool",
+                    "args": [
+                        "-j",
+                        "-g",
+                        "-"
+                    ]
+                }
+            }
+        },
+        "body": [
+            {
+                "File": {
+                    "MIMEType": "image/jpeg"
+                }
+            }
+        ]
+    }
+}
+```
+
+* Command: `exiftool -j -g -`
+* Parameters:
+    * `-j`: output in JSON format
+    * `-g`: group output by tag class
+    * `-`: read from `stdin` instead loading a saved file
+
+### Error handling
+
+If there is any error during the call of the command line tool, the error is formatted as a JSON object and returned instead of the expected response:
+
+```yaml
+{
+  "command": "cat --INVALID",
+  "error": "exit status 1",
+  "exit_code": 1,
+  "stderr": "cat: unrecognized option '--INVALID'\nTry 'cat --help' for more information.\n"
+}
+```
+
+* `command`: the command that was executed (consisting of `cmd.name` and `cmd.args`)
+* `error`: error message (message of internal `exec.ExitError`)
+* `exit_code`: integer value of the exit code
+* `stderr`: additional error information from `stderr` of the command line tool
+
+If such an error is expected as a result, this formatted error message can be checked as the response.
+
 # Datastore
 
 The datastore is a storage for arbitrary data. It can be set directly or set using values received from a response. It has two parts:
@@ -750,6 +856,9 @@ E.g. the following response would **fail**  as `"beGreater"` is smaller than exp
     }
 }
 ```
+
+
+
 
 # Use external file
 
