@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type PreProcess struct {
@@ -15,6 +16,7 @@ type PreProcess struct {
 }
 
 type preProcessError struct {
+	Command  string `json:"command"`
 	Error    string `json:"error"`
 	ExitCode int    `json:"exit_code"`
 	StdErr   string `json:"stderr"`
@@ -58,6 +60,7 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 		}
 
 		response.body, err2 = json.MarshalIndent(preProcessError{
+			Command:  strings.Join(cmd.Args, " "),
 			Error:    err.Error(),
 			ExitCode: exitCode,
 			StdErr:   string(stderrBytes),
