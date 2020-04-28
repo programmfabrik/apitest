@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,11 +16,18 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-var c http.Client
+var httpClient *http.Client
 
 func init() {
-	c = http.Client{
-		Timeout: time.Minute * 5,
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	httpClient = &http.Client{
+		Timeout:   time.Minute * 5,
+		Transport: tr,
 	}
 }
 
@@ -32,6 +40,7 @@ type Request struct {
 	Headers              map[string]*string     `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string      `yaml:"header_from_store" json:"header_from_store"`
 	BodyType             string                 `yaml:"body_type" json:"body_type"`
+	BodyFile             string                 `yaml:"body_file" json:"body_file"`
 	Body                 interface{}            `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
@@ -48,6 +57,8 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			request.buildPolicy = buildMultipart
 		case "urlencoded":
 			request.buildPolicy = buildUrlencoded
+		case "file":
+			request.buildPolicy = buildFile
 		default:
 			request.buildPolicy = buildRegular
 		}
@@ -224,12 +235,18 @@ func (request Request) Send() (response Response, err error) {
 		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
 	}
 
-	httpResponse, err := c.Do(httpRequest)
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
 	defer func() {
-		lerr := httpResponse.Body.Close()
+		// Try to close body, if we have a ReadCloser
+		closer, ok := httpResponse.Body.(io.ReadCloser)
+		if !ok {
+			return
+		}
+
+		lerr := closer.Close()
 		if lerr != nil {
 			fmt.Println("Could not close body: ", lerr)
 		}
