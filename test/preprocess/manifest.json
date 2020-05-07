@@ -1,0 +1,205 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "new feature pre_process",
+    "tests": [
+        /////////////////////////////
+        // bounce-json
+        {
+            "name": "bounce-json",
+            "request": {
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "query_params": {
+                    "param1": "abc",
+                    "param2": 123,
+                    "param3": true
+                },
+                "header": {
+                    "header1": "RST",
+                    "header2": "XYZ"
+                },
+                "body": {
+                    "name": "Test HTTP Server",
+                    "easydb_version": "1",
+                    "instance": "test_instance",
+                    "server_version": 6
+                }
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "cat"
+                        }
+                    }
+                },
+                "statuscode": 200,
+                "body": {
+                    "header": {
+                        "Header1": [
+                            "RST"
+                        ],
+                        "Header2": [
+                            "XYZ"
+                        ],
+                        "Accept-Encoding": [],
+                        "Connection": [],
+                        "Content-Length": [],
+                        "Content-Type": [
+                            "application/json"
+                        ],
+                        "User-Agent": []
+                    },
+                    "query_params": {
+                        "param1": [
+                            "abc"
+                        ],
+                        "param2": [
+                            "123"
+                        ],
+                        "param3": [
+                            "true"
+                        ]
+                    },
+                    "body": {
+                        "name:control": {
+                            "is_string": true
+                        },
+                        "easydb_version:control": {
+                            "is_string": true
+                        },
+                        "instance:control": {
+                            "is_string": true
+                        },
+                        "server_version:control": {
+                            "is_number": true
+                        }
+                    }
+                }
+            }
+        },
+        /////////////////////////////
+        // bounce
+        {
+            "name": "bounce (binary)",
+            "request": {
+                "endpoint": "bounce",
+                "method": "POST",
+                "query_params": {
+                    "param1": "abc",
+                    "param2": 123,
+                    "param3": true
+                },
+                "header": {
+                    "header1": "RST",
+                    "header2": "XYZ"
+                },
+                "body": {
+                    "file": "@../_res/assets/camera.jpg"
+                },
+                "body_type": "multipart"
+            },
+            "response": {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "exiftool",
+                            "args": [
+                                "-j",
+                                "-g",
+                                "-"
+                            ]
+                        }
+                    }
+                },
+                "statuscode": 200,
+                "header": {
+                    "Content-Type": [
+                        "application/octet-stream"
+                    ],
+                    "Date": [],
+                    "X-Req-Header-Accept-Encoding": [
+                        "gzip"
+                    ],
+                    "X-Req-Header-Content-Length": [],
+                    "X-Req-Header-Content-Type": [],
+                    "X-Req-Header-Header1": [
+                        "RST"
+                    ],
+                    "X-Req-Header-Header2": [
+                        "XYZ"
+                    ],
+                    "X-Req-Query-Param1": [
+                        "abc"
+                    ],
+                    "X-Req-Query-Param2": [
+                        "123"
+                    ],
+                    "X-Req-Query-Param3": [
+                        "true"
+                    ]
+                },
+                "body": [
+                    {
+                        "SourceFile": "-",
+                        "ExifTool": {},
+                        "JFIF": {},
+                        "ICC_Profile": {},
+                        "File": {},
+                        "Composite": {}
+                    }
+                ]
+            }
+        },
+        /////////////////////////////
+        // load-file
+        {
+            "name": "test load-file endpoint (invalid query_params)",
+            "request": {
+                "endpoint": "load-file",
+                "method": "GET"
+            },
+            "response": {
+                "statuscode": 400,
+                "body": {
+                    "error": "file not found in query_params"
+                }
+            }
+        },
+        {
+            "name": "test load-file endpoint (invalid query_params)",
+            "request": {
+                "endpoint": "load-file",
+                "method": "GET",
+                "query_params": {
+                    "something": "wrong"
+                }
+            },
+            "response": {
+                "statuscode": 400,
+                "body": {
+                    "error": "file not found in query_params"
+                }
+            }
+        },
+        {
+            "name": "test load-file endpoint (file not found)",
+            "request": {
+                "endpoint": "load-file",
+                "method": "GET",
+                "query_params": {
+                    "file": "wrong/path.jpg"
+                }
+            },
+            "response": {
+                "statuscode": 404
+            }
+        },
+        "@preprocess_file_exiftool_json.json",
+        "@preprocess_file_exiftool_xml.json"
+    ]
+}

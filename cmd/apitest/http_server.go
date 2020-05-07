@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
+	"net/url"
 	"path/filepath"
-	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
@@ -30,19 +30,16 @@ func (ats *Suite) StartHttpServer() {
 	}
 	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
 
-	// read the file at query param 'path' and return it as the response body
+	// read the file at query param 'file' and return it as the response body
 	mux.HandleFunc("/load-file", func(w http.ResponseWriter, r *http.Request) {
 		loadFile(w, r, ats.httpServerDir)
 	})
 
-	// bounce the request body back as the response body
-	mux.HandleFunc("/bounce", bounce)
+	// bounce json response
+	mux.HandleFunc("/bounce-json", bounceJSON)
 
-	// bounce the request url parameters back as the response body
-	mux.HandleFunc("/bounce-query", bounceQuery)
-
-	// bounce the request headers back as the response body
-	mux.HandleFunc("/bounce-header", bounceHeader)
+	// bounce binary response with information in headers
+	mux.HandleFunc("/bounce", bounceBinary)
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
@@ -108,70 +105,71 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error) {
 
 // loadFile reads the file at query param 'path' and returns it as the response body
 func loadFile(w http.ResponseWriter, r *http.Request, dir string) {
-	fn := r.URL.Query().Get("path")
+	fn := r.URL.Query().Get("file")
 	if fn == "" {
-		errorResponse(w, 400, xerrors.Errorf("path not found in query_params"))
+		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"))
 		return
 	}
 
-	fpath := dir + "/" + fn
-
-	of, err := os.Open(fpath)
-	defer of.Close()
-	if err != nil {
-		errorResponse(w, 404, xerrors.Errorf("file %s not found", fpath))
-		return
-	}
-
-	// build headers
-	w.Header().Set("Content-Disposition", "attachment; filename="+fpath)
-
-	// Content-Type
-	fh := make([]byte, 512)
-	of.Read(fh)
-	contentType := http.DetectContentType(fh)
-	w.Header().Set("Content-Type", contentType)
-
-	// Content-Length
-	fs, _ := of.Stat()
-	w.Header().Set("Content-Length", strconv.FormatInt(fs.Size(), 10))
-
-	// write body
-	of.Seek(0, 0)
-	io.Copy(w, of)
+	http.ServeFile(w, r, dir+"/"+fn)
 }
 
-// bounce reads the body from the requests and writes it directly to the response body
-func bounce(w http.ResponseWriter, r *http.Request) {
+type BounceResponse struct {
+	Header      map[string][]string `json:"header"`
+	QueryParams url.Values          `json:"query_params"`
+	Body        interface{}         `json:"body"`
+}
+
+// bounceJSON builds a json response including the header, query params and body of the request
+func bounceJSON(w http.ResponseWriter, r *http.Request) {
+
+	var (
+		err       error
+		bodyBytes []byte
+		bodyJSON  interface{}
+	)
+
+	bodyBytes, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not read body: %s", err))
+		return
+	}
+
+	err = json.Unmarshal(bodyBytes, &bodyJSON)
+	if err != nil {
+		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not unmarshal body: %s", err))
+		return
+	}
+
+	response := BounceResponse{
+		Header:      r.Header,
+		QueryParams: r.URL.Query(),
+		Body:        bodyJSON,
+	}
+
+	responseData, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not marshal response: %s", err))
+		return
+	}
+
+	w.Write(responseData)
+}
+
+// bounceBinary returns the request in binary form
+func bounceBinary(w http.ResponseWriter, r *http.Request) {
+
+	for param, values := range r.URL.Query() {
+		for _, value := range values {
+			w.Header().Add("X-Req-Query-"+param, value)
+		}
+	}
+
+	for param, values := range r.Header {
+		for _, value := range values {
+			w.Header().Add("X-Req-Header-"+param, value)
+		}
+	}
+
 	io.Copy(w, r.Body)
-}
-
-// bounceQuery builds a json response body from the url parameters
-func bounceQuery(w http.ResponseWriter, r *http.Request) {
-	params := map[string]string{}
-	for k, v := range r.URL.Query() {
-		params[k] = v[0]
-	}
-
-	body, err := json.MarshalIndent(params, "", "  ")
-	if err != nil {
-		errorResponse(w, 500, err)
-	}
-
-	w.Write(body)
-}
-
-// bounceHeader builds a json response body the request header
-func bounceHeader(w http.ResponseWriter, r *http.Request) {
-	header := map[string]string{}
-	for k, v := range r.Header {
-		header[k] = v[0]
-	}
-
-	body, err := json.MarshalIndent(header, "", "  ")
-	if err != nil {
-		errorResponse(w, 500, err)
-	}
-
-	w.Write(body)
 }

@@ -6,7 +6,7 @@
             "endpoint": "load-file",
             "method": "GET",
             "query_params": {
-                "path": "assets/camera.jpg"
+                "file": "assets/camera.jpg"
             }
         },
         "response": {
