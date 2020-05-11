@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"text/template"
@@ -204,6 +205,10 @@ func (loader *Loader) Render(
 		"str_escape": func(s string) (string, error) {
 			s = strings.Replace(s, "\\", "\\\\", -1)
 			return strings.Replace(s, "\"", "\\\"", -1), nil
+		},
+		// return json escape string
+		"url_path_escape": func(s string) (string, error) {
+			return url.PathEscape(s), nil
 		},
 		// add a + b
 		"add": add,

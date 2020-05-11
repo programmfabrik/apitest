@@ -281,15 +281,17 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	return responsesMatch, req, apiResp, nil
 }
 
+// LogResp print the response to the console
 func (testCase Case) LogResp(response api.Response) {
 	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
 
 	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debugf(errString)
+		logrus.Debug(errString)
 	}
 }
 
+// LogReq print the request to the console
 func (testCase Case) LogReq(req api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 

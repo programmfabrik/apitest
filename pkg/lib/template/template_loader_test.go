@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
 
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
@@ -16,8 +17,8 @@ import (
 )
 
 func TestRender_LoadFile_withParam(t *testing.T) {
-	root := []byte("{{ file \"somefile.json\" \"bogus\"}}")
-	target := []byte("{{ .Param1 }}")
+	root := []byte(`{{ file "somefile.json" "bogus"}}`)
+	target := []byte(`{{ .Param1 }}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
 	filesystem.Fs.MkdirAll("some/path", 0755)
@@ -30,9 +31,9 @@ func TestRender_LoadFile_withParam(t *testing.T) {
 }
 
 func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
-	root := []byte("{{ file \"a/next.tmpl\" \"bogus\" }}")
-	next := []byte("{{ file \"b/last.tmpl\" .Param1 }}")
-	last := []byte("{{ .Param1 }}")
+	root := []byte(`{{ file "a/next.tmpl" "bogus" }}`)
+	next := []byte(`{{ file "b/last.tmpl" .Param1 }}`)
+	last := []byte(`{{ .Param1 }}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
 	filesystem.Fs.MkdirAll("root/a/b/", 0755)
@@ -103,9 +104,8 @@ func TestRowsToMapTemplate(t *testing.T) {
 }
 
 func TestRender_LoadFile_QJson_Params(t *testing.T) {
-	root := []byte(
-		"{{ file \"somefile.json\" \"foo\" \"bar\" | qjson \"key.1\" }}")
-	target := []byte("{ \"key\": [\"{{ .Param1 }}\", \"{{ .Param2 }}\"]}")
+	root := []byte(`{{ file "somefile.json" "foo" "bar" | qjson "key.1" }}`)
+	target := []byte(`{ "key": ["{{ .Param1 }}", "{{ .Param2 }}"]}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
 	filesystem.Fs.MkdirAll("some/path", 0755)
@@ -114,7 +114,7 @@ func TestRender_LoadFile_QJson_Params(t *testing.T) {
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
-	go_test_utils.AssertStringEquals(t, string(res), "\"bar\"")
+	go_test_utils.AssertStringEquals(t, string(res), `"bar"`)
 }
 
 func TestRender_LoadFile_CSV(t *testing.T) {
@@ -313,12 +313,64 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 		expected    string
 		expectedErr error
 	}{
-		{`body.1._id`, `{"body":[{"_id": 1}, {"_id": 2}]}`, `2`, nil},
-		{`body.0`, `{"body":[{"_id": 1}, {"_id": 2}]}`, `{"_id": 1}`, nil},
-		{`body.invalid`, `{"body":[{"_id": 1}, {"_id": 2}]}`, ``, fmt.Errorf("'body.invalid' was not found or was empty string")}, //beware wrong access returns nothing
-		{`body.array`, `{"body": {"array": [1, 2]}}`, `[1, 2]`, nil},
-		{`body.array.1`, `{"body": {"array": [1, 2]}}`, `2`, nil},
-		{`body.0._id`, `{"body":[{"_id":2}]}`, `2`, nil},
+		{`body.1._id`, `{
+			"body": [
+				{
+					"_id": 1
+				},
+				{
+					"_id": 2
+				}
+			]
+		}`, `2`, nil},
+		{`body.0`, `{
+			"body": [
+				{
+					"_id": 1
+				},
+				{
+					"_id": 2
+				}
+			]
+				}`, `{
+			"_id": 1
+		}`, nil},
+		{`body.invalid`, `{
+			"body": [
+				{
+					"_id": 1
+				},
+				{
+					"_id": 2
+				}
+			]
+		}`, ``, fmt.Errorf("'body.invalid' was not found or was empty string")}, //beware wrong access returns nothing
+		{`body.array`, `{
+			"body": {
+				"array": [
+					1,
+					2
+				]
+			}
+				}`, `[
+			1,
+			2
+		]`, nil},
+		{`body.array.1`, `{
+			"body": {
+				"array": [
+					1,
+					2
+				]
+			}
+		}`, `2`, nil},
+		{`body.0._id`, `{
+			"body": [
+				{
+					"_id": 2
+				}
+			]
+		}`, `2`, nil},
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
@@ -348,7 +400,12 @@ func Test_DataStore_QJson(t *testing.T) {
 	response, _ := api.NewResponse(
 		200,
 		map[string][]string{"x-header": {"foo", "bar"}},
-		strings.NewReader(`{"flib": ["flab", "flob"]}`),
+		strings.NewReader(`{
+			"flib": [
+				"flab",
+				"flob"
+			]
+		}`),
 		nil,
 		api.ResponseFormat{},
 	)
@@ -371,15 +428,15 @@ func Test_DataStore_QJson(t *testing.T) {
 		{"body.flib.0", `"flab"`},
 		{"body.flib.1", `"flob"`},
 		{"body.flib", `[
-      "flab",
-      "flob"
-    ]`},
+			"flab",
+			"flob"
+		]`},
 		{"body", `{
-    "flib": [
-      "flab",
-      "flob"
-    ]
-  }`},
+			"flib": [
+				"flab",
+				"flob"
+			]
+		}`},
 	}
 
 	for i, testCase := range testCases {
@@ -388,7 +445,7 @@ func Test_DataStore_QJson(t *testing.T) {
 			res, err := loader.Render(root, "some/path", nil)
 
 			go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
-			go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
+			test_utils.AssertJsonStringEquals(t, string(res), testCase.expected)
 		})
 	}
 

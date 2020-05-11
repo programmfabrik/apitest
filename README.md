@@ -171,6 +171,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest",
 
+        // If no endpoint is given, the server url to connect can be set directly
+        "server_url": "",
+
         // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET",
 
@@ -210,8 +213,11 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "animal": "dog"
         },
 
-        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
+        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded, file]
         "body_type": "urlencoded"
+
+        // If body_type is file, "body_file" points to the file to be sent as binary body
+        "body_file": "<path|url>"
     },
     // Define how the response should look like. Testtool checks against this response
     "response": {
@@ -1347,6 +1353,10 @@ Returns a `string` of the MD5 sum of the file found in `filepath`.
 ## `str_escape [string]`
 
 Returns a `string` where all `"` are escaped to `\"`. This is useful in Strings which need to be concatenated.
+
+## `url_path_escape [string]`
+
+Uses [Url.PathEscape](https://pkg.go.dev/net/url?tab=doc#PathEscape) to escape given `string` to use in `endpoint` or `server_url`. Returns `string`.
 
 ## `match [regex] [text]`
 

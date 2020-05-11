@@ -2,13 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"io"
 	"io/ioutil"
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/go-test-utils"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestRequestBuildHttp(t *testing.T) {
