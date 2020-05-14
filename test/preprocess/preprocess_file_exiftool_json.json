@@ -3,6 +3,7 @@
         "name": "preprocess asset _res/assets/camera.jpg with exiftool in json format",
         "request": {
             // internal HTTP endpoint /load-file: returns header in response body
+            "server_url": "{{ datastore "local_url" }}",
             "endpoint": "load-file",
             "method": "GET",
             "query_params": {

@@ -1,16 +1,24 @@
+{{ $local_port:=":9999"}}
 {
     "http_server": {
-        "addr": ":9999",
+        "addr": "{{ $local_port }}",
         "dir": "../_res",
         "testmode": false
     },
     "name": "new feature pre_process",
     "tests": [
+        {
+            "name": "store local http server port {{ $local_port }} to use in loaded tests",
+            "store": {
+                "local_url": "http://localhost{{ $local_port }}"
+            }
+        },
         /////////////////////////////
         // bounce-json
         {
             "name": "bounce-json",
             "request": {
+                "server_url": "http://localhost{{ $local_port }}",
                 "endpoint": "bounce-json",
                 "method": "POST",
                 "query_params": {
@@ -87,6 +95,7 @@
         {
             "name": "bounce (binary)",
             "request": {
+                "server_url": "http://localhost{{ $local_port }}",
                 "endpoint": "bounce",
                 "method": "POST",
                 "query_params": {
@@ -160,6 +169,7 @@
         {
             "name": "test load-file endpoint (invalid query_params)",
             "request": {
+                "server_url": "http://localhost{{ $local_port }}",
                 "endpoint": "load-file",
                 "method": "GET"
             },
@@ -173,6 +183,7 @@
         {
             "name": "test load-file endpoint (invalid query_params)",
             "request": {
+                "server_url": "http://localhost{{ $local_port }}",
                 "endpoint": "load-file",
                 "method": "GET",
                 "query_params": {
@@ -189,6 +200,7 @@
         {
             "name": "test load-file endpoint (file not found)",
             "request": {
+                "server_url": "http://localhost{{ $local_port }}",
                 "endpoint": "load-file",
                 "method": "GET",
                 "query_params": {
