@@ -41,6 +41,7 @@ type ResponseFormat struct {
 	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
+	PreProcess *PreProcess `json:"pre_process,omitempty"`
 }
 
 func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
@@ -70,12 +71,22 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		res, bodyJSON interface{}
 		bodyData      []byte
 		err           error
+		resp          Response
 	)
+
+	if responseFormat.PreProcess != nil {
+		resp, err = responseFormat.PreProcess.RunPreProcess(response)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not pre process response")
+		}
+	} else {
+		resp = response
+	}
 
 	switch responseFormat.Type {
 	case "xml":
 		xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-		replacedXML := xmlDeclarationRegex.ReplaceAll(response.Body(), []byte{})
+		replacedXML := xmlDeclarationRegex.ReplaceAll(resp.Body(), []byte{})
 
 		mv, err := mxj.NewMapXmlSeq(replacedXML)
 		if err != nil {
@@ -92,7 +103,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			runeComma = []rune(responseFormat.CSV.Comma)[0]
 		}
 
-		csvData, err := csv.GenericCSVToMap(response.Body(), runeComma)
+		csvData, err := csv.GenericCSVToMap(resp.Body(), runeComma)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not parse csv")
 		}
@@ -104,7 +115,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	case "binary":
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
-		hasher.Write([]byte(response.Body()))
+		hasher.Write([]byte(resp.Body()))
 		JsonObject := util.JsonObject{
 			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
@@ -114,16 +125,16 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		}
 	case "":
 		// no specific format, we assume a json, and thereby try to unmarshal it into our body
-		bodyData = response.Body()
+		bodyData = resp.Body()
 	default:
 		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
 	responseJSON := ResponseSerialization{
-		StatusCode: response.statusCode,
+		StatusCode: resp.statusCode,
 	}
-	if len(response.headers) > 0 {
-		responseJSON.Headers = response.headers
+	if len(resp.headers) > 0 {
+		responseJSON.Headers = resp.headers
 	}
 
 	// if the body should not be ignored, serialize the parsed/converted body
@@ -219,6 +230,7 @@ func (response Response) ToString() string {
 		headersString string
 		bodyString    string
 		err           error
+		resp          Response
 	)
 
 	for k, v := range response.headers {
@@ -232,14 +244,23 @@ func (response Response) ToString() string {
 		headersString = fmt.Sprintf("%s\n%s:%s", headersString, k, value)
 	}
 
-	// for logging, always show the body
-	response.Format.IgnoreBody = false
+	if response.Format.PreProcess != nil {
+		resp, err = response.Format.PreProcess.RunPreProcess(response)
+		if err != nil {
+			resp = response
+		}
+	} else {
+		resp = response
+	}
 
-	body := response.Body()
-	switch response.Format.Type {
+	// for logging, always show the body
+	resp.Format.IgnoreBody = false
+
+	body := resp.Body()
+	switch resp.Format.Type {
 	case "xml", "csv":
 		if utf8.Valid(body) {
-			bodyString, err = response.ServerResponseToJsonString(true)
+			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {
 				bodyString = string(body)
 			}
@@ -247,8 +268,8 @@ func (response Response) ToString() string {
 			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
 		}
 	case "binary":
-		response.Format.IgnoreBody = false
-		bodyString, err = response.ServerResponseToJsonString(true)
+		resp.Format.IgnoreBody = false
+		bodyString, err = resp.ServerResponseToJsonString(true)
 		if err != nil {
 			bodyString = string(body)
 		}
@@ -260,5 +281,5 @@ func (response Response) ToString() string {
 		}
 	}
 
-	return fmt.Sprintf("%d\n%s\n\n%s", response.statusCode, headersString, bodyString)
+	return fmt.Sprintf("%d\n%s\n\n%s", resp.statusCode, headersString, bodyString)
 }
