@@ -171,7 +171,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest",
 
-        // If no endpoint is given, the server url to connect can be set directly
+        // the server url to connect can be set directly for a request, overwriting the configured server url
         "server_url": "",
 
         // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
@@ -1547,10 +1547,153 @@ To configure a HTTP Server, the manifest need to include these lines:
     "http_server": {
         "addr": ":8788", // address to listen on
         "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false, // boolean flag to switch test mode on / off
+        "testmode": false // boolean flag to switch test mode on / off
     }
 }
 ```
 
 The HTTP Server is started and stopped per test.
 
+## HTTP Endpoints
+
+The server provides endpoints to serve local files and return responses based on request data.
+
+### Static files
+
+To access any static file, use the path relative to the server directory (`dir`) as the endpoint:
+
+```yaml
+{
+    "request": {
+        "endpoint": "path/to/file.jpg",
+        "method": "GET"
+    }
+}
+```
+
+If there is any error (for example wrong path), a HTTP error repsonse will be returned.
+
+### `load-file`
+
+The endpoint `load-file` also serves a static file. The file path must be relative to the server directory and is specified in the url query parameter `file`.
+
+```yaml
+{
+    "request": {
+        "endpoint": "load-file",
+        "method": "GET",
+        "query_params": {
+            "file": "path/to/file.jpg"
+        }
+    }
+}
+```
+
+If the `file` parameter is missing an error message is returned:
+
+```yaml
+{
+    "response": {
+        "statuscode": 400,
+        "body": {
+            "error": "file not found in query_params"
+        }
+    }
+}
+```
+
+Other HTTP errors are handled like for the static file endpoint (see above).
+
+### `bounce`
+
+The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.
+
+```yaml
+{
+    "request": {
+        "endpoint": "bounce",
+        "method": "POST",
+        "query_params": {
+            "param1": "abc"
+        },
+        "header": {
+            "header1": 123
+        },
+        "body": {
+            "file": "@path/to/file.jpg"
+        },
+        "body_type": "multipart"
+    }
+}
+```
+
+The file that is specified is relative to the apitest file, not relative to the http server directory. The response will include the binary of the file, which can be handled with [`pre_process` and `format`](#preprocessing-responses).
+
+Request headers are included in the response header with the prefix `X-Req-Header-`, request query parameters are included in the response header with the prefix `X-Req-Query-`:
+
+```yaml
+{
+    "response": {
+        "header": {
+            "X-Req-Query-Param1": [
+                "abc"
+            ],
+            "X-Req-Header-Header1": [
+                "123"
+            ]
+        }
+    }
+}
+```
+
+### `bounce-json`
+
+The endpoint `bounce-json` returns the a response that includes `header`, `query_params` and `body` in the body.
+
+```yaml
+{
+    "request": {
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "query_params": {
+            "param1": "abc"
+        },
+        "header": {
+            "header1": 123
+        },
+        "body": {
+            "value1": "test",
+            "value2": {
+                "hello": "world"
+            }
+        }
+    }
+}
+```
+
+will return this response:
+
+```yaml
+{
+    "response": {
+        "body": {
+            "query_params": {
+                "param1": [
+                    "abc"
+                ]
+            },
+            "header": {
+                "Header1": [
+                    "123"
+                ]
+            },
+            "body": {
+                "value1": "test",
+                "value2": {
+                    "hello": "world"
+                }
+            }
+        }
+    }
+}
+```
