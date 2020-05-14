@@ -91,18 +91,7 @@ type ErrorResponse struct {
 	Body  interface{} `json:"body,omitempty"`
 }
 
-func errorResponse(w http.ResponseWriter, statuscode int, err error, bodyBytes []byte) {
-	var body interface{}
-	if utf8.Valid(bodyBytes) {
-		if len(bodyBytes) > 0 {
-			body = string(bodyBytes)
-		} else {
-			body = nil
-		}
-	} else {
-		body = bodyBytes
-	}
-
+func errorResponse(w http.ResponseWriter, statuscode int, err error, body interface{}) {
 	resp := ErrorResponse{
 		Error: err.Error(),
 		Body:  body,
@@ -121,7 +110,7 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, bodyBytes [
 func loadFile(w http.ResponseWriter, r *http.Request, dir string) {
 	fn := r.URL.Query().Get("file")
 	if fn == "" {
-		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"), []byte{})
+		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"), nil)
 		return
 	}
 
@@ -141,17 +130,29 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		err       error
 		bodyBytes []byte
 		bodyJSON  interface{}
+		errorBody interface{}
 	)
 
 	bodyBytes, err = ioutil.ReadAll(r.Body)
+
+	if utf8.Valid(bodyBytes) {
+		if len(bodyBytes) > 0 {
+			errorBody = string(bodyBytes)
+		} else {
+			errorBody = nil
+		}
+	} else {
+		errorBody = bodyBytes
+	}
+
 	if err != nil {
-		errorResponse(w, 500, err, bodyBytes)
+		errorResponse(w, 500, err, errorBody)
 		return
 	}
 
 	err = json.Unmarshal(bodyBytes, &bodyJSON)
 	if err != nil {
-		errorResponse(w, 500, err, bodyBytes)
+		errorResponse(w, 500, err, errorBody)
 		return
 	}
 
@@ -163,7 +164,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	responseData, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
-		errorResponse(w, 500, err, bodyBytes)
+		errorResponse(w, 500, err, response)
 		return
 	}
 
