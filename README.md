@@ -367,7 +367,9 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
 ## Preprocessing responses
 
-Responses in other formats than JSON can be preprocessed by calling any command line tool that can produce JSON output. The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked. This only works, if the command line tool produces valid JSON.
+Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML or CSV output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
+
+The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked.
 
 To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
 
@@ -409,7 +411,7 @@ This basic example shows how to use the `pre_process` feature. The response is p
 }
 ```
 
-#### Reading metadata from a file
+#### Reading metadata from a file (JSON Format)
 
 To check the file metadata of a file that is directly downloaded as a binary file using the `eas/download` API, use `exiftool` to read the file and output the metadata in JSON format.
 
@@ -445,11 +447,54 @@ If there is a file with the asset ID `1`, and the apitest needs to check that th
 }
 ```
 
-* Command: `exiftool -j -g -`
-* Parameters:
-    * `-j`: output in JSON format
-    * `-g`: group output by tag class
-    * `-`: read from `stdin` instead loading a saved file
+* `format.pre_process`:
+    * Command: `exiftool -j -g -`
+    * Parameters:
+        * `-j`: output in JSON format
+        * `-g`: group output by tag class
+        * `-`: read from `stdin` instead loading a saved file
+
+#### Reading metadata from a file (XML Format)
+
+This example shows the combination of `pre_process` and `type`. Instead of calling `exiftool` with JSON output, it can also be used with XML output, which then will be formatted to JSON by the apitest tool.
+
+```yaml
+{
+    "request": {
+        "endpoint": "eas/download/1/original",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "exiftool",
+                    "args": [
+                        "-X",
+                        "-"
+                    ]
+                }
+            },
+            "type": "xml"
+        },
+        "body": [
+            {
+                "File": {
+                    "MIMEType": "image/jpeg"
+                }
+            }
+        ]
+    }
+}
+```
+
+* `format.pre_process`:
+    * Command: `exiftool -X -`
+    * Parameters:
+        * `-X`: output in XML format
+        * `-`: read from `stdin` instead loading a saved file
+* `format.type`:
+    * `xml`: convert the output of `exiftool`, which is expected to be in XML format, into JSON
 
 ### Error handling
 
