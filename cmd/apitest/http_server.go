@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"unicode/utf8"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
@@ -86,12 +87,25 @@ func (ats *Suite) StopHttpServer() {
 }
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error string      `json:"error"`
+	Body  interface{} `json:"body,omitempty"`
 }
 
-func errorResponse(w http.ResponseWriter, statuscode int, err error) {
+func errorResponse(w http.ResponseWriter, statuscode int, err error, bodyBytes []byte) {
+	var body interface{}
+	if utf8.Valid(bodyBytes) {
+		if len(bodyBytes) > 0 {
+			body = string(bodyBytes)
+		} else {
+			body = nil
+		}
+	} else {
+		body = bodyBytes
+	}
+
 	resp := ErrorResponse{
 		Error: err.Error(),
+		Body:  body,
 	}
 
 	b, err2 := json.MarshalIndent(resp, "", "  ")
@@ -107,7 +121,7 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error) {
 func loadFile(w http.ResponseWriter, r *http.Request, dir string) {
 	fn := r.URL.Query().Get("file")
 	if fn == "" {
-		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"))
+		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"), []byte{})
 		return
 	}
 
@@ -115,9 +129,9 @@ func loadFile(w http.ResponseWriter, r *http.Request, dir string) {
 }
 
 type BounceResponse struct {
-	Header      map[string][]string `json:"header"`
-	QueryParams url.Values          `json:"query_params"`
-	Body        interface{}         `json:"body"`
+	Header      http.Header `json:"header"`
+	QueryParams url.Values  `json:"query_params"`
+	Body        interface{} `json:"body"`
 }
 
 // bounceJSON builds a json response including the header, query params and body of the request
@@ -131,13 +145,13 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err = ioutil.ReadAll(r.Body)
 	if err != nil {
-		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not read body: %s", err))
+		errorResponse(w, 500, err, bodyBytes)
 		return
 	}
 
 	err = json.Unmarshal(bodyBytes, &bodyJSON)
 	if err != nil {
-		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not unmarshal body: %s", err))
+		errorResponse(w, 500, err, bodyBytes)
 		return
 	}
 
@@ -149,7 +163,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	responseData, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
-		errorResponse(w, 500, xerrors.Errorf("bounce-json: could not marshal response: %s", err))
+		errorResponse(w, 500, err, bodyBytes)
 		return
 	}
 

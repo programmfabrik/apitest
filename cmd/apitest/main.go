@@ -81,7 +81,7 @@ func init() {
 	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
 	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 
-	println("The latest apitest tool, v 67")
+	println("The latest apitest tool, v 68")
 }
 
 var testCMD = &cobra.Command{
