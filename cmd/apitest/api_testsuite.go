@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -84,67 +83,6 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	}
 
 	return &suite, nil
-}
-
-// StartHttpServer start a simple http server that can server local test resources during the testsuite is running
-func (ats *Suite) StartHttpServer() {
-
-	if ats.HttpServer == nil {
-		return
-	}
-
-	ats.idleConnsClosed = make(chan struct{})
-	mux := http.NewServeMux()
-
-	if ats.HttpServer.Dir == "" {
-		ats.httpServerDir = ats.manifestDir
-	} else {
-		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
-	}
-	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
-
-	ats.httpServer = http.Server{
-		Addr:    ats.HttpServer.Addr,
-		Handler: mux,
-	}
-
-	run := func() {
-		logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
-
-		err := ats.httpServer.ListenAndServe()
-		if err != http.ErrServerClosed {
-			// Error starting or closing listener:
-			logrus.Errorf("HTTP server ListenAndServe: %v", err)
-			return
-		}
-	}
-
-	if ats.HttpServer.Testmode {
-		// Run in foreground to test
-		logrus.Infof("Testmode for HTTP Server. Listening, not running tests...")
-		run()
-	} else {
-		go run()
-	}
-}
-
-// StopHttpServer stop the http server that was started for this test suite
-func (ats *Suite) StopHttpServer() {
-
-	if ats.HttpServer == nil {
-		return
-	}
-
-	err := ats.httpServer.Shutdown(context.Background())
-	if err != nil {
-		// Error from closing listeners, or context timeout:
-		logrus.Errorf("HTTP server Shutdown: %v", err)
-		close(ats.idleConnsClosed)
-		<-ats.idleConnsClosed
-	} else {
-		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
-	}
-	return
 }
 
 // Run run the given testsuite
