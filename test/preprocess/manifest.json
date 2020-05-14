@@ -188,53 +188,6 @@
                 "statuscode": 200
             }
         },
-        /////////////////////////////
-        // load-file
-        {
-            "name": "test load-file endpoint (invalid query_params)",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "load-file",
-                "method": "GET"
-            },
-            "response": {
-                "statuscode": 400,
-                "body": {
-                    "error": "file not found in query_params"
-                }
-            }
-        },
-        {
-            "name": "test load-file endpoint (invalid query_params)",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "load-file",
-                "method": "GET",
-                "query_params": {
-                    "something": "wrong"
-                }
-            },
-            "response": {
-                "statuscode": 400,
-                "body": {
-                    "error": "file not found in query_params"
-                }
-            }
-        },
-        {
-            "name": "test load-file endpoint (file not found)",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "load-file",
-                "method": "GET",
-                "query_params": {
-                    "file": "wrong/path.jpg"
-                }
-            },
-            "response": {
-                "statuscode": 404
-            }
-        },
         "@preprocess_file_exiftool_json.json",
         "@preprocess_file_exiftool_xml.json"
     ]

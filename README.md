@@ -1573,37 +1573,6 @@ To access any static file, use the path relative to the server directory (`dir`)
 
 If there is any error (for example wrong path), a HTTP error repsonse will be returned.
 
-### `load-file`
-
-The endpoint `load-file` also serves a static file. The file path must be relative to the server directory and is specified in the url query parameter `file`.
-
-```yaml
-{
-    "request": {
-        "endpoint": "load-file",
-        "method": "GET",
-        "query_params": {
-            "file": "path/to/file.jpg"
-        }
-    }
-}
-```
-
-If the `file` parameter is missing an error message is returned:
-
-```yaml
-{
-    "response": {
-        "statuscode": 400,
-        "body": {
-            "error": "file not found in query_params"
-        }
-    }
-}
-```
-
-Other HTTP errors are handled like for the static file endpoint (see above).
-
 ### `bounce`
 
 The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.

@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
 )
 
 // StartHttpServer start a simple http server that can server local test resources during the testsuite is running
@@ -30,11 +29,6 @@ func (ats *Suite) StartHttpServer() {
 		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
 	}
 	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
-
-	// read the file at query param 'file' and return it as the response body
-	mux.HandleFunc("/load-file", func(w http.ResponseWriter, r *http.Request) {
-		loadFile(w, r, ats.httpServerDir)
-	})
 
 	// bounce json response
 	mux.HandleFunc("/bounce-json", bounceJSON)
@@ -104,17 +98,6 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body interf
 	}
 
 	http.Error(w, string(b), statuscode)
-}
-
-// loadFile reads the file at query param 'path' and returns it as the response body
-func loadFile(w http.ResponseWriter, r *http.Request, dir string) {
-	fn := r.URL.Query().Get("file")
-	if fn == "" {
-		errorResponse(w, 400, xerrors.Errorf("file not found in query_params"), nil)
-		return
-	}
-
-	http.ServeFile(w, r, dir+"/"+fn)
 }
 
 type BounceResponse struct {
