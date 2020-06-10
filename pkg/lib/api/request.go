@@ -3,10 +3,12 @@ package api
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -49,7 +51,7 @@ type Request struct {
 	DataStore   *datastore.Datastore
 }
 
-func (request Request) buildHttpRequest() (res *http.Request, err error) {
+func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if request.buildPolicy == nil {
 		//Set Build policy
 		switch request.BodyType {
@@ -70,17 +72,29 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		requestUrl = request.ServerURL
 	}
 
+	reqUrl, err := url.Parse(requestUrl)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to buildHttpRequest with URL %q", requestUrl)
+	}
+
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
-		return res, fmt.Errorf("error executing buildpolicy: %s", err)
+		return req, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
-	res, err = http.NewRequest(request.Method, requestUrl, body)
+	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
-		return res, fmt.Errorf("error creating new request")
+		return req, fmt.Errorf("error creating new request")
 	}
-	res.Close = true
+	req.Close = true
 
-	q := res.URL.Query()
+	if reqUrl.User != nil {
+		pw, ok := reqUrl.User.Password()
+		if ok {
+			req.SetBasicAuth(reqUrl.User.Username(), pw)
+		}
+	}
+
+	q := req.URL.Query()
 
 	for queryName, datastoreKey := range request.QueryParamsFromStore {
 		skipOnError := false
@@ -90,7 +104,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 
 		if request.DataStore == nil {
-			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+			return req, fmt.Errorf("can't get header_from_store as the datastore is nil")
 		}
 
 		queryParamInterface, err := request.DataStore.Get(datastoreKey)
@@ -103,7 +117,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		stringVal, err := util.GetStringFromInterface(queryParamInterface)
 		if err != nil {
-			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 
 		if stringVal == "" {
@@ -115,15 +129,15 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	for key, val := range request.QueryParams {
 		stringVal, err := util.GetStringFromInterface(val)
 		if err != nil {
-			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 		q.Set(key, stringVal)
 	}
 
-	res.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = q.Encode()
 
 	for key, val := range additionalHeaders {
-		res.Header.Add(key, val)
+		req.Header.Add(key, val)
 	}
 
 	for headerName, datastoreKey := range request.HeaderFromStore {
@@ -134,7 +148,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 
 		if request.DataStore == nil {
-			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+			return req, fmt.Errorf("can't get header_from_store as the datastore is nil")
 		}
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
@@ -153,7 +167,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 					if valString == "" {
 						continue
 					}
-					res.Header.Add(headerName, valString)
+					req.Header.Add(headerName, valString)
 				}
 			}
 			continue
@@ -164,7 +178,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			if ownHeader == "" {
 				continue
 			}
-			res.Header.Add(headerName, ownHeader)
+			req.Header.Add(headerName, ownHeader)
 		} else {
 			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
 		}
@@ -173,14 +187,14 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	for key, val := range request.Headers {
 		if *val == "" {
 			//Unset header explicit
-			res.Header.Del(key)
+			req.Header.Del(key)
 		} else {
 			//ADD header
-			res.Header.Set(key, *val)
+			req.Header.Set(key, *val)
 		}
 	}
 
-	return res, nil
+	return req, nil
 }
 
 func (request Request) ToString(curl bool) (res string) {

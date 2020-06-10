@@ -1,13 +1,17 @@
-all: generate build
+all: test build
 
-generate:
-	go generate ./...
-
-test: generate
+test:
 	go vet ./...
 	go test ./...
+
+gox:
+	go get github.com/mitchellh/gox
+	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
+
+clean:
+	rm -rfv ./apitest ./bin/*
 
 build:
 	go build
 
-.PHONY: all generate test build
+.PHONY: all test gox build clean
