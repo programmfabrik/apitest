@@ -75,19 +75,44 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	}
 
 	// Add external http server url here, as only after this point the http_server.addr may be available
-	httpServerURLStr := ""
+	hsru := new(url.URL)
+	shsu := new(url.URL)
 	if httpServerReplaceURL != "" {
-		httpServerURLStr = httpServerReplaceURL
-	} else if suite.HttpServer != nil && suite.HttpServer.Addr != "" {
-		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
-		httpServerURLStr = "//" + suite.HttpServer.Addr
-	}
-	if httpServerURLStr != "" {
-		httpServerURL, err := url.Parse(httpServerURLStr)
+		hsru, err = url.Parse(httpServerReplaceURL)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_url failed")
+			return nil, errors.Wrap(err, "set http_server_url failed (command argument)")
 		}
-		suite.HTTPServerURL = httpServerURL
+	}
+	if suite.HttpServer != nil && suite.HttpServer.Addr != "" {
+		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
+		shsu, err = url.Parse("//" + suite.HttpServer.Addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "set http_server_url failed (manifesr addr)")
+		}
+	}
+	suite.HTTPServerURL = new(url.URL)
+	if hsru.Scheme != "" {
+		suite.HTTPServerURL.Scheme = hsru.Scheme
+	} else if shsu.Scheme != "" {
+		suite.HTTPServerURL.Scheme = shsu.Scheme
+	}
+	if hsru.Hostname() != "" {
+		suite.HTTPServerURL.Host = hsru.Hostname()
+	} else if shsu.Hostname() != "" {
+		suite.HTTPServerURL.Host = shsu.Hostname()
+	}
+	if suite.HTTPServerURL.Host == "0.0.0.0" {
+		suite.HTTPServerURL.Host = "127.0.0.1"
+	}
+	if hsru.Port() != "" {
+		suite.HTTPServerURL.Host += ":" + hsru.Port()
+	} else if shsu.Port() != "" {
+		suite.HTTPServerURL.Host += ":" + shsu.Port()
+	}
+	if hsru.Path != "" {
+		suite.HTTPServerURL.Path = hsru.Path
+	} else if shsu.Path != "" {
+		suite.HTTPServerURL.Path = shsu.Path
 	}
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
