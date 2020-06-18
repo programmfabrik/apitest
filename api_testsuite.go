@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -44,6 +46,7 @@ type Suite struct {
 	httpServer      http.Server
 	httpServerDir   string
 	idleConnsClosed chan struct{}
+	HTTPServerURL   *url.URL
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -69,6 +72,22 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
 		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
 		return &suite, err
+	}
+
+	// Add external http server url here, as only after this point the http_server.addr may be available
+	httpServerURLStr := ""
+	if httpServerReplaceURL != "" {
+		httpServerURLStr = httpServerReplaceURL
+	} else if suite.HttpServer != nil && suite.HttpServer.Addr != "" {
+		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
+		httpServerURLStr = "//" + suite.HttpServer.Addr
+	}
+	if httpServerURLStr != "" {
+		httpServerURL, err := url.Parse(httpServerURLStr)
+		if err != nil {
+			return nil, errors.Wrap(err, "set http_server_url failed")
+		}
+		suite.HTTPServerURL = httpServerURL
 	}
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
@@ -126,10 +145,9 @@ type TestContainer struct {
 func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
-	if externalHTTPServer != "" {
-		loader.HTTPServer = externalHTTPServer
-	} else if ats.httpServer.Addr != "" {
-		loader.HTTPServer = "//"+ats.HttpServer.Addr
+
+	if ats.HTTPServerURL != nil {
+		loader.HTTPServerURL = ats.HTTPServerURL
 	}
 
 	isParallelPathSpec := false
@@ -271,11 +289,6 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
-	if externalHTTPServer != "" {
-		loader.HTTPServer = externalHTTPServer
-	} else if ats.HttpServer != nil && ats.HttpServer.Addr != "" {
-		loader.HTTPServer = "//"+ats.HttpServer.Addr
-	}
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)

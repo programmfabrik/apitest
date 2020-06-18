@@ -68,7 +68,7 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 
 type Loader struct {
 	datastore *datastore.Datastore
-	HTTPServer string
+	HTTPServerURL *url.URL
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -283,9 +283,9 @@ func (loader *Loader) Render(
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
 		},
-		"replace_http_server": func(srcURL string) (string, error) {
+		"replace_http_server_url": func(srcURL string) (string, error) {
 			// If no override provided, return original one
-			if loader.HTTPServer == "" {
+			if loader.HTTPServerURL == nil {
 				return srcURL, nil
 			}
 			// Parse source URL or fail
@@ -293,27 +293,24 @@ func (loader *Loader) Render(
 			if err != nil {
 				return "", err
 			}
-			// Parse override URL or fail
-			parsedOverrideURL, err := url.Parse(loader.HTTPServer)
-			if err != nil {
-				return "", err
-			}
 			// Go thru all provided parts and replace/add them
-			if parsedOverrideURL.Scheme != "" {
-				parsedURL.Scheme = parsedOverrideURL.Scheme
+			if loader.HTTPServerURL.Scheme != "" {
+				parsedURL.Scheme = loader.HTTPServerURL.Scheme
 			}
-			hostName := parsedOverrideURL.Hostname()
-			port := parsedOverrideURL.Port()
-			if hostName == "" && port != "" {
-				hostName = "localhost"
+			hostName := loader.HTTPServerURL.Hostname()
+			port := loader.HTTPServerURL.Port()
+			if hostName == "" {
+				if port != "" {
+					hostName = "localhost"
+				} else {
+					hostName = parsedURL.Hostname()
+				}
 			}
-			if hostName != "" {
-				parsedURL.Host = hostName
-			}		
+			parsedURL.Host = hostName
 			if port != "" {
 				parsedURL.Host += ":"+port
 			}
-			path := parsedOverrideURL.Path
+			path := loader.HTTPServerURL.Path
 			if path != "" {
 				parsedURL.Path = path + parsedURL.Path
 			}

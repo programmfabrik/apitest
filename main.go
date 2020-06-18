@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL, externalHTTPServer                                     string
+	reportFormat, reportFile, serverURL, httpServerReplaceURL               string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                             []string
 	limitRequest, limitResponse                                             uint
@@ -30,8 +30,8 @@ func init() {
 		"URL of the Server. Overwrites server URL in yml config.")
 
 	testCMD.PersistentFlags().StringVar(
-		&externalHTTPServer, "http-server-external", "",
-		"Address of the external HTTP Server. Overwrites HTTP server addresses in test manifests.")
+		&httpServerReplaceURL, "http-server-replace-url", "",
+		"Address of the HTTP Server replacement URL. Overwrites HTTP server URLS in test manifests.")
 
 	testCMD.PersistentFlags().StringSliceVarP(
 		&rootDirectorys, "directory", "d", []string{"."},
