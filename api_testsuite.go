@@ -46,7 +46,7 @@ type Suite struct {
 	httpServer      http.Server
 	httpServerDir   string
 	idleConnsClosed chan struct{}
-	HTTPServerURL   *url.URL
+	HTTPServerHost  string
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -77,42 +77,34 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	// Add external http server url here, as only after this point the http_server.addr may be available
 	hsru := new(url.URL)
 	shsu := new(url.URL)
-	if httpServerReplaceURL != "" {
-		hsru, err = url.Parse(httpServerReplaceURL)
+	if httpServerReplaceHost != "" {
+		hsru, err = url.Parse("//"+httpServerReplaceHost)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_url failed (command argument)")
+			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
 		}
 	}
 	if suite.HttpServer != nil && suite.HttpServer.Addr != "" {
 		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
 		shsu, err = url.Parse("//" + suite.HttpServer.Addr)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_url failed (manifesr addr)")
+			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
 		}
 	}
-	suite.HTTPServerURL = new(url.URL)
-	if hsru.Scheme != "" {
-		suite.HTTPServerURL.Scheme = hsru.Scheme
-	} else if shsu.Scheme != "" {
-		suite.HTTPServerURL.Scheme = shsu.Scheme
-	}
+	suite.HTTPServerHost = ""
 	if hsru.Hostname() != "" {
-		suite.HTTPServerURL.Host = hsru.Hostname()
+		suite.HTTPServerHost = hsru.Hostname()
 	} else if shsu.Hostname() != "" {
-		suite.HTTPServerURL.Host = shsu.Hostname()
+		suite.HTTPServerHost = shsu.Hostname()
+	} else {
+		suite.HTTPServerHost = "localhost"
 	}
-	if suite.HTTPServerURL.Host == "0.0.0.0" {
-		suite.HTTPServerURL.Host = "127.0.0.1"
+	if suite.HTTPServerHost== "0.0.0.0" {
+		suite.HTTPServerHost = "localhost"
 	}
 	if hsru.Port() != "" {
-		suite.HTTPServerURL.Host += ":" + hsru.Port()
+		suite.HTTPServerHost += ":" + hsru.Port()
 	} else if shsu.Port() != "" {
-		suite.HTTPServerURL.Host += ":" + shsu.Port()
-	}
-	if hsru.Path != "" {
-		suite.HTTPServerURL.Path = hsru.Path
-	} else if shsu.Path != "" {
-		suite.HTTPServerURL.Path = shsu.Path
+		suite.HTTPServerHost += ":" + shsu.Port()
 	}
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
@@ -171,8 +163,8 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
 
-	if ats.HTTPServerURL != nil {
-		loader.HTTPServerURL = ats.HTTPServerURL
+	if ats.HTTPServerHost != "" {
+		loader.HTTPServerHost = ats.HTTPServerHost
 	}
 
 	isParallelPathSpec := false

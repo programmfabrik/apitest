@@ -88,7 +88,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--server URL`: Overwrites base url to the api
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
-- `--http-server-replace-url URL`: Overwrites test server url with provided one. If host and/or port are to be specified, it must contain a protocol or '//' to use the original one. It can specify a full or partial path and it will be prepended to the original one
+- `--replace-host URL`: Overwrites test server host with provided one
 
 ### Examples
 
@@ -104,21 +104,9 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ./apitest --single apitests/test1/manifest.json --log-console-enable false
 ```
 
-- Run all tests in the directory **apitests** with **http server url replacement** for its host (localhost in this case) and port
-
+- Run all tests in the directory **apitests** with **http server url replacement** for host
 ```bash
-./apitest -d apitests --http-server-replace-url //:8989
-```
-
-- Run all tests in the directory **apitests** with **http server url replacement** for prepending path to the original ones
-```bash
-./apitest -d apitests --http-server-replace-url /my/prefix
-```
-
-- Run all tests in the directory **apitests** with **http server url replacement** for protocol, host, port and prepending path to the original ones.
-
-```bash
-./apitest -d apitests --http-server-replace-url https://my.fancy.host:8989/my/place
+./apitest -d apitests --replace-host my.fancy.host:8989
 ```
 
 
