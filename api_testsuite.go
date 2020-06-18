@@ -126,6 +126,11 @@ type TestContainer struct {
 func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
+	if externalHTTPServer != "" {
+		loader.HTTPServer = externalHTTPServer
+	} else if ats.httpServer.Addr != "" {
+		loader.HTTPServer = "//"+ats.HttpServer.Addr
+	}
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -266,6 +271,11 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
+	if externalHTTPServer != "" {
+		loader.HTTPServer = externalHTTPServer
+	} else if ats.HttpServer != nil && ats.HttpServer.Addr != "" {
+		loader.HTTPServer = "//"+ats.HttpServer.Addr
+	}
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)

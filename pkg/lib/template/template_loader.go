@@ -68,6 +68,7 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 
 type Loader struct {
 	datastore *datastore.Datastore
+	HTTPServer string
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -281,6 +282,42 @@ func (loader *Loader) Render(
 		},
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
+		},
+		"replace_http_server": func(srcURL string) (string, error) {
+			// If no override provided, return original one
+			if loader.HTTPServer == "" {
+				return srcURL, nil
+			}
+			// Parse source URL or fail
+			parsedURL, err := url.Parse(srcURL)
+			if err != nil {
+				return "", err
+			}
+			// Parse override URL or fail
+			parsedOverrideURL, err := url.Parse(loader.HTTPServer)
+			if err != nil {
+				return "", err
+			}
+			// Go thru all provided parts and replace/add them
+			if parsedOverrideURL.Scheme != "" {
+				parsedURL.Scheme = parsedOverrideURL.Scheme
+			}
+			hostName := parsedOverrideURL.Hostname()
+			port := parsedOverrideURL.Port()
+			if hostName == "" && port != "" {
+				hostName = "localhost"
+			}
+			if hostName != "" {
+				parsedURL.Host = hostName
+			}		
+			if port != "" {
+				parsedURL.Host += ":"+port
+			}
+			path := parsedOverrideURL.Path
+			if path != "" {
+				parsedURL.Path = path + parsedURL.Path
+			}
+			return parsedURL.String(), nil
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
