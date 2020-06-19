@@ -59,6 +59,9 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		datastore:    datastore,
 		index:        index,
 	}
+	// Here we create this additional struct in order to preload the suite manifest
+	// It is needed, for example, for getting the suite HTTP server address
+	// Then preloaded values are used to load again the manifest with relevant replacements
 	suitePreload := Suite{
 		Config:       config,
 		manifestDir:  filepath.Dir(manifestPath),
@@ -91,9 +94,13 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
 		}
 	}
-	if suitePreload.HttpServer != nil && suitePreload.HttpServer.Addr != "" {
+	if suitePreload.HttpServer != nil {
+		preloadHTTPAddrStr := suitePreload.HttpServer.Addr
+		if preloadHTTPAddrStr == "" {
+			preloadHTTPAddrStr = ":80"
+		}
 		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
-		shsu, err = url.Parse("//" + suitePreload.HttpServer.Addr)
+		shsu, err = url.Parse("//" + preloadHTTPAddrStr)
 		if err != nil {
 			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
 		}
@@ -115,6 +122,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		suitePreload.HTTPServerHost += ":" + shsu.Port()
 	}
 
+	// Here we load the usable manifest, now that we can do all potential replacements
 	manifest, err = suitePreload.loadManifest()
 	if err != nil {
 		err = fmt.Errorf("error loading manifest: %s", err)
@@ -122,6 +130,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		return &suite, err
 	}
 	// fmt.Printf("%s", string(manifest))
+	// We unmarshall the final manifest into the final working suite
 	err = cjson.Unmarshal(manifest, &suite)
 	if err != nil {
 		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
@@ -186,9 +195,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
 
-	if ats.HTTPServerHost != "" {
-		loader.HTTPServerHost = ats.HTTPServerHost
-	}
+	loader.HTTPServerHost = ats.HTTPServerHost
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -329,9 +336,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
-	if ats.HTTPServerHost != "" {
-		loader.HTTPServerHost = ats.HTTPServerHost
-	}
+	loader.HTTPServerHost = ats.HTTPServerHost
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)

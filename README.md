@@ -88,7 +88,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--server URL`: Overwrites base url to the api
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
-- `--replace-host URL`: Overwrites test server host with provided one
+- `--replace-host [host][:port]`: Overwrites test server host with provided one in template function "replace_host"
 
 ### Examples
 
@@ -104,7 +104,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ./apitest --single apitests/test1/manifest.json --log-console-enable false
 ```
 
-- Run all tests in the directory **apitests** with **http server url replacement** for host
+- Run all tests in the directory **apitests** with **http server host replacement** for those templates using **replace_host** template function
 ```bash
 ./apitest -d apitests --replace-host my.fancy.host:8989
 ```
