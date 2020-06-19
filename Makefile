@@ -4,6 +4,9 @@ test:
 	go vet ./...
 	go test ./...
 
+apitest:
+	./apitest -d test/
+
 gox:
 	go get github.com/mitchellh/gox
 	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
@@ -14,4 +17,4 @@ clean:
 build:
 	go build
 
-.PHONY: all test gox build clean
+.PHONY: all test apitest gox build clean
