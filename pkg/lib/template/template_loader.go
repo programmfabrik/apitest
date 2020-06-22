@@ -68,6 +68,7 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 
 type Loader struct {
 	datastore *datastore.Datastore
+	HTTPServerHost string
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -281,6 +282,19 @@ func (loader *Loader) Render(
 		},
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
+		},
+		"replace_host": func(srcURL string) (string, error) {
+			// If no override provided, return original one
+			if loader.HTTPServerHost == "" {
+				return srcURL, nil
+			}
+			// Parse source URL or fail
+			parsedURL, err := url.Parse(srcURL)
+			if err != nil {
+				return "", err
+			}
+			parsedURL.Host = loader.HTTPServerHost
+			return parsedURL.String(), nil
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
