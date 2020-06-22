@@ -1476,6 +1476,10 @@ int64,string
 
 Returns a slice with the given parameters as elements. Use this for **range** in templates.
 
+## `split s sep`
+
+Returns a string slice with `s` split by `sep`.
+
 ## `add [a] [b]`
 
 Returns the sum of `a`and `b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.

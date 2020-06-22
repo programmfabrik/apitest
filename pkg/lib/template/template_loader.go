@@ -99,6 +99,9 @@ func (loader *Loader) Render(
 			}
 			return
 		},
+		"split": func(s, sep string) []string {
+			return strings.Split(s, sep)
+		},
 		"md5sum": func(path string) (string, error) {
 			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
