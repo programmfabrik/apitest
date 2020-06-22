@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL, httpServerReplaceHost               string
+	reportFormat, reportFile, serverURL, httpServerReplaceHost              string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                             []string
 	limitRequest, limitResponse                                             uint
@@ -31,7 +31,7 @@ func init() {
 
 	testCMD.PersistentFlags().StringVar(
 		&httpServerReplaceHost, "replace-host", "",
-		"Address of the HTTP Server replacement host. Overwrites HTTP server URLS in test manifests.")
+		"HTTP Server replacement host to be used in replace_host template function.")
 
 	testCMD.PersistentFlags().StringSliceVarP(
 		&rootDirectorys, "directory", "d", []string{"."},

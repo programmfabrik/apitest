@@ -88,7 +88,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--server URL`: Overwrites base url to the api
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
-- `--replace-host [host][:port]`: Overwrites test server host with provided one in template function "replace_host"
+- `--replace-host [host][:port]`: Overwrites built-in server host in template function "replace_host"
 
 ### Examples
 
@@ -1542,6 +1542,12 @@ Example how to range over 100 objects
     ]
 }
 ```
+
+## replace_host [url]
+
+**replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
+
+As an example, the URL _http://localhost/myimage.jpg_ would be changed into _http://localhost:8788/myimage.jpg_ following the example below.
 
 # HTTP Server
 
