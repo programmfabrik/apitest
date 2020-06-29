@@ -1555,7 +1555,7 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 
 ## server_url
 
-**server_url** returns (renders) the tests configured server url (api server), which can be globally provided in the yaml config file or directly by the command line parameter `--server`.
+**server_url** returns the configured server url (endpoint server), which can be globally provided in the yaml config file or directly by the command line parameter `--server`.
 
 # HTTP Server
 
