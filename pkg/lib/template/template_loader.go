@@ -67,8 +67,9 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 }
 
 type Loader struct {
-	datastore *datastore.Datastore
+	datastore      *datastore.Datastore
 	HTTPServerHost string
+	ServerURL      string
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -298,6 +299,9 @@ func (loader *Loader) Render(
 			}
 			parsedURL.Host = loader.HTTPServerHost
 			return parsedURL.String(), nil
+		},
+		"server_url": func() string {
+			return loader.ServerURL
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
