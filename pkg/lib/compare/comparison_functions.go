@@ -355,7 +355,27 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 					continue
 				}
 
-				tmp, err := JsonEqual(lv, rv, control)
+				// We need to check the left interface against the right one multiple times
+				// JsonEqual modifies such interface (it deletes it afterwards)
+				// Therefore we need a copy of it for this case 
+				var (
+					err error
+					tmp CompareResult
+				)
+				switch lv.(type) {
+				case util.JsonObject:
+					jo, ok := lv.(util.JsonObject)
+					if ok {
+						lvv := util.JsonObject{}
+						for k, v := range jo {
+							lvv[k] = v
+						}
+						tmp, err = JsonEqual(lvv, rv, control)
+					}
+				default:
+					tmp, err = JsonEqual(lv, rv, control)
+				}
+
 				if err != nil {
 					return CompareResult{}, err
 				}
