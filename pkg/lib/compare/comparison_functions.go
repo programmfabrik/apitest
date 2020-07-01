@@ -362,16 +362,13 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 					err error
 					tmp CompareResult
 				)
-				switch lv.(type) {
+				switch jo := lv.(type) {
 				case util.JsonObject:
-					jo, ok := lv.(util.JsonObject)
-					if ok {
-						lvv := util.JsonObject{}
-						for k, v := range jo {
-							lvv[k] = v
-						}
-						tmp, err = JsonEqual(lvv, rv, control)
+					lvv := util.JsonObject{}
+					for k, v := range jo {
+						lvv[k] = v
 					}
+					tmp, err = JsonEqual(lvv, rv, control)
 				default:
 					tmp, err = JsonEqual(lv, rv, control)
 				}

@@ -7,7 +7,7 @@
     "name": "check control structures in array",
     "tests": [
         {
-            "name": "check control structures in array (MUST FAIL)",
+            "name": "check control structures in array",
             "request": {
                 "server_url": "http://localhost:9999",
                 "endpoint": "bounce-json",
@@ -31,6 +31,9 @@
                         },
                         {
                             "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+                        },
+                        {
+                            "path": "files/so-henk-was-here_small.png"
                         }
                     ]
                 }
@@ -61,7 +64,6 @@
                                 }
                             },
                             {
-                                // XXX this control structure needs to cause a test failure: there is no path that matches "^.*henk.*$"
                                 "path:control": {
                                     "match": "^.*henk.*$"
                                 }
