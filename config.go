@@ -82,7 +82,7 @@ func (config *TestToolConfig) extractTestDirectories() error {
 			if info.IsDir() {
 				// Skip directories starting with "_"
 				if strings.Contains(path, "/_") {
-					logrus.Infof("Skipping: %s", path)
+					// logrus.Infof("Skipping: %s", path)
 					return filepath.SkipDir
 				}
 				//Skip directories not containing a manifest

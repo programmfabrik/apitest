@@ -1553,6 +1553,10 @@ Example how to range over 100 objects
 
 As an example, the URL _http://localhost/myimage.jpg_ would be changed into _http://localhost:8788/myimage.jpg_ following the example below.
 
+## server_url
+
+**server_url** returns the configured server url (endpoint server), which can be globally provided in the yaml config file or directly by the command line parameter `--server`.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
