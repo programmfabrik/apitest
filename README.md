@@ -288,8 +288,8 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "@continue_response_processing.json"
     ],
 
-    // If set to true, the test case will consider its failure as a success, useful for testing the test suite
-    "expect_fail": false
+    // If set to true, the test case will consider its failure as a success, and the other way around
+    "reverse_test_result": false
 }
 ```
 

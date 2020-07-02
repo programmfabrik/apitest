@@ -136,7 +136,7 @@
                     }
                 }
             },
-            "expect_fail": true
+            "reverse_test_result": true
         }
     ]
 }
