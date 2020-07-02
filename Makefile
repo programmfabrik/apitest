@@ -5,7 +5,7 @@ test:
 	go test ./...
 
 apitest:
-	./apitest -d test/
+	./apitest --stop-on-fail -d test/
 
 gox:
 	go get github.com/mitchellh/gox
