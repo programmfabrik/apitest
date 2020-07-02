@@ -99,6 +99,9 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		success = false
 	}
 
+	// XOR for when we want it to fail
+	success = success != testCase.ExpectToFail
+
 	if !success {
 		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
 	} else {
@@ -286,7 +289,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 func (testCase Case) LogResp(response api.Response) {
 	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
 
-	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
+	if !testCase.ExpectToFail && testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		logrus.Debug(errString)
 	}
@@ -296,7 +299,7 @@ func (testCase Case) LogResp(response api.Response) {
 func (testCase Case) LogReq(req api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 
-	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
+	if !testCase.ExpectToFail && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		logrus.Debug(errString)
 	}
@@ -397,9 +400,11 @@ func (testCase Case) run() (bool, error) {
 	}
 
 	if !responsesMatch.Equal || timedOutFlag {
-		for _, v := range responsesMatch.Failures {
-			logrus.Errorf("[%s] %s", v.Key, v.Message)
-			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
+		if !testCase.ExpectToFail {
+			for _, v := range responsesMatch.Failures {
+				logrus.Errorf("[%s] %s", v.Key, v.Message)
+				r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
+			}
 		}
 
 		collectArray, ok := testCase.CollectResponse.(util.JsonArray)

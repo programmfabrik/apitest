@@ -331,7 +331,7 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	}
 	success := test.runAPITestCase(r)
 
-	if !success && !test.ExpectToFail && !test.ContinueOnFailure {
+	if !success && !test.ContinueOnFailure {
 		return false
 	}
 
