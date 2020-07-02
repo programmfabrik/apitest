@@ -196,6 +196,12 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	loader := template.NewLoader(ats.datastore)
 
 	loader.HTTPServerHost = ats.HTTPServerHost
+	serverURL, err := getURLWithoutAuth(ats.Config.ServerURL)
+	if err != nil {
+		logrus.Error(fmt.Errorf("can not load server url into test (%s): %s", testFilePath, err))
+		return false
+	}
+	loader.ServerURL = serverURL
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -325,7 +331,7 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	}
 	success := test.runAPITestCase(r)
 
-	if !success && !test.ContinueOnFailure {
+	if !success && !test.ExpectToFail && !test.ContinueOnFailure {
 		return false
 	}
 
@@ -337,6 +343,11 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
 	loader.HTTPServerHost = ats.HTTPServerHost
+	serverURL, err := getURLWithoutAuth(ats.Config.ServerURL)
+	if err != nil {
+		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
+	}
+	loader.ServerURL = serverURL
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)
@@ -374,4 +385,14 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manif
 	if success {
 		<-waitCh
 	}
+}
+
+// getURLWithoutAuth helper
+func getURLWithoutAuth(srcURL string) (string, error) {
+	parsedURL, err  := url.Parse(srcURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.User = nil
+	return parsedURL.String(), nil
 }

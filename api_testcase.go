@@ -52,6 +52,7 @@ type Case struct {
 	standardHeaderFromStore map[string]string
 
 	ServerURL string `json:"server_url"`
+	ExpectToFail bool `json:"expect_fail"`
 }
 
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
