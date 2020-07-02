@@ -286,7 +286,10 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "collect_response": [
         "@continue_response_pending.json",
         "@continue_response_processing.json"
-    ]
+    ],
+
+    // If set to true, the test case will consider its failure as a success, useful for testing the test suite
+    "expect_fail": false
 }
 ```
 
