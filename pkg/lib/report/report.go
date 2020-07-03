@@ -42,8 +42,8 @@ func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []
 
 //DidFail, Check if the testsuite did produce failures
 func (r Report) DidFail() bool {
-
-	if r.root.Failures > 0 {
+	aggRes := r.root.getTestResult()
+	if aggRes.Failures > 0 {
 		return true
 	} else {
 		return false
