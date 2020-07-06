@@ -1597,6 +1597,19 @@ To access any static file, use the path relative to the server directory (`dir`)
 
 If there is any error (for example wrong path), a HTTP error repsonse will be returned.
 
+#### No Content-Length header
+
+For some tests, you may not want the Content-Length header to be sent alongside the asset
+In this case, add `no-content-length=1` to the query string of the asset url:
+```yaml
+{
+    "request": {
+        "endpoint": "path/to/file.jpg?no-content-length=1",
+        "method": "GET"
+    }
+}
+```
+
 ### `bounce`
 
 The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.
