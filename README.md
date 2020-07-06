@@ -1595,20 +1595,20 @@ To access any static file, use the path relative to the server directory (`dir`)
 }
 ```
 
-#### Skip Content-Length header
+If there is any error (for example wrong path), a HTTP error repsonse will be returned.
+
+#### No Content-Length header
 
 For some tests, you may not want the Content-Length header to be sent alongside the asset
-In this case, add `skip-content-length=1` to the query string of the asset url:
+In this case, add `no-content-length=1` to the query string of the asset url:
 ```yaml
 {
     "request": {
-        "endpoint": "path/to/file.jpg?skip-content-length=1",
+        "endpoint": "path/to/file.jpg?no-content-length=1",
         "method": "GET"
     }
 }
 ```
-
-If there is any error (for example wrong path), a HTTP error repsonse will be returned.
 
 ### `bounce`
 

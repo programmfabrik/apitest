@@ -69,8 +69,8 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 		// As ultimately the default FileServer implementation will override all of them
 		// After diving into its code, the only way to avoid it is setting Content-Encoding header to some value
 		// In this case, 'identity', as per RFC 7231 / RFC 2616, means no compression or modification
-		skipContentLengthHeader := qs.Get("skip-content-length")
-		if skipContentLengthHeader == "1" || skipContentLengthHeader == "true" {
+		noContentLengthHeader := qs.Get("no-content-length")
+		if noContentLengthHeader == "1" || noContentLengthHeader == "true" {
 			w.Header().Set("Content-Encoding", "identity")
 		} 
 		h.ServeHTTP(w, r)
