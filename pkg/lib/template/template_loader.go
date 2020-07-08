@@ -69,7 +69,7 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 type Loader struct {
 	datastore      *datastore.Datastore
 	HTTPServerHost string
-	ServerURL      string
+	ServerURL      *url.URL
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -300,7 +300,7 @@ func (loader *Loader) Render(
 			parsedURL.Host = loader.HTTPServerHost
 			return parsedURL.String(), nil
 		},
-		"server_url": func() string {
+		"server_url": func() *url.URL {
 			return loader.ServerURL
 		},
 	}

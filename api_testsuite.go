@@ -89,7 +89,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	hsru := new(url.URL)
 	shsu := new(url.URL)
 	if httpServerReplaceHost != "" {
-		hsru, err = url.Parse("//"+httpServerReplaceHost)
+		hsru, err = url.Parse("//" + httpServerReplaceHost)
 		if err != nil {
 			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
 		}
@@ -113,7 +113,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	} else {
 		suitePreload.HTTPServerHost = "localhost"
 	}
-	if suite.HTTPServerHost== "0.0.0.0" {
+	if suite.HTTPServerHost == "0.0.0.0" {
 		suitePreload.HTTPServerHost = "localhost"
 	}
 	if hsru.Port() != "" {
@@ -196,7 +196,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	loader := template.NewLoader(ats.datastore)
 
 	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := getURLWithoutAuth(ats.Config.ServerURL)
+	serverURL, err := url.Parse(ats.Config.ServerURL)
 	if err != nil {
 		logrus.Error(fmt.Errorf("can not load server url into test (%s): %s", testFilePath, err))
 		return false
@@ -343,7 +343,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
 	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := getURLWithoutAuth(ats.Config.ServerURL)
+	serverURL, err := url.Parse(ats.Config.ServerURL)
 	if err != nil {
 		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
 	}
@@ -385,14 +385,4 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manif
 	if success {
 		<-waitCh
 	}
-}
-
-// getURLWithoutAuth helper
-func getURLWithoutAuth(srcURL string) (string, error) {
-	parsedURL, err  := url.Parse(srcURL)
-	if err != nil {
-		return "", err
-	}
-	parsedURL.User = nil
-	return parsedURL.String(), nil
 }
