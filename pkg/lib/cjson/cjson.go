@@ -72,16 +72,37 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 	fmtString := fmt.Sprintf("%s%d%s", "%s%", len(strconv.Itoa(n)), "d: %s\n")
 
 	scanner := bufio.NewScanner(strings.NewReader(string(input)))
+	// Set some significant buffer to scanner (lines up to 1Mb)
+	// the default would end up throwing scan errors
+	// therefore the rest of the output woud be skipped
+	buf := make([]byte, 0, bufio.MaxScanTokenSize)
+	scanner.Buffer(buf, 16 * bufio.MaxScanTokenSize)
 	i := 1
 	for scanner.Scan() {
-		if len(strings.TrimSpace(scanner.Text())) > 0 {
+		scannerText := scanner.Text()
+		// Because we increased the scanner capacity the line can be too long
+		// We trim it here (1Kb) for readability and add a short explanation at the end
+		if len(scannerText) > 1024 {
+			scannerText = scannerText[0:1024] + " ... (skipped too long output)"
+		}
+		if len(strings.TrimSpace(scannerText)) > 0 {
 			fmtStringRow := "%s"
 			if coloredError && i == errLn {
 				fmtStringRow = "\033[31m%s\033[0m"
 			}
-			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, fmt.Sprintf(fmtStringRow, scanner.Text()))
+			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, fmt.Sprintf(fmtStringRow, scannerText))
 		}
 		i++
+	}
+
+	// We reached an error in the scanner, so output it
+	if scanner.Err() != nil {
+		jsonWithLineNumbers = fmt.Sprintf("%s-----------\nText scanner error: %s", jsonWithLineNumbers, scanner.Err())
+		// The manifest is just too long, add advice
+		if scanner.Err() == bufio.ErrTooLong {
+			jsonWithLineNumbers = fmt.Sprintf("%s\nSome fields are too long, consider splitting tests or reducing datasets", jsonWithLineNumbers)
+		}
+		jsonWithLineNumbers = fmt.Sprintf("%s\n-----------\n", jsonWithLineNumbers) 
 	}
 
 	return
