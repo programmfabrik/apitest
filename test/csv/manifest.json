@@ -1,0 +1,41 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res/assets",
+        "testmode": false
+    },
+    "name": "CSV tests",
+    "tests": [
+        {
+            "name": "Get non-existing CSV file",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "endpoint": "wrong/path.jpg",
+                "method": "GET"
+            },
+            "response": {
+                "statuscode": 404
+            }
+        },
+        {
+            "name": "Get existing CSV file",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "endpoint": "dummy.csv",
+                "method": "GET"
+            },
+            "response": {
+                "statuscode": 200
+            }
+        },
+        {
+            "name": "Get existing CSV file, without checking response",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "endpoint": "dummy.csv",
+                "method": "GET"
+            }
+        }
+    ]
+}
