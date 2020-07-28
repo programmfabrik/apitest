@@ -51,8 +51,8 @@ type Case struct {
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
 
-	ServerURL string `json:"server_url"`
-	ReverseTestResult bool `json:"reverse_test_result"`
+	ServerURL         string `json:"server_url"`
+	ReverseTestResult bool   `json:"reverse_test_result"`
 }
 
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
@@ -251,11 +251,13 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error getting json from response: %s", err)
-		return responsesMatch, req, apiResp, err
+	if testCase.ResponseData != nil || len(testCase.StoreResponse) > 0 {
+		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
+		if err != nil {
+			testCase.LogReq(req)
+			err = fmt.Errorf("error getting json from response: %s", err)
+			return responsesMatch, req, apiResp, err
+		}
 	}
 
 	// Store in custom store
@@ -275,13 +277,15 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		}
 	}
 
-	//Compare Responses
-	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
-
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error matching responses: %s", err)
-		return responsesMatch, req, apiResp, err
+	// Compare Responses, only if a response is set in the test case
+	responsesMatch = compare.CompareResult{Equal: true}
+	if testCase.ResponseData != nil {
+		responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
+		if err != nil {
+			testCase.LogReq(req)
+			err = fmt.Errorf("error matching responses: %s", err)
+			return responsesMatch, req, apiResp, err
+		}
 	}
 
 	return responsesMatch, req, apiResp, nil
