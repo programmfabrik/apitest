@@ -1,0 +1,21 @@
+
+{
+    "name": "Get existing CSV file, checking response with previously stored data",
+    "request": {
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "dummy.csv",
+        "method": "GET"
+    },
+    "response": {
+        "statuscode": 200,
+        "format": {
+            "type": "csv"
+        },
+        "body": [
+            {
+                "name": "{{ datastore "name" }}",
+                "extension": "{{ datastore "ext" }}"
+            }
+        ]
+    }
+}

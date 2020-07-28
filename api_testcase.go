@@ -264,7 +264,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	err = testCase.dataStore.SetWithQjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
-		err = fmt.Errorf("error store repsonse with qjson: %s", err)
+		err = fmt.Errorf("error store response with qjson: %s", err)
 		return responsesMatch, req, apiResp, err
 	}
 
@@ -278,7 +278,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 
 	// Compare Responses, only if a response is set in the test case
-	responsesMatch = compare.CompareResult{Equal: true}
+	responsesMatch .Equal = true
 	if testCase.ResponseData != nil {
 		responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
 		if err != nil {

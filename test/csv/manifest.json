@@ -5,37 +5,12 @@
         "dir": "../_res/assets",
         "testmode": false
     },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
     "name": "CSV tests",
     "tests": [
-        {
-            "name": "Get non-existing CSV file",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "wrong/path.jpg",
-                "method": "GET"
-            },
-            "response": {
-                "statuscode": 404
-            }
-        },
-        {
-            "name": "Get existing CSV file",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "dummy.csv",
-                "method": "GET"
-            },
-            "response": {
-                "statuscode": 200
-            }
-        },
-        {
-            "name": "Get existing CSV file, without checking response",
-            "request": {
-                "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "dummy.csv",
-                "method": "GET"
-            }
-        }
+        "@csv_requests.json",
+        "@check_store_values.json"
     ]
 }
