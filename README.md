@@ -1558,7 +1558,7 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 
 ## server_url
 
-**server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a *url.URL.
+**server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
 
 # HTTP Server
 
