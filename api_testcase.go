@@ -251,7 +251,8 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	if testCase.ResponseData != nil || len(testCase.StoreResponse) > 0 {
+	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
+			len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
 		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
 		if err != nil {
 			testCase.LogReq(req)
@@ -472,7 +473,7 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
 	}
-	if testCase.ResponseData == nil {
+	if testCase.ResponseData == nil && testCase.CollectResponse == nil && len(testCase.BreakResponse) == 0 {
 		expected.Format.IgnoreBody = true
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
