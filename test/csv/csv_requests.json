@@ -1,6 +1,6 @@
 [
     {
-        "name": "Get non-existing CSV file",
+        "name": "Get non-existing CSV file (expecting statuscode)",
         "request": {
             "server_url": "{{ datastore "req_base_url" }}",
             "endpoint": "wrong/path.jpg",
@@ -9,6 +9,15 @@
         "response": {
             "statuscode": 404
         }
+    },
+    {
+        "name": "Get non-existing CSV file (not expecting statuscode, so should fail)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "wrong/path.jpg",
+            "method": "GET"
+        },
+        "reverse_test_result": true
     },
     {
         "name": "Get existing CSV file",
