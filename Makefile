@@ -10,8 +10,8 @@ test: fmt vet
 	go test -race -cover ./...
 
 webtest:
-	go test -coverprofile=output.out
-	go tool cover -html=output.out
+	go test -coverprofile=testcoverage.out
+	go tool cover -html=testcoverage.out
 
 apitest:
 	./apitest --stop-on-fail -d test/
