@@ -277,15 +277,12 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		}
 	}
 
-	// Compare Responses, only if a response is set in the test case
-	responsesMatch .Equal = true
-	if testCase.ResponseData != nil {
-		responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
-		if err != nil {
-			testCase.LogReq(req)
-			err = fmt.Errorf("error matching responses: %s", err)
-			return responsesMatch, req, apiResp, err
-		}
+	// Compare Responses
+	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
+	if err != nil {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error matching responses: %s", err)
+		return responsesMatch, req, apiResp, err
 	}
 
 	return responsesMatch, req, apiResp, nil
@@ -473,11 +470,14 @@ func (testCase Case) loadResponse() (api.Response, error) {
 func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
 	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
+	}
+	if testCase.ResponseData == nil {
+		expected.Format.IgnoreBody = true
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading response generic json: %s", err)
 	}
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
