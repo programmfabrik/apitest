@@ -21,7 +21,7 @@ gox:
 	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
 
 clean:
-	rm -rfv ./apitest ./bin/* ./output.out
+	rm -rfv ./apitest ./bin/* ./testcoverage.out
 
 build:
 	go build
