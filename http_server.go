@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,24 +22,37 @@ func (ats *Suite) StartHttpServer() {
 	}
 
 	ats.idleConnsClosed = make(chan struct{})
-	mux := http.NewServeMux()
+	router := mux.NewRouter()
 
 	if ats.HttpServer.Dir == "" {
 		ats.httpServerDir = ats.manifestDir
 	} else {
 		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
 	}
-	mux.Handle("/", customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir))))
+	router.Handle("/", customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir))))
 
 	// bounce json response
-	mux.HandleFunc("/bounce-json", bounceJSON)
+	router.HandleFunc("/bounce-json", bounceJSON)
 
 	// bounce binary response with information in headers
-	mux.HandleFunc("/bounce", bounceBinary)
+	router.HandleFunc("/bounce", bounceBinary)
+
+	// Start listening on server proxies
+	// for k, v := range ats.HttpServer.Proxy {
+	// 	if v.BasePath == "" {
+	// 		v.BasePath = k
+	// 	}
+	// 	proxy, err := NewHTTPServerProxy(v.ReadPrefixPath, v.WritePrefixPath, v.BasePath, v.Mode)
+	// 	if err != nil {
+	// 		logrus.Errorf("Could not start HTTP Server Proxy: %s, %v", err, v)
+	// 		return
+	// 	}
+	// 	proxy.Listen(router)
+	// }
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
-		Handler: mux,
+		Handler: router,
 	}
 
 	run := func() {

@@ -26,9 +26,10 @@ type Suite struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	HttpServer  *struct {
-		Addr     string `json:"addr"`
-		Dir      string `json:"dir"`
-		Testmode bool   `json:"testmode"`
+		Addr     string                     `json:"addr"`
+		Dir      string                     `json:"dir"`
+		Testmode bool                       `json:"testmode"`
+		Proxy    map[string]HTTPServerProxy `json:"proxy"`
 	} `json:"http_server,omitempty"`
 	Tests []interface{}          `json:"tests"`
 	Store map[string]interface{} `json:"store"`
