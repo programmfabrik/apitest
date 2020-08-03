@@ -19,5 +19,4 @@ apitest_report.json
 *.code-workspace
 *.vscode
 *.sh
-output.out
 testcoverage.out
