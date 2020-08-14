@@ -45,6 +45,7 @@ type Suite struct {
 	index           int
 	serverURL       string
 	httpServer      http.Server
+	httpServerProxy *HTTPServerProxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
