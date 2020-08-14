@@ -139,9 +139,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 
 	// if the body should not be ignored, serialize the parsed/converted body
 	if !responseFormat.IgnoreBody {
-		err = json.Unmarshal(bodyData, &bodyJSON)
-		if err != nil {
-			return res, err
+
+		if len(bodyData) > 0 {
+			err = json.Unmarshal(bodyData, &bodyJSON)
+			if err != nil {
+				return res, err
+			}
 		}
 
 		if bodyOnly {
@@ -168,9 +171,12 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 	)
 
 	// We have a json, and thereby try to unmarshal it into our body
-	err = json.Unmarshal(response.Body(), &bodyJSON)
-	if err != nil {
-		return res, err
+	resBody := response.Body()
+	if len(resBody) > 0 {
+		err = json.Unmarshal(resBody, &bodyJSON)
+		if err != nil {
+			return res, err
+		}
 	}
 
 	responseJSON := ResponseSerialization{
@@ -211,16 +217,22 @@ func (response Response) Body() []byte {
 	// some endpoints return empty strings;
 	// since that is no valid json so we interpret it as the json null literal to
 	// establish the invariant that api endpoints return json responses
-	if bytes.Compare(response.body, []byte("")) == 0 {
-		return []byte("null")
-	}
+
+	// hmmm, does not really make sense
+	// shouldn't a byte array always be checked
+	// before actually attempting to decode it?
+	// if bytes.Compare(response.body, []byte("")) == 0 {
+	// 	return []byte("null")
+	// }
 	return response.body
 }
 
 func (response *Response) marshalBodyInto(target interface{}) (err error) {
 	bodyBytes := response.Body()
-	if err = json.Unmarshal(bodyBytes, target); err != nil {
-		return fmt.Errorf("error unmarshaling response: %s", err)
+	if len(bodyBytes) > 0 {
+		if err = json.Unmarshal(bodyBytes, target); err != nil {
+			return fmt.Errorf("error unmarshaling response: %s", err)
+		}
 	}
 	return nil
 }
