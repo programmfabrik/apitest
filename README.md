@@ -12,16 +12,16 @@ A single testcase is also a perfect definition of an occuring problem and helps 
 # Configuration file
 For configuring the apitest tool, add the follwing section to your 'apitest.yml' configuration file.
 
-The report parameters of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
-
- **After the first setup you don't need to touch the config again. (You should not do that, to prevent errors based on rash changes in the config)**
-
+The report parameters of this config can be overwritten via a command line flag. So you should set your intended standar
 ```yaml
 apitest:
   server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
+  store: # initial values for the datastore, parsed as map[string]interface{}
+    email.server: smtp.google.com
+
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
