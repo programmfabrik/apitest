@@ -1,109 +1,83 @@
 [
-    {{ range $i := int_range 0 10 }}
-        {{ if gt $i 0 }},{{ end }}
-        {{ $offset := multiply $i 10 }}
-        {{ $nextOffset := add $offset 10 }}
+    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
+    {{ if gt $idx 0 }}, {{ end }}
         {
-            "name": "Read requests from proxy 'test' store, from {{ $offset }} to {{ $nextOffset }}",
+            "name": "Poll 'test' proxy store, offset {{ $offset }}",
             "request": {
                 "server_url": "{{ datastore "req_base_url" }}",
-                "endpoint": "proxystore/test",
+                "endpoint": "proxyread/test",
                 "method": "GET",
                 "query_params": {
-                    "offset": "{{ $offset }}",
-                    "limit": "10"
+                    "offset": {{ $offset }}
                 }
             },
             "response": {
-                "statuscode": 200,
+                "header": {
+                    "X-Request-Method": ["POST"],
+                    "X-Request-Path": ["/proxywrite/test?some=value"],
+                    "X-Request-Query": ["some=value"],
+                    "X-Request-X-Some": ["x-header"],
+                    "X-Proxy-Store-Count": ["{{ add (datastore "max_entries") 1 }}"],
+                    "X-Proxy-Store-Next-Offset": ["{{ add $offset 1 }}"]
+                },
                 "body": {
-                    "mode": "passthru",
-                    "offset": {{ $offset }},
-                    "next_offset": {{ $nextOffset }},
-                    "limit": 10,
-                    "count": 100,
-                    "store": [
-                        {{ range $j := int_range $offset $nextOffset }}
-                            {{ if gt $j $offset }},{{ end }}
-                            {
-                                "offset": {{ $j }},
-                                "request": {
-                                    "method": "POST",
-                                    "path": "/proxy/test?some=value",
-                                    "query": {
-                                        "some": ["value"]
-                                    },
-                                    "header": {
-                                        "X-Some": ["x-header"]
-                                    },
-                                    "body": {
-                                        "some": [
-                                            "body", "here"
-                                        ],
-                                        "index": "idx_{{ $j }}"
-                                    }
-                                },
-                                "response": {
-                                    "statuscode": 200
-                                }
-                            }
-                        {{ end }}
+                    "some": [
+                        "body", "here"
                     ],
-                    "store:control": {
-                        "no_extra": true,
-                        "order_matters": true,
-                        "element_count": 10
-                    }
+                    "index": "idx_{{ $offset }}"
                 }
             }
+        }
+    {{ end }}
+    ,{
+        "name": "Poll 'test' proxy store for binary content (image)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "proxyread/test",
+            "method": "GET",
+            "query_params": {
+                "offset": "{{ datastore "max_entries" }}"
+            }            
         },
+        "response": {
+            "header": {
+                "X-Request-Method": ["POST"],
+                "X-Request-Path": ["/proxywrite/test"],
+                "X-Proxy-Store-Count": ["{{ add (datastore "max_entries") 1 }}"],
+                "X-Proxy-Store-Next-Offset": ["0"]
+            },
+            "format": {
+                "type": "binary"
+            },
+            "body": {
+                "md5sum": {{ md5sum "@../_res/assets/camera.jpg" | marshal }}
+            }
+        }
+    },
+    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
+    {{ if gt $idx 0 }}, {{ end }}
         {
-            "name": "Read requests from proxy 'test2' store, from {{ $offset }} to {{ $nextOffset }}",
+            "name": "Poll 'test2' proxy store, offset {{ $offset }}",
             "request": {
                 "server_url": "{{ datastore "req_base_url" }}",
-                "endpoint": "proxystore/test2",
+                "endpoint": "proxyread/test2",
                 "method": "GET",
                 "query_params": {
-                    "offset": "{{ $offset }}",
-                    "limit": "10"
+                    "offset": {{ $offset }}
                 }
             },
             "response": {
-                "statuscode": 200,
-                "body": {
-                    "mode": "passthru",
-                    "offset": {{ $offset }},
-                    "next_offset": {{ $nextOffset }},
-                    "limit": 10,
-                    "count": 100,
-                    "store": [
-                        {{ range $j := int_range $offset $nextOffset }}
-                            {{ if gt $j $offset }},{{ end }}
-                            {
-                                "offset": {{ $j }},
-                                "request": {
-                                    "method": "GET",
-                                    "path": "/proxy/test2?is=here&my=data_{{ $j }}&some=value",
-                                    "query": {
-                                        "some": ["value"],
-                                        "my": ["data_{{ $j }}"],
-                                        "is": ["here"]
-                                    },
-                                    "header": {
-                                        "X-Some": ["x-header"]
-                                    }
-                                },
-                                "response": {
-                                    "statuscode": 200
-                                }
-                            }
-                        {{ end }}
-                    ],
-                    "store:control": {
-                        "no_extra": true,
-                        "order_matters": true,
-                        "element_count": 10
-                    }
+                "header": {
+                    "X-Request-Method": ["GET"],
+                    "X-Request-Path": ["/proxywrite/test2?is=here&my=data_{{ $offset }}&some=value"],
+                    "X-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"],
+                    "X-Request-X-Some": ["x-header"],
+                    "X-Proxy-Store-Count": ["{{ datastore "max_entries" }}"],
+                    {{ $nextOffset := add $offset 1 }}
+                    {{ if gt $nextOffset (subtract 1 (datastore "max_entries")) }}
+                        {{ $nextOffset = 0 }}
+                    {{ end }}
+                    "X-Proxy-Store-Next-Offset": ["{{ $nextOffset }}"]
                 }
             }
         }

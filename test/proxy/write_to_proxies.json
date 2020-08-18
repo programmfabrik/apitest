@@ -1,11 +1,11 @@
 [
-    {{ range $i := int_range 0 100 }}
-        {{ if gt $i 0 }},{{ end }}
+    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
+        {{ if gt $idx 0 }},{{ end }}
         {
-            "name": "Add requests to proxy 'test'",
+            "name": "Add some JSON requests to proxy 'test'",
             "request": {
                 "server_url": "{{ datastore "req_base_url" }}",
-                "endpoint": "proxy/test",
+                "endpoint": "proxywrite/test",
                 "method": "POST",
                 "query_params": {
                     "some": "value"
@@ -17,24 +17,46 @@
                     "some": [
                         "body", "here"
                     ],
-                    "index": "idx_{{ $i }}"
+                    "index": "idx_{{ $offset }}"
                 }
             },
             "response": {
-                "statuscode": 200
+                "statuscode": 200,
+                "body": {
+                    "offset": {{ $offset }}
+                }
             }
         }
     {{ end }}
-    {{ range $i := int_range 0 100 }}
+    ,{
+        "name": "post image to proxy 'test'",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "proxywrite/test",
+            "method": "POST",
+            "body_file": "@../_res/assets/camera.jpg",
+            "body_type": "file"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "offset": {{ datastore "max_entries" }}
+            }
+        },
+        "store_response_qjson": {
+            "test_image_offset": "body.offset"
+        }
+    }
+    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
         ,{
-            "name": "Add requests to proxy 'test2'",
+            "name": "Add some JSON requests to proxy 'test2'",
             "request": {
                 "server_url": "{{ datastore "req_base_url" }}",
-                "endpoint": "proxy/test2",
+                "endpoint": "proxywrite/test2",
                 "method": "GET",
                 "query_params": {
                     "some": "value",
-                    "my": "data_{{ $i }}",
+                    "my": "data_{{ $offset }}",
                     "is": "here"
                 },
                 "header": {
@@ -42,7 +64,10 @@
                 }
             },
             "response": {
-                "statuscode": 200
+                "statuscode": 200,
+                "body": {
+                    "offset": {{ $offset }}
+                }
             }
         }
     {{ end }}

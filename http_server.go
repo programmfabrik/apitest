@@ -76,7 +76,7 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 		noContentLengthHeader := qs.Get("no-content-length")
 		if noContentLengthHeader == "1" || noContentLengthHeader == "true" {
 			w.Header().Set("Content-Encoding", "identity")
-		} 
+		}
 		h.ServeHTTP(w, r)
 	}
 }

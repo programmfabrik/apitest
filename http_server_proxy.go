@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,20 +18,30 @@ const (
 	HTTPServerProxyStoreModePassthrough HTTPServerProxyStoreMode = "passthru"
 )
 
+// HTTPServerProxyStoreErrorResponseBody definition
+type HTTPServerProxyStoreErrorResponseBody struct {
+	Error string `json:"error"`
+}
+
 // HTTPServerProxyStoreRequestData definition
 type HTTPServerProxyStoreRequestData struct {
 	Method  string      `json:"method"`
 	Path    string      `json:"path"`
 	Headers http.Header `json:"header"`
 	Query   url.Values  `json:"query"`
-	Body    interface{} `json:"body"`
+	Body    []byte      `json:"body"`
 }
 
 // HTTPServerProxyStoreResponseData definition
 type HTTPServerProxyStoreResponseData struct {
-	StatusCode int         `json:"statuscode"`
-	Headers    http.Header `json:"header"`
-	Body       interface{} `json:"body"`
+	StatusCode int                                  `json:"statuscode"`
+	Headers    http.Header                          `json:"header"`
+	Body       HTTPServerProxyStoreResponseDataBody `json:"body"`
+}
+
+// HTTPServerProxyStoreResponseDataBody definition
+type HTTPServerProxyStoreResponseDataBody struct {
+	Offset int `json:"offset"`
 }
 
 // HTTPServerProxyStoreDataEntry definition
@@ -47,16 +58,6 @@ type HTTPServerProxyStore struct {
 	Data []HTTPServerProxyStoreDataEntry
 }
 
-// HTTPServerProxyStoreResponse definition
-type HTTPServerProxyStoreResponse struct {
-	Mode       HTTPServerProxyStoreMode        `json:"mode"`
-	Offset     int                             `json:"offset"`
-	NextOffset int                             `json:"next_offset"`
-	Limit      int                             `json:"limit"`
-	Count      int                             `json:"count"`
-	Store      []HTTPServerProxyStoreDataEntry `json:"store"`
-}
-
 // HTTPServerProxy definition
 type HTTPServerProxy map[string]HTTPServerProxyStore
 
@@ -71,8 +72,8 @@ func NewProxy(cfg HTTPServerProxy) *HTTPServerProxy {
 func (proxy *HTTPServerProxy) Listen(mux *http.ServeMux, prefix string) {
 	for p, s := range *proxy {
 		store := HTTPServerProxyStore{Name: p, Mode: s.Mode, Data: []HTTPServerProxyStoreDataEntry{}}
-		mux.HandleFunc(fmt.Sprintf("%s/%s", prefix, p), store.write)
-		mux.HandleFunc(fmt.Sprintf("%sstore/%s", prefix, p), store.read)
+		mux.HandleFunc(fmt.Sprintf("%swrite/%s", prefix, p), store.write)
+		mux.HandleFunc(fmt.Sprintf("%sread/%s", prefix, p), store.read)
 	}
 }
 
@@ -86,42 +87,43 @@ func (store *HTTPServerProxyStore) write(w http.ResponseWriter, r *http.Request)
 		Query:   r.URL.Query(),
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	offset := len(store.Data)
+
+	resData := HTTPServerProxyStoreResponseData{
+		StatusCode: http.StatusOK,
+		Headers: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		Body: HTTPServerProxyStoreResponseDataBody{
+			Offset: offset,
+		},
+	}
 
 	if r.Body != nil {
 		bin, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(500)
-			errStr := fmt.Sprintf("{\"error\":\"Could not read request body: %s\"}", err)
-			w.Write([]byte(errStr))
+			w.WriteHeader(http.StatusInternalServerError)
+			err := json.NewEncoder(w).Encode(HTTPServerProxyStoreErrorResponseBody{
+				Error: fmt.Sprintf("Could not read request body: %s", err),
+			})
+			if err != nil {
+				log.Printf("Could not encode even the error response: %s", err)
+			}
 			return
 		}
-		if len(bin) > 0 {
-			err = json.Unmarshal(bin, &reqData.Body)
-			if err != nil {
-				w.WriteHeader(500)
-				errStr := fmt.Sprintf("{\"error\":\"Could not unmarshal request body: %s\"}", err)
-				w.Write([]byte(errStr))
-				return
-			}
-		}
+		reqData.Body = bin
 	}
-
-	resData := HTTPServerProxyStoreResponseData{
-		StatusCode: http.StatusOK,
-	}
-
-	offset := len(store.Data)
 
 	store.Data = append(store.Data, HTTPServerProxyStoreDataEntry{offset, reqData, resData})
 
-	w.WriteHeader(resData.StatusCode)
-	if resData.Body != nil {
-		err := json.NewEncoder(w).Encode(resData.Body)
+	err := json.NewEncoder(w).Encode(resData.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(HTTPServerProxyStoreErrorResponseBody{
+			Error: fmt.Sprintf("Could not encode response: %s", err),
+		})
 		if err != nil {
-			w.WriteHeader(500)
-			errStr := fmt.Sprintf("{\"error\":\"Could not encode response: %s\"}", err)
-			w.Write([]byte(errStr))
+			log.Printf("Could not encode even the error response: %s", err)
 		}
 	}
 }
@@ -130,57 +132,66 @@ func (store *HTTPServerProxyStore) write(w http.ResponseWriter, r *http.Request)
 func (store *HTTPServerProxyStore) read(w http.ResponseWriter, r *http.Request) {
 
 	var (
-		offset, limit int
+		err    error
+		offset int
 	)
-	q := r.URL.Query()
 
+	q := r.URL.Query()
 	offsetStr := q.Get("offset")
 	if offsetStr != "" {
-		off, err := strconv.Atoi(offsetStr)
-		if err == nil {
-			offset = off
-		}
-	}
-
-	limit = 10
-	limitStr := q.Get("limit")
-	if limitStr != "" {
-		lim, err := strconv.Atoi(limitStr)
-		if err == nil {
-			limit = lim
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(HTTPServerProxyStoreErrorResponseBody{
+				Error: fmt.Sprintf("Invalid offset %s", offsetStr),
+			})
+			if err != nil {
+				log.Printf("Could not encode even the error response: %s", err)
+			}
+			return
 		}
 	}
 
 	count := len(store.Data)
-	if limit == 0 {
-		limit = count
+	if offset >= count {
+		w.WriteHeader(http.StatusBadRequest)
+		err = json.NewEncoder(w).Encode(HTTPServerProxyStoreErrorResponseBody{
+			Error: fmt.Sprintf("Offset (%d) is higher than count (%d)", offset, count),
+		})
+		if err != nil {
+			log.Printf("Could not encode even the error response: %s", err)
+		}
+		return
 	}
-	max := offset + limit
-	nextOffset := max
-	if max > count {
-		max = count
+
+	nextOffset := offset + 1
+	if nextOffset >= count {
 		nextOffset = 0
 	}
+	data := store.Data[offset]
 
-	res := HTTPServerProxyStoreResponse{
-		Mode:       store.Mode,
-		Offset:     offset,
-		NextOffset: nextOffset,
-		Limit:      limit,
-		Count:      count,
+	req := data.Request
+
+	w.Header().Add("X-Proxy-Store-Count", fmt.Sprintf("%d", count))
+	w.Header().Add("X-Proxy-Store-Next-Offset", fmt.Sprintf("%d", nextOffset))
+	w.Header().Add("X-Request-Method", req.Method)
+	w.Header().Add("X-Request-Path", req.Path)
+	w.Header().Add("X-Request-Query", req.Query.Encode())
+	for k, v := range req.Headers {
+		for _, h := range v {
+			w.Header().Add(fmt.Sprintf("X-Request-%s", k), h)
+		}
 	}
+	w.Header().Add("Content-Type", req.Headers.Get("Content-Type"))
 
-	data := []HTTPServerProxyStoreDataEntry{}
-	if offset < count {
-		data = store.Data[offset:max]
-	}
-	res.Store = data
-
-	err := json.NewEncoder(w).Encode(res)
+	_, err = w.Write(req.Body)
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(500)
-		errStr := fmt.Sprintf("{\"error\":\"Could not encode response: %s\"}", err)
-		w.Write([]byte(errStr))
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(HTTPServerProxyStoreErrorResponseBody{
+			Error: fmt.Sprintf("Could not encode response: %s", err),
+		})
+		if err != nil {
+			log.Printf("Could not encode even the error response: %s", err)
+		}
 	}
 }

@@ -1550,6 +1550,22 @@ Example how to range over 100 objects
 }
 ```
 
+## `int_range [from] [to]`
+
+Returns a `int64` slice whose values range from `from` to `to`.
+
+Example how to range from 30 to 50
+
+```django
+{
+    "body":  [
+        {{ range $idx, $v := int_range 30 50 }}
+        ...
+        {{ end }}
+    ]
+}
+```
+
 ## replace_host [url]
 
 **replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
@@ -1745,7 +1761,7 @@ Store modes:
 
 Perform a request against the http server path `/proxy/<store_name>`.
 Where `<store_name>` is a key (store name) inside the `proxy` object in the configuration.
-The expected response will have wither `200` status code and no body or another status and an error body.
+The expected response will have either `200` status code and the used offset as body or another status and an error body.
 
 Given this request:
 ```yaml
@@ -1769,17 +1785,19 @@ Given this request:
 The expected response: 
 ```yaml
 {
-    "statuscode": 200
+    "statuscode": 200,
+    "body": {
+        "offset": 0
+    }
 }
 ```
 
 ### Read from proxy store
 
-Whatever request performed against the server path `/proxystore/<store_name>?offset=<offset>&limit=<limit>`.
+Whatever request performed against the server path `/proxystore/<store_name>?offset=<offset>`.
 Where:
 - `<store_name>` is a key inside the `proxy` object in the server configuration, aka the proxy store name
-- `<offset>` represents the first entry to be retrieved in the proxy store requests collection.
-- `<limit>` represents the maximum amount of entries to be retrieved from the proxy store.
+- `<offset>` represents the first entry to be retrieved in the proxy store requests collection. If not provided, 0 is assumed.
 
 Given this request:
 ```yaml
@@ -1787,8 +1805,7 @@ Given this request:
     "endpoint": "/proxystore/test",
     "method": "GET",
     "query_params": {
-        "offset": 0,
-        "limit": 2
+        "offset": 0
     }
 }
 ```
@@ -1796,41 +1813,16 @@ Given this request:
 The expected response: 
 ```yaml
 {
-     "mode": "passthru", // The mode the proxy store runs on
-     "offset": 0, // Offset requested
-     "next_offset": 2, // Next offset, as the current offset + limit or 0 if reached max entries
-     "limit": 2, // Limit requested
-     "count": 20, // Total number of requests recorded in this proxy store
-     "store": [
-           {
-                "offset": 0, // The offset for this request entry
-                "request": {
-                       "method": "POST", // The method of this request to the proxy store
-                       "path": "", // The url path requested (including query string)
-                       "header": { // The headers of this request to the proxy store
-                           "X-My-Header": ["blah"]
-                       }
-                       "query": { // The query string parameters of this request to the proxy store
-                           "nolimit": [true]
-                       }
-                       "body": { // The body of this request to the proxy store
-                           "whatever": ["is", "here"]
-                       }
-                 },
-                 "response": { // The response the proxy delivered (will only contain an error body if statuscode is not 200)
-                        "statuscode": 200
-                 }
-           },
-           {
-                "offset": 1,
-                "request": {
-                       ...
-                 },
-                 "response": {
-                        "statuscode": 200
-                 }
-           },
-           ...
-     ]
+    "header": { // Merged headers. original request headers prefixed with 'X-Request`
+        "X-Request-Method": ["POST"], // The method of the request to the proxy store
+        "X-Request-Path": ["/proxywrite/test?is=here"], // The url path requested (including query string)
+        "X-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"], // The request query string only
+        "X-My-Header": ["blah"], // Custom headers
+        "X-Proxy-Store-Count": ["7"], // The number of requests stored
+        "X-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+    },
+    "body": { // The body of this request to the proxy store, Content-Type header will reveal its format
+        "whatever": ["is", "here"]
+    }
 }
 ```
