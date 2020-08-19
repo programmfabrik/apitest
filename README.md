@@ -1552,7 +1552,7 @@ Example how to range over 100 objects
 
 ## `int_range [from] [to]`
 
-Returns a `int64` slice whose values range from `from` to `to`.
+Returns a `int64` slice whose values range from `from` (inclusive) to `to` (exclusive).
 
 Example how to range from 30 to 50
 
@@ -1565,6 +1565,7 @@ Example how to range from 30 to 50
     ]
 }
 ```
+In this case `$idx` will iterate from 0 to 19 inclusive, while `$v` will do from 30 to 49 inclusive
 
 ## replace_host [url]
 
@@ -1579,7 +1580,7 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
-It is possible to define a proxy in the server which would accept and store request data.
+It is possible to define a proxy in the server which accepts and stores request data.
 It is useful if there is need to test that expected webhook calls are properly performed.
 Different stores can be configured within the proxy.
 
@@ -1759,14 +1760,14 @@ Store modes:
 
 ### Write to proxy store
 
-Perform a request against the http server path `/proxy/<store_name>`.
+Perform a request against the http server path `/proxywrite/<store_name>`.
 Where `<store_name>` is a key (store name) inside the `proxy` object in the configuration.
 The expected response will have either `200` status code and the used offset as body or another status and an error body.
 
 Given this request:
 ```yaml
 {
-    "endpoint": "/proxy/test",
+    "endpoint": "/proxywrite/test",
     "method": "POST",
     "query_params": {
         "some": "param"
@@ -1794,15 +1795,15 @@ The expected response:
 
 ### Read from proxy store
 
-Whatever request performed against the server path `/proxystore/<store_name>?offset=<offset>`.
+Whatever request performed against the server path `/proxyread/<store_name>?offset=<offset>`.
 Where:
 - `<store_name>` is a key inside the `proxy` object in the server configuration, aka the proxy store name
-- `<offset>` represents the first entry to be retrieved in the proxy store requests collection. If not provided, 0 is assumed.
+- `<offset>` represents the entry to be retrieved in the proxy store requests collection. If not provided, 0 is assumed.
 
 Given this request:
 ```yaml
 {
-    "endpoint": "/proxystore/test",
+    "endpoint": "/proxyread/test",
     "method": "GET",
     "query_params": {
         "offset": 0
@@ -1814,15 +1815,16 @@ The expected response:
 ```yaml
 {
     "header": { // Merged headers. original request headers prefixed with 'X-Request`
-        "X-Request-Method": ["POST"], // The method of the request to the proxy store
-        "X-Request-Path": ["/proxywrite/test?is=here"], // The url path requested (including query string)
-        "X-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"], // The request query string only
-        "X-My-Header": ["blah"], // Custom headers
-        "X-Proxy-Store-Count": ["7"], // The number of requests stored
-        "X-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+        "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
+        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test?is=here"], // The url path requested (including query string)
+        "X-Apitest-Proxy-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"], // The request query string only
+        "X-My-Header": ["blah"], // Original request custom header
+        "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored
+        "X-Apitest-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+        ... // All other standard headers sent with the original request (like Content-Type)
     },
-    "body": { // The body of this request to the proxy store, Content-Type header will reveal its format
-        "whatever": ["is", "here"]
+    "body": { // The body of this request to the proxy store, always in binary format
+        "whatever": ["is", "here"] // Content-Type header will reveal its format on client side, in this case, it's JSON, but it could be a byte stream of an image, etc.
     }
 }
 ```

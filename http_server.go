@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
+	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,8 +38,8 @@ func (ats *Suite) StartHttpServer() {
 	mux.HandleFunc("/bounce", bounceBinary)
 
 	// Start listening into proxy
-	ats.httpServerProxy = NewProxy(ats.HttpServer.Proxy)
-	ats.httpServerProxy.Listen(mux, "/proxy")
+	ats.httpServerProxy = httpproxy.NewProxy(ats.HttpServer.Proxy)
+	ats.httpServerProxy.Listen(mux, "/")
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
