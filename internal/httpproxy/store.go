@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // Mode definition
@@ -44,22 +46,28 @@ type WriteResponseBody struct {
 	Offset int `json:"offset"`
 }
 
-// Entry definition
-type Entry struct {
-	Offset   int           `json:"offset"`
-	Request  Request       `json:"request"`
-	Response WriteResponse `json:"response"`
+// storeEntry definition
+type storeEntry struct {
+	Offset  int
+	Request Request
 }
 
-// HTTPServerProxyStore definition
+// StoreConfig definition
+type StoreConfig struct {
+	Mode Mode `json:"mode"`
+}
+
+// Store definition
 type Store struct {
-	Name string `json:"name"`
-	Mode Mode   `json:"mode"`
-	Data []Entry
+	Name string
+	Mode Mode
+	Data []storeEntry
 }
 
 // write stores incoming request data
 func (store *Store) write(w http.ResponseWriter, r *http.Request) {
+
+	var err error
 
 	reqData := Request{
 		Method:  r.Method,
@@ -81,31 +89,18 @@ func (store *Store) write(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Body != nil {
-		bin, err := ioutil.ReadAll(r.Body)
+		reqData.Body, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			err := json.NewEncoder(w).Encode(ErrorResponse{
-				Error: fmt.Sprintf("Could not read request body: %s", err),
-			})
-			if err != nil {
-				log.Printf("Could not encode even the error response: %s", err)
-			}
+			respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
 			return
 		}
-		reqData.Body = bin
 	}
 
-	store.Data = append(store.Data, Entry{offset, reqData, resData})
+	store.Data = append(store.Data, storeEntry{offset, reqData})
 
-	err := json.NewEncoder(w).Encode(resData.Body)
+	err = json.NewEncoder(w).Encode(resData.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		err := json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("Could not encode response: %s", err),
-		})
-		if err != nil {
-			log.Printf("Could not encode even the error response: %s", err)
-		}
+		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }
 
@@ -122,26 +117,14 @@ func (store *Store) read(w http.ResponseWriter, r *http.Request) {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			err = json.NewEncoder(w).Encode(ErrorResponse{
-				Error: fmt.Sprintf("Invalid offset %s", offsetStr),
-			})
-			if err != nil {
-				log.Printf("Could not encode even the error response: %s", err)
-			}
+			respondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
 			return
 		}
 	}
 
 	count := len(store.Data)
 	if offset >= count {
-		w.WriteHeader(http.StatusBadRequest)
-		err = json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("Offset (%d) is higher than count (%d)", offset, count),
-		})
-		if err != nil {
-			log.Printf("Could not encode even the error response: %s", err)
-		}
+		respondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
 		return
 	}
 
@@ -166,12 +149,15 @@ func (store *Store) read(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(req.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		err := json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("Could not encode response: %s", err),
-		})
-		if err != nil {
-			log.Printf("Could not encode even the error response: %s", err)
-		}
+		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+	}
+}
+
+// respondWithErr helper
+func respondWithErr(w http.ResponseWriter, status int, err error) {
+	w.WriteHeader(status)
+	err2 := json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+	if err2 != nil {
+		log.Printf("Could not encode the error (%s) response itself: %s", err, err2)
 	}
 }

@@ -5,21 +5,25 @@ import (
 	"net/http"
 )
 
+// ProxyConfig definition
+type ProxyConfig map[string]StoreConfig
+
 // Proxy definition
-type Proxy map[string]Store
+type Proxy map[string]*Store
 
 // NewProxy allocates a new http proxy from its configuration
-func NewProxy(cfg Proxy) *Proxy {
-	proxy := new(Proxy)
-	*proxy = cfg
-	return proxy
+func NewProxy(cfg ProxyConfig) *Proxy {
+	proxy := Proxy{}
+	for k, v := range cfg {
+		proxy[k] = &Store{k, v.Mode, []storeEntry{}}
+	}
+	return &proxy
 }
 
 // Listen for the proxy store/retrieve
 func (proxy *Proxy) Listen(mux *http.ServeMux, prefix string) {
-	for p, s := range *proxy {
-		store := Store{Name: p, Mode: s.Mode, Data: []Entry{}}
-		mux.HandleFunc(fmt.Sprintf("%sproxywrite/%s", prefix, p), store.write)
-		mux.HandleFunc(fmt.Sprintf("%sproxyread/%s", prefix, p), store.read)
+	for _, s := range *proxy {
+		mux.HandleFunc(fmt.Sprintf("%sproxywrite/%s", prefix, s.Name), s.write)
+		mux.HandleFunc(fmt.Sprintf("%sproxyread/%s", prefix, s.Name), s.read)
 	}
 }

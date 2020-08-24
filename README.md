@@ -1817,7 +1817,7 @@ The expected response:
     "header": { // Merged headers. original request headers prefixed with 'X-Request`
         "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
         "X-Apitest-Proxy-Request-Path": ["/proxywrite/test?is=here"], // The url path requested (including query string)
-        "X-Apitest-Proxy-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"], // The request query string only
+        "X-Apitest-Proxy-Request-Query": ["is=here&my=data&some=value"], // The request query string only
         "X-My-Header": ["blah"], // Original request custom header
         "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored
         "X-Apitest-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
