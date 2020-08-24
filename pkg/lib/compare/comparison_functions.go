@@ -334,7 +334,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 	for lk, lv := range left {
 		if orderMaters {
 			for rk, rv := range right {
-				if rk < lastPositionFromLeftInRight {
+				if rk <= lastPositionFromLeftInRight {
 					continue
 				}
 				tmp, err := JsonEqual(lv, rv, control)
