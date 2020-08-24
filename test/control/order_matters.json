@@ -276,5 +276,60 @@
             }
         },
         "reverse_test_result": true
+    },
+    {
+        "name": "check control order_matters in array (should fail - expect two times \"4\")",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "1"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
     }
 ]
