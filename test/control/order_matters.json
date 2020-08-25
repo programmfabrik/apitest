@@ -1,6 +1,6 @@
 [
     {
-        "name": "check control order_matters in array",
+        "name": "check control order_matters in array (should pass - all elements in proper order)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
@@ -60,7 +60,7 @@
         }
     },
     {
-        "name": "check control order_matters in array (should fail)",
+        "name": "check control order_matters in array (should fail - all elements but no proper order)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
@@ -107,6 +107,218 @@
                         },
                         {
                             "value": "2"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "check control order_matters in array (should pass - not all elements, proper order)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "2"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control order_matters in array (should fail - not all elements, no proper order)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "2"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true,
+                        "no_extra": true
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "check control order_matters in array (should fail - not all elements, proper order, no_extra passed)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "2"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true,
+                        "no_extra": true
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "check control order_matters in array (should fail - expect two times \"4\")",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "1"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "4"
                         },
                         {
                             "value": "6"
