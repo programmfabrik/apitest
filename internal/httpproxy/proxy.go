@@ -9,13 +9,13 @@ import (
 type ProxyConfig map[string]StoreConfig
 
 // Proxy definition
-type Proxy map[string]*Store
+type Proxy map[string]*store
 
 // NewProxy allocates a new http proxy from its configuration
-func NewProxy(cfg ProxyConfig) *Proxy {
+func New(cfg ProxyConfig) *Proxy {
 	proxy := Proxy{}
 	for k, v := range cfg {
-		proxy[k] = &Store{k, v.Mode, []storeEntry{}}
+		proxy[k] = &store{k, v.Mode, []storeEntry{}}
 	}
 	return &proxy
 }

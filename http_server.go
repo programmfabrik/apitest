@@ -38,7 +38,7 @@ func (ats *Suite) StartHttpServer() {
 	mux.HandleFunc("/bounce", bounceBinary)
 
 	// Start listening into proxy
-	ats.httpServerProxy = httpproxy.NewProxy(ats.HttpServer.Proxy)
+	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
 	ats.httpServerProxy.Listen(mux, "/")
 
 	ats.httpServer = http.Server{

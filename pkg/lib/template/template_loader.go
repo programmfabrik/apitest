@@ -313,7 +313,6 @@ func (loader *Loader) Render(
 			default:
 				panic("Invalid 'start' range value")
 			}
-
 			switch v := e.(type) {
 			case int64:
 				end = v
@@ -322,31 +321,11 @@ func (loader *Loader) Render(
 			default:
 				panic("Invalid 'end' range value")
 			}
-
-			// sv := reflect.ValueOf(s)
-			// ev := reflect.ValueOf(e)
-			// var start, end int64
-			// switch sv.Kind() {
-			// case reflect.Int:
-			// 	start = int64(s.(int))
-			// case reflect.Int64:
-			// 	start = s.(int64)
-			// default:
-			// 	return nil
-			// }
-			// switch ev.Kind() {
-			// case reflect.Int:
-			// 	end = int64(e.(int))
-			// case reflect.Int64:
-			// 	end = e.(int64)
-			// default:
-			// 	return nil
-			// }
 			n := end - start
-			result := make([]int64, n)
+			result := []int64{}
 			var i int64
 			for i = 0; i < n; i++ {
-				result[i] = start + i
+				result= append(result, start + i)
 			}
 			return result
 		},

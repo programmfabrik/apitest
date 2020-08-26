@@ -20,13 +20,13 @@ const (
 	ModePassthrough Mode = "passthru"
 )
 
-// ErrorResponse definition
-type ErrorResponse struct {
+// errorResponse definition
+type errorResponse struct {
 	Error string `json:"error"`
 }
 
-// Request definition
-type Request struct {
+// request definition
+type request struct {
 	Method  string      `json:"method"`
 	Path    string      `json:"path"`
 	Headers http.Header `json:"header"`
@@ -34,22 +34,10 @@ type Request struct {
 	Body    []byte      `json:"body"`
 }
 
-// WriteResponse definition
-type WriteResponse struct {
-	StatusCode int               `json:"statuscode"`
-	Headers    http.Header       `json:"header"`
-	Body       WriteResponseBody `json:"body"`
-}
-
-// WriteResponseBody definition
-type WriteResponseBody struct {
-	Offset int `json:"offset"`
-}
-
 // storeEntry definition
 type storeEntry struct {
 	Offset  int
-	Request Request
+	Request request
 }
 
 // StoreConfig definition
@@ -57,36 +45,26 @@ type StoreConfig struct {
 	Mode Mode `json:"mode"`
 }
 
-// Store definition
-type Store struct {
+// store definition
+type store struct {
 	Name string
 	Mode Mode
 	Data []storeEntry
 }
 
 // write stores incoming request data
-func (store *Store) write(w http.ResponseWriter, r *http.Request) {
+func (st *store) write(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	reqData := Request{
+	reqData := request{
 		Method:  r.Method,
 		Path:    r.URL.RequestURI(),
 		Headers: r.Header,
 		Query:   r.URL.Query(),
 	}
 
-	offset := len(store.Data)
-
-	resData := WriteResponse{
-		StatusCode: http.StatusOK,
-		Headers: http.Header{
-			"Content-Type": []string{"application/json"},
-		},
-		Body: WriteResponseBody{
-			Offset: offset,
-		},
-	}
+	offset := len(st.Data)
 
 	if r.Body != nil {
 		reqData.Body, err = ioutil.ReadAll(r.Body)
@@ -96,16 +74,18 @@ func (store *Store) write(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	store.Data = append(store.Data, storeEntry{offset, reqData})
+	st.Data = append(st.Data, storeEntry{offset, reqData})
 
-	err = json.NewEncoder(w).Encode(resData.Body)
+	err = json.NewEncoder(w).Encode(struct {
+		Offset int `json:"offset"`
+	}{offset})
 	if err != nil {
 		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }
 
 // read reads existing requests stored data
-func (store *Store) read(w http.ResponseWriter, r *http.Request) {
+func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		err    error
@@ -122,7 +102,7 @@ func (store *Store) read(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	count := len(store.Data)
+	count := len(st.Data)
 	if offset >= count {
 		respondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
 		return
@@ -132,7 +112,7 @@ func (store *Store) read(w http.ResponseWriter, r *http.Request) {
 	if nextOffset >= count {
 		nextOffset = 0
 	}
-	data := store.Data[offset]
+	data := st.Data[offset]
 
 	req := data.Request
 
@@ -156,7 +136,7 @@ func (store *Store) read(w http.ResponseWriter, r *http.Request) {
 // respondWithErr helper
 func respondWithErr(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
-	err2 := json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+	err2 := json.NewEncoder(w).Encode(errorResponse{err.Error()})
 	if err2 != nil {
 		log.Printf("Could not encode the error (%s) response itself: %s", err, err2)
 	}
