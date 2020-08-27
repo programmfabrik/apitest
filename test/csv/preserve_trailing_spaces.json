@@ -1,0 +1,20 @@
+{
+    "name": "Get existing CSV file with trailing spaces in values of type \"string,array\"",
+    "request": {
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {{ file_csv "trailing_spaces.csv" ',' | marshal }}
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": [
+                { "list": ["No surrounding","spaces"] },
+                { "list": [" Leading","space"] },
+                { "list": ["Trailing ","space"] },
+                { "list": [" Surrounding ","spaces"] }
+            ]
+        }
+    }
+}
