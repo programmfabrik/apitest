@@ -302,9 +302,6 @@ func TestComparison(t *testing.T) {
 						},
 					},
 				},
-				"it:control": util.JsonObject{
-					"order_matters": true,
-				},
 			},
 			right: util.JsonObject{
 				"it": util.JsonArray{
@@ -439,12 +436,12 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "array[0]",
-					Message: "Got 'val2', expected 'val3'",
+					Key:     "array[1]",
+					Message: "element \"val2\" not found in array in proper order",
 				},
 				{
-					Key:     "array[1]",
-					Message: "Got 'val3', expected 'val2'",
+					Key:     "array",
+					Message: "extra elements found in array",
 				},
 			},
 		},
@@ -476,12 +473,8 @@ func TestComparison(t *testing.T) {
 			eEqual: false,
 			eFailures: []CompareFailure{
 				{
-					Key:     "array.inner.deeper[0]",
-					Message: "Got 'val5', expected 'val4'",
-				},
-				{
 					Key:     "array.inner.deeper[1]",
-					Message: "Got 'val4', expected 'val5'",
+					Message: "element \"val5\" not found in array in proper order",
 				},
 			},
 		},

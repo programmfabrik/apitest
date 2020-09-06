@@ -329,24 +329,34 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 	}
 
 	takenInRight := make(map[int]bool, 0)
+	var lastPositionFromLeftInRight int = -1
 
 	for lk, lv := range left {
 		if orderMaters {
-			tmp, err := JsonEqual(lv, right[lk], control)
-			if err != nil {
-				return CompareResult{}, err
-			}
-			if tmp.Equal != true {
-				for _, v := range tmp.Failures {
-					key := fmt.Sprintf("[%d].%s", lk, v.Key)
-					if v.Key == "" {
-						key = fmt.Sprintf("[%d]", lk)
-					}
-					res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("%s", v.Message)})
+			for rk, rv := range right {
+				if rk <= lastPositionFromLeftInRight {
+					continue
 				}
+				tmp, err := JsonEqual(lv, rv, control)
+				if err != nil {
+					return CompareResult{}, err
+				}
+				if tmp.Equal == true {
+					takenInRight[lk] = true
+					lastPositionFromLeftInRight = rk
+					break
+				}
+			}
+			if !takenInRight[lk] {
+				key := fmt.Sprintf("[%d]", lk)
+				elStr := fmt.Sprintf("%v", lv)
+				elBytes, err := json.Marshal(lv)
+				if err == nil {
+					elStr = string(elBytes)
+				}
+				res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("element %s not found in array in proper order", elStr)})
 				res.Equal = false
 			}
-			takenInRight[lk] = true
 		} else {
 			found := false
 			allTmpFailures := make([]CompareFailure, 0)
@@ -357,7 +367,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 
 				// We need to check the left interface against the right one multiple times
 				// JsonEqual modifies such interface (it deletes it afterwards)
-				// Therefore we need a copy of it for this case 
+				// Therefore we need a copy of it for this case
 				var (
 					err error
 					tmp CompareResult

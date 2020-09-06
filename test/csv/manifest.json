@@ -11,6 +11,7 @@
     "name": "CSV tests",
     "tests": [
         "@csv_requests.json",
-        "@check_store_values.json"
+        "@check_store_values.json",
+        "@preserve_trailing_spaces.json"
     ]
 }
