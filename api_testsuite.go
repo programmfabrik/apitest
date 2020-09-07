@@ -309,6 +309,7 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 		return false
 	}
 
+	test.Filename = testFilePath
 	test.loader = loader
 	test.manifestDir = tc.Path
 	test.suiteIndex = ats.index
