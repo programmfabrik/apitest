@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -53,6 +54,8 @@ type Case struct {
 
 	ServerURL         string `json:"server_url"`
 	ReverseTestResult bool   `json:"reverse_test_result"`
+
+	Filename string
 }
 
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
@@ -104,10 +107,11 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		success = !success
 	}
 
+	fileBasename := filepath.Base(testCase.Filename)
 	if !success {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Warnf("     [%2d] failure", testCase.index)
 	} else {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.Leave(success)
@@ -252,7 +256,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	apiResp.Format = expectedResponse.Format
 
 	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
-			len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
+		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
 		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
 		if err != nil {
 			testCase.LogReq(req)
