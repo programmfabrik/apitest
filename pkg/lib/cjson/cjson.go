@@ -76,7 +76,7 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 	// the default would end up throwing scan errors
 	// therefore the rest of the output woud be skipped
 	buf := make([]byte, 0, bufio.MaxScanTokenSize)
-	scanner.Buffer(buf, 16 * bufio.MaxScanTokenSize)
+	scanner.Buffer(buf, 16*bufio.MaxScanTokenSize)
 	i := 1
 	for scanner.Scan() {
 		scannerText := scanner.Text()
@@ -102,7 +102,7 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 		if scanner.Err() == bufio.ErrTooLong {
 			jsonWithLineNumbers = fmt.Sprintf("%s\nSome fields are too long, consider splitting tests or reducing datasets", jsonWithLineNumbers)
 		}
-		jsonWithLineNumbers = fmt.Sprintf("%s\n-----------\n", jsonWithLineNumbers) 
+		jsonWithLineNumbers = fmt.Sprintf("%s\n-----------\n", jsonWithLineNumbers)
 	}
 
 	return

@@ -215,6 +215,11 @@ func getTyped(value, format string) (interface{}, error) {
 
 		retArray := make([]string, 0)
 		for _, v := range records[0] {
+			// DEBUG: The previous code would trim values here.
+			// Uncomment to debug your CSV...
+			// if len(strings.TrimSpace(v)) != len(v) {
+			// 	println(fmt.Sprintf("Trimming %s %v", v, records[0]))
+			// }
 			retArray = append(retArray, v)
 		}
 		return retArray, nil
