@@ -1,0 +1,81 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "template file_sqlite: read from sqlite file, iterate over results",
+    "tests": [
+        // successful requests (expect 200)
+        {{ range $idx, $row := file_sqlite "../_res/testdata.sqlite" `
+                SELECT * FROM "test_endpoints"
+                WHERE "expected_statuscode" = 200
+            `}}
+            {{ if gt $idx 0 }}, {{ end }}
+            {
+                "name": "{{ $row.method }} {{ $row.endpoint }} | expect success",
+                "request": {
+                    "server_url": "http://localhost{{ $local_port }}",
+                    "method": {{ $row.method | marshal }},
+                    "endpoint": {{ $row.endpoint | marshal }}
+                    {{ if eq ( $row.file | marshal ) "null" }}
+                        ,
+                        "body": {}
+                    {{ else }}
+                        ,
+                        "body": {
+                            "file": "@{{ $row.file }}"
+                        },
+                        "body_type": "multipart"
+                    {{ end }}
+                    {{ if or ( ne ( $row.param1 | marshal ) "null" ) ( ne ( $row.param2 | marshal ) "null" ) ( ne ( $row.param3 | marshal ) "null" ) }}
+                        ,
+                        "query_params": {
+                            {{ if ne ( $row.param1 | marshal ) "null" }}
+                                "param1": {{ $row.param1 | marshal }}
+                                {{ if ne ( $row.param2 | marshal ) "null" }}, {{ end }}
+                            {{ end }}
+                            {{ if ne ( $row.param2 | marshal ) "null" }}
+                                "param2": {{ $row.param2 | marshal }}
+                                {{ if ne ( $row.param3 | marshal ) "null" }}, {{ end }}
+                            {{ end }}
+                            {{ if ne ( $row.param3 | marshal ) "null" }}
+                                "param3": {{ $row.param3 | marshal }}
+                            {{ end }}
+                        }
+                    {{ end }}
+                },
+                "response": {
+                    "statuscode": {{ $row.expected_statuscode }}
+                    {{ if ne ( $row.format | marshal ) "null" }}
+                        , "format": {{ $row.format }}
+                    {{ end }}
+                    {{ if ne ( $row.expected_body | marshal ) "null" }}
+                        , "body": {{ $row.expected_body }}
+                    {{ end }}
+                }
+            }
+        {{ end }}
+        //
+        // failing requests
+        {{ range $idx, $row := file_sqlite "../_res/testdata.sqlite" `
+                SELECT * FROM "test_endpoints"
+                WHERE "expected_statuscode" != 200
+                ORDER BY "method", "endpoint"
+            `}}
+            ,
+            {
+                "name": "{{ $row.method }} {{ $row.endpoint }} | expect failure ({{ $row.expected_statuscode }})",
+                "request": {
+                    "server_url": "http://localhost{{ $local_port }}",
+                    "method": {{ $row.method | marshal }},
+                    "endpoint": {{ $row.endpoint | marshal }}
+                },
+                "response": {
+                    "statuscode": {{ $row.expected_statuscode }}
+                }
+            }
+        {{ end }}
+    ]
+}
