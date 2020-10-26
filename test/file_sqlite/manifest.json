@@ -19,7 +19,7 @@
                     "server_url": "http://localhost{{ $local_port }}",
                     "method": {{ $row.method | marshal }},
                     "endpoint": {{ $row.endpoint | marshal }}
-                    {{ if eq ( $row.file | marshal ) "null" }}
+                    {{ if eq $row.file nil }}
                         ,
                         "body": {}
                     {{ else }}
@@ -29,18 +29,18 @@
                         },
                         "body_type": "multipart"
                     {{ end }}
-                    {{ if or ( ne ( $row.param1 | marshal ) "null" ) ( ne ( $row.param2 | marshal ) "null" ) ( ne ( $row.param3 | marshal ) "null" ) }}
+                    {{ if or ( ne $row.param1 nil ) ( ne $row.param2 nil ) ( ne $row.param3 nil ) }}
                         ,
                         "query_params": {
-                            {{ if ne ( $row.param1 | marshal ) "null" }}
+                            {{ if ne $row.param1 nil }}
                                 "param1": {{ $row.param1 | marshal }}
-                                {{ if ne ( $row.param2 | marshal ) "null" }}, {{ end }}
+                                {{ if ne $row.param2 nil }}, {{ end }}
                             {{ end }}
-                            {{ if ne ( $row.param2 | marshal ) "null" }}
+                            {{ if ne $row.param2 nil }}
                                 "param2": {{ $row.param2 | marshal }}
-                                {{ if ne ( $row.param3 | marshal ) "null" }}, {{ end }}
+                                {{ if $row.param3 }}, {{ end }}
                             {{ end }}
-                            {{ if ne ( $row.param3 | marshal ) "null" }}
+                            {{ if ne $row.param3 nil }}
                                 "param3": {{ $row.param3 | marshal }}
                             {{ end }}
                         }
@@ -48,15 +48,15 @@
                 },
                 "response": {
                     "statuscode": {{ $row.expected_statuscode }}
-                    {{ if ne ( $row.format | marshal ) "null" }}
+                    {{ if ne $row.format nil }}
                         , "format": {{ $row.format }}
                     {{ end }}
-                    {{ if ne ( $row.expected_body | marshal ) "null" }}
+                    {{ if ne $row.expected_body nil }}
                         , "body": {{ $row.expected_body }}
                     {{ end }}
                 }
             }
-        {{ end }}
+            {{ end }}
         //
         // failing requests
         {{ range $idx, $row := file_sqlite "../_res/testdata.sqlite" `

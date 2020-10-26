@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -209,6 +211,20 @@ func (loader *Loader) Render(
 				if err != nil {
 					return nil, err
 				}
+				if len(row) != len(columns) {
+					return nil, errors.Errorf("len of scanned row (%d) != number of columns (%d)", len(row), len(columns))
+				}
+
+				for idx, d := range row {
+					col := columns[idx]
+
+					rv := reflect.ValueOf(d)
+					switch rv.Elem().Interface().(type) {
+					case nil:
+						dataEntry[col.Name()] = nil
+					}
+				}
+
 				data = append(data, dataEntry)
 			}
 
