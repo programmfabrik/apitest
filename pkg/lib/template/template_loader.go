@@ -13,7 +13,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -195,33 +194,26 @@ func (loader *Loader) Render(
 			if err != nil {
 				return nil, err
 			}
+			row := make([]interface{}, len(columns))
 
 			data := []map[string]interface{}{}
+			dataEntry := map[string]interface{}{}
 
 			for rows.Next() {
-				row := []interface{}{}
-				dataEntry := map[string]interface{}{}
-
-				for _, col := range columns {
+				for idx, col := range columns {
 					dataEntry[col.Name()] = new(interface{})
-					row = append(row, dataEntry[col.Name()])
+					row[idx] = dataEntry[col.Name()]
 				}
 
 				err = rows.Scan(row...)
 				if err != nil {
 					return nil, err
 				}
-				if len(row) != len(columns) {
-					return nil, errors.Errorf("len of scanned row (%d) != number of columns (%d)", len(row), len(columns))
-				}
 
 				for idx, d := range row {
-					col := columns[idx]
-
-					rv := reflect.ValueOf(d)
-					switch rv.Elem().Interface().(type) {
+					switch reflect.ValueOf(d).Elem().Interface().(type) {
 					case nil:
-						dataEntry[col.Name()] = nil
+						dataEntry[columns[idx].Name()] = nil
 					}
 				}
 
