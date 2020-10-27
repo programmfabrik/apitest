@@ -1,11 +1,14 @@
 package api
 
 import (
+	"crypto/tls"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -15,11 +18,18 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-var c http.Client
+var httpClient *http.Client
 
 func init() {
-	c = http.Client{
-		Timeout: time.Minute * 5,
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	httpClient = &http.Client{
+		Timeout:   time.Minute * 5,
+		Transport: tr,
 	}
 }
 
@@ -32,6 +42,7 @@ type Request struct {
 	Headers              map[string]*string     `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string      `yaml:"header_from_store" json:"header_from_store"`
 	BodyType             string                 `yaml:"body_type" json:"body_type"`
+	BodyFile             string                 `yaml:"body_file" json:"body_file"`
 	Body                 interface{}            `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
@@ -40,7 +51,7 @@ type Request struct {
 	DataStore   *datastore.Datastore
 }
 
-func (request Request) buildHttpRequest() (res *http.Request, err error) {
+func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if request.buildPolicy == nil {
 		//Set Build policy
 		switch request.BodyType {
@@ -48,6 +59,8 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			request.buildPolicy = buildMultipart
 		case "urlencoded":
 			request.buildPolicy = buildUrlencoded
+		case "file":
+			request.buildPolicy = buildFile
 		default:
 			request.buildPolicy = buildRegular
 		}
@@ -59,17 +72,29 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		requestUrl = request.ServerURL
 	}
 
+	reqUrl, err := url.Parse(requestUrl)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to buildHttpRequest with URL %q", requestUrl)
+	}
+
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
-		return res, fmt.Errorf("error executing buildpolicy: %s", err)
+		return req, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
-	res, err = http.NewRequest(request.Method, requestUrl, body)
+	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
-		return res, fmt.Errorf("error creating new request")
+		return req, fmt.Errorf("error creating new request")
 	}
-	res.Close = true
+	req.Close = true
 
-	q := res.URL.Query()
+	if reqUrl.User != nil {
+		pw, ok := reqUrl.User.Password()
+		if ok {
+			req.SetBasicAuth(reqUrl.User.Username(), pw)
+		}
+	}
+
+	q := req.URL.Query()
 
 	for queryName, datastoreKey := range request.QueryParamsFromStore {
 		skipOnError := false
@@ -79,7 +104,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 
 		if request.DataStore == nil {
-			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+			return req, fmt.Errorf("can't get header_from_store as the datastore is nil")
 		}
 
 		queryParamInterface, err := request.DataStore.Get(datastoreKey)
@@ -92,7 +117,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 
 		stringVal, err := util.GetStringFromInterface(queryParamInterface)
 		if err != nil {
-			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 
 		if stringVal == "" {
@@ -104,15 +129,15 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	for key, val := range request.QueryParams {
 		stringVal, err := util.GetStringFromInterface(val)
 		if err != nil {
-			return res, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 		q.Set(key, stringVal)
 	}
 
-	res.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = q.Encode()
 
 	for key, val := range additionalHeaders {
-		res.Header.Add(key, val)
+		req.Header.Add(key, val)
 	}
 
 	for headerName, datastoreKey := range request.HeaderFromStore {
@@ -123,7 +148,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 		}
 
 		if request.DataStore == nil {
-			return res, fmt.Errorf("can't get header_from_store as the datastore is nil")
+			return req, fmt.Errorf("can't get header_from_store as the datastore is nil")
 		}
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
@@ -142,7 +167,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 					if valString == "" {
 						continue
 					}
-					res.Header.Add(headerName, valString)
+					req.Header.Add(headerName, valString)
 				}
 			}
 			continue
@@ -153,7 +178,7 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 			if ownHeader == "" {
 				continue
 			}
-			res.Header.Add(headerName, ownHeader)
+			req.Header.Add(headerName, ownHeader)
 		} else {
 			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
 		}
@@ -162,14 +187,14 @@ func (request Request) buildHttpRequest() (res *http.Request, err error) {
 	for key, val := range request.Headers {
 		if *val == "" {
 			//Unset header explicit
-			res.Header.Del(key)
+			req.Header.Del(key)
 		} else {
 			//ADD header
-			res.Header.Set(key, *val)
+			req.Header.Set(key, *val)
 		}
 	}
 
-	return res, nil
+	return req, nil
 }
 
 func (request Request) ToString(curl bool) (res string) {
@@ -224,12 +249,18 @@ func (request Request) Send() (response Response, err error) {
 		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
 	}
 
-	httpResponse, err := c.Do(httpRequest)
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
 	defer func() {
-		lerr := httpResponse.Body.Close()
+		// Try to close body, if we have a ReadCloser
+		closer, ok := httpResponse.Body.(io.ReadCloser)
+		if !ok {
+			return
+		}
+
+		lerr := closer.Close()
 		if lerr != nil {
 			fmt.Println("Could not close body: ", lerr)
 		}

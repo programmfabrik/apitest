@@ -51,7 +51,8 @@ type Case struct {
 	standardHeader          map[string]*string
 	standardHeaderFromStore map[string]string
 
-	ServerURL string `json:"server_url"`
+	ServerURL         string `json:"server_url"`
+	ReverseTestResult bool   `json:"reverse_test_result"`
 }
 
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
@@ -96,6 +97,11 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		logrus.Errorf("     [%2d] %s", testCase.index, err)
 		success = false
+	}
+
+	// Reverse if needed
+	if testCase.ReverseTestResult {
+		success = !success
 	}
 
 	if !success {
@@ -245,18 +251,21 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error getting json from response: %s", err)
-		return responsesMatch, req, apiResp, err
+	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
+			len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
+		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
+		if err != nil {
+			testCase.LogReq(req)
+			err = fmt.Errorf("error getting json from response: %s", err)
+			return responsesMatch, req, apiResp, err
+		}
 	}
 
 	// Store in custom store
 	err = testCase.dataStore.SetWithQjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
-		err = fmt.Errorf("error store repsonse with qjson: %s", err)
+		err = fmt.Errorf("error store response with qjson: %s", err)
 		return responsesMatch, req, apiResp, err
 	}
 
@@ -269,9 +278,8 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		}
 	}
 
-	//Compare Responses
+	// Compare Responses
 	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
-
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error matching responses: %s", err)
@@ -281,19 +289,21 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	return responsesMatch, req, apiResp, nil
 }
 
+// LogResp print the response to the console
 func (testCase Case) LogResp(response api.Response) {
 	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
 
-	if testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
+	if !testCase.ReverseTestResult && testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
 		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debugf(errString)
+		logrus.Debug(errString)
 	}
 }
 
+// LogReq print the request to the console
 func (testCase Case) LogReq(req api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 
-	if !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
+	if !testCase.ReverseTestResult && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		logrus.Debug(errString)
 	}
@@ -394,9 +404,11 @@ func (testCase Case) run() (bool, error) {
 	}
 
 	if !responsesMatch.Equal || timedOutFlag {
-		for _, v := range responsesMatch.Failures {
-			logrus.Errorf("[%s] %s", v.Key, v.Message)
-			r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
+		if !testCase.ReverseTestResult {
+			for _, v := range responsesMatch.Failures {
+				logrus.Errorf("[%s] %s", v.Key, v.Message)
+				r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
+			}
 		}
 
 		collectArray, ok := testCase.CollectResponse.(util.JsonArray)
@@ -459,11 +471,14 @@ func (testCase Case) loadResponse() (api.Response, error) {
 func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
 	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
+	}
+	if testCase.ResponseData == nil && testCase.CollectResponse == nil && len(testCase.BreakResponse) == 0 {
+		expected.Format.IgnoreBody = true
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading generic json: %s", err)
+		return compare.CompareResult{}, fmt.Errorf("error loading response generic json: %s", err)
 	}
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }

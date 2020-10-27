@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"text/template"
@@ -66,7 +67,9 @@ func newTemplateParams(params []interface{}) (interface{}, error) {
 }
 
 type Loader struct {
-	datastore *datastore.Datastore
+	datastore      *datastore.Datastore
+	HTTPServerHost string
+	ServerURL      *url.URL
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -97,6 +100,9 @@ func (loader *Loader) Render(
 				err = fmt.Errorf("'%s' was not found or was empty string. Qjson Input: %s", path, json)
 			}
 			return
+		},
+		"split": func(s, sep string) []string {
+			return strings.Split(s, sep)
 		},
 		"md5sum": func(path string) (string, error) {
 			_, file, err := util.OpenFileOrUrl(path, rootDir)
@@ -205,6 +211,10 @@ func (loader *Loader) Render(
 			s = strings.Replace(s, "\\", "\\\\", -1)
 			return strings.Replace(s, "\"", "\\\"", -1), nil
 		},
+		// return json escape string
+		"url_path_escape": func(s string) (string, error) {
+			return url.PathEscape(s), nil
+		},
 		// add a + b
 		"add": add,
 		// subtract a - b
@@ -276,6 +286,22 @@ func (loader *Loader) Render(
 		},
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
+		},
+		"replace_host": func(srcURL string) (string, error) {
+			// If no override provided, return original one
+			if loader.HTTPServerHost == "" {
+				return srcURL, nil
+			}
+			// Parse source URL or fail
+			parsedURL, err := url.Parse(srcURL)
+			if err != nil {
+				return "", err
+			}
+			parsedURL.Host = loader.HTTPServerHost
+			return parsedURL.String(), nil
+		},
+		"server_url": func() *url.URL {
+			return loader.ServerURL
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))

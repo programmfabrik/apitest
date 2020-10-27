@@ -1,0 +1,38 @@
+[
+    {
+        "name": "preprocess asset _res/assets/camera.jpg with exiftool in json format",
+        "request": {
+            // load static file
+            "server_url": "{{ datastore "local_url" }}",
+            "endpoint": "assets/camera.jpg",
+            "method": "GET"
+        },
+        "response": {
+            "format": {
+                "pre_process": {
+                    "cmd": {
+                        "name": "exiftool",
+                        "args": [
+                            "-j",
+                            "-g",
+                            "-"
+                        ]
+                    }
+                }
+            },
+            "body": [
+                {
+                    "Composite": {},
+                    "ExifTool": {},
+                    "File": {
+                        "FileType": "JPEG",
+                        "FileTypeExtension": "jpg",
+                        "MIMEType": "image/jpeg"
+                    },
+                    "ICC_Profile": {},
+                    "JFIF": {}
+                }
+            ]
+        }
+    }
+]

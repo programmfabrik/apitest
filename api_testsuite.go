@@ -1,15 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -45,6 +46,7 @@ type Suite struct {
 	httpServer      http.Server
 	httpServerDir   string
 	idleConnsClosed chan struct{}
+	HTTPServerHost  string
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -57,20 +59,85 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 		datastore:    datastore,
 		index:        index,
 	}
+	// Here we create this additional struct in order to preload the suite manifest
+	// It is needed, for example, for getting the suite HTTP server address
+	// Then preloaded values are used to load again the manifest with relevant replacements
+	suitePreload := Suite{
+		Config:       config,
+		manifestDir:  filepath.Dir(manifestPath),
+		manifestPath: manifestPath,
+		reporterRoot: r,
+		datastore:    datastore,
+		index:        index,
+	}
 
-	manifest, err := suite.loadManifest()
+	manifest, err := suitePreload.loadManifest()
+	if err != nil {
+		err = fmt.Errorf("error loading manifest: %s", err)
+		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		return &suitePreload, err
+	}
+
+	err = cjson.Unmarshal(manifest, &suitePreload)
+	if err != nil {
+		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
+		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		return &suitePreload, err
+	}
+
+	// Add external http server url here, as only after this point the http_server.addr may be available
+	hsru := new(url.URL)
+	shsu := new(url.URL)
+	if httpServerReplaceHost != "" {
+		hsru, err = url.Parse("//" + httpServerReplaceHost)
+		if err != nil {
+			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
+		}
+	}
+	if suitePreload.HttpServer != nil {
+		preloadHTTPAddrStr := suitePreload.HttpServer.Addr
+		if preloadHTTPAddrStr == "" {
+			preloadHTTPAddrStr = ":80"
+		}
+		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
+		shsu, err = url.Parse("//" + preloadHTTPAddrStr)
+		if err != nil {
+			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
+		}
+	}
+	suitePreload.HTTPServerHost = ""
+	if hsru.Hostname() != "" {
+		suitePreload.HTTPServerHost = hsru.Hostname()
+	} else if shsu.Hostname() != "" {
+		suitePreload.HTTPServerHost = shsu.Hostname()
+	} else {
+		suitePreload.HTTPServerHost = "localhost"
+	}
+	if suite.HTTPServerHost == "0.0.0.0" {
+		suitePreload.HTTPServerHost = "localhost"
+	}
+	if hsru.Port() != "" {
+		suitePreload.HTTPServerHost += ":" + hsru.Port()
+	} else if shsu.Port() != "" {
+		suitePreload.HTTPServerHost += ":" + shsu.Port()
+	}
+
+	// Here we load the usable manifest, now that we can do all potential replacements
+	manifest, err = suitePreload.loadManifest()
 	if err != nil {
 		err = fmt.Errorf("error loading manifest: %s", err)
 		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
 		return &suite, err
 	}
-
+	// fmt.Printf("%s", string(manifest))
+	// We unmarshall the final manifest into the final working suite
 	err = cjson.Unmarshal(manifest, &suite)
 	if err != nil {
 		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
 		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
 		return &suite, err
 	}
+	suite.HTTPServerHost = suitePreload.HTTPServerHost
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
@@ -84,67 +151,6 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 	}
 
 	return &suite, nil
-}
-
-// StartHttpServer start a simple http server that can server local test resources during the testsuite is running
-func (ats *Suite) StartHttpServer() {
-
-	if ats.HttpServer == nil {
-		return
-	}
-
-	ats.idleConnsClosed = make(chan struct{})
-	mux := http.NewServeMux()
-
-	if ats.HttpServer.Dir == "" {
-		ats.httpServerDir = ats.manifestDir
-	} else {
-		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
-	}
-	mux.Handle("/", http.FileServer(http.Dir(ats.httpServerDir)))
-
-	ats.httpServer = http.Server{
-		Addr:    ats.HttpServer.Addr,
-		Handler: mux,
-	}
-
-	run := func() {
-		logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
-
-		err := ats.httpServer.ListenAndServe()
-		if err != http.ErrServerClosed {
-			// Error starting or closing listener:
-			logrus.Errorf("HTTP server ListenAndServe: %v", err)
-			return
-		}
-	}
-
-	if ats.HttpServer.Testmode {
-		// Run in foreground to test
-		logrus.Infof("Testmode for HTTP Server. Listening, not running tests...")
-		run()
-	} else {
-		go run()
-	}
-}
-
-// StopHttpServer stop the http server that was started for this test suite
-func (ats *Suite) StopHttpServer() {
-
-	if ats.HttpServer == nil {
-		return
-	}
-
-	err := ats.httpServer.Shutdown(context.Background())
-	if err != nil {
-		// Error from closing listeners, or context timeout:
-		logrus.Errorf("HTTP server Shutdown: %v", err)
-		close(ats.idleConnsClosed)
-		<-ats.idleConnsClosed
-	} else {
-		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
-	}
-	return
 }
 
 // Run run the given testsuite
@@ -188,6 +194,14 @@ type TestContainer struct {
 func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
 	//Init variables
 	loader := template.NewLoader(ats.datastore)
+
+	loader.HTTPServerHost = ats.HTTPServerHost
+	serverURL, err := url.Parse(ats.Config.ServerURL)
+	if err != nil {
+		logrus.Error(fmt.Errorf("can not load server url into test (%s): %s", testFilePath, err))
+		return false
+	}
+	loader.ServerURL = serverURL
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -328,6 +342,12 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
 	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	loader := template.NewLoader(ats.datastore)
+	loader.HTTPServerHost = ats.HTTPServerHost
+	serverURL, err := url.Parse(ats.Config.ServerURL)
+	if err != nil {
+		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
+	}
+	loader.ServerURL = serverURL
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)

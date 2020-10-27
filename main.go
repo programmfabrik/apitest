@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL                                     string
+	reportFormat, reportFile, serverURL, httpServerReplaceHost              string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                             []string
 	limitRequest, limitResponse                                             uint
@@ -28,6 +28,10 @@ func init() {
 	testCMD.PersistentFlags().StringVar(
 		&serverURL, "server", "",
 		"URL of the Server. Overwrites server URL in yml config.")
+
+	testCMD.PersistentFlags().StringVar(
+		&httpServerReplaceHost, "replace-host", "",
+		"HTTP Server replacement host to be used in replace_host template function.")
 
 	testCMD.PersistentFlags().StringSliceVarP(
 		&rootDirectorys, "directory", "d", []string{"."},
@@ -81,7 +85,7 @@ func init() {
 	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
 	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 
-	println("The latest apitest tool, v 67")
+	println("The latest apitest tool, v 68")
 }
 
 var testCMD = &cobra.Command{

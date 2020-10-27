@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -49,6 +50,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
+		defer file.Close()
 
 		var part io.Writer
 		if replaceFilename == nil {
@@ -84,10 +86,31 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
-	bodyBytes, err := json.Marshal(request.Body)
-	if err != nil {
-		return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
+
+	if request.Body == nil {
+		body = bytes.NewBuffer([]byte{})
+	} else {
+		bodyBytes, err := json.Marshal(request.Body)
+		if err != nil {
+			return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
+		}
+		body = bytes.NewBuffer(bodyBytes)
 	}
-	body = bytes.NewBuffer(bodyBytes)
 	return additionalHeaders, body, nil
+}
+
+func buildFile(req Request) (map[string]string, io.Reader, error) {
+
+	headers := map[string]string{}
+
+	if req.BodyFile == "" {
+		return nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
+	}
+
+	_, file, err := util.OpenFileOrUrl(req.BodyFile, req.ManifestDir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return headers, file, err
 }

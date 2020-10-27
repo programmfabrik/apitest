@@ -88,6 +88,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--server URL`: Overwrites base url to the api
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
+- `--replace-host [host][:port]`: Overwrites built-in server host in template function "replace_host"
 
 ### Examples
 
@@ -102,6 +103,12 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ```bash
 ./apitest --single apitests/test1/manifest.json --log-console-enable false
 ```
+
+- Run all tests in the directory **apitests** with **http server host replacement** for those templates using **replace_host** template function
+```bash
+./apitest -d apitests --replace-host my.fancy.host:8989
+```
+
 
 # Manifest
 
@@ -171,6 +178,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest",
 
+        // the server url to connect can be set directly for a request, overwriting the configured server url
+        "server_url": "",
+
         // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET",
 
@@ -210,8 +220,11 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "animal": "dog"
         },
 
-        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded]
+        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded, file]
         "body_type": "urlencoded"
+
+        // If body_type is file, "body_file" points to the file to be sent as binary body
+        "body_file": "<path|url>"
     },
     // Define how the response should look like. Testtool checks against this response
     "response": {
@@ -273,7 +286,10 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "collect_response": [
         "@continue_response_pending.json",
         "@continue_response_processing.json"
-    ]
+    ],
+
+    // If set to true, the test case will consider its failure as a success, and the other way around
+    "reverse_test_result": false
 }
 ```
 
@@ -358,6 +374,157 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
     }
 }
 ```
+
+## Preprocessing responses
+
+Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML or CSV output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
+
+The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked.
+
+To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "...",
+                    "args": [ ]
+                }
+            }
+        }
+    }
+}
+```
+
+* `format.pre_process.cmd.name`: (string, mandatory) name of the command line tool
+* `format.pre_process.cmd.args`: (string array, optional) list of command line parameters
+
+### Examples
+
+#### Basic usage: pipe response without changes
+
+This basic example shows how to use the `pre_process` feature. The response is piped through `cat` which returns the input without any changes. This command takes no arguments.
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "cat"
+                }
+            }
+        }
+    }
+}
+```
+
+#### Reading metadata from a file (JSON Format)
+
+To check the file metadata of a file that is directly downloaded as a binary file using the `eas/download` API, use `exiftool` to read the file and output the metadata in JSON format.
+
+If there is a file with the asset ID `1`, and the apitest needs to check that the MIME type is `image/jpeg`, create the following test case:
+
+```yaml
+{
+    "request": {
+        "endpoint": "eas/download/1/original",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "exiftool",
+                    "args": [
+                        "-j",
+                        "-g",
+                        "-"
+                    ]
+                }
+            }
+        },
+        "body": [
+            {
+                "File": {
+                    "MIMEType": "image/jpeg"
+                }
+            }
+        ]
+    }
+}
+```
+
+* `format.pre_process`:
+    * Command: `exiftool -j -g -`
+    * Parameters:
+        * `-j`: output in JSON format
+        * `-g`: group output by tag class
+        * `-`: read from `stdin` instead loading a saved file
+
+#### Reading metadata from a file (XML Format)
+
+This example shows the combination of `pre_process` and `type`. Instead of calling `exiftool` with JSON output, it can also be used with XML output, which then will be formatted to JSON by the apitest tool.
+
+```yaml
+{
+    "request": {
+        "endpoint": "eas/download/1/original",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "exiftool",
+                    "args": [
+                        "-X",
+                        "-"
+                    ]
+                }
+            },
+            "type": "xml"
+        },
+        "body": [
+            {
+                "File": {
+                    "MIMEType": "image/jpeg"
+                }
+            }
+        ]
+    }
+}
+```
+
+* `format.pre_process`:
+    * Command: `exiftool -X -`
+    * Parameters:
+        * `-X`: output in XML format
+        * `-`: read from `stdin` instead loading a saved file
+* `format.type`:
+    * `xml`: convert the output of `exiftool`, which is expected to be in XML format, into JSON
+
+### Error handling
+
+If there is any error during the call of the command line tool, the error is formatted as a JSON object and returned instead of the expected response:
+
+```yaml
+{
+  "command": "cat --INVALID",
+  "error": "exit status 1",
+  "exit_code": 1,
+  "stderr": "cat: unrecognized option '--INVALID'\nTry 'cat --help' for more information.\n"
+}
+```
+
+* `command`: the command that was executed (consisting of `cmd.name` and `cmd.args`)
+* `error`: error message (message of internal `exec.ExitError`)
+* `exit_code`: integer value of the exit code
+* `stderr`: additional error information from `stderr` of the command line tool
+
+If such an error is expected as a result, this formatted error message can be checked as the response.
 
 # Datastore
 
@@ -750,6 +917,9 @@ E.g. the following response would **fail**  as `"beGreater"` is smaller than exp
     }
 }
 ```
+
+
+
 
 # Use external file
 
@@ -1316,6 +1486,10 @@ int64,string
 
 Returns a slice with the given parameters as elements. Use this for **range** in templates.
 
+## `split s sep`
+
+Returns a string slice with `s` split by `sep`.
+
 ## `add [a] [b]`
 
 Returns the sum of `a`and `b`. `a, b` can be any numeric type or string. The function returns a numeric type, depending on the input. With `string` we return `int64`.
@@ -1348,6 +1522,10 @@ Returns a `string` of the MD5 sum of the file found in `filepath`.
 
 Returns a `string` where all `"` are escaped to `\"`. This is useful in Strings which need to be concatenated.
 
+## `url_path_escape [string]`
+
+Uses [Url.PathEscape](https://pkg.go.dev/net/url?tab=doc#PathEscape) to escape given `string` to use in `endpoint` or `server_url`. Returns `string`.
+
 ## `match [regex] [text]`
 
 Returns a `bool` value. If `text` matches the [regular expression](https://gobyexample.com/regular-expressions) `regex`, it returns `true`, else `false`. This is useful inside `{{ if ... }}` templates.
@@ -1372,6 +1550,16 @@ Example how to range over 100 objects
 }
 ```
 
+## replace_host [url]
+
+**replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
+
+As an example, the URL _http://localhost/myimage.jpg_ would be changed into _http://localhost:8788/myimage.jpg_ following the example below.
+
+## server_url
+
+**server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
@@ -1383,10 +1571,135 @@ To configure a HTTP Server, the manifest need to include these lines:
     "http_server": {
         "addr": ":8788", // address to listen on
         "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false, // boolean flag to switch test mode on / off
+        "testmode": false // boolean flag to switch test mode on / off
     }
 }
 ```
 
 The HTTP Server is started and stopped per test.
 
+## HTTP Endpoints
+
+The server provides endpoints to serve local files and return responses based on request data.
+
+### Static files
+
+To access any static file, use the path relative to the server directory (`dir`) as the endpoint:
+
+```yaml
+{
+    "request": {
+        "endpoint": "path/to/file.jpg",
+        "method": "GET"
+    }
+}
+```
+
+If there is any error (for example wrong path), a HTTP error repsonse will be returned.
+
+#### No Content-Length header
+
+For some tests, you may not want the Content-Length header to be sent alongside the asset
+In this case, add `no-content-length=1` to the query string of the asset url:
+```yaml
+{
+    "request": {
+        "endpoint": "path/to/file.jpg?no-content-length=1",
+        "method": "GET"
+    }
+}
+```
+
+### `bounce`
+
+The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.
+
+```yaml
+{
+    "request": {
+        "endpoint": "bounce",
+        "method": "POST",
+        "query_params": {
+            "param1": "abc"
+        },
+        "header": {
+            "header1": 123
+        },
+        "body": {
+            "file": "@path/to/file.jpg"
+        },
+        "body_type": "multipart"
+    }
+}
+```
+
+The file that is specified is relative to the apitest file, not relative to the http server directory. The response will include the binary of the file, which can be handled with [`pre_process` and `format`](#preprocessing-responses).
+
+Request headers are included in the response header with the prefix `X-Req-Header-`, request query parameters are included in the response header with the prefix `X-Req-Query-`:
+
+```yaml
+{
+    "response": {
+        "header": {
+            "X-Req-Query-Param1": [
+                "abc"
+            ],
+            "X-Req-Header-Header1": [
+                "123"
+            ]
+        }
+    }
+}
+```
+
+### `bounce-json`
+
+The endpoint `bounce-json` returns the a response that includes `header`, `query_params` and `body` in the body.
+
+```yaml
+{
+    "request": {
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "query_params": {
+            "param1": "abc"
+        },
+        "header": {
+            "header1": 123
+        },
+        "body": {
+            "value1": "test",
+            "value2": {
+                "hello": "world"
+            }
+        }
+    }
+}
+```
+
+will return this response:
+
+```yaml
+{
+    "response": {
+        "body": {
+            "query_params": {
+                "param1": [
+                    "abc"
+                ]
+            },
+            "header": {
+                "Header1": [
+                    "123"
+                ]
+            },
+            "body": {
+                "value1": "test",
+                "value2": {
+                    "hello": "world"
+                }
+            }
+        }
+    }
+}
+```

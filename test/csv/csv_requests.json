@@ -1,0 +1,101 @@
+[
+    {
+        "name": "Get non-existing CSV file (expecting statuscode)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "wrong/path.jpg",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 404
+        }
+    },
+    {
+        "name": "Get non-existing CSV file (not expecting statuscode, so should fail)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "wrong/path.jpg",
+            "method": "GET"
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "Get existing CSV file",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200
+        }
+    },
+    {
+        "name": "Get existing CSV file, without checking response",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        }
+    },
+    {
+        "name": "Get existing CSV file, checking response and storing data (fail - no format)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200
+        },
+        "store_response_qjson": {
+            "name": "body.0.name"
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "Get existing CSV file, checking response and storing data (success)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "csv"
+            }
+        },
+        "store_response_qjson": {
+            "name": "body.0.name"
+        }
+    },
+    {
+        "name": "Get existing CSV file, only storing data (fail - no format)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "store_response_qjson": {
+            "ext": "body.0.extension"
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "Get existing CSV file, only storing data (success)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "format": {
+                "type": "csv"
+            }
+        },
+        "store_response_qjson": {
+            "ext": "body.0.extension"
+        }
+    }
+]
