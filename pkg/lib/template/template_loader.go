@@ -197,9 +197,9 @@ func (loader *Loader) Render(
 			row := make([]interface{}, len(columns))
 
 			data := []map[string]interface{}{}
-			dataEntry := map[string]interface{}{}
 
 			for rows.Next() {
+				dataEntry := map[string]interface{}{}
 				for idx, col := range columns {
 					dataEntry[col.Name()] = new(interface{})
 					row[idx] = dataEntry[col.Name()]
