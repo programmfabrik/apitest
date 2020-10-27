@@ -7,75 +7,19 @@
     },
     "name": "template file_sqlite: read from sqlite file, iterate over results",
     "tests": [
-        // successful requests (expect 200)
-        {{ range $idx, $row := file_sqlite "../_res/testdata.sqlite" `
-                SELECT * FROM "test_endpoints"
-                WHERE "expected_statuscode" = 200
-            `}}
-            {{ if gt $idx 0 }}, {{ end }}
-            {
-                "name": "{{ $row.method }} {{ $row.endpoint }} | expect success",
-                "request": {
-                    "server_url": "http://localhost{{ $local_port }}",
-                    "method": {{ $row.method | marshal }},
-                    "endpoint": {{ $row.endpoint | marshal }}
-                    {{ if eq $row.file nil }}
-                        ,
-                        "body": {}
-                    {{ else }}
-                        ,
-                        "body": {
-                            "file": "@{{ $row.file }}"
-                        },
-                        "body_type": "multipart"
-                    {{ end }}
-                    {{ if or ( ne $row.param1 nil ) ( ne $row.param2 nil ) ( ne $row.param3 nil ) }}
-                        ,
-                        "query_params": {
-                            {{ if ne $row.param1 nil }}
-                                "param1": {{ $row.param1 | marshal }}
-                                {{ if ne $row.param2 nil }}, {{ end }}
-                            {{ end }}
-                            {{ if ne $row.param2 nil }}
-                                "param2": {{ $row.param2 | marshal }}
-                                {{ if $row.param3 }}, {{ end }}
-                            {{ end }}
-                            {{ if ne $row.param3 nil }}
-                                "param3": {{ $row.param3 | marshal }}
-                            {{ end }}
-                        }
-                    {{ end }}
-                },
-                "response": {
-                    "statuscode": {{ $row.expected_statuscode }}
-                    {{ if ne $row.format nil }}
-                        , "format": {{ $row.format }}
-                    {{ end }}
-                    {{ if ne $row.expected_body nil }}
-                        , "body": {{ $row.expected_body }}
-                    {{ end }}
-                }
+        {
+            "name": "bounce marshalled result of SELECT statement",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "method": "POST",
+                "endpoint": "bounce",
+                "body": {{ file_sqlite "testdata.sqlite" `
+                    SELECT * FROM "test_values"
+                ` | marshal }}
+            },
+            "response": {
+                "body": {{ file "expected_response.json" }}
             }
-            {{ end }}
-        //
-        // failing requests
-        {{ range $idx, $row := file_sqlite "../_res/testdata.sqlite" `
-                SELECT * FROM "test_endpoints"
-                WHERE "expected_statuscode" != 200
-                ORDER BY "method", "endpoint"
-            `}}
-            ,
-            {
-                "name": "{{ $row.method }} {{ $row.endpoint }} | expect failure ({{ $row.expected_statuscode }})",
-                "request": {
-                    "server_url": "http://localhost{{ $local_port }}",
-                    "method": {{ $row.method | marshal }},
-                    "endpoint": {{ $row.endpoint | marshal }}
-                },
-                "response": {
-                    "statuscode": {{ $row.expected_statuscode }}
-                }
-            }
-        {{ end }}
+        }
     ]
 }

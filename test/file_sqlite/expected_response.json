@@ -1,0 +1,22 @@
+[
+    {
+        "text": "one",
+        "number": 1,
+        "bool": true
+    },
+    {
+        "text": "two",
+        "number": 2,
+        "bool": false
+    },
+    {
+        "text": "three",
+        "number": 3,
+        "bool": null
+    },
+    {
+        "text": "four",
+        "number": null,
+        "bool": null
+    }
+]
