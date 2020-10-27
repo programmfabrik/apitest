@@ -3,10 +3,12 @@ package template
 import (
 	"bytes"
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
@@ -20,6 +22,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/tidwall/gjson"
 )
 
@@ -172,6 +175,52 @@ func (loader *Loader) Render(
 				return data, fmt.Errorf("'%s' %s", path, err)
 			}
 			return data, err
+		},
+		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
+			sqliteFile := filepath.Join(rootDir, path)
+			database, err := sql.Open("sqlite3", sqliteFile)
+			if err != nil {
+				return nil, err
+			}
+			defer database.Close()
+
+			rows, err := database.Query(statement)
+			if err != nil {
+				return nil, err
+			}
+			defer rows.Close()
+
+			columns, err := rows.ColumnTypes()
+			if err != nil {
+				return nil, err
+			}
+			row := make([]interface{}, len(columns))
+
+			data := []map[string]interface{}{}
+			dataEntry := map[string]interface{}{}
+
+			for rows.Next() {
+				for idx, col := range columns {
+					dataEntry[col.Name()] = new(interface{})
+					row[idx] = dataEntry[col.Name()]
+				}
+
+				err = rows.Scan(row...)
+				if err != nil {
+					return nil, err
+				}
+
+				for idx, d := range row {
+					switch reflect.ValueOf(d).Elem().Interface().(type) {
+					case nil:
+						dataEntry[columns[idx].Name()] = nil
+					}
+				}
+
+				data = append(data, dataEntry)
+			}
+
+			return data, nil
 		},
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string

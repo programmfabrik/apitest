@@ -7,6 +7,7 @@ require (
 	github.com/gabriel-vasile/mimetype v0.3.22
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0
 	github.com/pkg/errors v0.8.1

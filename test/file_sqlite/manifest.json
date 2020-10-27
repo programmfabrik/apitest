@@ -1,0 +1,25 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "template file_sqlite: read from sqlite file, iterate over results",
+    "tests": [
+        {
+            "name": "bounce marshalled result of SELECT statement",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "method": "POST",
+                "endpoint": "bounce",
+                "body": {{ file_sqlite "testdata.sqlite" `
+                    SELECT * FROM "test_values"
+                ` | marshal }}
+            },
+            "response": {
+                "body": {{ file "expected_response.json" }}
+            }
+        }
+    ]
+}
