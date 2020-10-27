@@ -1,0 +1,21 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "request miscellanoeus tests",
+    "tests": [
+        {
+            "name": "test not null response on actual empty response",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "assets/empty.json",
+                "method": "GET"
+            },
+            "response": {
+                "statuscode": 200
+            }
+        }
+    ]
+}

@@ -12,16 +12,16 @@ A single testcase is also a perfect definition of an occuring problem and helps 
 # Configuration file
 For configuring the apitest tool, add the follwing section to your 'apitest.yml' configuration file.
 
-The report parameters of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
-
- **After the first setup you don't need to touch the config again. (You should not do that, to prevent errors based on rash changes in the config)**
-
+The report parameters of this config can be overwritten via a command line flag. So you should set your intended standar
 ```yaml
 apitest:
   server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
+  store: # initial values for the datastore, parsed as map[string]interface{}
+    email.server: smtp.google.com
+
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
@@ -1393,7 +1393,7 @@ int64,string
 The call
 
 ```django
-{{ csv "some/path/example.csv" ','}}
+{{ file_csv "some/path/example.csv" ','}}
 ```
 
 would result in
@@ -1405,7 +1405,7 @@ would result in
 As an example with pipes, the call
 
 ```django
-{{ csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
+{{ file_csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
 ```
 
  would result in `martin` given the response above.
@@ -1480,6 +1480,70 @@ int64,string
 
 ```go
 [map[name:simon] map[name:martin] map[name:roman] map[name:klaus] map[name:sebastian]]
+```
+
+## `file_sqlite [path] [statement]`
+
+Helper function to return the result of an SQL statement from a sqlite3 file.
+- `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
+- `@statement`: string; a SQL statement that returns data (`SELECT`)
+- `@result`: the result of the statement as a json array so we can work on this data with qjson
+
+### Example
+
+Content of sqlite file at `some/path/example.sqlite`:
+
+Table `names`:
+- column `id`: type `INTEGER`
+- column `name`: type `TEXT`
+
+| id | name |
+|---|---|
+| `2` | `martin` |
+| `3` | NULL |
+| `1` | `simon` |
+
+The call
+
+```django
+{{ file_sqlite "some/path/example.sqlite" `
+    SELECT id, name FROM names
+    WHERE name IS NOT NULL
+    ORDER BY id ASC
+` }}
+```
+
+would result in
+
+```go
+[map[id:1 name:simon] map[id:2 name:martin]]
+```
+
+### Working with `NULL` values
+
+`NULL` values in the database are returned as `nil` in the template. To check if a value in the sqlite file is `NULL`, us a comparison to `nil`:
+
+The call
+
+```django
+{{ file_sqlite "some/path/example.sqlite" `
+    SELECT id, name FROM names
+    ORDER BY id ASC
+` }}
+```
+
+would result in
+
+```go
+[map[id:1 name:simon] map[id:2 name:martin] map[id:3 name:nil]]
+```
+
+The `NULL` value in `name` can be checked with
+
+```django
+{{ if ne $row.name nil }}
+    // use name, else skip
+{{ end }}
 ```
 
 ## `slice [parms...]`
