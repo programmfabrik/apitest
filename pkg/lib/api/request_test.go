@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
@@ -60,5 +62,60 @@ func TestBuildCurl(t *testing.T) {
 
 	if request.ToString(true) != exp {
 		t.Fatalf("Did not match right curl command. Expected '%s' != '%s' GOT", exp, request.ToString(true))
+	}
+}
+
+func TestRequestBuildHttpWithCookie(t *testing.T) {
+	reqCookies := map[string]*RequestCookie{
+		"sess": {
+			ValueFromStore: "sess_cookie",
+		},
+		"sess2": {
+			ValueFromStore: "?sess2_cookie",
+			Value:          "you_sec_sess",
+		},
+	}
+	storeCookies := map[string]http.Cookie{
+		"sess_cookie": {
+			Value: "your_session",
+		},
+	}
+	request := Request{
+		Endpoint: "dummy",
+		Method:   "GET",
+		Cookies:  reqCookies,
+	}
+	request.buildPolicy = buildRegular
+	ds := datastore.NewStore(false)
+	for key, val := range storeCookies {
+		ds.Set(key, val)
+	}
+	request.DataStore = ds
+	httpRequest, err := request.buildHttpRequest()
+	if err != nil {
+		t.Fatalf("Could not build http request: %s", err)
+	}
+	for k, v := range reqCookies {
+		ck, err := httpRequest.Cookie(k)
+		if err != nil {
+			t.Fatalf("Could not retieve cookie '%s' from http request: %s", k, err)
+		}
+		if v.Value != "" && ck.Value != v.Value {
+			t.Fatalf("Cookie %s value: '%s', expected: '%s'", k, ck.Value, v.Value)
+		}
+		if v.ValueFromStore != "" {
+			st := v.ValueFromStore
+			if strings.HasPrefix(v.ValueFromStore, "?") {
+				st = st[1:]
+			}
+			st = fmt.Sprintf("%s_cookie", st)
+			sCk, ok := storeCookies[st]
+			if !ok {
+				continue
+			}
+			if v.Value == "" && ck.Value != sCk.Value {
+				t.Fatalf("Cookie %s value: '%s', expected: '%s'", k, ck.Value, sCk.Value)
+			}
+		}
 	}
 }

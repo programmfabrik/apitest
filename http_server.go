@@ -31,7 +31,9 @@ func (ats *Suite) StartHttpServer() {
 	mux.Handle("/", customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir))))
 
 	// bounce json response
-	mux.HandleFunc("/bounce-json", bounceJSON)
+	mux.HandleFunc("/bounce-json", func(w http.ResponseWriter, r *http.Request) {
+		cookiesMiddleware(w, r, bounceJSON)
+	})
 
 	// bounce binary response with information in headers
 	mux.HandleFunc("/bounce", bounceBinary)
@@ -186,4 +188,12 @@ func bounceBinary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.Copy(w, r.Body)
+}
+
+func cookiesMiddleware(w http.ResponseWriter, r *http.Request, f http.HandlerFunc) {
+	ckHeader := r.Header.Values("X-Test-Set-Cookies")
+	for _, ck := range ckHeader {
+		w.Header().Add("Set-Cookie", ck)
+	}
+	f(w, r)
 }

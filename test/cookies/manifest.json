@@ -1,0 +1,120 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "check cookies from server as defined in test request",
+    "tests": [
+        {
+            "name": "set a sess cookie",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "set_cookies": [
+                    {
+                        "name": "sess",
+                        "value": "my_sess"
+                    },
+                    {
+                        "name": "dummy",
+                        "value": "whatever",
+                        "path": "/mypath"
+                    }
+                ],
+                "body": {}
+            },
+            "response": {
+                "statuscode": 200,
+                "header": {
+                    "Set-Cookie": [
+                        "sess=my_sess",
+                        "dummy=whatever; Path=/mypath"
+                    ]
+                },
+                "body": {}
+            },
+			"store_response_qjson": {
+				"sess_cookie": "cookie.sess"
+			}
+        },
+        {
+            "name": "use cookie set in store",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "cookies": {
+                    "sess": {
+                        "value_from_store": "sess_cookie"
+                    }
+                },
+                "body": {}
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "header": {
+                        "Cookie": [
+                            "sess=my_sess"
+                        ]
+                    },
+                    "body": {}
+                }
+            }
+        },
+        {
+            "name": "use cookie not set in store",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "cookies": {
+                    "sess2": {
+                        "value_from_store": "?nonexistent",
+                        "value": "fancy_sess_vol_2"
+                    }
+                },
+                "body": {}
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "header": {
+                        "Cookie": [
+                            "sess2=fancy_sess_vol_2"
+                        ]
+                    },
+                    "body": {}
+                }
+            }
+        },
+        {
+            "name": "override cookie set in store",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "cookies": {
+                    "dummy": {
+                        "value_from_store": "?dummy",
+                        "value": "wherever_whatever"
+                    }
+                },
+                "body": {}
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "header": {
+                        "Cookie": [
+                            "dummy=wherever_whatever"
+                        ]
+                    },
+                    "body": {}
+                }
+            }
+        }
+    ]
+}

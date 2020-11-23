@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -22,17 +23,19 @@ import (
 type Response struct {
 	statusCode  int
 	headers     map[string][]string
+	cookies     []*http.Cookie
 	body        []byte
 	bodyControl util.JsonObject
 	Format      ResponseFormat
 }
 
 type ResponseSerialization struct {
-	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
-	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
-	Body        interface{}         `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
-	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
+	StatusCode  int                    `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string][]string    `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]http.Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Body        interface{}            `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject        `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat         `yaml:"format" json:"format,omitempty"`
 }
 
 type ResponseFormat struct {
@@ -44,12 +47,12 @@ type ResponseFormat struct {
 	PreProcess *PreProcess `json:"pre_process,omitempty"`
 }
 
-func NewResponse(statusCode int, headers map[string][]string, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
+func NewResponse(statusCode int, headers map[string][]string, cookies []*http.Cookie, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return res, err
 	}
-	return Response{statusCode: statusCode, headers: headers, body: bodyBytes, bodyControl: bodyControl, Format: bodyFormat}, nil
+	return Response{statusCode: statusCode, headers: headers, cookies: cookies, body: bodyBytes, bodyControl: bodyControl, Format: bodyFormat}, nil
 }
 
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
@@ -62,7 +65,16 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		spec.StatusCode = 200
 	}
 
-	return NewResponse(spec.StatusCode, spec.Headers, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
+	// Build standard cookies bag from spec map
+	var cookies []*http.Cookie
+	if len(spec.Cookies) > 0 {
+		cookies = make([]*http.Cookie, 0)
+		for _, ck := range spec.Cookies {
+			cookies = append(cookies, &ck)
+		}
+	}
+
+	return NewResponse(spec.StatusCode, spec.Headers, cookies, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -135,6 +147,15 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 	if len(resp.headers) > 0 {
 		responseJSON.Headers = resp.headers
+	}
+	// Build cookies map from standard bag
+	if len(resp.cookies) > 0 {
+		responseJSON.Cookies = make(map[string]http.Cookie)
+		for _, ck := range resp.cookies {
+			if ck != nil {
+				responseJSON.Cookies[ck.Name] = *ck
+			}
+		}
 	}
 
 	// if the body should not be ignored, serialize the parsed/converted body

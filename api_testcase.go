@@ -459,7 +459,7 @@ func (testCase Case) loadResponse() (api.Response, error) {
 
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil, res.Format)
+		return api.NewResponse(200, nil, nil, bytes.NewReader([]byte("")), nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {

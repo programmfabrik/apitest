@@ -204,6 +204,37 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "header2": "value"
         },
 
+        // Additional cookies that should be added to the request
+        "cookies": {
+            // name of a cookie to be set
+            "cookie1": {
+                // A cookie can be get parsed from store if it was saved before
+                // Prepending `?` will ignore the cookie if it is not set
+                "value_from_store": "?sess_cookie",
+                // Or its values can be directly set, overriding the one from store, if defined
+                "value": "value"
+            },
+            "cookie2": {
+                "value_from_store": "ads_cookie",
+            }
+        },
+
+        // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
+        // It is used in the builting `http_server` to automatically set those cookies on response
+        // So it is useful for mocking them for further testing
+        "set_cookies": [
+            {
+                "name": "sess_cookie",
+                "value": "myauthtoken"
+            },
+            {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "Path": "/auth",
+                "HttpOnly": true
+            }
+        ],
+
         // With header_from_you set a header to the value of the dat astore field
         // In this example we set the "Content-Type" header to the value "application/json"
         // As "application/json" is stored as string in the datastore on index "contentType"
@@ -260,9 +291,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         }
     },
 
-    // Store parts of the repsonse into the datastore
+    // Store parts of the response into the datastore
     "store_response_qjson": {
-        "eas_id": "body.0.eas._id"
+        "eas_id": "body.0.eas._id",
+
+        // Cookies are stored in `cookies` map
+        "sess_cookie": "cookies.sess"
     },
 
     // wait_before_ms pauses right before sending the test request <n> milliseconds
