@@ -12,7 +12,7 @@
                 "server_url": "http://localhost:9999",
                 "endpoint": "bounce-json",
                 "method": "POST",
-                "set_cookies": [
+                "x-test-set-cookie": [
                     {
                         "name": "sess",
                         "value": "my_sess"
@@ -32,6 +32,17 @@
                         "sess=my_sess",
                         "dummy=whatever; Path=/mypath"
                     ]
+                },
+                "cookie": {
+                    "sess": {
+                        "Name": "sess",
+                        "Value": "mysess"
+                    },
+                    "dummy": {
+                        "Name": "dummy",
+                        "Value": "whatever",
+                        "Path": "/mypath"
+                    }
                 },
                 "body": {}
             },
@@ -72,7 +83,7 @@
                 "method": "POST",
                 "cookies": {
                     "sess2": {
-                        "value_from_store": "?nonexistent",
+                        "value_from_store": "nonexistent",
                         "value": "fancy_sess_vol_2"
                     }
                 },
@@ -98,7 +109,7 @@
                 "method": "POST",
                 "cookies": {
                     "dummy": {
-                        "value_from_store": "?dummy",
+                        "value_from_store": "dummy",
                         "value": "wherever_whatever"
                     }
                 },

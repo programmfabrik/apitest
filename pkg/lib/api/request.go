@@ -49,7 +49,7 @@ type Request struct {
 	Headers              map[string]*string        `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*http.Cookie            `yaml:"set_cookies" json:"set_cookies"`
+	SetCookies           []*http.Cookie            `yaml:"x-test-set-cookie" json:"x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 interface{}               `yaml:"body" json:"body"`
@@ -211,40 +211,21 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		storeKey := reqCookie.ValueFromStore
 
 		// Get cookie from store
-		if len(storeKey) > 0 {
-			skipOnError := false
-			if strings.HasPrefix(storeKey, "?") {
-				skipOnError = true
-				storeKey = storeKey[1:]
-			}
-			if request.DataStore == nil {
-				if !skipOnError {
-					return req, fmt.Errorf("can't get cookie as the datastore is nil")
-				}
-			} else {
-				cookieInt, err := request.DataStore.Get(storeKey)
+		if len(storeKey) > 0 && request.DataStore != nil  {
+			cookieInt, err := request.DataStore.Get(storeKey)
+			if err == nil && cookieInt != "" {
+				ckBytes, err := json.Marshal(cookieInt)
 				if err != nil {
-					if !skipOnError {
-						return nil, fmt.Errorf("could not get cookie '%s' from Datastore: %s", storeKey, err)
-					}
-				} else if cookieInt == "" {
-					if !skipOnError {
-						return nil, fmt.Errorf("empty cookie '%s' from Datastore", storeKey)
-					}
-				} else {
-					ckBytes, err := json.Marshal(cookieInt)
-					if err != nil {
-						return nil, fmt.Errorf("could not marshal cookie '%s' from Datastore", storeKey)
-					}
-					err = json.Unmarshal(ckBytes, &ck)
-					if err != nil {
-						return nil, fmt.Errorf("could not unmarshal cookie '%s' from Datastore: %s", storeKey, string(ckBytes))
-					}
+					return nil, fmt.Errorf("could not marshal cookie '%s' from Datastore", storeKey)
+				}
+				err = json.Unmarshal(ckBytes, &ck)
+				if err != nil {
+					return nil, fmt.Errorf("could not unmarshal cookie '%s' from Datastore: %s", storeKey, string(ckBytes))
 				}
 			}
 		}
 
-		//Override with specific values
+		// Override with specific values
 		if reqCookie.Value != "" {
 			ck.Value = reqCookie.Value
 		}

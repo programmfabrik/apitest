@@ -204,13 +204,13 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "header2": "value"
         },
 
-        // Additional cookies that should be added to the request
+        // Cookies can be added to the request
         "cookies": {
             // name of a cookie to be set
             "cookie1": {
                 // A cookie can be get parsed from store if it was saved before
-                // Prepending `?` will ignore the cookie if it is not set
-                "value_from_store": "?sess_cookie",
+                // It will ignore the cookie if it is not set
+                "value_from_store": "sess_cookie",
                 // Or its values can be directly set, overriding the one from store, if defined
                 "value": "value"
             },
@@ -222,7 +222,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
         // It is used in the builting `http_server` to automatically set those cookies on response
         // So it is useful for mocking them for further testing
-        "set_cookies": [
+        "x-test-set-cookie": [
             {
                 "name": "sess_cookie",
                 "value": "myauthtoken"
@@ -263,7 +263,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Expected http status code. See api documentation vor the right ones
         "statuscode": 200,
 
-        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
+        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defined in rfc2616)
         "header": {
             "key1": [
                 "val1",
@@ -274,6 +274,19 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
                 "csdklmwerf8ßwji02kopwfjko2"
             ]
         },
+
+        // Cookies will be under this key, in a map name => cookie
+        "cookie": {
+            "cookie1": {
+                "Name": "cookie1",
+                "Value": "val1",
+                "Path": "/"
+            },
+            "cookie2": {
+                "Name": "cookie2",
+                "Value": "val2"
+            }
+        }
 
         // optionally, the expected format of the response can be specified so that it can be converted into json and can be checked
         "format": {
