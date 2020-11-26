@@ -278,13 +278,13 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Cookies will be under this key, in a map name => cookie
         "cookie": {
             "cookie1": {
-                "Name": "cookie1",
-                "Value": "val1",
-                "Path": "/"
+                "name": "cookie1",
+                "value": "val1",
+                "path": "/"
             },
             "cookie2": {
-                "Name": "cookie2",
-                "Value": "val2"
+                "name": "cookie2",
+                "value": "val2"
             }
         }
 
@@ -308,8 +308,8 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     "store_response_qjson": {
         "eas_id": "body.0.eas._id",
 
-        // Cookies are stored in `cookies` map
-        "sess_cookie": "cookies.sess"
+        // Cookies are stored in `cookie` map
+        "sess_cookie": "cookie.sess"
     },
 
     // wait_before_ms pauses right before sending the test request <n> milliseconds

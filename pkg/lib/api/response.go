@@ -32,7 +32,7 @@ type Response struct {
 type ResponseSerialization struct {
 	StatusCode  int                    `yaml:"statuscode" json:"statuscode"`
 	Headers     map[string][]string    `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]http.Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Cookies     map[string]interface{} `yaml:"cookie" json:"cookie,omitempty"`
 	Body        interface{}            `yaml:"body" json:"body,omitempty"`
 	BodyControl util.JsonObject        `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat         `yaml:"format" json:"format,omitempty"`
@@ -69,7 +69,24 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	var cookies []*http.Cookie
 	if len(spec.Cookies) > 0 {
 		cookies = make([]*http.Cookie, 0)
-		for _, ck := range spec.Cookies {
+		for _, ckIface := range spec.Cookies {
+			ckMap, ok := ckIface.(map[string]interface{})
+			if !ok {
+				return res, errors.Errorf("Could not cast cookie map '%v'", ckIface)
+			}
+			ucMap := make(map[string]interface{}, len(ckMap))
+			for k, v := range ckMap {
+				ucMap[strings.Title(k)] = v
+			}
+			ckBytes, err := json.Marshal(ucMap)
+			if err != nil {
+				return res, errors.Wrapf(err, "Could not marshal cookie map '%v'", ucMap)
+			}
+			var ck http.Cookie
+			err = json.Unmarshal(ckBytes, &ck)
+			if err != nil {
+				return res, errors.Wrapf(err, "Could not unmarshal map into cookie: '%v'", ucMap)
+			}
 			cookies = append(cookies, &ck)
 		}
 	}
@@ -150,10 +167,23 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 	// Build cookies map from standard bag
 	if len(resp.cookies) > 0 {
-		responseJSON.Cookies = make(map[string]http.Cookie)
+		responseJSON.Cookies = make(map[string]interface{})
 		for _, ck := range resp.cookies {
 			if ck != nil {
-				responseJSON.Cookies[ck.Name] = *ck
+				ckBytes, err := json.Marshal(*ck)
+				if err != nil {
+					return res, errors.Wrapf(err, "Could not marshal cookie '%v'", ck)
+				}
+				var ckMap map[string]interface{}
+				err = json.Unmarshal(ckBytes, &ckMap)
+				if err != nil {
+					return res, errors.Wrapf(err, "Could not unmarshal cookie into map: '%v'", ck)
+				}
+				lcMap := make(map[string]interface{}, len(ckMap))
+				for k, v := range ckMap {
+					lcMap[strings.ToLower(k)] = v
+				}
+				responseJSON.Cookies[ck.Name] = lcMap
 			}
 		}
 	}

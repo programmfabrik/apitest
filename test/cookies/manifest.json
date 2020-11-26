@@ -35,13 +35,13 @@
                 },
                 "cookie": {
                     "sess": {
-                        "Name": "sess",
-                        "Value": "mysess"
+                        "name": "sess",
+                        "value": "mysess"
                     },
                     "dummy": {
-                        "Name": "dummy",
-                        "Value": "whatever",
-                        "Path": "/mypath"
+                        "name": "dummy",
+                        "value": "whatever",
+                        "path": "/mypath"
                     }
                 },
                 "body": {}
@@ -65,6 +65,12 @@
             },
             "response": {
                 "statuscode": 200,
+                "cookie": {
+                    "sess": {
+                        "name": "sess",
+                        "value": "mysess"
+                    }
+                },
                 "body": {
                     "header": {
                         "Cookie": [
@@ -91,6 +97,12 @@
             },
             "response": {
                 "statuscode": 200,
+                "cookie": {
+                    "sess2": {
+                        "name": "sess2",
+                        "value": "fancy_sess_vol_2"
+                    }
+                },
                 "body": {
                     "header": {
                         "Cookie": [
@@ -117,6 +129,12 @@
             },
             "response": {
                 "statuscode": 200,
+                "cookie": {
+                    "dummy": {
+                        "name": "dummy",
+                        "value": "wherever_whatever"
+                    }
+                },
                 "body": {
                     "header": {
                         "Cookie": [
