@@ -224,14 +224,19 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // So it is useful for mocking them for further testing
         "x-test-set-cookie": [
             {
-                "name": "sess_cookie",
+                "name": "sess",
                 "value": "myauthtoken"
             },
             {
                 "name": "jwtoken",
                 "value": "tokenized",
-                "Path": "/auth",
-                "HttpOnly": true
+                "path": "/auth",
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "max_age": 86400,
+                "secure": false,
+                "http_only": true,
+                "same_site": 1
             }
         ],
 
@@ -277,14 +282,20 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
         // Cookies will be under this key, in a map name => cookie
         "cookie": {
-            "cookie1": {
-                "name": "cookie1",
-                "value": "val1",
-                "path": "/"
+            "sess": {
+                "name": "sess",
+                "value": "myauthtoken"
             },
-            "cookie2": {
-                "name": "cookie2",
-                "value": "val2"
+            "jwtoken": {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "path": "/auth",
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "max_age": 86400,
+                "secure": false,
+                "http_only": true,
+                "same_site": 1
             }
         }
 

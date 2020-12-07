@@ -49,7 +49,7 @@ type Request struct {
 	Headers              map[string]*string        `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*http.Cookie            `yaml:"x-test-set-cookie" json:"x-test-set-cookie"`
+	SetCookies           []*TestCookie             `yaml:"x-test-set-cookie" json:"x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 interface{}               `yaml:"body" json:"body"`
@@ -211,7 +211,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		storeKey := reqCookie.ValueFromStore
 
 		// Get cookie from store
-		if len(storeKey) > 0 && request.DataStore != nil  {
+		if len(storeKey) > 0 && request.DataStore != nil {
 			cookieInt, err := request.DataStore.Get(storeKey)
 			if err == nil && cookieInt != "" {
 				ckBytes, err := json.Marshal(cookieInt)
@@ -238,7 +238,18 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		if v == nil {
 			continue
 		}
-		ckVal := v.String()
+		ck := http.Cookie{
+			Name:     v.Name,
+			Value:    v.Value,
+			Path:     v.Path,
+			Domain:   v.Domain,
+			Expires:  v.Expires,
+			MaxAge:   v.MaxAge,
+			Secure:   v.Secure,
+			HttpOnly: v.HttpOnly,
+			SameSite: v.SameSite,
+		}
+		ckVal := ck.String()
 		if ckVal == "" {
 			return nil, fmt.Errorf("Invalid cookie to set server-side: %v", v)
 		}

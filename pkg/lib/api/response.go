@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/clbanning/mxj"
@@ -29,13 +30,26 @@ type Response struct {
 	Format      ResponseFormat
 }
 
+// TestCookie definition
+type TestCookie struct {
+	Name     string        `json:"name"`
+	Value    string        `json:"value"`
+	Path     string        `json:"path,omitempty"`
+	Domain   string        `json:"domain,omitempty"`
+	Expires  time.Time     `json:"expires,omitempty"`
+	MaxAge   int           `json:"max_age,omitempty"`
+	Secure   bool          `json:"secure,omitempty"`
+	HttpOnly bool          `json:"http_only,omitempty"`
+	SameSite http.SameSite `json:"same_site,omitempty"`
+}
+
 type ResponseSerialization struct {
-	StatusCode  int                    `yaml:"statuscode" json:"statuscode"`
-	Headers     map[string][]string    `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]interface{} `yaml:"cookie" json:"cookie,omitempty"`
-	Body        interface{}            `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject        `yaml:"body:control" json:"body:control,omitempty"`
-	Format      ResponseFormat         `yaml:"format" json:"format,omitempty"`
+	StatusCode  int                   `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string][]string   `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]TestCookie `yaml:"cookie" json:"cookie,omitempty"`
+	Body        interface{}           `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject       `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat        `yaml:"format" json:"format,omitempty"`
 }
 
 type ResponseFormat struct {
@@ -69,25 +83,18 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	var cookies []*http.Cookie
 	if len(spec.Cookies) > 0 {
 		cookies = make([]*http.Cookie, 0)
-		for _, ckIface := range spec.Cookies {
-			ckMap, ok := ckIface.(map[string]interface{})
-			if !ok {
-				return res, errors.Errorf("Could not cast cookie map '%v'", ckIface)
-			}
-			ucMap := make(map[string]interface{}, len(ckMap))
-			for k, v := range ckMap {
-				ucMap[strings.Title(k)] = v
-			}
-			ckBytes, err := json.Marshal(ucMap)
-			if err != nil {
-				return res, errors.Wrapf(err, "Could not marshal cookie map '%v'", ucMap)
-			}
-			var ck http.Cookie
-			err = json.Unmarshal(ckBytes, &ck)
-			if err != nil {
-				return res, errors.Wrapf(err, "Could not unmarshal map into cookie: '%v'", ucMap)
-			}
-			cookies = append(cookies, &ck)
+		for _, rck := range spec.Cookies {
+			cookies = append(cookies, &http.Cookie{
+				Name:     rck.Name,
+				Value:    rck.Value,
+				Path:     rck.Path,
+				Domain:   rck.Domain,
+				Expires:  rck.Expires,
+				MaxAge:   rck.MaxAge,
+				Secure:   rck.Secure,
+				HttpOnly: rck.HttpOnly,
+				SameSite: rck.SameSite,
+			})
 		}
 	}
 
@@ -167,23 +174,20 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 	// Build cookies map from standard bag
 	if len(resp.cookies) > 0 {
-		responseJSON.Cookies = make(map[string]interface{})
+		responseJSON.Cookies = make(map[string]TestCookie)
 		for _, ck := range resp.cookies {
 			if ck != nil {
-				ckBytes, err := json.Marshal(*ck)
-				if err != nil {
-					return res, errors.Wrapf(err, "Could not marshal cookie '%v'", ck)
+				responseJSON.Cookies[ck.Name] = TestCookie{
+					Name:     ck.Name,
+					Value:    ck.Value,
+					Path:     ck.Path,
+					Domain:   ck.Domain,
+					Expires:  ck.Expires,
+					MaxAge:   ck.MaxAge,
+					Secure:   ck.Secure,
+					HttpOnly: ck.HttpOnly,
+					SameSite: ck.SameSite,
 				}
-				var ckMap map[string]interface{}
-				err = json.Unmarshal(ckBytes, &ckMap)
-				if err != nil {
-					return res, errors.Wrapf(err, "Could not unmarshal cookie into map: '%v'", ck)
-				}
-				lcMap := make(map[string]interface{}, len(ckMap))
-				for k, v := range ckMap {
-					lcMap[strings.ToLower(k)] = v
-				}
-				responseJSON.Cookies[ck.Name] = lcMap
 			}
 		}
 	}
