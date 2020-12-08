@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -45,14 +46,27 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 			if ki >= len(infos) || infos[ki].format == "SKIP_COLUMN" {
 				continue
 			}
+			ptr := false
+			frmt := infos[ki].format
+			if strings.HasPrefix(frmt, "*") {
+				frmt = frmt[1:]
+				ptr = true
+			}
 
-			value, err := getTyped(vi, infos[ki].format)
+			value, err := getTyped(vi, frmt)
 			if err != nil {
 				return nil, err
 			}
 
-			tmpRow[infos[ki].name] = value
-
+			if ptr {
+				if vi == "" {
+					tmpRow[infos[ki].name] = reflect.Zero(reflect.TypeOf(value)).Interface()
+				} else {
+					tmpRow[infos[ki].name] = &value
+				}
+			} else {
+				tmpRow[infos[ki].name] = value
+			}
 		}
 		output = append(output, tmpRow)
 	}
@@ -162,6 +176,9 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 }
 
 func isValidFormat(format string) bool {
+	if strings.HasPrefix(format, "*") {
+		format = format[1:]
+	}
 	validFormats := []string{"string", "int64", "int", "float64", "bool"}
 	for _, v := range validFormats {
 		if format == v || format == v+",array" || format == "json" {

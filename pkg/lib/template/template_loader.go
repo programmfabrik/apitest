@@ -355,6 +355,12 @@ func (loader *Loader) Render(
 		"server_url": func() *url.URL {
 			return loader.ServerURL
 		},
+		"is_zero": func(v interface{}) bool {
+			if v == nil {
+				return true
+			}
+			return reflect.ValueOf(v).IsZero()
+		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
 	if err != nil {
