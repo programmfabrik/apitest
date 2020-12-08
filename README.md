@@ -1380,6 +1380,8 @@ The CSV **must** have a certain structur. If the structure of the given CSV diff
 - bool,array
 - json
 
+All types can be prefixed with * to return a pointer to the value. Empty strings initialize the Golang zero value for the type, however for type array the empty string inialized an empty array. The empty string returns an empty typed pointer.
+
 ### Example
 
 Content of file at `some/path/example.csv`:
@@ -1623,6 +1625,10 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 ## server_url
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
+
+## is_zero
+
+**is_zero** returns **true** if the passed value is the Golang zero value of the type.
 
 # HTTP Server
 
