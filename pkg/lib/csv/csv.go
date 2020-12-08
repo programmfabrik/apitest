@@ -58,7 +58,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 			}
 
 			if ptr {
-				if vi == "" || value == nil {
+				if vi == "" || value == nil {
 					tmpRow[infos[ki].name] = nil // use an untyped nil
 				} else {
 					tmpRow[infos[ki].name] = &value
