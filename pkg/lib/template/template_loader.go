@@ -222,6 +222,9 @@ func (loader *Loader) Render(
 
 			return data, nil
 		},
+		"file_path": func(path string) string {
+			return util.LocalPath(path, rootDir)
+		},
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string
 
