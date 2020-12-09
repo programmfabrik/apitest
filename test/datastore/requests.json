@@ -1,0 +1,29 @@
+[
+    {
+        "name": "add data thru request - 1",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "data1.json",
+            "method": "GET"
+        },
+        "response": {
+            "body": {"some": "data"}
+        }
+    },
+    {
+        "name": "add data thru request - 2",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "data2.json",
+            "method": "GET"
+        }
+    },
+    {
+        "name": "add data thru request - 3",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "data1.json",
+            "method": "GET"
+        }
+    }
+]
