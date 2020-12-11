@@ -2,7 +2,7 @@
 {
     "http_server": {
         "addr": "{{ $local_port }}",
-        "dir": "../_res",
+        "dir": "./",
         "testmode": false
     },
     "name": "new feature pre_process",
@@ -108,7 +108,7 @@
                     "header2": "XYZ"
                 },
                 "body": {
-                    "file": "@../_res/assets/camera.jpg"
+                    "file": "@camera.jpg"
                 },
                 "body_type": "multipart"
             },
@@ -181,7 +181,7 @@
             "name": "test static endpoint (serve static file relative to server directory)",
             "request": {
                 "server_url": "http://localhost{{ $local_port }}",
-                "endpoint": "assets/camera.jpg",
+                "endpoint": "camera.jpg",
                 "method": "GET"
             },
             "response": {

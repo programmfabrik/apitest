@@ -1,10 +1,10 @@
 [
     {
-        "name": "preprocess asset _res/assets/camera.jpg with imagemagick compare against itsefl (should pass)",
+        "name": "preprocess asset camera.jpg with imagemagick compare against itsefl (should pass)",
         "request": {
             // load static file
             "server_url": "{{ datastore "local_url" }}",
-            "endpoint": "assets/camera.jpg",
+            "endpoint": "camera.jpg",
             "method": "GET"
         },
         "response": {
@@ -18,7 +18,7 @@
                           "-fuzz",
                           "2%",
                           "-",
-                          {{ file_path "../_res/assets/camera.jpg" | marshal }},
+                          {{ file_path "camera.jpg" | marshal }},
                           "/dev/null"
                         ],
                         "output": "stderr"
@@ -29,11 +29,11 @@
         }
     },
     {
-        "name": "preprocess asset _res/assets/camera.jpg with imagemagick compare against a different one (should fail)",
+        "name": "preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
         "request": {
             // load static file
             "server_url": "{{ datastore "local_url" }}",
-            "endpoint": "assets/camera.jpg",
+            "endpoint": "camera.jpg",
             "method": "GET"
         },
         "response": {
@@ -47,7 +47,7 @@
                           "-fuzz",
                           "2%",
                           "-",
-                          {{ file_path "../_res/assets/berlin.jpg" | marshal }},
+                          {{ file_path "berlin.jpg" | marshal }},
                           "/dev/null"
                         ],
                         "output": "stderr"
