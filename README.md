@@ -1431,7 +1431,7 @@ The CSV **must** have a certain structur. If the structure of the given CSV diff
 - bool,array
 - json
 
-All types can be prefixed with * to return a pointer to the value. Empty strings initialize the Golang zero value for the type, however for type array the empty string inialized an empty array. The empty string returns an empty typed pointer.
+All types can be prefixed with * to return a pointer to the value. Empty strings initialize the Golang zero value for the type,  for type array the empty string inialized an empty array. The empty string returns an untyped **nil**.
 
 ### Example
 

@@ -255,14 +255,15 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
-		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
-		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
-		if err != nil {
-			testCase.LogReq(req)
-			err = fmt.Errorf("error getting json from response: %s", err)
-			return responsesMatch, req, apiResp, err
-		}
+	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
+	// If we don't define an expected response, we won't have a format
+	// That's problematic if the response is not JSON, as we try to parse it for the datastore anyway
+	// So we don't fail the test in that edge case
+	if err != nil && (testCase.ResponseData != nil || testCase.CollectResponse != nil ||
+		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0) {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error getting json from response: %s", err)
+		return responsesMatch, req, apiResp, err
 	}
 
 	// Store in custom store

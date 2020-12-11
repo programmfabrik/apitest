@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -59,8 +58,8 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 			}
 
 			if ptr {
-				if vi == "" {
-					tmpRow[infos[ki].name] = reflect.Zero(reflect.TypeOf(value)).Interface()
+				if vi == "" || value == nil {
+					tmpRow[infos[ki].name] = nil // use an untyped nil
 				} else {
 					tmpRow[infos[ki].name] = &value
 				}
@@ -189,6 +188,7 @@ func isValidFormat(format string) bool {
 	return false
 }
 
+// getTyped
 func getTyped(value, format string) (interface{}, error) {
 
 	switch format {
