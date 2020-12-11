@@ -377,7 +377,7 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
 ## Preprocessing responses
 
-Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML or CSV output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
+Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML, CSV or binary output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
 
 The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked.
 
@@ -390,7 +390,8 @@ To define a preprocessing for a response, add a `format` object that defines the
             "pre_process": {
                 "cmd": {
                     "name": "...",
-                    "args": [ ]
+                    "args": [ ],
+                    "output": "stdout"
                 }
             }
         }
@@ -400,6 +401,7 @@ To define a preprocessing for a response, add a `format` object that defines the
 
 * `format.pre_process.cmd.name`: (string, mandatory) name of the command line tool
 * `format.pre_process.cmd.args`: (string array, optional) list of command line parameters
+* `format.pre_process.cmd.output`: (string, optional) what command output to use as result response, it can be one of `exitcode`, `stderr` or `stdout` (default)
 
 ### Examples
 
@@ -420,6 +422,44 @@ This basic example shows how to use the `pre_process` feature. The response is p
     }
 }
 ```
+
+#### Advanced usage: compare binary image with local one
+
+This example shows how to use the `pre_process` feature with `stderr` output. The response is the metric result of running `imagemagick compare` which returns the absolute error between 2 images given a threshold (0 if identical, number of different pixels otherwise). The arguments are the piped binary from the response and the image to compare against (local file using `file_path` template function) .
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "compare",
+                    "args": [
+                        "-metric",
+                        "AE",
+                        "-fuzz",
+                        "2%",
+                        "-",
+                        {{ file_path "other/file.jpg" | marshal }},
+                        "/dev/null"
+                    ],
+                    "output": "stderr"
+                }
+            }
+        },
+        "body": 0
+    }
+}
+```
+
+* `format.pre_process`:
+    * Command: `compare -metric AE -fuzz 2% - /path/to/other/file.jpg /dev/null`
+    * Parameters:
+        * `-metric AE`: metric to use for image comparison
+        * `-fuzz 2%`: threshold for allowed pixel color difference
+        * `-`: read first image from `stdin` instead loading a saved file
+        * `/path/to/other/file.jpg `: read second image from local path (result from template function above)
+        * `/dev/null`: discard stdout (it contains a binary we don't want, we use stderr output)
 
 #### Reading metadata from a file (JSON Format)
 
@@ -1030,6 +1070,17 @@ Content of file at `some/target.tmpl`:
 ```
 
 Rendering `example.tmpl` will result in `hello world`
+
+## `file_path "relative/path/"`
+
+Returns the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
+
+### Example
+
+Absolute path of file at `some/path/myfile.cpp`:
+```yaml
+{{ file_path "../myfile.tmpl" }}
+```
 
 ## `rows_to_map "keyColumn" "valueColumn" [input]`
 
