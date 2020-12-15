@@ -1616,23 +1616,6 @@ Example how to range over 100 objects
 }
 ```
 
-## `int_range [from] [to]`
-
-Returns a `int64` slice whose values range from `from` (inclusive) to `to` (exclusive).
-
-Example how to range from 30 to 50
-
-```django
-{
-    "body":  [
-        {{ range $idx, $v := int_range 30 50 }}
-        ...
-        {{ end }}
-    ]
-}
-```
-In this case `$idx` will iterate from 0 to 19 inclusive, while `$v` will do from 30 to 49 inclusive
-
 ## replace_host [url]
 
 **replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
@@ -1886,7 +1869,7 @@ The expected response:
 {
     "header": { // Merged headers. original request headers prefixed with 'X-Request`
         "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
-        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test?is=here"], // The url path requested (including query string)
+        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"], // The url path requested (including query string)
         "X-Apitest-Proxy-Request-Query": ["is=here&my=data&some=value"], // The request query string only
         "X-My-Header": ["blah"], // Original request custom header
         "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored

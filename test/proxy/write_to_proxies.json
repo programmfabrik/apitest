@@ -1,6 +1,6 @@
 [
-    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
-        {{ if gt $idx 0 }},{{ end }}
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
+        {{ if gt $offset 0 }},{{ end }}
         {
             "name": "Add some JSON requests to proxy 'test'",
             "request": {
@@ -47,7 +47,7 @@
             "test_image_offset": "body.offset"
         }
     }
-    {{ range $idx, $offset := int_range 0 (datastore "max_entries") }}
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
         ,{
             "name": "Add some JSON requests to proxy 'test2'",
             "request": {

@@ -59,7 +59,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 
 	reqData := request{
 		Method:  r.Method,
-		Path:    r.URL.RequestURI(),
+		Path:    r.URL.Path,
 		Headers: r.Header,
 		Query:   r.URL.Query(),
 	}

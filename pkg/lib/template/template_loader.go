@@ -352,32 +352,6 @@ func (loader *Loader) Render(
 		"server_url": func() *url.URL {
 			return loader.ServerURL
 		},
-		"int_range": func(s, e interface{}) []int64 {
-			var start, end int64
-			switch v := s.(type) {
-			case int64:
-				start = v
-			case int:
-				start = int64(v)
-			default:
-				panic("Invalid 'start' range value")
-			}
-			switch v := e.(type) {
-			case int64:
-				end = v
-			case int:
-				end = int64(v)
-			default:
-				panic("Invalid 'end' range value")
-			}
-			n := end - start
-			result := []int64{}
-			var i int64
-			for i = 0; i < n; i++ {
-				result = append(result, start+i)
-			}
-			return result
-		},
 		"is_zero": func(v interface{}) bool {
 			if v == nil {
 				return true
