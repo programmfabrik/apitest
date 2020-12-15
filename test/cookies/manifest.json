@@ -12,7 +12,7 @@
                 "server_url": "http://localhost:9999",
                 "endpoint": "bounce-json",
                 "method": "POST",
-                "x-test-set-cookie": [
+                "header-x-test-set-cookie": [
                     {
                         "name": "sess",
                         "value": "my_sess"
@@ -42,7 +42,7 @@
                 "cookie": {
                     "sess": {
                         "name": "sess",
-                        "value": "mysess"
+                        "value": "my_sess"
                     },
                     "dummy": {
                         "name": "dummy",
@@ -77,12 +77,6 @@
             },
             "response": {
                 "statuscode": 200,
-                "cookie": {
-                    "sess": {
-                        "name": "sess",
-                        "value": "mysess"
-                    }
-                },
                 "body": {
                     "header": {
                         "Cookie": [
@@ -109,12 +103,6 @@
             },
             "response": {
                 "statuscode": 200,
-                "cookie": {
-                    "sess2": {
-                        "name": "sess2",
-                        "value": "fancy_sess_vol_2"
-                    }
-                },
                 "body": {
                     "header": {
                         "Cookie": [
@@ -141,12 +129,6 @@
             },
             "response": {
                 "statuscode": 200,
-                "cookie": {
-                    "dummy": {
-                        "name": "dummy",
-                        "value": "wherever_whatever"
-                    }
-                },
                 "body": {
                     "header": {
                         "Cookie": [

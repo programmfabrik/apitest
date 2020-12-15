@@ -242,6 +242,26 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 		responseJSON.Headers = response.headers
 	}
 
+	// Build cookies map from standard bag
+	if len(response.cookies) > 0 {
+		responseJSON.Cookies = make(map[string]TestCookie)
+		for _, ck := range response.cookies {
+			if ck != nil {
+				responseJSON.Cookies[ck.Name] = TestCookie{
+					Name:     ck.Name,
+					Value:    ck.Value,
+					Path:     ck.Path,
+					Domain:   ck.Domain,
+					Expires:  ck.Expires,
+					MaxAge:   ck.MaxAge,
+					Secure:   ck.Secure,
+					HttpOnly: ck.HttpOnly,
+					SameSite: ck.SameSite,
+				}
+			}
+		}
+	}
+
 	// necessary because check for <nil> against missing body would fail, but must succeed
 	if bodyJSON != nil {
 		responseJSON.Body = &bodyJSON

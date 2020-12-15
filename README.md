@@ -222,7 +222,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
         // It is used in the builting `http_server` to automatically set those cookies on response
         // So it is useful for mocking them for further testing
-        "x-test-set-cookie": [
+        "header-x-test-set-cookie": [
             {
                 "name": "sess",
                 "value": "myauthtoken"
