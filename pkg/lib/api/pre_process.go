@@ -5,13 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
+)
+
+type CmdOutputType string
+
+const (
+	CmdOutputStdout   CmdOutputType = "stdout"
+	CmdOutputStderr   CmdOutputType = "stderr"
+	CmdOutputExitCode CmdOutputType = "exitcode"
 )
 
 type PreProcess struct {
 	Cmd struct {
-		Name string   `json:"name"`
-		Args []string `json:"args,omitempty"`
+		Name   string        `json:"name"`
+		Args   []string      `json:"args,omitempty"`
+		Output CmdOutputType `json:"output,omitempty"`
 	} `json:"cmd"`
 }
 
@@ -33,6 +43,10 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 
 	if proc.Cmd.Name == "" {
 		return response, fmt.Errorf("Invalid cmd for pre_process: must not be an empty string")
+	}
+
+	if proc.Cmd.Output == "" {
+		proc.Cmd.Output = CmdOutputStdout
 	}
 
 	bodyReader = bytes.NewReader(response.body)
@@ -59,15 +73,31 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 			stderrBytes = append(stderrBytes, exitError.Stderr...)
 		}
 
-		response.body, err2 = json.MarshalIndent(preProcessError{
-			Command:  strings.Join(cmd.Args, " "),
-			Error:    err.Error(),
-			ExitCode: exitCode,
-			StdErr:   string(stderrBytes),
-		}, "", "  ")
+		switch proc.Cmd.Output {
+		case CmdOutputExitCode:
+			response.body = []byte(strconv.Itoa(exitCode))
+		case CmdOutputStderr:
+			response.body = stderrBytes
+		case CmdOutputStdout:
+			response.body, err2 = json.MarshalIndent(preProcessError{
+				Command:  strings.Join(cmd.Args, " "),
+				Error:    err.Error(),
+				ExitCode: exitCode,
+				StdErr:   string(stderrBytes),
+			}, "", "  ")
+		}
+
 		return response, err2
 	}
 
-	response.body = stdout.Bytes()
+	switch proc.Cmd.Output {
+	case CmdOutputExitCode:
+		response.body = []byte(strconv.Itoa(cmd.ProcessState.ExitCode()))
+	case CmdOutputStderr:
+		response.body = stderr.Bytes()
+	case CmdOutputStdout:
+		response.body = stdout.Bytes()
+	}
+
 	return response, nil
 }

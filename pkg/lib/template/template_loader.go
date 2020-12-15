@@ -222,6 +222,9 @@ func (loader *Loader) Render(
 
 			return data, nil
 		},
+		"file_path": func(path string) string {
+			return util.LocalPath(path, rootDir)
+		},
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string
 
@@ -351,6 +354,12 @@ func (loader *Loader) Render(
 		},
 		"server_url": func() *url.URL {
 			return loader.ServerURL
+		},
+		"is_zero": func(v interface{}) bool {
+			if v == nil {
+				return true
+			}
+			return reflect.ValueOf(v).IsZero()
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
