@@ -49,7 +49,7 @@ type Request struct {
 	Headers              map[string]*string        `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*TestCookie             `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 interface{}               `yaml:"body" json:"body"`

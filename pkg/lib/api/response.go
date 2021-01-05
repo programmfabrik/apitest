@@ -30,8 +30,8 @@ type Response struct {
 	Format      ResponseFormat
 }
 
-// TestCookie definition
-type TestCookie struct {
+// Cookie definition
+type Cookie struct {
 	Name     string        `json:"name"`
 	Value    string        `json:"value"`
 	Path     string        `json:"path,omitempty"`
@@ -44,12 +44,12 @@ type TestCookie struct {
 }
 
 type ResponseSerialization struct {
-	StatusCode  int                   `yaml:"statuscode" json:"statuscode"`
-	Headers     map[string][]string   `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]TestCookie `yaml:"cookie" json:"cookie,omitempty"`
-	Body        interface{}           `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject       `yaml:"body:control" json:"body:control,omitempty"`
-	Format      ResponseFormat        `yaml:"format" json:"format,omitempty"`
+	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]Cookie   `yaml:"cookie" json:"cookie,omitempty"`
+	Body        interface{}         `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
 }
 
 type ResponseFormat struct {
@@ -174,10 +174,10 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 	// Build cookies map from standard bag
 	if len(resp.cookies) > 0 {
-		responseJSON.Cookies = make(map[string]TestCookie)
+		responseJSON.Cookies = make(map[string]Cookie)
 		for _, ck := range resp.cookies {
 			if ck != nil {
-				responseJSON.Cookies[ck.Name] = TestCookie{
+				responseJSON.Cookies[ck.Name] = Cookie{
 					Name:     ck.Name,
 					Value:    ck.Value,
 					Path:     ck.Path,
@@ -244,10 +244,10 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 
 	// Build cookies map from standard bag
 	if len(response.cookies) > 0 {
-		responseJSON.Cookies = make(map[string]TestCookie)
+		responseJSON.Cookies = make(map[string]Cookie)
 		for _, ck := range response.cookies {
 			if ck != nil {
-				responseJSON.Cookies[ck.Name] = TestCookie{
+				responseJSON.Cookies[ck.Name] = Cookie{
 					Name:     ck.Name,
 					Value:    ck.Value,
 					Path:     ck.Path,
