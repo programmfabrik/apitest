@@ -6,7 +6,7 @@ import (
 )
 
 // ProxyConfig definition
-type ProxyConfig map[string]StoreConfig
+type ProxyConfig map[string]storeConfig
 
 // Proxy definition
 type Proxy map[string]*store
@@ -20,8 +20,8 @@ func New(cfg ProxyConfig) *Proxy {
 	return &proxy
 }
 
-// Listen for the proxy store/retrieve
-func (proxy *Proxy) Listen(mux *http.ServeMux, prefix string) {
+// RegisterRoutes for the proxy store/retrieve
+func (proxy *Proxy) RegisterRoutes(mux *http.ServeMux, prefix string) {
 	for _, s := range *proxy {
 		mux.HandleFunc(fmt.Sprintf("%sproxywrite/%s", prefix, s.Name), s.write)
 		mux.HandleFunc(fmt.Sprintf("%sproxyread/%s", prefix, s.Name), s.read)

@@ -39,7 +39,7 @@ func (ats *Suite) StartHttpServer() {
 
 	// Start listening into proxy
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
-	ats.httpServerProxy.Listen(mux, "/")
+	ats.httpServerProxy.RegisterRoutes(mux, "/")
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,

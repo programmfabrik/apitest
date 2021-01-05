@@ -40,8 +40,8 @@ type storeEntry struct {
 	Request request
 }
 
-// StoreConfig definition
-type StoreConfig struct {
+// storeConfig definition
+type storeConfig struct {
 	Mode Mode `json:"mode"`
 }
 
