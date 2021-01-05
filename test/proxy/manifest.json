@@ -3,7 +3,7 @@
 {
     "http_server": {
         "addr": "{{ $local_port }}",
-        "dir": "../_res/assets",
+        "dir": "./",
         "testmode": false,
         "proxy": {
             "test": {
