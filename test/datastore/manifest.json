@@ -1,0 +1,12 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "./",
+        "testmode": false
+    },
+    "name": "check datastore proper values",
+    "tests": [
+        "@requests.json",
+        "@check.json"
+    ]
+}
