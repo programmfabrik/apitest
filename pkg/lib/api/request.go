@@ -2,8 +2,8 @@ package api
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +12,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/moul/http2curl"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
@@ -33,17 +35,24 @@ func init() {
 	}
 }
 
+type RequestCookie struct {
+	ValueFromStore string `yaml:"value_from_store" json:"value_from_store"`
+	Value          string `yaml:"value" json:"value"`
+}
+
 type Request struct {
-	Endpoint             string                 `yaml:"endpoint" json:"endpoint"`
-	ServerURL            string                 `yaml:"server_url" json:"server_url"`
-	Method               string                 `yaml:"method" json:"method"`
-	QueryParams          map[string]interface{} `yaml:"query_params" json:"query_params"`
-	QueryParamsFromStore map[string]string      `yaml:"query_params_from_store" json:"query_params_from_store"`
-	Headers              map[string]*string     `yaml:"header" json:"header"`
-	HeaderFromStore      map[string]string      `yaml:"header_from_store" json:"header_from_store"`
-	BodyType             string                 `yaml:"body_type" json:"body_type"`
-	BodyFile             string                 `yaml:"body_file" json:"body_file"`
-	Body                 interface{}            `yaml:"body" json:"body"`
+	Endpoint             string                    `yaml:"endpoint" json:"endpoint"`
+	ServerURL            string                    `yaml:"server_url" json:"server_url"`
+	Method               string                    `yaml:"method" json:"method"`
+	QueryParams          map[string]interface{}    `yaml:"query_params" json:"query_params"`
+	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
+	Headers              map[string]*string        `yaml:"header" json:"header"`
+	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
+	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
+	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	BodyType             string                    `yaml:"body_type" json:"body_type"`
+	BodyFile             string                    `yaml:"body_file" json:"body_file"`
+	Body                 interface{}               `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	DoNotStore  bool
@@ -194,6 +203,59 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		}
 	}
 
+	for ckName, reqCookie := range request.Cookies {
+		if reqCookie == nil {
+			continue
+		}
+		var ck http.Cookie
+		storeKey := reqCookie.ValueFromStore
+
+		// Get cookie from store
+		if len(storeKey) > 0 && request.DataStore != nil {
+			cookieInt, err := request.DataStore.Get(storeKey)
+			if err == nil && cookieInt != "" {
+				ckBytes, err := json.Marshal(cookieInt)
+				if err != nil {
+					return nil, fmt.Errorf("could not marshal cookie '%s' from Datastore", storeKey)
+				}
+				err = json.Unmarshal(ckBytes, &ck)
+				if err != nil {
+					return nil, fmt.Errorf("could not unmarshal cookie '%s' from Datastore: %s", storeKey, string(ckBytes))
+				}
+			}
+		}
+
+		// Override with specific values
+		if reqCookie.Value != "" {
+			ck.Value = reqCookie.Value
+		}
+		ck.Name = ckName
+		req.AddCookie(&ck)
+	}
+
+	// Add to custom header cookies to set in server
+	for _, v := range request.SetCookies {
+		if v == nil {
+			continue
+		}
+		ck := http.Cookie{
+			Name:     v.Name,
+			Value:    v.Value,
+			Path:     v.Path,
+			Domain:   v.Domain,
+			Expires:  v.Expires,
+			MaxAge:   v.MaxAge,
+			Secure:   v.Secure,
+			HttpOnly: v.HttpOnly,
+			SameSite: v.SameSite,
+		}
+		ckVal := ck.String()
+		if ckVal == "" {
+			return nil, fmt.Errorf("Invalid cookie to set server-side: %v", v)
+		}
+		req.Header.Add("X-Test-Set-Cookies", ckVal)
+	}
+
 	return req, nil
 }
 
@@ -266,7 +328,7 @@ func (request Request) Send() (response Response, err error) {
 		}
 	}()
 
-	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Body, nil, ResponseFormat{})
+	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}

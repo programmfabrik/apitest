@@ -1,10 +1,14 @@
 package api
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	go_test_utils "github.com/programmfabrik/go-test-utils"
+	"github.com/tidwall/gjson"
 )
 
 func TestResponse_ToGenericJson(t *testing.T) {
@@ -65,7 +69,7 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 }
 
 func TestResponse_NewResponse(t *testing.T) {
-	response, err := NewResponse(200, nil, strings.NewReader("foo"), nil, ResponseFormat{})
+	response, err := NewResponse(200, nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
 	go_test_utils.AssertIntEquals(t, response.statusCode, 200)
 }
@@ -75,7 +79,7 @@ func TestResponse_String(t *testing.T) {
 		"foo": "bar"
 	}`
 
-	response, err := NewResponse(200, nil, strings.NewReader(requestString), nil, ResponseFormat{})
+	response, err := NewResponse(200, nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "error constructing response")
 
 	assertString := "200\n\n\n" + requestString
@@ -87,4 +91,54 @@ func TestResponse_String(t *testing.T) {
 	responseString = strings.ReplaceAll(responseString, " ", "")
 
 	go_test_utils.AssertStringEquals(t, responseString, assertString)
+}
+
+func TestResponse_Cookies(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:  "sess",
+			Value: "you_session_data",
+		})
+	}))
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	response, err := NewResponse(res.StatusCode, res.Header, res.Cookies(), res.Body, nil, ResponseFormat{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jsonStr, err := response.ServerResponseToJsonString(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !gjson.Valid(jsonStr) {
+		t.Fatalf("Invalid serialized JSON: %s", jsonStr)
+	}
+
+	v := gjson.Get(jsonStr, "cookie.sess")
+	if !v.Exists() {
+		t.Fatalf("No cookie found in JSON: %s", jsonStr)
+	}
+	if !v.IsObject() {
+		t.Fatalf("Cookie raw object malformed in JSON: %s", jsonStr)
+	}
+
+	var ck http.Cookie
+	vb, err := json.Marshal(v.Value())
+	if err != nil {
+		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", v, err)
+	}
+	err = json.Unmarshal(vb, &ck)
+	if err != nil {
+		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", v, err)
+	}
+
+	go_test_utils.AssertStringEquals(t, ck.Value, "you_session_data")
 }
