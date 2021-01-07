@@ -14,6 +14,7 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 
@@ -474,4 +475,156 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 		t.Errorf("Did fail but it should not")
 	}
 
+}
+
+func TestCookieSetInDatastore(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:  "sess",
+			Value: "you_session_data",
+		})
+		fmt.Fprint(w, `{"status": "done"}`)
+	}))
+	defer ts.Close()
+
+	testManifest := []byte(`
+        {
+            "name": "CookieToStoreTest",
+			"request":{
+				"endpoint": "whatever",
+				"method": "GET"
+			},
+			"response":{
+				"body": {
+					"status": "done"
+				}
+			},
+			"store_response_qjson": {
+				"sess_cookie": "cookie.sess"
+			}
+        }
+`)
+
+	filesystem.Fs = afero.NewMemMapFs()
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+
+	r := report.NewReport()
+	r.Root().NoLogTime = true
+
+	var test Case
+	err := json.Unmarshal(testManifest, &test)
+	if err != nil {
+		t.Fatal(err)
+	}
+	test.ServerURL = ts.URL
+
+	test.dataStore = datastore.NewStore(false)
+
+	test.runAPITestCase(r.Root())
+
+	r.GetTestResult(report.ParseJSONResult)
+	if r.DidFail() {
+		t.Fatalf("Did fail but it should not")
+	}
+
+	ckData, err := test.dataStore.Get("sess_cookie")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ck http.Cookie
+	ckBytes, err := json.Marshal(ckData)
+	if err != nil {
+		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", ckData, err)
+	}
+	err = json.Unmarshal(ckBytes, &ck)
+	if err != nil {
+		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", ckData, err)
+	}
+
+	go_test_utils.AssertStringEquals(t, ck.Value, "you_session_data")
+}
+
+func TestCookiesReceivedFromRequest(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ck, err := r.Cookie("sess")
+		if err != nil {
+			fmt.Fprintf(w, `{"status": "error", "error": "%s"}`, err)
+			return
+		}
+		if ck == nil {
+			fmt.Fprint(w, `{"status": "error", "error": "empty sess cookie"}`)
+			return
+		}
+		if ck.Value != "you_session_data" {
+			fmt.Fprint(w, `{"status": "error", "error": "invalid sess cookie value"}`)
+			return
+		}
+		ck2, err := r.Cookie("sess2")
+		if err != nil {
+			fmt.Fprintf(w, `{"status": "error", "error": "%s"}`, err)
+			return
+		}
+		if ck2 == nil {
+			fmt.Fprint(w, `{"status": "error", "error": "sess2 empty cookie"}`)
+			return
+		}
+		if ck2.Value != "yet_another_sess" {
+			fmt.Fprint(w, `{"status": "error", "error": "invalid sess2 cookie value"}`)
+			return
+		}
+		fmt.Fprint(w, `{"status": "done"}`)
+	}))
+	defer ts.Close()
+
+	testManifest := []byte(`
+        {
+            "name": "CookiesReceivedTest",
+			"request":{
+				"endpoint": "whatever",
+				"method": "GET",
+				"cookies": {
+					"sess": {
+						"value_from_store": "sess_cookie"
+					},
+					"sess2": {
+						"value_from_store": "?sess2_cookie",
+						"value": "yet_another_sess"
+					}
+				}
+			},
+			"response":{
+				"body": {
+					"status": "done"
+				}
+			}
+        }
+`)
+
+	filesystem.Fs = afero.NewMemMapFs()
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+
+	r := report.NewReport()
+	r.Root().NoLogTime = true
+
+	var test Case
+	err := json.Unmarshal(testManifest, &test)
+	if err != nil {
+		t.Fatal(err)
+	}
+	test.ServerURL = ts.URL
+
+	test.dataStore = datastore.NewStore(false)
+	test.dataStore.Set("sess_cookie", http.Cookie{
+		Name:  "sess",
+		Value: "you_session_data",
+	})
+
+	test.runAPITestCase(r.Root())
+
+	r.GetTestResult(report.ParseJSONResult)
+	if r.DidFail() {
+		t.Fatalf("Did fail but it should not")
+	}
 }
