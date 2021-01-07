@@ -1742,6 +1742,9 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
+It is possible to define a proxy in the server which accepts and stores request data.
+It is useful if there is need to test that expected webhook calls are properly performed.
+Different stores can be configured within the proxy.
 
 To configure a HTTP Server, the manifest need to include these lines:
 
@@ -1750,10 +1753,18 @@ To configure a HTTP Server, the manifest need to include these lines:
     "http_server": {
         "addr": ":8788", // address to listen on
         "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false // boolean flag to switch test mode on / off
+        "testmode": false, // boolean flag to switch test mode on / off
+        "proxy": { // proxy configuration
+            "test": { // proxy store configuration
+                "mode": "passthru" // proxy store mode
+            }
+        }
     }
 }
 ```
+
+The proxy `mode` parameter supports these values:
+- `passthru` : The request is stored as it is, without further processing
 
 The HTTP Server is started and stopped per test.
 
@@ -1879,6 +1890,103 @@ will return this response:
                 }
             }
         }
+    }
+}
+```
+
+## HTTP Server Proxy
+
+The proxy different stores can be used to both store and read their stored requests
+The configuration, as already defined in [HTTP Server](#http-server), is as follows:
+
+```
+"proxy": { // proxy configuration
+    "<store_name>": { // proxy store configuration
+        "mode": "passthru" // proxy store mode
+    }
+}
+```
+
+| Key            | Value Type     | Value description                                                        |
+|----------------|----------------|--------------------------------------------------------------------------|
+| proxy          | JSON Object    | An object with the store names as keys and their configuration as values |
+| <store_name>   | JSON Object    | An object with the store configuration                                   |
+| mode           | string         | The mode the store runs on (see below)                                   |
+
+Store modes:
+
+| Value        | Description                                                                            |
+|--------------|----------------------------------------------------------------------------------------|
+| passthru     |  The request to the proxy store will be stored as it is without any further processing |
+
+
+### Write to proxy store
+
+Perform a request against the http server path `/proxywrite/<store_name>`.
+Where `<store_name>` is a key (store name) inside the `proxy` object in the configuration.
+The expected response will have either `200` status code and the used offset as body or another status and an error body.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxywrite/test",
+    "method": "POST",
+    "query_params": {
+        "some": "param"
+    },
+    "header": {
+        "X-My-Header": 0
+    },
+    "body": {
+        "post": {
+            "my": ["body", "here"]
+        }
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+    "statuscode": 200,
+    "body": {
+        "offset": 0
+    }
+}
+```
+
+### Read from proxy store
+
+Whatever request performed against the server path `/proxyread/<store_name>?offset=<offset>`.
+Where:
+- `<store_name>` is a key inside the `proxy` object in the server configuration, aka the proxy store name
+- `<offset>` represents the entry to be retrieved in the proxy store requests collection. If not provided, 0 is assumed.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxyread/test",
+    "method": "GET",
+    "query_params": {
+        "offset": 0
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+    "header": { // Merged headers. original request headers prefixed with 'X-Request`
+        "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
+        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"], // The url path requested (including query string)
+        "X-Apitest-Proxy-Request-Query": ["is=here&my=data&some=value"], // The request query string only
+        "X-My-Header": ["blah"], // Original request custom header
+        "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored
+        "X-Apitest-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+        ... // All other standard headers sent with the original request (like Content-Type)
+    },
+    "body": { // The body of this request to the proxy store, always in binary format
+        "whatever": ["is", "here"] // Content-Type header will reveal its format on client side, in this case, it's JSON, but it could be a byte stream of an image, etc.
     }
 }
 ```

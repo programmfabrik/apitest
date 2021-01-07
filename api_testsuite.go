@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
@@ -26,9 +27,10 @@ type Suite struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	HttpServer  *struct {
-		Addr     string `json:"addr"`
-		Dir      string `json:"dir"`
-		Testmode bool   `json:"testmode"`
+		Addr     string                `json:"addr"`
+		Dir      string                `json:"dir"`
+		Testmode bool                  `json:"testmode"`
+		Proxy    httpproxy.ProxyConfig `json:"proxy"`
 	} `json:"http_server,omitempty"`
 	Tests []interface{}          `json:"tests"`
 	Store map[string]interface{} `json:"store"`
@@ -44,6 +46,7 @@ type Suite struct {
 	index           int
 	serverURL       string
 	httpServer      http.Server
+	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string

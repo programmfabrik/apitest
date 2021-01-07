@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/gabriel-vasile/mimetype v0.3.22
+	github.com/gorilla/mux v1.7.4
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.4

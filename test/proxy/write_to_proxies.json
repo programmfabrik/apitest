@@ -1,0 +1,74 @@
+[
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
+        {{ if gt $offset 0 }},{{ end }}
+        {
+            "name": "Add some JSON requests to proxy 'test'",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxywrite/test",
+                "method": "POST",
+                "query_params": {
+                    "some": "value"
+                },
+                "header": {
+                    "X-Some": "x-header"
+                },
+                "body": {
+                    "some": [
+                        "body", "here"
+                    ],
+                    "index": "idx_{{ $offset }}"
+                }
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "offset": {{ $offset }}
+                }
+            }
+        }
+    {{ end }}
+    ,{
+        "name": "post image to proxy 'test'",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "proxywrite/test",
+            "method": "POST",
+            "body_file": "@camera.jpg",
+            "body_type": "file"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "offset": {{ datastore "max_entries" }}
+            }
+        },
+        "store_response_qjson": {
+            "test_image_offset": "body.offset"
+        }
+    }
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
+        ,{
+            "name": "Add some JSON requests to proxy 'test2'",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxywrite/test2",
+                "method": "GET",
+                "query_params": {
+                    "some": "value",
+                    "my": "data_{{ $offset }}",
+                    "is": "here"
+                },
+                "header": {
+                    "X-Some": "x-header"
+                }
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "offset": {{ $offset }}
+                }
+            }
+        }
+    {{ end }}
+]
