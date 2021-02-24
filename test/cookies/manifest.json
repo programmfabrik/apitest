@@ -26,7 +26,7 @@
                         "max_age": 86400,
                         "secure": false,
                         "http_only": false,
-                        "same_site": 1
+                        "same_site": 2
                     }
                 ],
                 "body": {}
@@ -36,7 +36,7 @@
                 "header": {
                     "Set-Cookie": [
                         "sess=my_sess",
-                        "dummy=whatever; Path=/mypath; Domain=mydomain; Expires=Wed, 10 Nov 2021 10:00:00 GMT; Max-Age=86400; SameSite"
+                        "dummy=whatever; Path=/mypath; Domain=mydomain; Expires=Wed, 10 Nov 2021 10:00:00 GMT; Max-Age=86400; SameSite=Lax"
                     ]
                 },
                 "cookie": {
@@ -53,7 +53,7 @@
                         "max_age": 86400,
                         "secure": false,
                         "http_only": false,
-                        "same_site": 1
+                        "same_site": 2
                     }
                 },
                 "body": {}
