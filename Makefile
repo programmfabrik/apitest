@@ -1,8 +1,17 @@
 all: test build
 
-test:
+vet:
 	go vet ./...
-	go test ./...
+
+fmt:
+	go fmt ./...
+
+test: fmt vet
+	go test -race -cover ./...
+
+webtest:
+	go test -coverprofile=testcoverage.out
+	go tool cover -html=testcoverage.out
 
 apitest:
 	./apitest --stop-on-fail -d test/
@@ -12,7 +21,7 @@ gox:
 	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
 
 clean:
-	rm -rfv ./apitest ./bin/*
+	rm -rfv ./apitest ./bin/* ./testcoverage.out
 
 build:
 	go build
