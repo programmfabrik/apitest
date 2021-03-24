@@ -90,6 +90,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if err != nil {
 		return req, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
+
 	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
 		return req, fmt.Errorf("error creating new request")
@@ -101,6 +102,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		if ok {
 			req.SetBasicAuth(reqUrl.User.Username(), pw)
 		}
+		req.URL.User = nil
 	}
 
 	q := req.URL.Query()
