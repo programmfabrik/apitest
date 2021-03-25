@@ -67,7 +67,7 @@ jobs:
           tag_name: ${{ steps.bump_version.outputs.tag_version }}
           release_name: ${{ steps.bump_version.outputs.tag_version }}
           body_path: RELEASES.md
-          draft: true
+          draft: false
           prerelease: false
       
       - name: set url
