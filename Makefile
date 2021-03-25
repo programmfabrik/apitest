@@ -1,6 +1,7 @@
 all: test build
 
 deps:
+	go mod download github.com/clbanning/mxj
 	go get ./...
 
 vet:
