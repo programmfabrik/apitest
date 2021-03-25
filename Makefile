@@ -26,4 +26,4 @@ clean:
 build:
 	go build
 
-.PHONY: all test apitest gox build clean
+.PHONY: all test apitest webtest gox build clean
