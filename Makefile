@@ -20,7 +20,7 @@ webtest:
 apitest:
 	./apitest --stop-on-fail -d test/
 
-gox:
+gox: deps
 	go get github.com/mitchellh/gox
 	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
 
