@@ -1,3 +1,6 @@
+GOOS ?= linux
+GOARCH ?= amd64
+
 all: test build
 
 deps:
@@ -26,6 +29,9 @@ gox: deps
 
 clean:
 	rm -rfv ./apitest ./bin/* ./testcoverage.out
+
+ci: deps
+	go build -o bin/apitest_$(GOOS)_$(GOARCH) *.go
 
 build: deps
 	go build
