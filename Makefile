@@ -1,12 +1,15 @@
 all: test build
 
+deps:
+	go get ./...
+
 vet:
 	go vet ./...
 
 fmt:
 	go fmt ./...
 
-test: fmt vet
+test: deps fmt vet
 	go test -race -cover ./...
 
 webtest:
@@ -23,7 +26,7 @@ gox:
 clean:
 	rm -rfv ./apitest ./bin/* ./testcoverage.out
 
-build:
+build: deps
 	go build
 
 .PHONY: all test apitest webtest gox build clean
