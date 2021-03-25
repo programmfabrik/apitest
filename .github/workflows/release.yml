@@ -14,7 +14,7 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.16
-
+  
       - name: Checkout code
         uses: actions/checkout@v2
       
@@ -41,6 +41,7 @@ jobs:
       - unit-tests
     outputs:
       asset_upload_url: ${{ steps.set_url.outputs.asset_upload_url }}
+      version: ${{ steps.bump_version.outputs.tag_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -50,6 +51,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v5.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: releases
 
       - name: bump version
         id: bump_version
@@ -65,12 +67,26 @@ jobs:
           tag_name: ${{ steps.bump_version.outputs.tag_version }}
           release_name: ${{ steps.bump_version.outputs.tag_version }}
           body_path: RELEASES.md
-          draft: false
+          draft: true
           prerelease: false
       
       - name: set url
         id: set_url
-        run: echo "::set-output name=asset_upload_url::${{ steps.create_release.outputs.upload_url }}" 
+        run: echo "::set-output name=asset_upload_url::${{ steps.create_release.outputs.upload_url }}"
+
+      - name: Notify slack channel about a failure
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: k8s-deployment
+          SLACK_USERNAME: fylr-bot
+          SLACK_MSG_AUTHOR: fylr-bot
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
+          SLACK_COLOR: "#ff0000"
+          SLACK_MESSAGE: Automated release failed with unknown reason. Please take care of it.
+          SLACK_TITLE: Release ${{ needs.release.outputs.tag_version }} failed
+          SLACK_FOOTER: "Repository: https://github.com/$GITHUB_REPOSITORY"
 
   upload-asset:
     runs-on: ubuntu-latest
@@ -117,7 +133,7 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-        run: make build
+        run: make ci
 
       - name: upload asset
         id: upload-release-asset 
@@ -126,8 +142,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.asset_upload_url }}
-          asset_path: ./bin/apitest-${{ matrix.goos }}-${{ matrix.goarch }}
-          asset_name: apitest-${{ matrix.goos }}-${{ matrix.goarch }}
+          asset_path: bin/apitest_${{ matrix.goos }}_${{ matrix.goarch }}
+          asset_name: apitest_${{ matrix.goos }}_${{ matrix.goarch }}
           asset_content_type: application/octet-stream
 
   notify-slack:
@@ -136,6 +152,17 @@ jobs:
       - release
       - upload-asset
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: set body message
+        id: body_message
+        run: echo "::set-output name=slack_body_message::$(cat RELEASES.md)"
+
+      - name: set title
+        id: title_message
+        run: echo "::set-output name=slack_title_message::Released a new version ${{ needs.release.outputs.version }}"
+
       - name: Notify slack channel about the release
         if: ${{ success() }}
         uses: rtCamp/action-slack-notify@v2
@@ -146,20 +173,6 @@ jobs:
           SLACK_MSG_AUTHOR: fylr-bot
           SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
           SLACK_COLOR: "#00ff00"
-          SLACK_MESSAGE: $(cat RELEASES.md)
-          SLACK_TITLE: Released version ${{ needs.release.outputs.tag_version }}
-          SLACK_FOOTER: ""
-
-      - name: Notify slack channel about a failure
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
-          SLACK_CHANNEL: k8s-deployment
-          SLACK_USERNAME: fylr-bot
-          SLACK_MSG_AUTHOR: fylr-bot
-          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
-          SLACK_COLOR: "#ff0000"
-          SLACK_MESSAGE: Automated release failed with unknown reason. Please take care of it.
-          SLACK_TITLE: Release ${{ needs.release.outputs.tag_version }} failed
+          SLACK_MESSAGE: ${{ steps.body_message.outputs.slack_body_message }}
+          SLACK_TITLE: ${{ steps.title_message.outputs.slack_title_message }}
           SLACK_FOOTER: ""
