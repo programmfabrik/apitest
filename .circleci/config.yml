@@ -2,14 +2,14 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     working_directory: ~/apitest
     steps:
       - checkout
       - run: make test
   crosscompile:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     working_directory: ~/apitest_cross
     steps:
       - checkout
