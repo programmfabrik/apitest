@@ -14,6 +14,9 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.16
+
+      - name: Checkout code
+        uses: actions/checkout@v2
       
       - name: execute unit tests
         shell: bash
