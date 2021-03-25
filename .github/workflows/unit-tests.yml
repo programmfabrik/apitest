@@ -1,0 +1,34 @@
+name: unit-tests
+
+on: 
+  push:
+    branches:
+      - "**"
+      - "!production"
+
+jobs:
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: run go 1.16
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+      
+      - name: execute unit tests
+        shell: bash
+        run: make test
+
+      - name: Notify slack channel about a failure
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: k8s-deployment
+          SLACK_USERNAME: fylr-bot
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
+          SLACK_COLOR: "#ff0000"
+          SLACK_MESSAGE: Unit tests failed
+          SLACK_TITLE: Unit tests failed
+          SLACK_FOOTER: ""
