@@ -90,6 +90,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if err != nil {
 		return req, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
+
 	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
 		return req, fmt.Errorf("error creating new request")
@@ -101,6 +102,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		if ok {
 			req.SetBasicAuth(reqUrl.User.Username(), pw)
 		}
+		req.URL.User = nil
 	}
 
 	q := req.URL.Query()
@@ -274,11 +276,12 @@ func (request Request) ToString(curl bool) (res string) {
 
 	if curl {
 		// Log as curl
-		r := strings.NewReplacer(" -", " \\\n-", "' '", "' \\\n'")
+		// r := strings.NewReplacer(" -", " \\\n-", "' '", "' \\\n'")
 
 		if dumpBody {
 			curl, _ := http2curl.GetCurlCommand(httpRequest)
-			return r.Replace(curl.String())
+			return curl.String()
+			// return r.Replace(curl.String())
 		}
 
 		_, _ = io.Copy(ioutil.Discard, httpRequest.Body)
@@ -295,7 +298,8 @@ func (request Request) ToString(curl bool) (res string) {
 			}
 			rep = fmt.Sprintf(`%s -F "%s=@%s"`, rep, key, path.Join(request.ManifestDir, pathSpec[1:]))
 		}
-		return r.Replace(strings.Replace(cString, " -d ''", rep, 1))
+		// return r.Replace(strings.Replace(cString, " -d ''", rep, 1))
+		return strings.Replace(cString, " -d ''", rep, 1)
 	}
 
 	resBytes, err := httputil.DumpRequestOut(httpRequest, dumpBody)
