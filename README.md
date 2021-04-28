@@ -1,6 +1,7 @@
 # apitest
 
-[![CircleCI](https://circleci.com/gh/programmfabrik/apitest.svg?style=svg)](https://circleci.com/gh/programmfabrik/apitest)
+[![release](https://github.com/programmfabrik/apitest/actions/workflows/release.yml/badge.svg?branch=production)](https://github.com/programmfabrik/apitest/actions/workflows/release.yml)
+[![unit-tests](https://github.com/programmfabrik/apitest/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/programmfabrik/apitest/actions/workflows/unit-tests.yml)
 [![Twitter](https://img.shields.io/twitter/follow/programmfabrik.svg?label=Follow&style=social)](https://twitter.com/programmfabrik)
 [![GoReportCard](https://goreportcard.com/badge/github.com/programmfabrik/apitest)](https://goreportcard.com/report/github.com/programmfabrik/apitest)
 
@@ -12,16 +13,16 @@ A single testcase is also a perfect definition of an occuring problem and helps 
 # Configuration file
 For configuring the apitest tool, add the follwing section to your 'apitest.yml' configuration file.
 
-The report parameters of this config can be overwritten via a command line flag. So you should set your intended standard values in the config.
-
- **After the first setup you don't need to touch the config again. (You should not do that, to prevent errors based on rash changes in the config)**
-
+The report parameters of this config can be overwritten via a command line flag. So you should set your intended standar
 ```yaml
 apitest:
   server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
+  store: # initial values for the datastore, parsed as map[string]interface{}
+    email.server: smtp.google.com
+
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
@@ -204,6 +205,42 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             "header2": "value"
         },
 
+        // Cookies can be added to the request
+        "cookies": {
+            // name of a cookie to be set
+            "cookie1": {
+                // A cookie can be get parsed from store if it was saved before
+                // It will ignore the cookie if it is not set
+                "value_from_store": "sess_cookie",
+                // Or its values can be directly set, overriding the one from store, if defined
+                "value": "value"
+            },
+            "cookie2": {
+                "value_from_store": "ads_cookie",
+            }
+        },
+
+        // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
+        // It is used in the builting `http_server` to automatically set those cookies on response
+        // So it is useful for mocking them for further testing
+        "header-x-test-set-cookie": [
+            {
+                "name": "sess",
+                "value": "myauthtoken"
+            },
+            {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "path": "/auth",
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "max_age": 86400,
+                "secure": false,
+                "http_only": true,
+                "same_site": 1
+            }
+        ],
+
         // With header_from_you set a header to the value of the dat astore field
         // In this example we set the "Content-Type" header to the value "application/json"
         // As "application/json" is stored as string in the datastore on index "contentType"
@@ -232,7 +269,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Expected http status code. See api documentation vor the right ones
         "statuscode": 200,
 
-        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defiend in rfc2616)
+        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defined in rfc2616)
         "header": {
             "key1": [
                 "val1",
@@ -243,6 +280,25 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
                 "csdklmwerf8ßwji02kopwfjko2"
             ]
         },
+
+        // Cookies will be under this key, in a map name => cookie
+        "cookie": {
+            "sess": {
+                "name": "sess",
+                "value": "myauthtoken"
+            },
+            "jwtoken": {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "path": "/auth",
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "max_age": 86400,
+                "secure": false,
+                "http_only": true,
+                "same_site": 1
+            }
+        }
 
         // optionally, the expected format of the response can be specified so that it can be converted into json and can be checked
         "format": {
@@ -260,9 +316,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         }
     },
 
-    // Store parts of the repsonse into the datastore
+    // Store parts of the response into the datastore
     "store_response_qjson": {
-        "eas_id": "body.0.eas._id"
+        "eas_id": "body.0.eas._id",
+
+        // Cookies are stored in `cookie` map
+        "sess_cookie": "cookie.sess"
     },
 
     // wait_before_ms pauses right before sending the test request <n> milliseconds
@@ -377,7 +436,7 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
 ## Preprocessing responses
 
-Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML or CSV output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
+Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML, CSV or binary output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
 
 The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked.
 
@@ -390,7 +449,8 @@ To define a preprocessing for a response, add a `format` object that defines the
             "pre_process": {
                 "cmd": {
                     "name": "...",
-                    "args": [ ]
+                    "args": [ ],
+                    "output": "stdout"
                 }
             }
         }
@@ -400,6 +460,7 @@ To define a preprocessing for a response, add a `format` object that defines the
 
 * `format.pre_process.cmd.name`: (string, mandatory) name of the command line tool
 * `format.pre_process.cmd.args`: (string array, optional) list of command line parameters
+* `format.pre_process.cmd.output`: (string, optional) what command output to use as result response, it can be one of `exitcode`, `stderr` or `stdout` (default)
 
 ### Examples
 
@@ -420,6 +481,44 @@ This basic example shows how to use the `pre_process` feature. The response is p
     }
 }
 ```
+
+#### Advanced usage: compare binary image with local one
+
+This example shows how to use the `pre_process` feature with `stderr` output. The response is the metric result of running `imagemagick compare` which returns the absolute error between 2 images given a threshold (0 if identical, number of different pixels otherwise). The arguments are the piped binary from the response and the image to compare against (local file using `file_path` template function) .
+
+```yaml
+{
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "compare",
+                    "args": [
+                        "-metric",
+                        "AE",
+                        "-fuzz",
+                        "2%",
+                        "-",
+                        {{ file_path "other/file.jpg" | marshal }},
+                        "/dev/null"
+                    ],
+                    "output": "stderr"
+                }
+            }
+        },
+        "body": 0
+    }
+}
+```
+
+* `format.pre_process`:
+    * Command: `compare -metric AE -fuzz 2% - /path/to/other/file.jpg /dev/null`
+    * Parameters:
+        * `-metric AE`: metric to use for image comparison
+        * `-fuzz 2%`: threshold for allowed pixel color difference
+        * `-`: read first image from `stdin` instead loading a saved file
+        * `/path/to/other/file.jpg `: read second image from local path (result from template function above)
+        * `/dev/null`: discard stdout (it contains a binary we don't want, we use stderr output)
 
 #### Reading metadata from a file (JSON Format)
 
@@ -1031,6 +1130,17 @@ Content of file at `some/target.tmpl`:
 
 Rendering `example.tmpl` will result in `hello world`
 
+## `file_path "relative/path/"`
+
+Returns the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
+
+### Example
+
+Absolute path of file at `some/path/myfile.cpp`:
+```yaml
+{{ file_path "../myfile.tmpl" }}
+```
+
 ## `rows_to_map "keyColumn" "valueColumn" [input]`
 
 Generates a key-value map from your input rows.
@@ -1380,6 +1490,8 @@ The CSV **must** have a certain structur. If the structure of the given CSV diff
 - bool,array
 - json
 
+All types can be prefixed with * to return a pointer to the value. Empty strings initialize the Golang zero value for the type,  for type array the empty string inialized an empty array. The empty string returns an untyped **nil**.
+
 ### Example
 
 Content of file at `some/path/example.csv`:
@@ -1393,7 +1505,7 @@ int64,string
 The call
 
 ```django
-{{ csv "some/path/example.csv" ','}}
+{{ file_csv "some/path/example.csv" ','}}
 ```
 
 would result in
@@ -1405,7 +1517,7 @@ would result in
 As an example with pipes, the call
 
 ```django
-{{ csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
+{{ file_csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
 ```
 
  would result in `martin` given the response above.
@@ -1480,6 +1592,70 @@ int64,string
 
 ```go
 [map[name:simon] map[name:martin] map[name:roman] map[name:klaus] map[name:sebastian]]
+```
+
+## `file_sqlite [path] [statement]`
+
+Helper function to return the result of an SQL statement from a sqlite3 file.
+- `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
+- `@statement`: string; a SQL statement that returns data (`SELECT`)
+- `@result`: the result of the statement as a json array so we can work on this data with qjson
+
+### Example
+
+Content of sqlite file at `some/path/example.sqlite`:
+
+Table `names`:
+- column `id`: type `INTEGER`
+- column `name`: type `TEXT`
+
+| id | name |
+|---|---|
+| `2` | `martin` |
+| `3` | NULL |
+| `1` | `simon` |
+
+The call
+
+```django
+{{ file_sqlite "some/path/example.sqlite" `
+    SELECT id, name FROM names
+    WHERE name IS NOT NULL
+    ORDER BY id ASC
+` }}
+```
+
+would result in
+
+```go
+[map[id:1 name:simon] map[id:2 name:martin]]
+```
+
+### Working with `NULL` values
+
+`NULL` values in the database are returned as `nil` in the template. To check if a value in the sqlite file is `NULL`, us a comparison to `nil`:
+
+The call
+
+```django
+{{ file_sqlite "some/path/example.sqlite" `
+    SELECT id, name FROM names
+    ORDER BY id ASC
+` }}
+```
+
+would result in
+
+```go
+[map[id:1 name:simon] map[id:2 name:martin] map[id:3 name:nil]]
+```
+
+The `NULL` value in `name` can be checked with
+
+```django
+{{ if ne $row.name nil }}
+    // use name, else skip
+{{ end }}
 ```
 
 ## `slice [parms...]`
@@ -1560,9 +1736,16 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
 
+## is_zero
+
+**is_zero** returns **true** if the passed value is the Golang zero value of the type.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
+It is possible to define a proxy in the server which accepts and stores request data.
+It is useful if there is need to test that expected webhook calls are properly performed.
+Different stores can be configured within the proxy.
 
 To configure a HTTP Server, the manifest need to include these lines:
 
@@ -1571,10 +1754,18 @@ To configure a HTTP Server, the manifest need to include these lines:
     "http_server": {
         "addr": ":8788", // address to listen on
         "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false // boolean flag to switch test mode on / off
+        "testmode": false, // boolean flag to switch test mode on / off
+        "proxy": { // proxy configuration
+            "test": { // proxy store configuration
+                "mode": "passthru" // proxy store mode
+            }
+        }
     }
 }
 ```
+
+The proxy `mode` parameter supports these values:
+- `passthru` : The request is stored as it is, without further processing
 
 The HTTP Server is started and stopped per test.
 
@@ -1700,6 +1891,103 @@ will return this response:
                 }
             }
         }
+    }
+}
+```
+
+## HTTP Server Proxy
+
+The proxy different stores can be used to both store and read their stored requests
+The configuration, as already defined in [HTTP Server](#http-server), is as follows:
+
+```
+"proxy": { // proxy configuration
+    "<store_name>": { // proxy store configuration
+        "mode": "passthru" // proxy store mode
+    }
+}
+```
+
+| Key            | Value Type     | Value description                                                        |
+|----------------|----------------|--------------------------------------------------------------------------|
+| proxy          | JSON Object    | An object with the store names as keys and their configuration as values |
+| <store_name>   | JSON Object    | An object with the store configuration                                   |
+| mode           | string         | The mode the store runs on (see below)                                   |
+
+Store modes:
+
+| Value        | Description                                                                            |
+|--------------|----------------------------------------------------------------------------------------|
+| passthru     |  The request to the proxy store will be stored as it is without any further processing |
+
+
+### Write to proxy store
+
+Perform a request against the http server path `/proxywrite/<store_name>`.
+Where `<store_name>` is a key (store name) inside the `proxy` object in the configuration.
+The expected response will have either `200` status code and the used offset as body or another status and an error body.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxywrite/test",
+    "method": "POST",
+    "query_params": {
+        "some": "param"
+    },
+    "header": {
+        "X-My-Header": 0
+    },
+    "body": {
+        "post": {
+            "my": ["body", "here"]
+        }
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+    "statuscode": 200,
+    "body": {
+        "offset": 0
+    }
+}
+```
+
+### Read from proxy store
+
+Whatever request performed against the server path `/proxyread/<store_name>?offset=<offset>`.
+Where:
+- `<store_name>` is a key inside the `proxy` object in the server configuration, aka the proxy store name
+- `<offset>` represents the entry to be retrieved in the proxy store requests collection. If not provided, 0 is assumed.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxyread/test",
+    "method": "GET",
+    "query_params": {
+        "offset": 0
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+    "header": { // Merged headers. original request headers prefixed with 'X-Request`
+        "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
+        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"], // The url path requested (including query string)
+        "X-Apitest-Proxy-Request-Query": ["is=here&my=data&some=value"], // The request query string only
+        "X-My-Header": ["blah"], // Original request custom header
+        "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored
+        "X-Apitest-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+        ... // All other standard headers sent with the original request (like Content-Type)
+    },
+    "body": { // The body of this request to the proxy store, always in binary format
+        "whatever": ["is", "here"] // Content-Type header will reveal its format on client side, in this case, it's JSON, but it could be a byte stream of an image, etc.
     }
 }
 ```

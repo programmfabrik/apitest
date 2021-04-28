@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -53,6 +54,8 @@ type Case struct {
 
 	ServerURL         string `json:"server_url"`
 	ReverseTestResult bool   `json:"reverse_test_result"`
+
+	Filename string
 }
 
 func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
@@ -104,10 +107,11 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		success = !success
 	}
 
+	fileBasename := filepath.Base(testCase.Filename)
 	if !success {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("     [%2d] failure", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Warnf("     [%2d] failure", testCase.index)
 	} else {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("     [%2d] success", testCase.index)
+		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.Leave(success)
@@ -251,14 +255,15 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	}
 	apiResp.Format = expectedResponse.Format
 
-	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
-			len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
-		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
-		if err != nil {
-			testCase.LogReq(req)
-			err = fmt.Errorf("error getting json from response: %s", err)
-			return responsesMatch, req, apiResp, err
-		}
+	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
+	// If we don't define an expected response, we won't have a format
+	// That's problematic if the response is not JSON, as we try to parse it for the datastore anyway
+	// So we don't fail the test in that edge case
+	if err != nil && (testCase.ResponseData != nil || testCase.CollectResponse != nil ||
+		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0) {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error getting json from response: %s", err)
+		return responsesMatch, req, apiResp, err
 	}
 
 	// Store in custom store
@@ -455,7 +460,7 @@ func (testCase Case) loadResponse() (api.Response, error) {
 
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, bytes.NewReader([]byte("")), nil, res.Format)
+		return api.NewResponse(200, nil, nil, bytes.NewReader([]byte("")), nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {

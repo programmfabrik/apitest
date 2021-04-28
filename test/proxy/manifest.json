@@ -1,0 +1,26 @@
+{{ $local_port := ":9999" }}
+{{ $max_entries := 10 }}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "./",
+        "testmode": false,
+        "proxy": {
+            "test": {
+                "mode": "passthru"
+            },
+            "test2": {
+                "mode": "passthru"
+            }
+        }
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}",
+        "max_entries": {{ $max_entries }}
+    },
+    "name": "Proxy Store tests",
+    "tests": [
+        "@write_to_proxies.json",
+        "@read_from_proxies.json"
+    ]
+}

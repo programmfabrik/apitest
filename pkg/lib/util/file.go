@@ -44,6 +44,10 @@ func openRemoteFile(absPath string) (io.ReadCloser, error) {
 }
 
 func openLocalFile(path, rootDir string) (io.ReadCloser, error) {
+	return filesystem.Fs.Open(LocalPath(path, rootDir))
+}
+
+func LocalPath(path, rootDir string) string {
 	var absPath string
 	if strings.HasPrefix(path, "./") {
 		//Path relative to binary
@@ -54,5 +58,5 @@ func openLocalFile(path, rootDir string) (io.ReadCloser, error) {
 	} else {
 		absPath = filepath.Join(rootDir, path)
 	}
-	return filesystem.Fs.Open(absPath)
+	return absPath
 }

@@ -1,0 +1,85 @@
+[
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
+    {{ if gt $offset 0 }}, {{ end }}
+        {
+            "name": "Poll 'test' proxy store, offset {{ $offset }}",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxyread/test",
+                "method": "GET",
+                "query_params": {
+                    "offset": {{ $offset }}
+                }
+            },
+            "response": {
+                "header": {
+                    "X-Apitest-Proxy-Request-Method": ["POST"],
+                    "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"],
+                    "X-Apitest-Proxy-Request-Query": ["some=value"],
+                    "X-Some": ["x-header"],
+                    "X-Apitest-Proxy-Store-Count": ["{{ add (datastore "max_entries") 1 }}"],
+                    "X-Apitest-Proxy-Store-Next-Offset": ["{{ add $offset 1 }}"]
+                },
+                "body": {
+                    "some": [
+                        "body", "here"
+                    ],
+                    "index": "idx_{{ $offset }}"
+                }
+            }
+        }
+    {{ end }}
+    ,{
+        "name": "Poll 'test' proxy store for binary content (image)",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "proxyread/test",
+            "method": "GET",
+            "query_params": {
+                "offset": "{{ datastore "max_entries" }}"
+            }            
+        },
+        "response": {
+            "header": {
+                "X-Apitest-Proxy-Request-Method": ["POST"],
+                "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"],
+                "X-Apitest-Proxy-Store-Count": ["{{ add (datastore "max_entries") 1 }}"],
+                "X-Apitest-Proxy-Store-Next-Offset": ["0"]
+            },
+            "format": {
+                "type": "binary"
+            },
+            "body": {
+                "md5sum": {{ md5sum "@camera.jpg" | marshal }}
+            }
+        }
+    },
+    {{ range $offset, $dummy := N (datastore "max_entries") }}
+    {{ if gt $offset 0 }}, {{ end }}
+        {
+            "name": "Poll 'test2' proxy store, offset {{ $offset }}",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxyread/test2",
+                "method": "GET",
+                "query_params": {
+                    "offset": {{ $offset }}
+                }
+            },
+            "response": {
+                "header": {
+                    "X-Apitest-Proxy-Request-Method": ["GET"],
+                    "X-Apitest-Proxy-Request-Path": ["/proxywrite/test2"],
+                    "X-Apitest-Proxy-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"],
+                    "X-Some": ["x-header"],
+                    "X-Apitest-Proxy-Store-Count": ["{{ datastore "max_entries" }}"],
+                    {{ $nextOffset := add $offset 1 }}
+                    {{ if gt $nextOffset (subtract 1 (datastore "max_entries")) }}
+                        {{ $nextOffset = 0 }}
+                    {{ end }}
+                    "X-Apitest-Proxy-Store-Next-Offset": ["{{ $nextOffset }}"]
+                }
+            }
+        }
+    {{ end }}
+]

@@ -45,14 +45,27 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 			if ki >= len(infos) || infos[ki].format == "SKIP_COLUMN" {
 				continue
 			}
+			ptr := false
+			frmt := infos[ki].format
+			if strings.HasPrefix(frmt, "*") {
+				frmt = frmt[1:]
+				ptr = true
+			}
 
-			value, err := getTyped(vi, infos[ki].format)
+			value, err := getTyped(vi, frmt)
 			if err != nil {
 				return nil, err
 			}
 
-			tmpRow[infos[ki].name] = value
-
+			if ptr {
+				if vi == "" || value == nil {
+					tmpRow[infos[ki].name] = nil // use an untyped nil
+				} else {
+					tmpRow[infos[ki].name] = &value
+				}
+			} else {
+				tmpRow[infos[ki].name] = value
+			}
 		}
 		output = append(output, tmpRow)
 	}
@@ -162,6 +175,9 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 }
 
 func isValidFormat(format string) bool {
+	if strings.HasPrefix(format, "*") {
+		format = format[1:]
+	}
 	validFormats := []string{"string", "int64", "int", "float64", "bool"}
 	for _, v := range validFormats {
 		if format == v || format == v+",array" || format == "json" {
@@ -172,6 +188,7 @@ func isValidFormat(format string) bool {
 	return false
 }
 
+// getTyped
 func getTyped(value, format string) (interface{}, error) {
 
 	switch format {
@@ -215,7 +232,12 @@ func getTyped(value, format string) (interface{}, error) {
 
 		retArray := make([]string, 0)
 		for _, v := range records[0] {
-			retArray = append(retArray, strings.TrimSpace(v))
+			// DEBUG: The previous code would trim values here.
+			// Uncomment to debug your CSV...
+			// if len(strings.TrimSpace(v)) != len(v) {
+			// 	println(fmt.Sprintf("Trimming %s %v", v, records[0]))
+			// }
+			retArray = append(retArray, v)
 		}
 		return retArray, nil
 	case "int64,array":

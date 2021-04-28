@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
+	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,10 +32,16 @@ func (ats *Suite) StartHttpServer() {
 	mux.Handle("/", customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir))))
 
 	// bounce json response
-	mux.HandleFunc("/bounce-json", bounceJSON)
+	mux.HandleFunc("/bounce-json", func(w http.ResponseWriter, r *http.Request) {
+		cookiesMiddleware(w, r, bounceJSON)
+	})
 
 	// bounce binary response with information in headers
 	mux.HandleFunc("/bounce", bounceBinary)
+
+	// Start listening into proxy
+	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
+	ats.httpServerProxy.RegisterRoutes(mux, "/")
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
@@ -72,7 +79,7 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 		noContentLengthHeader := qs.Get("no-content-length")
 		if noContentLengthHeader == "1" || noContentLengthHeader == "true" {
 			w.Header().Set("Content-Encoding", "identity")
-		} 
+		}
 		h.ServeHTTP(w, r)
 	}
 }
@@ -186,4 +193,12 @@ func bounceBinary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.Copy(w, r.Body)
+}
+
+func cookiesMiddleware(w http.ResponseWriter, r *http.Request, f http.HandlerFunc) {
+	ckHeader := r.Header.Values("X-Test-Set-Cookies")
+	for _, ck := range ckHeader {
+		w.Header().Add("Set-Cookie", ck)
+	}
+	f(w, r)
 }

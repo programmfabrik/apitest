@@ -1,10 +1,10 @@
 [
     {
-        "name": "preprocess asset _res/assets/camera.jpg with exiftool in json format",
+        "name": "preprocess asset camera.jpg with exiftool in json format",
         "request": {
             // load static file
             "server_url": "{{ datastore "local_url" }}",
-            "endpoint": "assets/camera.jpg",
+            "endpoint": "camera.jpg",
             "method": "GET"
         },
         "response": {

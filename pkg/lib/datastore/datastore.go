@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
@@ -15,6 +16,7 @@ type Datastore struct {
 	storage      map[string]interface{} // custom storage
 	responseJson []string               // store the responses
 	logDatastore bool
+	lock         *sync.Mutex
 }
 
 func NewStore(logDatastore bool) *Datastore {
@@ -22,6 +24,7 @@ func NewStore(logDatastore bool) *Datastore {
 	ds.storage = make(map[string]interface{}, 0)
 	ds.responseJson = make([]string, 0)
 	ds.logDatastore = logDatastore
+	ds.lock = &sync.Mutex{}
 	return &ds
 }
 
@@ -110,6 +113,9 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 			value = int(t)
 		}
 	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
 
 	//Slice in datastore
 	if strings.HasSuffix(index, "[]") {

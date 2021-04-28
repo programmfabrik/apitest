@@ -3,10 +3,12 @@ package template
 import (
 	"bytes"
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
@@ -20,6 +22,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/tidwall/gjson"
 )
 
@@ -173,6 +176,52 @@ func (loader *Loader) Render(
 			}
 			return data, err
 		},
+		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
+			sqliteFile := filepath.Join(rootDir, path)
+			database, err := sql.Open("sqlite3", sqliteFile)
+			if err != nil {
+				return nil, err
+			}
+			defer database.Close()
+
+			rows, err := database.Query(statement)
+			if err != nil {
+				return nil, err
+			}
+			defer rows.Close()
+
+			columns, err := rows.ColumnTypes()
+			if err != nil {
+				return nil, err
+			}
+			row := make([]interface{}, len(columns))
+
+			data := []map[string]interface{}{}
+
+			for rows.Next() {
+				dataEntry := map[string]interface{}{}
+				for idx, col := range columns {
+					dataEntry[col.Name()] = new(interface{})
+					row[idx] = dataEntry[col.Name()]
+				}
+
+				err = rows.Scan(row...)
+				if err != nil {
+					return nil, err
+				}
+
+				for idx, d := range row {
+					dataEntry[columns[idx].Name()] = reflect.ValueOf(d).Elem().Interface()
+				}
+
+				data = append(data, dataEntry)
+			}
+
+			return data, nil
+		},
+		"file_path": func(path string) string {
+			return util.LocalPath(path, rootDir)
+		},
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string
 
@@ -302,6 +351,12 @@ func (loader *Loader) Render(
 		},
 		"server_url": func() *url.URL {
 			return loader.ServerURL
+		},
+		"is_zero": func(v interface{}) bool {
+			if v == nil {
+				return true
+			}
+			return reflect.ValueOf(v).IsZero()
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
