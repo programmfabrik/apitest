@@ -8,7 +8,7 @@
     "name": "template file_sqlite: read from sqlite file, iterate over results",
     "tests": [
         {
-            "name": "bounce marshalled result of SELECT statement",
+            "name": "bounce marshalled result of SELECT statement (use marshal on file_sqlite result)",
             "request": {
                 "server_url": "http://localhost{{ $local_port }}",
                 "method": "POST",
@@ -19,6 +19,56 @@
             },
             "response": {
                 "body": {{ file "expected_response.json" }}
+            }
+        },
+        {
+            "name": "bounce marshalled result of SELECT statement (use printf on rows of file_sqlite result)",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "method": "POST",
+                "endpoint": "bounce",
+                "body": [
+                    {{ range $idx, $row := file_sqlite "testdata.sqlite" `
+                        SELECT * FROM "test_values"
+                    ` }}
+                        {{ if gt $idx 0 }}, {{ end }}
+                        {{ $row | marshal | printf "%s" }}
+                    {{ end }}
+                ]
+            },
+            "response": {
+                "body": {{ file "expected_response.json" }}
+            }
+        },
+        {
+            "name": "bounce marshalled result of SELECT statement (test check for NULL values)",
+            "request": {
+                "server_url": "http://localhost{{ $local_port }}",
+                "method": "POST",
+                "endpoint": "bounce",
+                "body": [
+                    {{ range $idx, $row := file_sqlite "testdata.sqlite" `
+                        SELECT * FROM "test_values"
+                    ` }}
+                        // skip rows if row.number is NULL in database
+                        {{ if $row.number }}
+                            {{ if gt $idx 0 }}, {{ end }}
+                            {{ $row | marshal }}
+                        {{ end }}
+                    {{ end }}
+                ]
+            },
+            "response": {
+                // response body must be the same content as if the NULL values are excluded using SQL
+                "body": [
+                    {{ range $idx, $row := file_sqlite "testdata.sqlite" `
+                        SELECT * FROM "test_values"
+                        WHERE number IS NOT NULL
+                    ` }}
+                        {{ if gt $idx 0 }}, {{ end }}
+                        {{ $row | marshal }}
+                    {{ end }}
+                ]
             }
         }
     ]
