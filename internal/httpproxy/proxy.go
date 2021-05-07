@@ -1,8 +1,9 @@
 package httpproxy
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 // ProxyConfig definition
@@ -23,7 +24,14 @@ func New(cfg ProxyConfig) *Proxy {
 // RegisterRoutes for the proxy store/retrieve
 func (proxy *Proxy) RegisterRoutes(mux *http.ServeMux, prefix string) {
 	for _, s := range *proxy {
-		mux.HandleFunc(fmt.Sprintf("%sproxywrite/%s", prefix, s.Name), s.write)
-		mux.HandleFunc(fmt.Sprintf("%sproxyread/%s", prefix, s.Name), s.read)
+		mux.Handle(prefix+"proxywrite/"+s.Name, logH(http.HandlerFunc(s.write)))
+		mux.Handle(prefix+"proxyread/"+s.Name, logH(http.HandlerFunc(s.read)))
 	}
+}
+
+func logH(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logrus.Debugf("http-server: %s: %q", r.Method, r.URL)
+		next.ServeHTTP(w, r)
+	})
 }
