@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Mode definition
@@ -94,6 +94,7 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	q := r.URL.Query()
 	offsetStr := q.Get("offset")
+
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
@@ -138,6 +139,6 @@ func respondWithErr(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
 	err2 := json.NewEncoder(w).Encode(errorResponse{err.Error()})
 	if err2 != nil {
-		log.Printf("Could not encode the error (%s) response itself: %s", err, err2)
+		logrus.Errorf("Could not encode the error (%s) response itself: %s", err, err2)
 	}
 }
