@@ -352,6 +352,11 @@ func (loader *Loader) Render(
 		"server_url": func() *url.URL {
 			return loader.ServerURL
 		},
+		"server_url_no_user": func() *url.URL {
+			u := loader.ServerURL
+			u.User = nil
+			return u
+		},
 		"is_zero": func(v interface{}) bool {
 			if v == nil {
 				return true
