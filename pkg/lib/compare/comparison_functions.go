@@ -28,6 +28,8 @@ type ComparisonContext struct {
 	numberLT       *util.JsonNumber
 	numberLE       *util.JsonNumber
 	regexMatch     *util.JsonString
+	startsWith     *util.JsonString
+	endsWith       *util.JsonString
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -89,6 +91,30 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.regexMatch = &tV
+		case "starts_with":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("starts_with is no string")
+				return
+
+			}
+			out.startsWith = &tV
+		case "ends_with":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("ends_with is no string")
+				return
+
+			}
+			out.endsWith = &tV
+		case "server_url_origin":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("server_url_origin is no string")
+				return
+
+			}
+			out.serverUrlOrigin = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
@@ -565,6 +591,28 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		}
 		if !doesMatch {
 			return fmt.Errorf("does not match regex '%s'", *regex)
+		}
+	}
+
+	// Check if string starts or ends with another string
+	if startswith := control.startsWith; startswith != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for starts_with but is '%s'", jsonType)
+		}
+
+		if !strings.HasPrefix(right.(util.JsonString), *startswith) {
+			return fmt.Errorf("does not start with '%s'", *startswith)
+		}
+	}
+	if endswith := control.endsWith; endswith != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for ends_with but is '%s'", jsonType)
+		}
+
+		if !strings.HasSuffix(right.(util.JsonString), *endswith) {
+			return fmt.Errorf("does not end with '%s'", *endswith)
 		}
 	}
 
