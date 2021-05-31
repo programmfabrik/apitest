@@ -107,14 +107,6 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.endsWith = &tV
-		case "server_url_origin":
-			tV, ok := v.(string)
-			if !ok {
-				err = fmt.Errorf("server_url_origin is no string")
-				return
-
-			}
-			out.serverUrlOrigin = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
