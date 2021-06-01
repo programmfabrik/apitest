@@ -353,7 +353,8 @@ func (loader *Loader) Render(
 			return loader.ServerURL
 		},
 		"server_url_no_user": func() *url.URL {
-			u := loader.ServerURL
+			u := new(url.URL)
+			*u = *loader.ServerURL
 			u.User = nil
 			return u
 		},
