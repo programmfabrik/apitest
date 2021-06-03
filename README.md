@@ -1,6 +1,7 @@
 # apitest
 
-[![CircleCI](https://circleci.com/gh/programmfabrik/apitest.svg?style=svg)](https://circleci.com/gh/programmfabrik/apitest)
+[![release](https://github.com/programmfabrik/apitest/actions/workflows/release.yml/badge.svg?branch=production)](https://github.com/programmfabrik/apitest/actions/workflows/release.yml)
+[![unit-tests](https://github.com/programmfabrik/apitest/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/programmfabrik/apitest/actions/workflows/unit-tests.yml)
 [![Twitter](https://img.shields.io/twitter/follow/programmfabrik.svg?label=Follow&style=social)](https://twitter.com/programmfabrik)
 [![GoReportCard](https://goreportcard.com/badge/github.com/programmfabrik/apitest)](https://goreportcard.com/report/github.com/programmfabrik/apitest)
 

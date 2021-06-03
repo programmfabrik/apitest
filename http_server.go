@@ -29,15 +29,13 @@ func (ats *Suite) StartHttpServer() {
 	} else {
 		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
 	}
-	mux.Handle("/", customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir))))
+	mux.Handle("/", logH(customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
 
 	// bounce json response
-	mux.HandleFunc("/bounce-json", func(w http.ResponseWriter, r *http.Request) {
-		cookiesMiddleware(w, r, bounceJSON)
-	})
+	mux.Handle("/bounce-json", logH(cookiesMiddleware(http.HandlerFunc(bounceJSON))))
 
 	// bounce binary response with information in headers
-	mux.HandleFunc("/bounce", bounceBinary)
+	mux.Handle("/bounce", logH(http.HandlerFunc(bounceBinary)))
 
 	// Start listening into proxy
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
@@ -71,6 +69,8 @@ func (ats *Suite) StartHttpServer() {
 // customStaticHandler can perform some operations before passing into final handler
 func customStaticHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logrus.Debugf("%s: %q", r.Method, r.URL)
+
 		qs := r.URL.Query()
 		// We try not to include Content-Length header here
 		// As ultimately the default FileServer implementation will override all of them
@@ -195,10 +195,19 @@ func bounceBinary(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, r.Body)
 }
 
-func cookiesMiddleware(w http.ResponseWriter, r *http.Request, f http.HandlerFunc) {
-	ckHeader := r.Header.Values("X-Test-Set-Cookies")
-	for _, ck := range ckHeader {
-		w.Header().Add("Set-Cookie", ck)
-	}
-	f(w, r)
+func cookiesMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ckHeader := r.Header.Values("X-Test-Set-Cookies")
+		for _, ck := range ckHeader {
+			w.Header().Add("Set-Cookie", ck)
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func logH(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logrus.Debugf("http-server: %s: %q", r.Method, r.URL)
+		next.ServeHTTP(w, r)
+	})
 }
