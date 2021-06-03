@@ -27,6 +27,8 @@ func init() {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
+		// We need to avoid the automatically set gzip header
+		DisableCompression: true,
 	}
 
 	httpClient = &http.Client{
@@ -94,6 +96,8 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if err != nil {
 		return req, fmt.Errorf("error creating new request")
 	}
+	// Remove library default agent
+	req.Header.Del("User-Agent")
 	req.Close = true
 
 	if reqUrl.User != nil {
