@@ -58,6 +58,7 @@ func TestBuildCurl(t *testing.T) {
 -X 'GET' \
 -d '{"hey":1}' \
 -H 'Content-Type: application/json' \
+-H 'User-Agent: ' \
 'https://serverUrl/endpoint?query_param=value'`
 
 	if request.ToString(true) != exp {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -97,7 +98,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		return req, fmt.Errorf("error creating new request")
 	}
 	// Remove library default agent
-	req.Header.Del("User-Agent")
+	req.Header.Set("User-Agent", "")
 	req.Close = true
 
 	if reqUrl.User != nil {
@@ -319,6 +320,8 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
+
+	var reader io.ReadCloser
 	defer func() {
 		// Try to close body, if we have a ReadCloser
 		closer, ok := httpResponse.Body.(io.ReadCloser)
@@ -332,7 +335,16 @@ func (request Request) Send() (response Response, err error) {
 		}
 	}()
 
-	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
+	// Check that the server actually sent compressed data
+	switch httpResponse.Header.Get("Content-Encoding") {
+	case "gzip":
+		reader, err = gzip.NewReader(httpResponse.Body)
+		defer reader.Close()
+	default:
+		reader = httpResponse.Body
+	}
+
+	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), reader, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}
