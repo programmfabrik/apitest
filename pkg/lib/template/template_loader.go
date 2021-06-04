@@ -211,10 +211,7 @@ func (loader *Loader) Render(
 				}
 
 				for idx, d := range row {
-					switch reflect.ValueOf(d).Elem().Interface().(type) {
-					case nil:
-						dataEntry[columns[idx].Name()] = nil
-					}
+					dataEntry[columns[idx].Name()] = reflect.ValueOf(d).Elem().Interface()
 				}
 
 				data = append(data, dataEntry)

@@ -1,4 +1,11 @@
+GOOS ?= linux
+GOARCH ?= amd64
+
 all: test build
+
+deps:
+	go mod download github.com/clbanning/mxj
+	go get ./...
 
 vet:
 	go vet ./...
@@ -6,7 +13,7 @@ vet:
 fmt:
 	go fmt ./...
 
-test: fmt vet
+test: deps fmt vet
 	go test -race -cover ./...
 
 webtest:
@@ -16,14 +23,17 @@ webtest:
 apitest:
 	./apitest --stop-on-fail -d test/
 
-gox:
+gox: deps
 	go get github.com/mitchellh/gox
 	gox ${LDFLAGS} -parallel=4 -output="./bin/apitest_{{.OS}}_{{.Arch}}"
 
 clean:
 	rm -rfv ./apitest ./bin/* ./testcoverage.out
 
-build:
+ci: deps
+	go build -o bin/apitest_$(GOOS)_$(GOARCH) *.go
+
+build: deps
 	go build
 
-.PHONY: all test apitest gox build clean
+.PHONY: all test apitest webtest gox build clean
