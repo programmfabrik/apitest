@@ -21,7 +21,7 @@ webtest:
 	go tool cover -html=testcoverage.out
 
 apitest:
-	./apitest --stop-on-fail -d test/
+	./apitest -c apitest.test.yml --stop-on-fail -d test/
 
 gox: deps
 	go get github.com/mitchellh/gox

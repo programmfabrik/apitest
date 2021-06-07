@@ -1,0 +1,17 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "./",
+        "testmode": false,
+        "proxy": {
+            "oauth2": {
+                "mode": "passthru"
+            }
+        }
+    },
+    "name": "oauth2",
+    "tests": [
+        "@store_token.json",
+        "@bounce_token.json"
+    ]
+}

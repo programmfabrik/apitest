@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -36,6 +37,9 @@ func (ats *Suite) StartHttpServer() {
 
 	// bounce binary response with information in headers
 	mux.Handle("/bounce", logH(http.HandlerFunc(bounceBinary)))
+
+	// bounce query response with query in response body, as it is
+	mux.Handle("/bounce-query", logH(http.HandlerFunc(bounceQuery)))
 
 	// Start listening into proxy
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
@@ -193,6 +197,13 @@ func bounceBinary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.Copy(w, r.Body)
+}
+
+// bounceQuery returns the request query in response body
+// for those cases where a body cannt be provided
+func bounceQuery(w http.ResponseWriter, r *http.Request) {
+	rBody := bytes.NewBufferString(r.URL.RawQuery)
+	io.Copy(w, rBody)
 }
 
 func cookiesMiddleware(next http.Handler) http.Handler {

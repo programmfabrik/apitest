@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -26,6 +27,7 @@ type ConfigStruct struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
 		} `mapstructure:"report"`
+		OAuthClient util.OAuthClientsConfig `mapstructure:"oauth_client"`
 	}
 }
 
@@ -56,6 +58,7 @@ type TestToolConfig struct {
 	TestDirectories []string
 	LogNetwork      bool
 	LogVerbose      bool
+	OAuthClient     util.OAuthClientsConfig
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
@@ -65,6 +68,7 @@ func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool
 		rootDirectorys: rootDirectory,
 		LogNetwork:     logNetwork,
 		LogVerbose:     logVerbose,
+		OAuthClient:    Config.Apitest.OAuthClient,
 	}
 	err = config.extractTestDirectories()
 	return config, err

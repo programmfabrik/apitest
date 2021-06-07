@@ -205,6 +205,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		return false
 	}
 	loader.ServerURL = serverURL
+	loader.OAuthClient = ats.Config.OAuthClient
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -354,6 +355,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
+	loader.OAuthClient = ats.Config.OAuthClient
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)
