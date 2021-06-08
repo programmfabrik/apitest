@@ -1897,7 +1897,7 @@ will return this response:
 
 ### `bounce-query`
 
-The endpoint `bounce-query` returns the a response that includes in its `body` the request `query strin` as it is.
+The endpoint `bounce-query` returns the a response that includes in its `body` the request `query string` as it is.
 This is useful in endpoints where a body cannot be configured, like oAuth urls, so we can simulate responses in the request for testing.
 
 ```yaml
