@@ -54,13 +54,11 @@
                         "Header2": [
                             "XYZ"
                         ],
-                        "Accept-Encoding": [],
                         "Connection": [],
                         "Content-Length": [],
                         "Content-Type": [
                             "application/json"
-                        ],
-                        "User-Agent": []
+                        ]
                     },
                     "query_params": {
                         "param1": [
@@ -104,6 +102,7 @@
                     "param3": true
                 },
                 "header": {
+                    "Accept-Encoding": "gzip",
                     "header1": "RST",
                     "header2": "XYZ"
                 },
