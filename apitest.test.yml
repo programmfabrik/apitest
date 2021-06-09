@@ -1,0 +1,6 @@
+apitest:
+   oauth_client:
+    my_client:
+      endpoint:
+        token_url: "http://localhost:9999/bounce-query?access_token=mytoken"
+      secret: "foobar"
