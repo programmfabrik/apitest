@@ -531,8 +531,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check for array length
-	leftLen := control.elementCount
-	if leftLen != nil {
+	if control.elementCount != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
 			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
@@ -540,8 +539,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 
 		rightArray := right.(util.JsonArray)
 		rightLen := int64(len(rightArray))
-		if rightLen != *leftLen {
-			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *leftLen)
+		if rightLen != *control.elementCount {
+			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *control.elementCount)
 		}
 	}
 
@@ -572,43 +571,40 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check if string matches regex
-	regex := control.regexMatch
-	if regex != nil {
+	if control.regexMatch != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
 		}
 
-		doesMatch, err := regexp.Match(*regex, []byte(right.(util.JsonString)))
+		doesMatch, err := regexp.Match(*control.regexMatch, []byte(right.(util.JsonString)))
 		if err != nil {
-			return fmt.Errorf("could not match regex '%s': '%s'", *regex, err)
+			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatch, err)
 		}
 		if !doesMatch {
-			return fmt.Errorf("does not match regex '%s'", *regex)
+			return fmt.Errorf("does not match regex '%s'", *control.regexMatch)
 		}
 	}
 
 	// Check if string starts or ends with another string
-	startswith := control.startsWith
-	if startswith != nil {
+	if control.startsWith != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for starts_with but is '%s'", jsonType)
 		}
 
-		if !strings.HasPrefix(right.(util.JsonString), *startswith) {
-			return fmt.Errorf("does not start with '%s'", *startswith)
+		if !strings.HasPrefix(right.(util.JsonString), *control.startsWith) {
+			return fmt.Errorf("does not start with '%s'", *control.startsWith)
 		}
 	}
-	endswith := control.endsWith
-	if endswith != nil {
+	if control.endsWith != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for ends_with but is '%s'", jsonType)
 		}
 
-		if !strings.HasSuffix(right.(util.JsonString), *endswith) {
-			return fmt.Errorf("does not end with '%s'", *endswith)
+		if !strings.HasSuffix(right.(util.JsonString), *control.endsWith) {
+			return fmt.Errorf("does not end with '%s'", *control.endsWith)
 		}
 	}
 
