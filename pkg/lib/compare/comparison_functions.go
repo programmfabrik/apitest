@@ -531,7 +531,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check for array length
-	if leftLen := control.elementCount; leftLen != nil {
+	leftLen := control.elementCount
+	if leftLen != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
 			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
@@ -571,7 +572,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check if string matches regex
-	if regex := control.regexMatch; regex != nil {
+	regex := control.regexMatch
+	if regex != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
@@ -587,7 +589,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check if string starts or ends with another string
-	if startswith := control.startsWith; startswith != nil {
+	startswith := control.startsWith
+	if startswith != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for starts_with but is '%s'", jsonType)
@@ -597,7 +600,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 			return fmt.Errorf("does not start with '%s'", *startswith)
 		}
 	}
-	if endswith := control.endsWith; endswith != nil {
+	endswith := control.endsWith
+	if endswith != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for ends_with but is '%s'", jsonType)
