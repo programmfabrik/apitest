@@ -360,13 +360,37 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_token": func(client string, login string, password string) (interface{}, error) {
+		"oauth2_password_token": func(client string, login string, password string) (interface{}, error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
 			}
 			oAuthClient.Key = client
-			return oAuthClient.GetAuthToken(login, password)
+			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
+		},
+		"oauth2_client_token": func(client string) (interface{}, error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			return oAuthClient.GetClientCredentialsAuthToken()
+		},
+		"oauth2_code_token": func(client string, params ...string) (interface{}, error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			return oAuthClient.GetCodeAuthToken(params...)
+		},
+		"oauth2_token": func(client string, params ...string) (interface{}, error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			return oAuthClient.GetAuthToken(params...)
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
