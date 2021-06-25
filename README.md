@@ -22,7 +22,13 @@ apitest:
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
   store: # initial values for the datastore, parsed as map[string]interface{}
     email.server: smtp.google.com
-
+  oauth_client: # Map of client-config for oAuth clients
+    my_client: # oauth Client ID 
+      endpoint: # endpoints on the oauth server
+        auth_url: "http://auth.myserver.de/oauth/auth"
+        token_url: "http://auth.myserver.de/oauth/token"
+      secret: "foobar" # oauth Client secret
+      redirect_url: "http://myfancyapp.de/auth/receive-fancy-token" # redirect, usually on client side
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
@@ -1726,19 +1732,89 @@ Example how to range over 100 objects
 }
 ```
 
-## replace_host [url]
+## `replace_host [url]`
 
 **replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
 
 As an example, the URL _http://localhost/myimage.jpg_ would be changed into _http://localhost:8788/myimage.jpg_ following the example below.
 
-## server_url
+## `server_url`
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
 
-## is_zero
+## `is_zero`
 
 **is_zero** returns **true** if the passed value is the Golang zero value of the type.
+
+## `oauth_password_token [client] [username] [password]`
+
+**oauth_password_token** returns an **oauth token** for a configured client and given some user credentials. Such token is an object which contains several properties, being **access_token** one of them. It uses the `trusted` oAuth2 flow
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth_client_token [client]`
+
+**oauth_client_token** returns an **oauth token** for a configured client. Such token is an object which contains several properties, being **access_token** one of them. It uses the `client credentials` oAuth2 flow.
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_client_token "my_client" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth_code_token [client] ...[[key] [value]]`
+
+**oauth_code_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `code grant` oAuth2 flow.
+
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the code from it and passing it to the last step of the regular flow. 
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+Or:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth_token [client] ...[[key] [value]]`
+
+**oauth_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `implicit grant` oAuth2 flow.
+
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the token from its fragment. 
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+    }
+}
+```
 
 # HTTP Server
 
