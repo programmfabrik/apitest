@@ -98,7 +98,9 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 				return
 
 			}
-			out.startsWith = &tV
+			if tV != "" {
+				out.startsWith = &tV
+			}
 		case "ends_with":
 			tV, ok := v.(string)
 			if !ok {
@@ -106,7 +108,9 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 				return
 
 			}
-			out.endsWith = &tV
+			if tV != "" {
+				out.endsWith = &tV
+			}
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
