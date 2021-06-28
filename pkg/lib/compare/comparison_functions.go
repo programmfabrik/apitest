@@ -93,24 +93,20 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			out.regexMatch = &tV
 		case "starts_with":
 			tV, ok := v.(string)
-			if !ok {
-				err = fmt.Errorf("starts_with is no string")
+			if !ok || tV == "" {
+				err = fmt.Errorf("starts_with must be a string with length > 0")
 				return
 
 			}
-			if tV != "" {
-				out.startsWith = &tV
-			}
+			out.startsWith = &tV
 		case "ends_with":
 			tV, ok := v.(string)
-			if !ok {
-				err = fmt.Errorf("ends_with is no string")
+			if !ok || tV == "" {
+				err = fmt.Errorf("ends_with must be a string with length > 0")
 				return
 
 			}
-			if tV != "" {
-				out.endsWith = &tV
-			}
+			out.endsWith = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
