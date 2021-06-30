@@ -1953,6 +1953,31 @@ will return this response:
 }
 ```
 
+### `bounce-query`
+
+The endpoint `bounce-query` returns the a response that includes in its `body` the request `query string` as it is.
+This is useful in endpoints where a body cannot be configured, like oAuth urls, so we can simulate responses in the request for testing.
+
+```yaml
+{
+    "request": {
+        "endpoint": "bounce-query?here=is&all=stuff",
+        "method": "POST",
+        "body": {}
+    }
+}
+```
+
+will return this response:
+
+```yaml
+{
+    "response": {
+        "body": "here=is&all=stuff"
+    }
+}
+```
+
 ## HTTP Server Proxy
 
 The proxy different stores can be used to both store and read their stored requests

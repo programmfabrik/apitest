@@ -5,7 +5,10 @@
             // load static file
             "server_url": "{{ datastore "local_url" }}",
             "endpoint": "camera.jpg",
-            "method": "GET"
+            "method": "GET",
+            "header": {
+                "Accept-Encoding": "gzip"
+            }
         },
         "response": {
             "format": {

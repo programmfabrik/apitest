@@ -205,6 +205,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		return false
 	}
 	loader.ServerURL = serverURL
+	loader.OAuthClient = ats.Config.OAuthClient
 
 	isParallelPathSpec := false
 	switch t := v.(type) {
@@ -252,11 +253,28 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 			}
 		}
 	} else {
-		//We were not able unmarshal into array, so we try to unmarshal into raw message
+		// We were not able unmarshal into array, so we try to unmarshal into raw message
+
+		// Parse as template always
+		requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+		if lErr != nil {
+			r.SaveToReportLog(lErr.Error())
+			logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
+			return false
+		}
+
+		// If objects are different, we did have a Go template, recurse one level deep
+		if string(requestBytes) != string(testObj) {
+			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
+				testFilePath, k, isParallelPathSpec, r)
+		}
+
+		// Its a JSON at this point, assign and proceed to parse
+		testObj = requestBytes
+
 		var singleTest json.RawMessage
 		err = cjson.Unmarshal(testObj, &singleTest)
 		if err == nil {
-			//Did work to unmarshal -> no go template
 
 			//Check if is @ and if so load the test
 			if util.IsPathSpec(testObj) {
@@ -274,25 +292,10 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 			}
 		} else {
-			//Did not work -> Could be go template or a mallformed json
-			requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-			if lErr != nil {
-				r.SaveToReportLog(lErr.Error())
-				logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
-				return false
-			}
-
-			//If the both objects are the same we did not have a template, but a mallformed json -> Call error
-			if string(requestBytes) == string(testObj) {
-				r.SaveToReportLog(err.Error())
-				logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-				return false
-			}
-
-			//We have a template -> One level deeper with rendered bytes
-			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-				testFilePath, k, isParallelPathSpec, r)
-
+			// Malformed json
+			r.SaveToReportLog(err.Error())
+			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+			return false
 		}
 	}
 
@@ -352,6 +355,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
+	loader.OAuthClient = ats.Config.OAuthClient
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)

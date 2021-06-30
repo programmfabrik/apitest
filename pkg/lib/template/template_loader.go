@@ -13,6 +13,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -73,6 +74,7 @@ type Loader struct {
 	datastore      *datastore.Datastore
 	HTTPServerHost string
 	ServerURL      *url.URL
+	OAuthClient    util.OAuthClientsConfig
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -363,6 +365,14 @@ func (loader *Loader) Render(
 				return true
 			}
 			return reflect.ValueOf(v).IsZero()
+		},
+		"oauth2_token": func(client string, login string, password string) (interface{}, error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			return oAuthClient.GetAuthToken(login, password)
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
