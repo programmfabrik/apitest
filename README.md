@@ -22,8 +22,8 @@ apitest:
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
   store: # initial values for the datastore, parsed as map[string]interface{}
     email.server: smtp.google.com
-  oauth_client: # Map of client-config for oAuth clients
-    my_client: # oauth Client ID 
+  oauth2_client: # Map of client-config for oAuth clients
+    my_client: # oauth Client ID
       endpoint: # endpoints on the oauth server
         auth_url: "http://auth.myserver.de/oauth/auth"
         token_url: "http://auth.myserver.de/oauth/token"
@@ -1746,9 +1746,9 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 
 **is_zero** returns **true** if the passed value is the Golang zero value of the type.
 
-## `oauth_password_token [client] [username] [password]`
+## `oauth2_password_token [client] [username] [password]`
 
-**oauth_password_token** returns an **oauth token** for a configured client and given some user credentials. Such token is an object which contains several properties, being **access_token** one of them. It uses the `trusted` oAuth2 flow
+**oauth2_password_token** returns an **oauth token** for a configured client and given some user credentials. Such token is an object which contains several properties, being **access_token** one of them. It uses the `trusted` oAuth2 flow
 
 Example:
 
@@ -1760,9 +1760,9 @@ Example:
 }
 ```
 
-## `oauth_client_token [client]`
+## `oauth2_client_token [client]`
 
-**oauth_client_token** returns an **oauth token** for a configured client. Such token is an object which contains several properties, being **access_token** one of them. It uses the `client credentials` oAuth2 flow.
+**oauth2_client_token** returns an **oauth token** for a configured client. Such token is an object which contains several properties, being **access_token** one of them. It uses the `client credentials` oAuth2 flow.
 
 Example:
 
@@ -1774,11 +1774,11 @@ Example:
 }
 ```
 
-## `oauth_code_token [client] ...[[key] [value]]`
+## `oauth2_code_token [client] ...[[key] [value]]`
 
-**oauth_code_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `code grant` oAuth2 flow.
+**oauth2_code_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `code grant` oAuth2 flow.
 
-Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the code from it and passing it to the last step of the regular flow. 
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the code from it and passing it to the last step of the regular flow.
 
 Example:
 
@@ -1800,18 +1800,18 @@ Or:
 }
 ```
 
-## `oauth_token [client] ...[[key] [value]]`
+## `oauth2_implicit_token [client] ...[[key] [value]]`
 
-**oauth_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `implicit grant` oAuth2 flow.
+**oauth2_implicit_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `implicit grant` oAuth2 flow.
 
-Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the token from its fragment. 
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the token from its fragment.
 
 Example:
 
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | qjson "access_token" }}
     }
 }
 ```
@@ -2047,7 +2047,7 @@ Given this request:
 }
 ```
 
-The expected response: 
+The expected response:
 ```yaml
 {
     "statuscode": 200,
@@ -2075,7 +2075,7 @@ Given this request:
 }
 ```
 
-The expected response: 
+The expected response:
 ```yaml
 {
     "header": { // Merged headers. original request headers prefixed with 'X-Request`

@@ -384,7 +384,7 @@ func (loader *Loader) Render(
 			oAuthClient.Key = client
 			return oAuthClient.GetCodeAuthToken(params...)
 		},
-		"oauth2_token": func(client string, params ...string) (interface{}, error) {
+		"oauth2_implicit_token": func(client string, params ...string) (interface{}, error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
