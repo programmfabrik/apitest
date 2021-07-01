@@ -421,18 +421,22 @@ func (loader *Loader) Render(
 		"query_escape": func(in string) string {
 			return url.QueryEscape(in)
 		},
-		"query_unescape": func(in string) (string, error) {
-			return url.QueryUnescape(in)
+		"query_unescape": func(in string) string {
+			out, err := url.QueryUnescape(in)
+			if err != nil {
+				return err.Error()
+			}
+			return out
 		},
 		"base64_encode": func(in string) string {
 			return base64.StdEncoding.EncodeToString([]byte(in))
 		},
-		"base64_decode": func(in string) (string, error) {
+		"base64_decode": func(in string) string {
 			b, err := base64.StdEncoding.DecodeString(in)
 			if err != nil {
-				return "", err
+				return err.Error()
 			}
-			return string(b), err
+			return string(b)
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
