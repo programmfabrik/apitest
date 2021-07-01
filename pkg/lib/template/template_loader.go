@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"golang.org/x/oauth2"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -360,13 +361,53 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_token": func(client string, login string, password string) (interface{}, error) {
+		"oauth2_password_token": func(client string, login string, password string) (t *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
 			}
 			oAuthClient.Key = client
-			return oAuthClient.GetAuthToken(login, password)
+			t, err = oAuthClient.GetPasswordCredentialsAuthToken(login, password)
+			if err != nil {
+				t = &oauth2.Token{AccessToken: err.Error()}
+			}
+			return t, nil
+		},
+		"oauth2_client_token": func(client string) (t *oauth2.Token, err error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			t, err = oAuthClient.GetClientCredentialsAuthToken()
+			if err != nil {
+				t = &oauth2.Token{AccessToken: err.Error()}
+			}
+			return t, nil
+		},
+		"oauth2_code_token": func(client string, params ...string) (t *oauth2.Token, err error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			t, err = oAuthClient.GetCodeAuthToken(params...)
+			if err != nil {
+				t = &oauth2.Token{AccessToken: err.Error()}
+			}
+			return t, nil
+		},
+		"oauth2_implicit_token": func(client string, params ...string) (t *oauth2.Token, err error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			t, err = oAuthClient.GetAuthToken(params...)
+			if err != nil {
+				t = &oauth2.Token{AccessToken: err.Error()}
+			}
+			return t, nil
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
