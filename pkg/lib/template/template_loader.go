@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"database/sql"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -408,6 +409,30 @@ func (loader *Loader) Render(
 				t = &oauth2.Token{AccessToken: err.Error()}
 			}
 			return t, nil
+		},
+		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return nil, errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Key = client
+			return &oAuthClient, nil
+		},
+		"query_escape": func(in string) string {
+			return url.QueryEscape(in)
+		},
+		"query_unescape": func(in string) (string, error) {
+			return url.QueryUnescape(in)
+		},
+		"base64_encode": func(in string) string {
+			return base64.StdEncoding.EncodeToString([]byte(in))
+		},
+		"base64_decode": func(in string) (string, error) {
+			b, err := base64.StdEncoding.DecodeString(in)
+			if err != nil {
+				return "", err
+			}
+			return string(b), err
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))

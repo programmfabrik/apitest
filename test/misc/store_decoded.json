@@ -1,0 +1,7 @@
+{
+    "name": "Store the result of decoding the encoded",
+    "store": {
+        "unescaped_query": {{ query_unescape (datastore "escaped_query") | marshal }},
+        "base64_decoded": {{ base64_decode (datastore "base64_encoded") | marshal }}
+    }
+}

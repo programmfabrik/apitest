@@ -1,0 +1,7 @@
+{
+    "name": "Store some raw inputs",
+    "store": {
+        "raw_query": "some=[1,2]&more={}",
+        "raw_string": "my-raw-string"
+    }
+}

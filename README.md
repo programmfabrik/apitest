@@ -1704,6 +1704,22 @@ Returns a `string` of the MD5 sum of the file found in `filepath`.
 
 Returns a `string` where all `"` are escaped to `\"`. This is useful in Strings which need to be concatenated.
 
+## `query_escape [string]`
+
+Returns a `string` as the result of escaping input as if it was intended for use in a URL query string.
+
+## `query_unescape [string]`
+
+Returns a `string` as the result of unescaping input as if it was coming from a URL query string.
+
+## `base64_encode [string]`
+
+Returns a `string` as the result of encoding input into base64.
+
+## `base64_decode [string]`
+
+Returns a `string` as the result of decoding input from base64.
+
 ## `url_path_escape [string]`
 
 Uses [Url.PathEscape](https://pkg.go.dev/net/url?tab=doc#PathEscape) to escape given `string` to use in `endpoint` or `server_url`. Returns `string`.
@@ -1812,6 +1828,20 @@ Example:
 {
     "store": {
         "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth2_client [client]`
+
+**oauth2_client** returns a configured **oauth client** given its `client_id`. Result is an object which contains several properties.
+
+Example:
+
+```django
+{
+    "store": {
+        "oauth2_client_config": {{ oauth2_client "my_client" | marshal }}
     }
 }
 ```

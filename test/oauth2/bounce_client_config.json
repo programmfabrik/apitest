@@ -1,0 +1,23 @@
+{
+    "name": "Bounce token",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {{ datastore "oauth2_client" | marshal }}
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "key": "my_client",
+                "endpoint": {
+                  "auth_url": "http://localhost:9999/bounce-query?access_token=mytoken#access_token=mytoken",
+                  "token_url": "http://localhost:9999/bounce-query?access_token=mytoken"
+                },
+                "secret": "foobar",
+                "redirect_url": "http://localhost:9999/bounce-query?access_token=mytoken#access_token=mytoken"
+            }
+        }
+    }
+}
