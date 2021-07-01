@@ -75,8 +75,15 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
-	for key, value := range request.Body.(map[string]string) {
-		formParams.Add(key, value)
+	for key, value := range request.Body.(map[string]interface{}) {
+		switch v := value.(type) {
+		case string:
+			formParams.Set(key, v)
+		case []string:
+			formParams[key] = v
+		default:
+			formParams.Set(key, fmt.Sprintf("%s", v))
+		}
 	}
 	body = strings.NewReader(formParams.Encode())
 	return additionalHeaders, body, nil

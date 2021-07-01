@@ -19,5 +19,7 @@
         ,"@bounce_token.json"
         ,"@store_token.json"
         ,"@bounce_token.json"
+        ,"@store_client_config.json"
+        ,"@bounce_client_config.json"
     ]
 }
