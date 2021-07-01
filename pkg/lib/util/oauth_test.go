@@ -26,7 +26,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 	defer ts.Close()
 
 	cfg := OAuthClientConfig{
-		Key: "nobody",
+		Client: "nobody",
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -38,7 +38,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -50,7 +50,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -89,7 +89,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 	defer ts.Close()
 
 	cfg := OAuthClientConfig{
-		Key: "nobody",
+		Client: "nobody",
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -101,7 +101,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -113,7 +113,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -177,7 +177,7 @@ func TestGetCodeToken(t *testing.T) {
 	defer ts.Close()
 
 	cfg := OAuthClientConfig{
-		Key: "nobody",
+		Client: "nobody",
 		Endpoint: OAuthEndpointConfig{
 			AuthURL:  as.URL,
 			TokenURL: ts.URL,
@@ -191,7 +191,7 @@ func TestGetCodeToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL:  as.URL,
 			TokenURL: ts.URL,
@@ -205,7 +205,7 @@ func TestGetCodeToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			TokenURL: ts.URL,
 		},
@@ -217,7 +217,7 @@ func TestGetCodeToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL:  as.URL,
 			TokenURL: ts.URL,
@@ -231,7 +231,7 @@ func TestGetCodeToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL:  as.URL,
 			TokenURL: ts.URL,
@@ -254,7 +254,7 @@ func TestGetCodeToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL:  as.URL,
 			TokenURL: ts.URL,
@@ -308,7 +308,7 @@ func TestGetAuthToken(t *testing.T) {
 	defer as.Close()
 
 	cfg := OAuthClientConfig{
-		Key: "nobody",
+		Client: "nobody",
 		Endpoint: OAuthEndpointConfig{
 			AuthURL: as.URL,
 		},
@@ -320,7 +320,7 @@ func TestGetAuthToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key:         theClient,
+		Client:      theClient,
 		Endpoint:    OAuthEndpointConfig{},
 		RedirectURL: rs.URL,
 	}
@@ -330,7 +330,7 @@ func TestGetAuthToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL: as.URL,
 		},
@@ -342,7 +342,7 @@ func TestGetAuthToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL: as.URL,
 		},
@@ -363,7 +363,7 @@ func TestGetAuthToken(t *testing.T) {
 	}
 
 	cfg = OAuthClientConfig{
-		Key: theClient,
+		Client: theClient,
 		Endpoint: OAuthEndpointConfig{
 			AuthURL: as.URL,
 		},

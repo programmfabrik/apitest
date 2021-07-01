@@ -10,7 +10,7 @@
         "statuscode": 200,
         "body": {
             "body": {
-                "key": "my_client",
+                "client": "my_client",
                 "endpoint": {
                   "auth_url": "http://localhost:9999/bounce-query?access_token=mytoken#access_token=mytoken",
                   "token_url": "http://localhost:9999/bounce-query?access_token=mytoken"

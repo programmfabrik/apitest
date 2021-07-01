@@ -16,7 +16,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
-	"golang.org/x/oauth2"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -353,8 +352,8 @@ func (loader *Loader) Render(
 			parsedURL.Host = loader.HTTPServerHost
 			return parsedURL.String(), nil
 		},
-		"server_url": func() *url.URL {
-			return loader.ServerURL
+		"server_url": func() url.URL {
+			return *loader.ServerURL
 		},
 		"is_zero": func(v interface{}) bool {
 			if v == nil {
@@ -362,61 +361,54 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_password_token": func(client string, login string, password string) (t *oauth2.Token, err error) {
+		"oauth2_password_token": func(client string, login string, password string) (tE oAuth2TokenExtended, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %s not configured", client)
+				return tE, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Key = client
-			t, err = oAuthClient.GetPasswordCredentialsAuthToken(login, password)
-			if err != nil {
-				t = &oauth2.Token{AccessToken: err.Error()}
-			}
-			return t, nil
+			oAuthClient.Client = client
+			return readOAuthReturnValue(oAuthClient.GetPasswordCredentialsAuthToken(login, password))
+
 		},
-		"oauth2_client_token": func(client string) (t *oauth2.Token, err error) {
+		"oauth2_client_token": func(client string) (tE oAuth2TokenExtended, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %s not configured", client)
+				return tE, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Key = client
-			t, err = oAuthClient.GetClientCredentialsAuthToken()
-			if err != nil {
-				t = &oauth2.Token{AccessToken: err.Error()}
-			}
-			return t, nil
+			oAuthClient.Client = client
+			return readOAuthReturnValue(oAuthClient.GetClientCredentialsAuthToken())
 		},
-		"oauth2_code_token": func(client string, params ...string) (t *oauth2.Token, err error) {
+		"oauth2_code_token": func(client string, params ...string) (tE oAuth2TokenExtended, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %s not configured", client)
+				return tE, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Key = client
-			t, err = oAuthClient.GetCodeAuthToken(params...)
-			if err != nil {
-				t = &oauth2.Token{AccessToken: err.Error()}
-			}
-			return t, nil
+			oAuthClient.Client = client
+			return readOAuthReturnValue(oAuthClient.GetCodeAuthToken(params...))
 		},
-		"oauth2_implicit_token": func(client string, params ...string) (t *oauth2.Token, err error) {
+		"oauth2_implicit_token": func(client string, params ...string) (tE oAuth2TokenExtended, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %s not configured", client)
+				return tE, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Key = client
-			t, err = oAuthClient.GetAuthToken(params...)
-			if err != nil {
-				t = &oauth2.Token{AccessToken: err.Error()}
-			}
-			return t, nil
+			oAuthClient.Client = client
+			return readOAuthReturnValue(oAuthClient.GetAuthToken(params...))
 		},
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Key = client
+			oAuthClient.Client = client
 			return &oAuthClient, nil
+		},
+		"oauth2_basic_auth": func(client string) (string, error) {
+			oAuthClient, ok := loader.OAuthClient[client]
+			if !ok {
+				return "", errors.Errorf("OAuth client %s not configured", client)
+			}
+			oAuthClient.Client = client
+			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
 		},
 		"query_escape": func(in string) string {
 			return url.QueryEscape(in)

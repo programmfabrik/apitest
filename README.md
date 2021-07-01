@@ -1846,6 +1846,10 @@ Example:
 }
 ```
 
+## `oauth2_basic_auth [client]`
+
+** oauth2_basic_auth** returns the authentication header for basic authentication for the given oauth client.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.

@@ -16,7 +16,7 @@ type OAuthClientsConfig map[string]OAuthClientConfig
 
 // OAuthClientConfig is our config for a single oAuth client
 type OAuthClientConfig struct {
-	Key         string              `json:"key"`
+	Client      string              `json:"client"`
 	Endpoint    OAuthEndpointConfig `mapstructure:"endpoint" json:"endpoint"`
 	Secret      string              `mapstructure:"secret" json:"secret"`
 	RedirectURL string              `mapstructure:"redirect_url" json:"redirect_url"`
@@ -31,7 +31,7 @@ type OAuthEndpointConfig struct {
 
 func getOAuthClientConfig(c OAuthClientConfig) oauth2.Config {
 	return oauth2.Config{
-		ClientID:     c.Key,
+		ClientID:     c.Client,
 		ClientSecret: c.Secret,
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  c.Endpoint.AuthURL,
@@ -44,7 +44,7 @@ func getOAuthClientConfig(c OAuthClientConfig) oauth2.Config {
 
 func getOAuthClientCredentialsConfig(c OAuthClientConfig) clientcredentials.Config {
 	return clientcredentials.Config{
-		ClientID:     c.Key,
+		ClientID:     c.Client,
 		ClientSecret: c.Secret,
 		TokenURL:     c.Endpoint.TokenURL,
 	}
