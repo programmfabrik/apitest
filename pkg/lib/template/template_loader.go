@@ -160,7 +160,7 @@ func (loader *Loader) Render(
 				return nil, err
 			}
 
-			csvData, err := csvx.NewCSV(',', '#', true).ToMap(fileBytes)
+			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
@@ -178,7 +178,7 @@ func (loader *Loader) Render(
 				return nil, err
 			}
 
-			csvData, err := csvx.NewCSV(',', '#', true).ToMap(fileBytes)
+			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
