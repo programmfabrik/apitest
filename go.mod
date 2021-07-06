@@ -1,6 +1,6 @@
 module github.com/programmfabrik/apitest
 
-go 1.13
+go 1.16
 
 require (
 	github.com/clbanning/mxj v1.8.4
