@@ -134,7 +134,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
 	case "csv":
-		csvData, err := csvx.NewCSV(',', '#', true).ToMap(resp.Body())
+		csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(resp.Body())
 		if err != nil {
 			return res, errors.Wrap(err, "Could not parse csv data")
 		}
