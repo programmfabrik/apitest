@@ -22,7 +22,13 @@ apitest:
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
   store: # initial values for the datastore, parsed as map[string]interface{}
     email.server: smtp.google.com
-
+  oauth2_client: # Map of client-config for oAuth clients
+    my_client: # oauth Client ID
+      endpoint: # endpoints on the oauth server
+        auth_url: "http://auth.myserver.de/oauth/auth"
+        token_url: "http://auth.myserver.de/oauth/token"
+      secret: "foobar" # oauth Client secret
+      redirect_url: "http://myfancyapp.de/auth/receive-fancy-token" # redirect, usually on client side
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
@@ -1750,6 +1756,22 @@ Returns a `string` of the MD5 sum of the file found in `filepath`.
 
 Returns a `string` where all `"` are escaped to `\"`. This is useful in Strings which need to be concatenated.
 
+## `query_escape [string]`
+
+Returns a `string` as the result of escaping input as if it was intended for use in a URL query string.
+
+## `query_unescape [string]`
+
+Returns a `string` as the result of unescaping input as if it was coming from a URL query string.
+
+## `base64_encode [string]`
+
+Returns a `string` as the result of encoding input into base64.
+
+## `base64_decode [string]`
+
+Returns a `string` as the result of decoding input from base64.
+
 ## `url_path_escape [string]`
 
 Uses [Url.PathEscape](https://pkg.go.dev/net/url?tab=doc#PathEscape) to escape given `string` to use in `endpoint` or `server_url`. Returns `string`.
@@ -1778,13 +1800,13 @@ Example how to range over 100 objects
 }
 ```
 
-## replace_host [url]
+## `replace_host [url]`
 
 **replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
 
 As an example, the URL _http://localhost/myimage.jpg_ would be changed into _http://localhost:8788/myimage.jpg_ following the example below.
 
-## server_url
+## `server_url`
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
 
@@ -1794,9 +1816,97 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 
 If the **server_url** is in the form of _http://user:password@localhost_, **server_url_no_user** will return _http://localhost_.
 
-## is_zero
+## `is_zero`
 
 **is_zero** returns **true** if the passed value is the Golang zero value of the type.
+
+## `oauth2_password_token [client] [username] [password]`
+
+**oauth2_password_token** returns an **oauth token** for a configured client and given some user credentials. Such token is an object which contains several properties, being **access_token** one of them. It uses the `trusted` oAuth2 flow
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth2_client_token [client]`
+
+**oauth2_client_token** returns an **oauth token** for a configured client. Such token is an object which contains several properties, being **access_token** one of them. It uses the `client credentials` oAuth2 flow.
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_client_token "my_client" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth2_code_token [client] ...[[key] [value]]`
+
+**oauth2_code_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `code grant` oAuth2 flow.
+
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the code from it and passing it to the last step of the regular flow.
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+Or:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth2_implicit_token [client] ...[[key] [value]]`
+
+**oauth2_implicit_token** returns an **oauth token** for a configured client and accepts a variable number of key/value parameters. Such token is an object which contains several properties, being **access_token** one of them. It uses the `implicit grant` oAuth2 flow.
+
+Behind the scenes the function will do a GET request to the `auth URL`, adding such parameters to it, and interpret the last URL such request was redirected to, extracting the token from its fragment.
+
+Example:
+
+```django
+{
+    "store": {
+        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | qjson "access_token" }}
+    }
+}
+```
+
+## `oauth2_client [client]`
+
+**oauth2_client** returns a configured **oauth client** given its `client_id`. Result is an object which contains several properties.
+
+Example:
+
+```django
+{
+    "store": {
+        "oauth2_client_config": {{ oauth2_client "my_client" | marshal }}
+    }
+}
+```
+
+## `oauth2_basic_auth [client]`
+
+** oauth2_basic_auth** returns the authentication header for basic authentication for the given oauth client.
 
 # HTTP Server
 
@@ -2029,7 +2139,7 @@ Given this request:
 }
 ```
 
-The expected response: 
+The expected response:
 ```yaml
 {
     "statuscode": 200,
@@ -2057,7 +2167,7 @@ Given this request:
 }
 ```
 
-The expected response: 
+The expected response:
 ```yaml
 {
     "header": { // Merged headers. original request headers prefixed with 'X-Request`

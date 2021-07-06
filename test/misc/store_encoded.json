@@ -1,0 +1,7 @@
+{
+    "name": "Store the result of some template outputs",
+    "store": {
+        "escaped_query": {{ query_escape (datastore "raw_query") | marshal }},
+        "base64_encoded": {{ base64_encode (datastore "raw_string") | marshal }}
+    }
+}

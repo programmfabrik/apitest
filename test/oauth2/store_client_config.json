@@ -1,0 +1,6 @@
+{
+    "name": "Store oauth2 client config",
+    "store": {
+        "oauth2_client": {{ oauth2_client "my_client" | marshal }}
+    }
+}
