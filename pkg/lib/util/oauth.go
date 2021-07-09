@@ -54,7 +54,7 @@ func getOAuthClientCredentialsConfig(c OAuthClientConfig) clientcredentials.Conf
 // to get a token on behalf of a user
 func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, password string) (*oauth2.Token, error) {
 	cfg := getOAuthClientConfig(c)
-	httpClient := &http.Client{Timeout: 5 * time.Second}
+	httpClient := &http.Client{Timeout: 60 * time.Second}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return cfg.PasswordCredentialsToken(ctx, username, password)
 }
@@ -63,7 +63,7 @@ func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, pass
 // to get a token on behalf of a user
 func (c OAuthClientConfig) GetClientCredentialsAuthToken() (*oauth2.Token, error) {
 	cfg := getOAuthClientCredentialsConfig(c)
-	httpClient := &http.Client{Timeout: 5 * time.Second}
+	httpClient := &http.Client{Timeout: 60 * time.Second}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return cfg.Token(ctx)
 }
@@ -104,7 +104,7 @@ func (c OAuthClientConfig) getRedirectURL(params ...string) (*url.URL, error) {
 		}
 	}
 	authURL.RawQuery = cqv.Encode()
-	httpClient := &http.Client{Timeout: 5 * time.Second}
+	httpClient := &http.Client{Timeout: 60 * time.Second}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	req, err := http.NewRequestWithContext(ctx, "GET", authURL.String(), nil)
 	if err != nil {
@@ -130,7 +130,7 @@ func (c OAuthClientConfig) GetCodeAuthToken(params ...string) (*oauth2.Token, er
 	}
 	code := redirectURL.Query().Get("code")
 	cfg := getOAuthClientConfig(c)
-	httpClient := &http.Client{Timeout: 5 * time.Second}
+	httpClient := &http.Client{Timeout: 60 * time.Second}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	opts := []oauth2.AuthCodeOption{}
 	for i := 0; i < len(params); i += 2 {
