@@ -9,7 +9,8 @@
             "semver_easydb_patch": {{ semver_compare "v5.86.2" "v6.0.0" }},
             "semver_lt": {{ semver_compare "v5.1.2" "v6.0.0" }},
             "semver_eq": {{ semver_compare "v6.0.0" "v6.0.0" }},
-            "semver_gt": {{ semver_compare "v7.1.2" "v6.0.0" }}
+            "semver_gt": {{ semver_compare "v7.1.2" "v6.0.0" }},
+            "semver_eq2": {{ semver_compare "" "v0.0.0" }}
         }
     },
     "response": {
@@ -39,7 +40,12 @@
                 "semver_gt:control": {
                     "is_integer": true
                 },
-                "semver_gt": 1
+                "semver_gt": 1,
+
+                "semver_eq2:control": {
+                    "is_integer": true
+                },
+                "semver_eq2": 0
             }
         }
     }

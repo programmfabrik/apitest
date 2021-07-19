@@ -432,6 +432,14 @@ func (loader *Loader) Render(
 			return string(b)
 		},
 		"semver_compare": func(v, w string) (int, error) {
+			if v == "" {
+				// empty version
+				v = "v0.0.0"
+			}
+			if w == "" {
+				// empty version
+				w = "v0.0.0"
+			}
 			if !semver.IsValid(v) {
 				return 0, errors.Errorf("version string %s is invalid", v)
 			}
