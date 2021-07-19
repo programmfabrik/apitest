@@ -23,6 +23,9 @@ type ConfigStruct struct {
 			Request  int `mapstructure:"request"`
 			Response int `mapstructure:"response"`
 		} `mapstructure:"limit"`
+		Log struct {
+			Short bool `mapstructure:"short"`
+		} `mapstructure:"log"`
 		Report struct {
 			File   string `mapstructure:"file"`
 			Format string `mapstructure:"format"`
@@ -58,16 +61,18 @@ type TestToolConfig struct {
 	TestDirectories []string
 	LogNetwork      bool
 	LogVerbose      bool
+	LogShort        bool
 	OAuthClient     util.OAuthClientsConfig
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
-func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool, logVerbose bool) (config TestToolConfig, err error) {
+func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool, logVerbose bool, logShort bool) (config TestToolConfig, err error) {
 	config = TestToolConfig{
 		ServerURL:      serverURL,
 		rootDirectorys: rootDirectory,
 		LogNetwork:     logNetwork,
 		LogVerbose:     logVerbose,
+		LogShort:       logShort,
 		OAuthClient:    Config.Apitest.OAuthClient,
 	}
 	err = config.extractTestDirectories()

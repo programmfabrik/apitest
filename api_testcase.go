@@ -41,6 +41,7 @@ type Case struct {
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
+	LogShort   *bool `json:"log_short"`
 
 	loader      template.Loader
 	manifestDir string
@@ -62,10 +63,12 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
-	if testCase.Description == "" {
-		logrus.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
-	} else {
-		logrus.Infof("     [%2d] '%s': '%s'", testCase.index, testCase.Name, testCase.Description)
+	if testCase.LogShort == nil || !*testCase.LogShort {
+		if testCase.Description == "" {
+			logrus.Infof("     [%2d] '%s'", testCase.index, testCase.Name)
+		} else {
+			logrus.Infof("     [%2d] '%s': '%s'", testCase.index, testCase.Name, testCase.Description)
+		}
 	}
 
 	testCase.ReportElem = parentReportElem.NewChild(testCase.Name)
@@ -110,7 +113,7 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 	fileBasename := filepath.Base(testCase.Filename)
 	if !success {
 		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Warnf("     [%2d] failure", testCase.index)
-	} else {
+	} else if testCase.LogShort == nil || !*testCase.LogShort {
 		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Infof("     [%2d] success", testCase.index)
 	}
 
@@ -346,7 +349,9 @@ func (testCase Case) run() (bool, error) {
 	collectPresent := testCase.CollectResponse != nil
 
 	if testCase.WaitBefore != nil {
-		logrus.Infof("wait_before_ms: %d", *testCase.WaitBefore)
+		if testCase.LogShort == nil || !*testCase.LogShort {
+			logrus.Infof("wait_before_ms: %d", *testCase.WaitBefore)
+		}
 		time.Sleep(time.Duration(*testCase.WaitBefore) * time.Millisecond)
 	}
 
@@ -436,7 +441,9 @@ func (testCase Case) run() (bool, error) {
 	}
 
 	if testCase.WaitAfter != nil {
-		logrus.Infof("wait_after_ms: %d", *testCase.WaitAfter)
+		if testCase.LogShort == nil || !*testCase.LogShort {
+			logrus.Infof("wait_after_ms: %d", *testCase.WaitAfter)
+		}
 		time.Sleep(time.Duration(*testCase.WaitAfter) * time.Millisecond)
 	}
 

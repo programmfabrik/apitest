@@ -1,5 +1,5 @@
 apitest:
-   oauth_client:
+  oauth_client:
     my_client:
       endpoint:
         auth_url: "http://localhost:9999/bounce-query?access_token=mytoken#access_token=mytoken"

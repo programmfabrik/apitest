@@ -332,6 +332,9 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	if test.LogVerbose == nil {
 		test.LogVerbose = &ats.Config.LogVerbose
 	}
+	if test.LogShort == nil {
+		test.LogShort = &ats.Config.LogShort
+	}
 
 	if test.ServerURL == "" {
 		test.ServerURL = ats.Config.ServerURL
@@ -347,7 +350,9 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 
 func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
-	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
+	if !ats.Config.LogShort {
+		logrus.Tracef("Loading manifest: %s", ats.manifestPath)
+	}
 	loader := template.NewLoader(ats.datastore)
 	loader.HTTPServerHost = ats.HTTPServerHost
 	serverURL, err := url.Parse(ats.Config.ServerURL)

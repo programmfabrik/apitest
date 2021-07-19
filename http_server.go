@@ -51,7 +51,9 @@ func (ats *Suite) StartHttpServer() {
 	}
 
 	run := func() {
-		logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
+		if !ats.Config.LogShort {
+			logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
+		}
 
 		err := ats.httpServer.ListenAndServe()
 		if err != http.ErrServerClosed {
@@ -101,7 +103,7 @@ func (ats *Suite) StopHttpServer() {
 		logrus.Errorf("HTTP server Shutdown: %v", err)
 		close(ats.idleConnsClosed)
 		<-ats.idleConnsClosed
-	} else {
+	} else if !ats.Config.LogShort {
 		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
 	}
 	return

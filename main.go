@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL, httpServerReplaceHost              string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                             []string
-	limitRequest, limitResponse                                             uint
+	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                                       []string
+	limitRequest, limitResponse                                                       uint
 )
 
 func init() {
@@ -55,6 +55,10 @@ func init() {
 		&logTimeStamp, "log-timestamp", "t", false,
 		"log full timestamp into console")
 
+	testCMD.PersistentFlags().BoolVarP(
+		&logShort, "log-short", "", false,
+		"short log on success into console")
+
 	testCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
 		"Defines where the log statements should be saved.")
@@ -82,6 +86,7 @@ func init() {
 	viper.BindPFlag("apitest.report.file", testCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", testCMD.PersistentFlags().Lookup("report-format"))
 	viper.BindPFlag("apitest.server", testCMD.PersistentFlags().Lookup("server"))
+	viper.BindPFlag("apitest.log.short", testCMD.PersistentFlags().Lookup("log-short"))
 	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
 	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 
@@ -112,7 +117,8 @@ func setup(ccmd *cobra.Command, args []string) {
 	LoadConfig(cfgFile)
 
 	// Set log verbosity to trace
-	logrus.SetLevel(logrus.TraceLevel)
+	logLevel := logrus.TraceLevel
+	logrus.SetLevel(logLevel)
 
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: logTimeStamp,
@@ -140,7 +146,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	rep := report.NewReport()
 
 	// Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose)
+	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
 	if err != nil {
 		logrus.Error(err)
 		if reportFile != "" {
