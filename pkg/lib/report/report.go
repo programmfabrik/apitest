@@ -118,10 +118,11 @@ func (r *ReportElement) Leave(result bool) {
 
 	if len(r.SubTests) == 0 {
 		r.TestCount++
-		if !result {
-			r.Failures++
-		}
 	}
+	if !result {
+		r.Failures++
+	}
+
 	r.ExecutionTime = time.Since(r.StartTime)
 }
 
