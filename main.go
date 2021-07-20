@@ -117,8 +117,7 @@ func setup(ccmd *cobra.Command, args []string) {
 	LoadConfig(cfgFile)
 
 	// Set log verbosity to trace
-	logLevel := logrus.TraceLevel
-	logrus.SetLevel(logLevel)
+	logrus.SetLevel(logrus.TraceLevel)
 
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: logTimeStamp,

@@ -101,7 +101,9 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 	elapsed := time.Since(start)
 	if err != nil {
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logrus.Errorf("     [%2d] %s", testCase.index, err)
+		if !testCase.ReverseTestResult || testCase.LogShort == nil || !*testCase.LogShort {
+			logrus.Errorf("     [%2d] %s", testCase.index, err)
+		}
 		success = false
 	}
 

@@ -30,20 +30,20 @@ func (ats *Suite) StartHttpServer() {
 	} else {
 		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
 	}
-	mux.Handle("/", logH(customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
+	mux.Handle("/", logH(ats.Config.LogShort, customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
 
 	// bounce json response
-	mux.Handle("/bounce-json", logH(cookiesMiddleware(http.HandlerFunc(bounceJSON))))
+	mux.Handle("/bounce-json", logH(ats.Config.LogShort, cookiesMiddleware(http.HandlerFunc(bounceJSON))))
 
 	// bounce binary response with information in headers
-	mux.Handle("/bounce", logH(http.HandlerFunc(bounceBinary)))
+	mux.Handle("/bounce", logH(ats.Config.LogShort, http.HandlerFunc(bounceBinary)))
 
 	// bounce query response with query in response body, as it is
-	mux.Handle("/bounce-query", logH(http.HandlerFunc(bounceQuery)))
+	mux.Handle("/bounce-query", logH(ats.Config.LogShort, http.HandlerFunc(bounceQuery)))
 
 	// Start listening into proxy
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
-	ats.httpServerProxy.RegisterRoutes(mux, "/")
+	ats.httpServerProxy.RegisterRoutes(mux, "/", ats.Config.LogShort)
 
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
@@ -75,8 +75,6 @@ func (ats *Suite) StartHttpServer() {
 // customStaticHandler can perform some operations before passing into final handler
 func customStaticHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logrus.Debugf("%s: %q", r.Method, r.URL)
-
 		qs := r.URL.Query()
 		// We try not to include Content-Length header here
 		// As ultimately the default FileServer implementation will override all of them
@@ -218,7 +216,10 @@ func cookiesMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func logH(next http.Handler) http.Handler {
+func logH(skipLog bool, next http.Handler) http.Handler {
+	if skipLog {
+		return next
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logrus.Debugf("http-server: %s: %q", r.Method, r.URL)
 		next.ServeHTTP(w, r)

@@ -159,7 +159,9 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 // Run run the given testsuite
 func (ats *Suite) Run() bool {
 	r := ats.reporterRoot
-	logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
+	if !ats.Config.LogShort {
+		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
+	}
 
 	ats.StartHttpServer()
 
@@ -179,9 +181,17 @@ func (ats *Suite) Run() bool {
 	elapsed := time.Since(start)
 	r.Leave(success)
 	if success {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
+		if ats.Config.LogShort {
+			logrus.Infof("[%s] OK '%s' (%.3fs)", startTime.Format("2006-01-02 15:04:05.000"), ats.manifestDir, elapsed.Seconds())
+		} else {
+			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
+		}
 	} else {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
+		if ats.Config.LogShort {
+			logrus.Warnf("[%s] FAIL '%s' (%.3fs)", startTime.Format("2006-01-02 15:04:05.000"), ats.manifestDir, elapsed.Seconds())
+		} else {
+			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
+		}
 	}
 
 	ats.StopHttpServer()
