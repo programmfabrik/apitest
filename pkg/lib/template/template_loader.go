@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"golang.org/x/mod/semver"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -355,6 +356,12 @@ func (loader *Loader) Render(
 		"server_url": func() url.URL {
 			return *loader.ServerURL
 		},
+		"server_url_no_user": func() *url.URL {
+			u := new(url.URL)
+			*u = *loader.ServerURL
+			u.User = nil
+			return u
+		},
 		"is_zero": func(v interface{}) bool {
 			if v == nil {
 				return true
@@ -429,6 +436,23 @@ func (loader *Loader) Render(
 				return err.Error()
 			}
 			return string(b)
+		},
+		"semver_compare": func(v, w string) (int, error) {
+			if v == "" {
+				// empty version
+				v = "v0.0.0"
+			}
+			if w == "" {
+				// empty version
+				w = "v0.0.0"
+			}
+			if !semver.IsValid(v) {
+				return 0, errors.Errorf("version string %s is invalid", v)
+			}
+			if !semver.IsValid(w) {
+				return 0, errors.Errorf("version string %s is invalid", w)
+			}
+			return semver.Compare(v, w), nil
 		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
