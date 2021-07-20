@@ -30,22 +30,34 @@
                                 }
                             },
                             "xmlns:Composite": {
-                                "#text": "http://ns.exiftool.org/Composite/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/Composite/1.0/"
+                                }
                             },
                             "xmlns:ExifTool": {
-                                "#text": "http://ns.exiftool.org/ExifTool/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/ExifTool/1.0/"
+                                }
                             },
                             "xmlns:File": {
-                                "#text": "http://ns.exiftool.org/File/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/File/1.0/"
+                                }
                             },
                             "xmlns:ICC_Profile": {
-                                "#text": "http://ns.exiftool.org/ICC_Profile/ICC_Profile/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/ICC_Profile/ICC_Profile/1.0/"
+                                }
                             },
                             "xmlns:JFIF": {
-                                "#text": "http://ns.exiftool.org/JFIF/JFIF/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/JFIF/JFIF/1.0/"
+                                }
                             },
                             "xmlns:et": {
-                                "#text": "http://ns.exiftool.org/1.0/"
+                                "#text:control": {
+                                    "regex": "http://ns.exiftool.(org|ca)/1.0/"
+                                }
                             }
                         },
                         "Composite:ImageSize": {
