@@ -353,8 +353,10 @@ func (loader *Loader) Render(
 			parsedURL.Host = loader.HTTPServerHost
 			return parsedURL.String(), nil
 		},
-		"server_url": func() url.URL {
-			return *loader.ServerURL
+		"server_url": func() *url.URL {
+			u := new(url.URL)
+			*u = *loader.ServerURL
+			return u
 		},
 		"server_url_no_user": func() *url.URL {
 			u := new(url.URL)
