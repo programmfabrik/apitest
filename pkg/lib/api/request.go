@@ -194,7 +194,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			if ownHeader == "" {
 				continue
 			}
-			req.Header.Add(headerName, ownHeader)
+			req.Header.Set(headerName, ownHeader)
 		} else {
 			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
 		}
