@@ -40,6 +40,7 @@ type Suite struct {
 
 	Config          TestToolConfig
 	datastore       *datastore.Datastore
+	manifestRelDir  string
 	manifestDir     string
 	manifestPath    string
 	reporterRoot    *report.ReportElement
@@ -53,25 +54,27 @@ type Suite struct {
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
+func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
 	suite := Suite{
-		Config:       config,
-		manifestDir:  filepath.Dir(manifestPath),
-		manifestPath: manifestPath,
-		reporterRoot: r,
-		datastore:    datastore,
-		index:        index,
+		Config:         config,
+		manifestDir:    filepath.Dir(manifestPath),
+		manifestPath:   manifestPath,
+		manifestRelDir: manifestDir,
+		reporterRoot:   r,
+		datastore:      datastore,
+		index:          index,
 	}
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
 	// Then preloaded values are used to load again the manifest with relevant replacements
 	suitePreload := Suite{
-		Config:       config,
-		manifestDir:  filepath.Dir(manifestPath),
-		manifestPath: manifestPath,
-		reporterRoot: r,
-		datastore:    datastore,
-		index:        index,
+		Config:         config,
+		manifestDir:    filepath.Dir(manifestPath),
+		manifestPath:   manifestPath,
+		manifestRelDir: manifestDir,
+		reporterRoot:   r,
+		datastore:      datastore,
+		index:          index,
 	}
 
 	manifest, err := suitePreload.loadManifest()
@@ -182,13 +185,13 @@ func (ats *Suite) Run() bool {
 	r.Leave(success)
 	if success {
 		if ats.Config.LogShort {
-			logrus.Infof("[%s] OK '%s' (%.3fs)", startTime.Format("2006-01-02 15:04:05.000"), ats.manifestDir, elapsed.Seconds())
+			logrus.Infof("[%s] OK '%s' (%.3fs)", start.Format("2006-01-02 15:04:05"), ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 		}
 	} else {
 		if ats.Config.LogShort {
-			logrus.Warnf("[%s] FAIL '%s' (%.3fs)", startTime.Format("2006-01-02 15:04:05.000"), ats.manifestDir, elapsed.Seconds())
+			logrus.Warnf("[%s] FAIL '%s' (%.3fs)", start.Format("2006-01-02 15:04:05"), ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 		}

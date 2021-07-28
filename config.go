@@ -56,13 +56,14 @@ func LoadConfig(cfgFile string) {
 
 // TestToolConfig gives us the basic testtool infos
 type TestToolConfig struct {
-	ServerURL       string
-	rootDirectorys  []string
-	TestDirectories []string
-	LogNetwork      bool
-	LogVerbose      bool
-	LogShort        bool
-	OAuthClient     util.OAuthClientsConfig
+	ServerURL          string
+	rootDirectorys     []string
+	TestDirectories    []string
+	TestRelDirectories []string
+	LogNetwork         bool
+	LogVerbose         bool
+	LogShort           bool
+	OAuthClient        util.OAuthClientsConfig
 }
 
 // NewTestToolConfig is mostly used for testing purpose. We can setup our config with this function
@@ -100,6 +101,14 @@ func (config *TestToolConfig) extractTestDirectories() error {
 					return nil
 				}
 				config.TestDirectories = append(config.TestDirectories, path)
+				dirRel, err := filepath.Rel(rootDirectory, path)
+				if err != nil {
+					dirRel = path
+				}
+				if dirRel == "." {
+					dirRel = filepath.Base(path)
+				}
+				config.TestRelDirectories = append(config.TestRelDirectories, dirRel)
 			}
 			return nil
 		})

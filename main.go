@@ -155,7 +155,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, reportElem *report.ReportElement) (success bool) {
+	runSingleTest := func(manifestPath string, manifestDir string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
@@ -164,7 +164,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, reportElem, store, 0)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, manifestDir, reportElem, store, 0)
 		if err != nil {
 			logrus.Error(err)
 			if reportFile != "" {
@@ -180,9 +180,10 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
 			absManifestPath, _ := filepath.Abs(singleTest)
+			singleTestDir := filepath.Dir(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, c)
+			success := runSingleTest(absManifestPath, filepath.Base(singleTestDir), c)
 			c.Leave(success)
 
 			if reportFile != "" {
@@ -194,12 +195,13 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
-		for _, singlerootDirectory := range testToolConfig.TestDirectories {
+		for i, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
+			relPath := testToolConfig.TestRelDirectories[i]
 			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, c)
+			success := runSingleTest(absManifestPath, relPath, c)
 			c.Leave(success)
 
 			if reportFile != "" {
