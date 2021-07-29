@@ -183,7 +183,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			singleTestDir := filepath.Dir(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, filepath.Base(singleTestDir), c)
+			success := runSingleTest(absManifestPath, singleTestDir, c)
 			c.Leave(success)
 
 			if reportFile != "" {
@@ -195,13 +195,12 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
-		for i, singlerootDirectory := range testToolConfig.TestDirectories {
+		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
-			relPath := testToolConfig.TestRelDirectories[i]
 			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, relPath, c)
+			success := runSingleTest(absManifestPath, singlerootDirectory, c)
 			c.Leave(success)
 
 			if reportFile != "" {
