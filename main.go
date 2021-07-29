@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL, httpServerReplaceHost              string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                             []string
-	limitRequest, limitResponse                                             uint
+	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
+	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                                       []string
+	limitRequest, limitResponse                                                       uint
 )
 
 func init() {
@@ -55,6 +55,10 @@ func init() {
 		&logTimeStamp, "log-timestamp", "t", false,
 		"log full timestamp into console")
 
+	testCMD.PersistentFlags().BoolVarP(
+		&logShort, "log-short", "", false,
+		"short log on success into console")
+
 	testCMD.PersistentFlags().StringVar(
 		&reportFile, "report-file", "",
 		"Defines where the log statements should be saved.")
@@ -82,10 +86,11 @@ func init() {
 	viper.BindPFlag("apitest.report.file", testCMD.PersistentFlags().Lookup("report-file"))
 	viper.BindPFlag("apitest.report.format", testCMD.PersistentFlags().Lookup("report-format"))
 	viper.BindPFlag("apitest.server", testCMD.PersistentFlags().Lookup("server"))
+	viper.BindPFlag("apitest.log.short", testCMD.PersistentFlags().Lookup("log-short"))
 	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
 	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 
-	println("The latest apitest tool, v 68")
+	// println("The latest apitest tool, v 68")
 }
 
 var testCMD = &cobra.Command{
@@ -140,7 +145,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	rep := report.NewReport()
 
 	// Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose)
+	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
 	if err != nil {
 		logrus.Error(err)
 		if reportFile != "" {
@@ -150,7 +155,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, reportElem *report.ReportElement) (success bool) {
+	runSingleTest := func(manifestPath string, manifestDir string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
@@ -159,7 +164,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, reportElem, store, 0)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, manifestDir, reportElem, store, 0)
 		if err != nil {
 			logrus.Error(err)
 			if reportFile != "" {
@@ -177,7 +182,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			absManifestPath, _ := filepath.Abs(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, c)
+			success := runSingleTest(absManifestPath, singleTest, c)
 			c.Leave(success)
 
 			if reportFile != "" {
@@ -194,7 +199,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, c)
+			success := runSingleTest(absManifestPath, manifestPath, c)
 			c.Leave(success)
 
 			if reportFile != "" {

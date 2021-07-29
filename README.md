@@ -17,6 +17,8 @@ The report parameters of this config can be overwritten via a command line flag.
 ```yaml
 apitest:
   server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
+  log:
+    short: true # Configures minimal logs by default for all tests
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
     format: "json.junit"       # Format of the report. (Supported formats: json or junit)
@@ -65,6 +67,7 @@ can configure the tool with additional log flags
 - `--log-network`: Log all network traffic
 - `--log-datastore`: Logs datastore operations into datastore
 - `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
+- `--log-short`: Show minimal logs, useful for CI chains
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
 - `--curl-bash`: Log the request as curl command
 - `-l`: Limit the lines of request log output. Configure limit in apitest.yml
@@ -178,6 +181,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     // Specify a unique log behavior only for this single test.
     "log_network": true,
     "log_verbose": false,
+
+    // Show or disable minimal logs for this test
+    "log_short": false,
 
     // Defines what gets send to the server
     "request": {

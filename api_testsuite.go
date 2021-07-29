@@ -40,6 +40,7 @@ type Suite struct {
 
 	Config          TestToolConfig
 	datastore       *datastore.Datastore
+	manifestRelDir  string
 	manifestDir     string
 	manifestPath    string
 	reporterRoot    *report.ReportElement
@@ -53,25 +54,27 @@ type Suite struct {
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
+func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
 	suite := Suite{
-		Config:       config,
-		manifestDir:  filepath.Dir(manifestPath),
-		manifestPath: manifestPath,
-		reporterRoot: r,
-		datastore:    datastore,
-		index:        index,
+		Config:         config,
+		manifestDir:    filepath.Dir(manifestPath),
+		manifestPath:   manifestPath,
+		manifestRelDir: manifestDir,
+		reporterRoot:   r,
+		datastore:      datastore,
+		index:          index,
 	}
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
 	// Then preloaded values are used to load again the manifest with relevant replacements
 	suitePreload := Suite{
-		Config:       config,
-		manifestDir:  filepath.Dir(manifestPath),
-		manifestPath: manifestPath,
-		reporterRoot: r,
-		datastore:    datastore,
-		index:        index,
+		Config:         config,
+		manifestDir:    filepath.Dir(manifestPath),
+		manifestPath:   manifestPath,
+		manifestRelDir: manifestDir,
+		reporterRoot:   r,
+		datastore:      datastore,
+		index:          index,
 	}
 
 	manifest, err := suitePreload.loadManifest()
@@ -159,7 +162,9 @@ func NewTestSuite(config TestToolConfig, manifestPath string, r *report.ReportEl
 // Run run the given testsuite
 func (ats *Suite) Run() bool {
 	r := ats.reporterRoot
-	logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
+	if !ats.Config.LogShort {
+		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
+	}
 
 	ats.StartHttpServer()
 
@@ -179,9 +184,17 @@ func (ats *Suite) Run() bool {
 	elapsed := time.Since(start)
 	r.Leave(success)
 	if success {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
+		if ats.Config.LogShort {
+			logrus.Infof("[%s] OK '%s' (%.3fs)", start.Format("2006-01-02 15:04:05"), ats.manifestRelDir, elapsed.Seconds())
+		} else {
+			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
+		}
 	} else {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
+		if ats.Config.LogShort {
+			logrus.Warnf("[%s] FAIL '%s' (%.3fs)", start.Format("2006-01-02 15:04:05"), ats.manifestRelDir, elapsed.Seconds())
+		} else {
+			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
+		}
 	}
 
 	ats.StopHttpServer()
@@ -332,6 +345,9 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	if test.LogVerbose == nil {
 		test.LogVerbose = &ats.Config.LogVerbose
 	}
+	if test.LogShort == nil {
+		test.LogShort = &ats.Config.LogShort
+	}
 
 	if test.ServerURL == "" {
 		test.ServerURL = ats.Config.ServerURL
@@ -347,7 +363,9 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 
 func (ats *Suite) loadManifest() ([]byte, error) {
 	var res []byte
-	logrus.Tracef("Loading manifest: %s", ats.manifestPath)
+	if !ats.Config.LogShort {
+		logrus.Tracef("Loading manifest: %s", ats.manifestPath)
+	}
 	loader := template.NewLoader(ats.datastore)
 	loader.HTTPServerHost = ats.HTTPServerHost
 	serverURL, err := url.Parse(ats.Config.ServerURL)
