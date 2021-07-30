@@ -36,4 +36,7 @@ ci: deps
 build: deps
 	go build
 
+build-linux: deps
+	GOOS=linux GOARCH=amd64 go build -o apitest-linux
+
 .PHONY: all test apitest webtest gox build clean

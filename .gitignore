@@ -8,6 +8,7 @@ vendor
 .\#*
 \#*#
 /apitest
+/apitest-linux
 /apitest.yml
 /website/public
 /public
