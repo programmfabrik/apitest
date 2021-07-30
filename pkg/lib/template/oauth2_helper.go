@@ -14,7 +14,7 @@ type oAuth2TokenExtended struct {
 
 // ReadOAuthReturnValue checks the return values from an OAUTH client and
 // stores the error in an extended struct of the oAuth token
-func readOAuthReturnValue(t *oauth2.Token, err error) (tE oAuth2TokenExtended, err2 error) {
+func readOAuthReturnValue(t *oauth2.Token, err error) (tE oAuth2TokenExtended) {
 	if t == nil {
 		t = &oauth2.Token{} // Make sure we have "AccessToken" in our struct
 	}
@@ -30,5 +30,5 @@ func readOAuthReturnValue(t *oauth2.Token, err error) (tE oAuth2TokenExtended, e
 			}
 		}
 	}
-	return tE, err
+	return tE
 }

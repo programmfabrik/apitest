@@ -370,35 +370,35 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_password_token": func(client string, login string, password string) (tE oAuth2TokenExtended, err error) {
+		"oauth2_password_token": func(client string, login string, password string) (tE oAuth2TokenExtended) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return tE, errors.Errorf("OAuth client %s not configured", client)
+				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
 			}
 			oAuthClient.Client = client
 			return readOAuthReturnValue(oAuthClient.GetPasswordCredentialsAuthToken(login, password))
 
 		},
-		"oauth2_client_token": func(client string) (tE oAuth2TokenExtended, err error) {
+		"oauth2_client_token": func(client string) (tE oAuth2TokenExtended) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return tE, errors.Errorf("OAuth client %s not configured", client)
+				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
 			}
 			oAuthClient.Client = client
 			return readOAuthReturnValue(oAuthClient.GetClientCredentialsAuthToken())
 		},
-		"oauth2_code_token": func(client string, params ...string) (tE oAuth2TokenExtended, err error) {
+		"oauth2_code_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return tE, errors.Errorf("OAuth client %s not configured", client)
+				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
 			}
 			oAuthClient.Client = client
 			return readOAuthReturnValue(oAuthClient.GetCodeAuthToken(params...))
 		},
-		"oauth2_implicit_token": func(client string, params ...string) (tE oAuth2TokenExtended, err error) {
+		"oauth2_implicit_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return tE, errors.Errorf("OAuth client %s not configured", client)
+				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
 			}
 			oAuthClient.Client = client
 			return readOAuthReturnValue(oAuthClient.GetAuthToken(params...))
