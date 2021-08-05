@@ -1172,13 +1172,11 @@ Consequently, rendering `Lets meet at the {{ myfunc 1 "foo" }}` results in an in
 
 We provide the following functions:
 
-## `file "relative/path/" [param1] ... [param4]`
+## `file "relative/path/" [param, ...]`
 
-Helper function to load contents of a file; if this file contains templates; it will render these templates with the up to 4 parameters provided in the call `@param1-4: string;` can be accessed from the loaded file via `{{ .Param1-4 }};` see example below
+Helper function to load contents of a file; if this file contains templates; it will render these templates with the parameters provided in the can be accessed from the loaded file via `{{ .Param1-n }};` see example below
 
 Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
-
-The loaded file will be rendered with the (up to) 4 provided parameters, that can be accessed using .Param1-4.
 
 ### Example
 

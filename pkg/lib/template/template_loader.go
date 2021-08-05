@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -33,43 +34,11 @@ import (
 Hack to dynamically pass parameters as context to a nested template load call alá
 {{ load_file path Param1 Param2 .... }} with a file at path that loads a template like "something = {{ .Param1 }}"
 */
-type templateParams0 struct{}
-
-type templateParams1 struct {
-	Param1 interface{}
-}
-type templateParams2 struct {
-	Param1 interface{}
-	Param2 interface{}
-}
-type templateParams3 struct {
-	Param1 interface{}
-	Param2 interface{}
-	Param3 interface{}
-}
-
-type templateParams4 struct {
+type templateParams struct {
 	Param1 interface{}
 	Param2 interface{}
 	Param3 interface{}
 	Param4 interface{}
-}
-
-func newTemplateParams(params []interface{}) (interface{}, error) {
-	switch len(params) {
-	case 0:
-		return templateParams0{}, nil
-	case 1:
-		return templateParams1{Param1: params[0]}, nil
-	case 2:
-		return templateParams2{Param1: params[0], Param2: params[1]}, nil
-	case 3:
-		return templateParams3{Param1: params[0], Param2: params[1], Param3: params[2]}, nil
-	case 4:
-		return templateParams4{Param1: params[0], Param2: params[1], Param3: params[2], Param4: params[3]}, nil
-	default:
-		return templateParams0{}, fmt.Errorf("newParams only supports up to 4 parameters")
-	}
 }
 
 type Loader struct {
@@ -89,7 +58,6 @@ func (loader *Loader) Render(
 	ctx interface{}) (res []byte, err error) {
 
 	//Remove comments from template
-
 	var re = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
 	tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), `$1`))
 
@@ -127,11 +95,10 @@ func (loader *Loader) Render(
 			return hex.EncodeToString(hasher.Sum(nil)), nil
 		},
 		"file": func(path string, params ...interface{}) (string, error) {
-			tmplParams, err := newTemplateParams(params)
-			if err != nil {
-				return "", err
+			tmplParams := map[string]interface{}{}
+			for idx, param := range params {
+				tmplParams["Param"+strconv.Itoa(idx+1)] = param
 			}
-
 			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return "", err

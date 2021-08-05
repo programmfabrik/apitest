@@ -2,7 +2,6 @@ package template
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -44,26 +43,6 @@ func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
 	res, err := loader.Render(root, "root", nil)
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
 	go_test_utils.AssertStringEquals(t, string(res), "bogus")
-}
-
-func TestRenderWithDataStore_LoadFile_TooManyParams(t *testing.T) {
-	manifestdir := "some/path"
-	filename := "somefile.json"
-	rootTmplContent := fmt.Sprintf(`{{ file "%s" "1" "2" "3" "4" "5" }}`, filename)
-	targetFileContent := ""
-	filesystem.Fs = afero.NewMemMapFs()
-	filesystem.Fs.MkdirAll(manifestdir, 0755)
-	afero.WriteFile(filesystem.Fs, filepath.Join(manifestdir, filename), []byte(targetFileContent), 0644)
-
-	loader := NewLoader(datastore.NewStore(false))
-	testTmpl := []byte(rootTmplContent)
-	_, err := loader.Render(testTmpl, manifestdir, nil)
-	if err == nil {
-		t.Fatal("expected error, got none")
-	}
-	if !strings.Contains(err.Error(), "newParams only supports up to 4 parameters") {
-		t.Errorf("expected error because of too many params, got: %s", err)
-	}
 }
 
 func TestBigIntRender(t *testing.T) {
