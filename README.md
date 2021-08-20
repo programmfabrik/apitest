@@ -808,6 +808,51 @@ E.g. the following response would **fail**  as the order in the actual response 
 }
 ```
 
+### `depth`
+
+This setting defines the depth that the `no_extra` and `order_matters` should consider when matching arrays.
+
+`depth` is available only for arrays.
+
+The possible values of `depth` are:
+```
+-1 -> full depth
+0  -> top element only (default)
+N -> N elements deep
+```
+
+The following response would **fail**  as their are too many entries in the actual response inner array.
+
+#### expected response defined with no_extra and depth
+
+```yaml
+{
+    "body": {
+        "testArray": [
+            [1, 3, 5],
+            [2, 4, 6]
+        ],
+        "testObject:control": {
+            "no_extra": true,
+            "depth": 1
+        }
+    }
+}
+```
+
+#### actual response
+
+```yaml
+{
+    "body": {
+        "testArray": [
+            [1, 3, 5],
+            [2, 4, 6, 8]
+        ]
+    }
+}
+```
+
 ### `must_exist`
 
 Check if a certain value does exist in the reponse (no matter what its content is)
@@ -870,11 +915,11 @@ E.g. the following response would **fail**  as `"count"` is has the wrong length
 
 Passes the no extra to the underlying structure in an array
 
-`must_exist` is available only for arrays
+`element_no_extra` is available only for arrays
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
-E.g. the following response would **fail**  as `"hasExtra"` is has extras
+E.g. the following response would **fail**  as `"extra"` is an extra element
 
 #### expected response defined with must_exist
 

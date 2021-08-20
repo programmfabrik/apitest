@@ -12,6 +12,7 @@ import (
 )
 
 type ComparisonContext struct {
+	depth          int64
 	orderMatters   bool
 	noExtra        bool
 	elementNoExtra bool
@@ -37,6 +38,13 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 	for k, v := range in {
 		switch k {
+		case "depth":
+			tV, err := getAsInt64(v)
+			if err != nil {
+				return out, fmt.Errorf("depth is no int64: %s", err)
+
+			}
+			out.depth = tV
 		case "order_matters":
 			tV, ok := v.(bool)
 			if !ok {
@@ -206,8 +214,8 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	res.Equal = true
 	keyRegex := regexp.MustCompile(`(?P<Key>.*?):control`)
 
-	takenInRight := make(map[string]bool, 0)
-	takenInLeft := make(map[string]bool, 0)
+	takenInRight := make(map[string]bool)
+	takenInLeft := make(map[string]bool)
 
 	// Iterate over normal fields
 	for ck, cv := range left {
@@ -322,12 +330,12 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 // ArrayComparison offerst the compare feature to other packages, with the standard behavior
 // noExtra=false, orderMatter=false
 func ArrayComparison(left, right util.JsonArray) (res CompareResult, err error) {
-	return arrayComparison(left, right, false, false, ComparisonContext{})
+	return arrayComparison(left, right, ComparisonContext{}, ComparisonContext{})
 }
 
 // arrayComparison makes a simple array comparison by either running trough both arrays with the same key (orderMaters)
 // or taking a value from the left array and search it in the right one
-func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, control ComparisonContext) (res CompareResult, err error) {
+func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, nextControl ComparisonContext) (res CompareResult, err error) {
 	res.Equal = true
 
 	if len(left) > len(right) {
@@ -346,20 +354,20 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 		return res, nil
 	}
 
-	takenInRight := make(map[int]bool, 0)
+	takenInRight := make(map[int]bool)
 	var lastPositionFromLeftInRight int = -1
 
 	for lk, lv := range left {
-		if orderMaters {
+		if currControl.orderMatters {
 			for rk, rv := range right {
 				if rk <= lastPositionFromLeftInRight {
 					continue
 				}
-				tmp, err := JsonEqual(lv, rv, control)
+				tmp, err := JsonEqual(lv, rv, nextControl)
 				if err != nil {
 					return CompareResult{}, err
 				}
-				if tmp.Equal == true {
+				if tmp.Equal {
 					takenInRight[lk] = true
 					lastPositionFromLeftInRight = rk
 					break
@@ -396,16 +404,16 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 					for k, v := range jo {
 						lvv[k] = v
 					}
-					tmp, err = JsonEqual(lvv, rv, control)
+					tmp, err = JsonEqual(lvv, rv, nextControl)
 				default:
-					tmp, err = JsonEqual(lv, rv, control)
+					tmp, err = JsonEqual(lv, rv, nextControl)
 				}
 
 				if err != nil {
 					return CompareResult{}, err
 				}
 
-				if tmp.Equal == true {
+				if tmp.Equal {
 					// Found an element fitting
 					found = true
 					takenInRight[rk] = true
@@ -416,13 +424,13 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 				allTmpFailures = append(allTmpFailures, tmp.Failures...)
 			}
 
-			if found != true {
+			if !found {
 				for _, v := range allTmpFailures {
 					key := fmt.Sprintf("[%d].%s", lk, v.Key)
 					if v.Key == "" {
 						key = fmt.Sprintf("[%d]", lk)
 					}
-					res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("%s", v.Message)})
+					res.Failures = append(res.Failures, CompareFailure{key, v.Message})
 				}
 				res.Equal = false
 			}
@@ -430,7 +438,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 
 	}
 
-	if noExtra {
+	if currControl.noExtra {
 		for k := range right {
 			if !takenInRight[k] {
 				res.Failures = append(res.Failures, CompareFailure{Key: "", Message: "extra elements found in array"})
@@ -444,7 +452,7 @@ func arrayComparison(left, right util.JsonArray, noExtra, orderMaters bool, cont
 }
 
 func ObjectEqualWithControl(left, right util.JsonObject, control ComparisonContext) (res CompareResult, err error) {
-	if control.noExtra == true {
+	if control.noExtra {
 		return objectComparison(left, right, true)
 	}
 
@@ -453,33 +461,26 @@ func ObjectEqualWithControl(left, right util.JsonObject, control ComparisonConte
 }
 
 func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext) (res CompareResult, err error) {
-	emptyControl := ComparisonContext{}
-
-	if control.elementNoExtra == true {
-		emptyControl.noExtra = true
+	nextControl := ComparisonContext{
+		noExtra: control.elementNoExtra,
+		depth:   -9999,
 	}
-
-	if control.orderMatters == true {
-		if control.noExtra == true {
-			// No extra with order
-			return arrayComparison(left, right, true, true, emptyControl)
-		} else {
-			// with extra with order
-			return arrayComparison(left, right, false, true, emptyControl)
-		}
-	} else {
-		if control.noExtra == true {
-			// No extra, no order
-			return arrayComparison(left, right, true, false, emptyControl)
-		} else {
-			// with extra, no order
-			return arrayComparison(left, right, false, false, emptyControl)
+	if control.depth >= -1 {
+		if control.depth > 0 {
+			nextControl.depth = control.depth - 1
+		} else if control.depth < 0 {
+			nextControl.depth = control.depth
 		}
 	}
+	if nextControl.depth >= -1 {
+		nextControl.noExtra = nextControl.noExtra || control.noExtra
+		nextControl.orderMatters = control.orderMatters
+	}
+	return arrayComparison(left, right, control, nextControl)
 }
 
 func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext) (err error) {
-	if control.isString == true {
+	if control.isString {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
 		}
@@ -487,7 +488,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' but is '%s'", jsonType)
 		}
-	} else if control.isNumber == true {
+	} else if control.isNumber {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
 		}
@@ -495,7 +496,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		if jsonType != "Number" {
 			return fmt.Errorf("should be 'Number' but is '%s'", jsonType)
 		}
-	} else if control.isBool == true {
+	} else if control.isBool {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
 		}
@@ -503,7 +504,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		if jsonType != "Bool" {
 			return fmt.Errorf("should be 'Bool' but is '%s'", jsonType)
 		}
-	} else if control.isArray == true {
+	} else if control.isArray {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
 		}
@@ -511,7 +512,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		if jsonType != "Array" {
 			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
-	} else if control.isObject == true {
+	} else if control.isObject {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
 		}
@@ -522,11 +523,11 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check if exists
-	if rOK == false && control.mustExist == true {
+	if !rOK && control.mustExist {
 		return fmt.Errorf("was not found, but should exist")
 	}
 
-	if rOK == true && control.mustNotExist == true {
+	if rOK && control.mustNotExist {
 		return fmt.Errorf("was found, but should NOT exist")
 	}
 

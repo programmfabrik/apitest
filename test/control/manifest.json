@@ -6,8 +6,9 @@
     },
     "name": "check control structures in array",
     "tests": [
-        "@match.json",
-        "@starts_ends_with.json",
-        "@order_matters.json"
+        "@match.json"
+        ,"@no_extra.json"
+        ,"@starts_ends_with.json"
+        ,"@order_matters.json"
     ]
 }
