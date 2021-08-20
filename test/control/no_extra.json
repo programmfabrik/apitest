@@ -1,0 +1,176 @@
+[
+    {
+        "name": "check control no_extra in array (should pass - no extras)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    [1,2,3,4],
+                    [
+                        [3,2,1],
+                        [4,5]
+                    ]
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        [1,2,3,4],
+                        [
+                            [3,2,1],
+                            [4,5]
+                        ]
+                    ],
+                    "data:control": {
+                        "no_extra": true
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control no_extra in array (should fail - extras)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    [1,2,3,4],
+                    [
+                        [3,2,1],
+                        [4,5]
+                    ],
+                    [1,2]
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        [1,2,3,4],
+                        [
+                            [3,2,1],
+                            [4,5]
+                        ]
+                    ],
+                    "data:control": {
+                        "no_extra": true
+                    }
+                }
+            }
+        }
+        ,"reverse_test_result": true
+    },
+    {
+        "name": "check control no_extra in array (should pass - no extras, no depth)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    [1,2,3,4],
+                    [
+                        [3,2,1],
+                        [4,5]
+                    ]
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        [1,2,4],
+                        [
+                            [4,5]
+                        ]
+                    ],
+                    "data:control": {
+                        "no_extra": true
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control no_extra in array (should fail - extras in depth = 1)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    [1,2,3,4],
+                    [
+                        [3,2,1],
+                        [4,5]
+                    ]
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        [1,2,4],
+                        [
+                            [4,5]
+                        ]
+                    ],
+                    "data:control": {
+                        "no_extra": true,
+                        "depth": 1
+                    }
+                }
+            }
+        }
+        ,"reverse_test_result": true
+    },
+    {
+        "name": "check control no_extra in array (should fail - extras in depth = 2)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    [1,2,3,4],
+                    [
+                        [3,2,1],
+                        [4,5]
+                    ]
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        [1,2,3,4],
+                        [
+                            [3,2],
+                            [4,5]
+                        ]
+                    ],
+                    "data:control": {
+                        "no_extra": true,
+                        "depth": -1
+                    }
+                }
+            }
+        }
+        ,"reverse_test_result": true
+    }
+]

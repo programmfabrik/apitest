@@ -60,6 +60,56 @@
         }
     },
     {
+        "name": "check control order_matters in array (should pass - all elements found, no order)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "2"
+                    },
+                    {
+                        "value": "3"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "5"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "2"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "6"
+                        }
+                    ],
+                    "data:control": {
+                    }
+                }
+            }
+        }
+    },
+    {
         "name": "check control order_matters in array (should fail - all elements but no proper order)",
         "request": {
             "server_url": "http://localhost:9999",
@@ -330,7 +380,7 @@
         "reverse_test_result": true
     },
     {
-        "name": "check control order_matters in array (should fail - expect two times \"4\")",
+        "name": "check control order_matters in array (should pass - expect three times \"4\", no order)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
@@ -378,5 +428,57 @@
                 }
             }
         }
+    },
+    {
+        "name": "check control order_matters in array (should fail - expect three times \"4\" with \"1\" in middle)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "data": [
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "1"
+                    },
+                    {
+                        "value": "4"
+                    },
+                    {
+                        "value": "6"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "data": [
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "1"
+                        },
+                        {
+                            "value": "4"
+                        },
+                        {
+                            "value": "4"
+                        }
+                    ],
+                    "data:control": {
+                        "order_matters": true
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
     }
 ]
