@@ -1,12 +1,10 @@
-package cjson
+package util
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/compare"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func init() {
@@ -73,16 +71,6 @@ func TestRealWorldJsonError(t *testing.T) {
 		{
 			`{
 "hallo":2,
-}`,
-			fmt.Errorf(`Cannot parse JSON '
-1: {
-2: "hallo":2,
-3: }
-' schema due to a syntax error at line 3, character 1: invalid character '}' looking for beginning of object key string`),
-		},
-		{
-			`{
-"hallo":2,
 welt:1
 }`,
 			fmt.Errorf(`Cannot parse JSON '
@@ -107,7 +95,7 @@ welt:1
 	}
 
 	for _, v := range testCases {
-		var out util.JsonObject
+		var out JsonObject
 		oErr := Unmarshal([]byte(v.iJson), &out)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
@@ -118,13 +106,13 @@ welt:1
 func TestRemoveComments(t *testing.T) {
 	testCases := []struct {
 		iJson string
-		eOut  util.JsonObject
+		eOut  JsonObject
 	}{
 		{
 			`{
 "hallo":2
 }`,
-			util.JsonObject{
+			JsonObject{
 				"hallo": float64(2),
 			},
 		},
@@ -132,7 +120,7 @@ func TestRemoveComments(t *testing.T) {
 			`{
 "hallo":2
 }`,
-			util.JsonObject{
+			JsonObject{
 				"hallo": float64(2),
 			},
 		},
@@ -143,19 +131,19 @@ func TestRemoveComments(t *testing.T) {
 
 #line2
 }`,
-			util.JsonObject{
+			JsonObject{
 				"hallo": float64(2),
 			},
 		},
 		{
 			`{
 "hallo":2,
-## line 2
+# line 2
 
 #line2
 "hey":"ha"
 }`,
-			util.JsonObject{
+			JsonObject{
 				"hallo": float64(2),
 				"hey":   "ha",
 			},
@@ -163,7 +151,7 @@ func TestRemoveComments(t *testing.T) {
 	}
 
 	for _, v := range testCases {
-		var out util.JsonObject
+		var out JsonObject
 		Unmarshal([]byte(v.iJson), &out)
 		for k, v := range v.eOut {
 			if out[k] != v {
@@ -177,12 +165,12 @@ func TestRemoveComments(t *testing.T) {
 func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	testCases := []struct {
 		cjsonString string
-		eObject     util.JsonObject
+		eObject     JsonObject
 		eError      error
 	}{
 		{
 			`{"hallo":3}`,
-			util.JsonObject{
+			JsonObject{
 				"hallo": float64(3),
 			},
 			nil,
@@ -255,16 +243,15 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	}
 
 	for _, v := range testCases {
-		oObject := util.JsonObject{}
+		oObject := JsonObject{}
 		oErr := Unmarshal([]byte(v.cjsonString), &oObject)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
-
-			equal, _ := compare.JsonEqual(v.eObject, oObject, compare.ComparisonContext{})
-
-			if !equal.Equal {
-				t.Errorf("Objects are not the same.\nExpected: %v\nGot: %v", v.eObject, oObject)
+			for k, v := range v.eObject {
+				if oObject[k] != v {
+					t.Errorf("[%s] Have '%f' != '%f' want", k, oObject[k], v)
+				}
 			}
 		}
 	}

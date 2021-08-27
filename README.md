@@ -119,7 +119,6 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ./apitest -d apitests --replace-host my.fancy.host:8989
 ```
 
-
 # Manifest
 
 Manifest is loaded as **template**, so you can use variables, Go **range** and **if** and others.
@@ -364,6 +363,24 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 }
 ```
 
+## Override template delimiters
+
+Go template delimiters can be redefined as part of a single line comment in any of these syntax:
+
+```
+// delims: <delim_left> <delim_right>
+/* delims: <delim_left> <delim_right> */
+```
+
+Examples:
+```
+// delims: /* */
+/* delims: // // */
+// delims {{ }}
+/* delims: {* *} */
+```
+
+** All external tests/requests/responses inherit those delimiters if not overriden in their template **
 
 ## Run tests in parallel
 
@@ -384,6 +401,7 @@ sense**
     "response": "@simple.bin"
 }
 ```
+
 ## Binary data comparison
 
 The tool is able to do a comparison with a binary file. Here we take a MD5 hash of the file and and then later compare

@@ -1,0 +1,9 @@
+// delims: ## ##
+{
+    "server_url": "http://localhost:9999",
+    "endpoint": "bounce-json",
+    "method": "POST",
+    "body": {
+        "hey": ## datastore "key1" | marshal ##
+    }
+}

@@ -1,0 +1,13 @@
+// delims: /* */
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "template tests",
+    "tests": [
+        /* printf "%s" "@test1.json" | marshal */,
+        "@test2.json"
+    ],
+}

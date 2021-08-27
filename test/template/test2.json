@@ -1,0 +1,12 @@
+{
+    "name": "switch delims for inner bounce request",
+    "request": "@request1.json",
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "hey": /* datastore "key1" | marshal */
+            }
+        }
+    },
+}

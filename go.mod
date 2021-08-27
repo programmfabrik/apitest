@@ -15,6 +15,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.5.0
 	github.com/tidwall/gjson v1.3.4
+	github.com/tidwall/jsonc v0.3.2
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect

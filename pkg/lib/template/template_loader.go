@@ -19,7 +19,6 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"golang.org/x/mod/semver"
 
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
@@ -30,22 +29,20 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-/*
-Hack to dynamically pass parameters as context to a nested template load call alá
-{{ load_file path Param1 Param2 .... }} with a file at path that loads a template like "something = {{ .Param1 }}"
-*/
-type templateParams struct {
-	Param1 interface{}
-	Param2 interface{}
-	Param3 interface{}
-	Param4 interface{}
+// delimiters as go template parsing options
+type delimiters struct {
+	Left  string
+	Right string
 }
+
+var delimsRE = regexp.MustCompile(`(?m)^[\t ]*(//|/\*)[\t ]*delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
 
 type Loader struct {
 	datastore      *datastore.Datastore
 	HTTPServerHost string
 	ServerURL      *url.URL
 	OAuthClient    util.OAuthClientsConfig
+	Delimiters     delimiters
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -57,13 +54,19 @@ func (loader *Loader) Render(
 	rootDir string,
 	ctx interface{}) (res []byte, err error) {
 
-	//Remove comments from template
-	var re = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
-	tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), `$1`))
+	// First check for custom delimiters
+	matches := delimsRE.FindStringSubmatch(string(tmplBytes))
+	if len(matches) == 4 {
+		loader.Delimiters.Left, loader.Delimiters.Right = matches[2], matches[3]
+	}
 
-	var funcMap template.FuncMap
+	// Remove comments from template if comments are not the delimiters
+	if loader.Delimiters.Left != "//" {
+		var re = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
+		tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), ``))
+	}
 
-	funcMap = template.FuncMap{
+	funcMap := template.FuncMap{
 		"qjson": func(path string, json string) (result string, err error) {
 			if json == "" {
 				err = fmt.Errorf("The given json was empty")
@@ -110,7 +113,8 @@ func (loader *Loader) Render(
 			}
 
 			absPath := filepath.Join(rootDir, path)
-			tmplBytes, err := loader.Render(fileBytes, filepath.Dir(absPath), tmplParams)
+			fileLoader := *loader
+			tmplBytes, err := fileLoader.Render(fileBytes, filepath.Dir(absPath), tmplParams)
 			if err != nil {
 				return "", err
 			}
@@ -196,13 +200,13 @@ func (loader *Loader) Render(
 		"datastore": func(index interface{}) (interface{}, error) {
 			var key string
 
-			switch index.(type) {
+			switch idxType := index.(type) {
 			case int:
-				key = fmt.Sprintf("%d", (index.(int)))
+				key = fmt.Sprintf("%d", idxType)
 			case int64:
-				key = fmt.Sprintf("%d", (index.(int64)))
+				key = fmt.Sprintf("%d", idxType)
 			case string:
-				key = index.(string)
+				key = idxType
 				// all good
 			default:
 				return "", fmt.Errorf("datastore needs string, int, or int64 as parameter")
@@ -212,7 +216,7 @@ func (loader *Loader) Render(
 		},
 		"unmarshal": func(s string) (interface{}, error) {
 			var gj interface{}
-			err := cjson.Unmarshal([]byte(s), &gj)
+			err := util.Unmarshal([]byte(s), &gj)
 			if err != nil {
 				return nil, err
 			}
@@ -424,7 +428,11 @@ func (loader *Loader) Render(
 			return semver.Compare(v, w), nil
 		},
 	}
-	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
+	tmpl, err := template.
+		New("tmpl").
+		Delims(loader.Delimiters.Left, loader.Delimiters.Right).
+		Funcs(funcMap).
+		Parse(string(tmplBytes))
 	if err != nil {
 		return nil, fmt.Errorf("error loading template: %s", err)
 	}

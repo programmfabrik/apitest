@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 func TestReportStructure(t *testing.T) {
@@ -82,8 +82,8 @@ func TestReportGetJSONResult(t *testing.T) {
 
 	var expJ, realJ interface{}
 
-	cjson.Unmarshal(jsonResult, &realJ)
-	cjson.Unmarshal(expResult, &expJ)
+	util.Unmarshal(jsonResult, &realJ)
+	util.Unmarshal(expResult, &expJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
@@ -138,8 +138,8 @@ func TestReportGetJUnitResult(t *testing.T) {
 
 	var expJ, realJ interface{}
 
-	cjson.Unmarshal(expJBytes, &expJ)
-	cjson.Unmarshal(realJBytes, &realJ)
+	util.Unmarshal(expJBytes, &expJ)
+	util.Unmarshal(realJBytes, &realJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 

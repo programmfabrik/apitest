@@ -15,6 +15,36 @@ import (
 	"github.com/spf13/afero"
 )
 
+func TestRender_Custom_Delimiters(t *testing.T) {
+	root := []byte(`** range $i, $v := N 3 ** ** $i ** ** end **`)
+	loader := NewLoader(datastore.NewStore(false))
+	loader.Delimiters.Left = "**"
+	loader.Delimiters.Right = "**"
+	res, err := loader.Render(root, "", nil)
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), " 0  1  2 ")
+}
+
+func TestRender_Custom_Delimiters_Comments(t *testing.T) {
+	root := []byte(`// range $i, $v := N 3 // // $i // // end //`)
+	loader := NewLoader(datastore.NewStore(false))
+	loader.Delimiters.Left = "//"
+	loader.Delimiters.Right = "//"
+	res, err := loader.Render(root, "", nil)
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), " 0  1  2 ")
+}
+
+func TestRender_Custom_Delimiters_Comments_Stripped(t *testing.T) {
+	root := []byte(`// ## range $i, $v := N 3 ## ## $i ## ## end ##`)
+	loader := NewLoader(datastore.NewStore(false))
+	loader.Delimiters.Left = "##"
+	loader.Delimiters.Right = "##"
+	res, err := loader.Render(root, "", nil)
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.AssertStringEquals(t, string(res), "")
+}
+
 func TestRender_LoadFile_withParam(t *testing.T) {
 	root := []byte(`{{ file "somefile.json" "bogus"}}`)
 	target := []byte(`{{ .Param1 }}`)
