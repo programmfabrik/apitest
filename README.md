@@ -368,19 +368,46 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 Go template delimiters can be redefined as part of a single line comment in any of these syntax:
 
 ```
-// delims: <delim_left> <delim_right>
-/* delims: <delim_left> <delim_right> */
+// template-delims: <delim_left> <delim_right>
+/* template-delims: <delim_left> <delim_right> */
 ```
 
 Examples:
 ```
-// delims: /* */
-/* delims: // // */
-// delims {{ }}
-/* delims: {* *} */
+// template-delims: /* */
+/* template-delims: // // */
+// template-delims {{ }}
+/* template-delims: {* *} */
 ```
 
 ** All external tests/requests/responses inherit those delimiters if not overriden in their template **
+
+## Remove template 'placeholders'
+
+Go templates may break the proper JSONC format even when separators are comments.
+So we could use placeholders for filling missing parts then strip them. 
+```
+// template-remove-tokens: <token> [<token>]*
+/* template-remove-tokens: <token> [<token>] */
+```
+
+Example:
+```
+// template-delims: /* */
+// template-remove-tokens: "delete_me"
+{
+    "prop": /* datastore "something" */"delete_me"
+}
+```
+This would be an actual proper JSONC as per the `"delete_me"` string.
+However that one will be stripped before parsing the template, which would be just:
+```
+{
+    "prop": /* datastore "something" */
+}
+```
+
+** Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
 
 ## Run tests in parallel
 

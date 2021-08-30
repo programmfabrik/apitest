@@ -1,9 +1,10 @@
-// delims: ## ##
+// template-delims: ## ##
+// template-remove-tokens: "removeme" "removemetoo"
 {
     "server_url": "http://localhost:9999",
     "endpoint": "bounce-json",
     "method": "POST",
     "body": {
-        "hey": ## datastore "key1" | marshal ##
+        "hey": ## datastore "key1" | marshal ##"removeme""removemetoo"
     }
 }

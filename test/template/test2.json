@@ -1,3 +1,4 @@
+// template-remove-tokens: "<placeholder>"
 {
     "name": "switch delims for inner bounce request",
     "request": "@request1.json",
@@ -5,7 +6,7 @@
         "statuscode": 200,
         "body": {
             "body": {
-                "hey": /* datastore "key1" | marshal */
+                "hey": "<placeholder>"/* datastore "key1" | marshal */
             }
         }
     },

@@ -35,7 +35,7 @@ type delimiters struct {
 	Right string
 }
 
-var delimsRE = regexp.MustCompile(`(?m)^[\t ]*(//|/\*)[\t ]*delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
+var delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
 
 type Loader struct {
 	datastore      *datastore.Datastore
@@ -56,9 +56,23 @@ func (loader *Loader) Render(
 
 	// First check for custom delimiters
 	matches := delimsRE.FindStringSubmatch(string(tmplBytes))
-	if len(matches) == 4 {
-		loader.Delimiters.Left, loader.Delimiters.Right = matches[2], matches[3]
+	if len(matches) == 3 {
+		loader.Delimiters.Left, loader.Delimiters.Right = matches[1], matches[2]
 	}
+
+	// Second check for placeholders removal
+	removeCheckRE := regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
+	matches = removeCheckRE.FindStringSubmatch(string(tmplBytes))
+	replacements := []string{}
+	if len(matches) > 1 {
+		splitRE := regexp.MustCompile(`[\t ]`)
+		placeholders := splitRE.Split(matches[1], -1)
+		for _, s := range placeholders {
+			replacements = append(replacements, s, "")
+		}
+	}
+	newTmplStr := strings.NewReplacer(replacements...).Replace(string(tmplBytes))
+	tmplBytes = []byte(newTmplStr)
 
 	// Remove comments from template if comments are not the delimiters
 	if loader.Delimiters.Left != "//" {

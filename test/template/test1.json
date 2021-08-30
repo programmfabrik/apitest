@@ -1,4 +1,4 @@
-// delims: ** **
+// template-delims: ** **
 {
     "name": "switch delims for inner bounce request",
     "request": "@request1.json",
