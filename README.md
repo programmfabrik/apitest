@@ -119,7 +119,6 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ./apitest -d apitests --replace-host my.fancy.host:8989
 ```
 
-
 # Manifest
 
 Manifest is loaded as **template**, so you can use variables, Go **range** and **if** and others.
@@ -364,6 +363,51 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 }
 ```
 
+## Override template delimiters
+
+Go template delimiters can be redefined as part of a single line comment in any of these syntax:
+
+```
+// template-delims: <delim_left> <delim_right>
+/* template-delims: <delim_left> <delim_right> */
+```
+
+Examples:
+```
+// template-delims: /* */
+/* template-delims: // // */
+// template-delims {{ }}
+/* template-delims: {* *} */
+```
+
+** All external tests/requests/responses inherit those delimiters if not overriden in their template **
+
+## Remove template 'placeholders'
+
+Go templates may break the proper JSONC format even when separators are comments.
+So we could use placeholders for filling missing parts then strip them. 
+```
+// template-remove-tokens: <token> [<token>]*
+/* template-remove-tokens: <token> [<token>] */
+```
+
+Example:
+```
+// template-delims: /* */
+// template-remove-tokens: "delete_me"
+{
+    "prop": /* datastore "something" */"delete_me"
+}
+```
+This would be an actual proper JSONC as per the `"delete_me"` string.
+However that one will be stripped before parsing the template, which would be just:
+```
+{
+    "prop": /* datastore "something" */
+}
+```
+
+** Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
 
 ## Run tests in parallel
 
@@ -384,6 +428,7 @@ sense**
     "response": "@simple.bin"
 }
 ```
+
 ## Binary data comparison
 
 The tool is able to do a comparison with a binary file. Here we take a MD5 hash of the file and and then later compare

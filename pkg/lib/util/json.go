@@ -1,4 +1,4 @@
-package cjson
+package util
 
 import (
 	"bufio"
@@ -8,7 +8,15 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/jsonc"
 )
+
+type JsonObject = map[string]interface{}
+type JsonArray = []interface{}
+type JsonString = string
+type JsonNumber = float64
+type JsonBool = bool
 
 var coloredError bool
 
@@ -17,16 +25,20 @@ func init() {
 }
 
 func Unmarshal(input []byte, output interface{}) error {
-	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*(#|//).*$`)
-	inputNoComments := []byte(commentRegex.ReplaceAllString(string(input), ``))
 
-	dec := json.NewDecoder(bytes.NewReader(inputNoComments))
+	// Remove # comments from template
+	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
+	tmplBytes := []byte(commentRegex.ReplaceAllString(string(input), ``))
+	// Remove //, /* comments plus tailing commas
+	tmplBytes = jsonc.ToJSON(tmplBytes)
+
+	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
 	dec.DisallowUnknownFields()
 
 	// unmarshal into object
 	err := dec.Decode(output)
 	if err != nil {
-		return getIndepthJsonError(inputNoComments, err)
+		return getIndepthJsonError(tmplBytes, err)
 	}
 	return nil
 }

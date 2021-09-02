@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 )
 
 func loadFileFromPathSpec(pathSpec, manifestDir string) (string, []byte, error) {
@@ -47,8 +45,8 @@ func LoadManifestDataAsObject(data interface{}, manifestDir string, loader Loade
 		var jsonObject util.JsonObject
 		var jsonArray util.JsonArray
 
-		if err = cjson.Unmarshal(requestBytes, &jsonObject); err != nil {
-			if err = cjson.Unmarshal(requestBytes, &jsonArray); err == nil {
+		if err = util.Unmarshal(requestBytes, &jsonObject); err != nil {
+			if err = util.Unmarshal(requestBytes, &jsonArray); err == nil {
 
 				return filepath, jsonArray, nil
 			}
@@ -80,7 +78,7 @@ func LoadManifestDataAsRawJson(data interface{}, manifestDir string) (filepath s
 		if err != nil {
 			return "", res, fmt.Errorf("error marshaling: %s", err)
 		}
-		if err = cjson.Unmarshal(jsonMar, &res); err != nil {
+		if err = util.Unmarshal(jsonMar, &res); err != nil {
 			return "", res, fmt.Errorf("error unmarshalling: %s", err)
 		}
 		return "", res, nil

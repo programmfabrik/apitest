@@ -11,8 +11,6 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
-
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -171,7 +169,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 			return -1, fmt.Errorf("error loading check response: %s", err)
 		}
 
-		jsonRespArray := util.JsonArray{}
+		var jsonRespArray util.JsonArray
 		switch t := loadedResponses.(type) {
 		case util.JsonArray:
 			jsonRespArray = t
@@ -231,6 +229,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	err = testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
 		err = fmt.Errorf("error setting datastore map:%s", err)
+		return responsesMatch, req, apiResp, err
 	}
 
 	//Do Request
@@ -313,7 +312,7 @@ func (testCase Case) LogResp(response api.Response) {
 func (testCase Case) LogReq(req api.Request) {
 	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 
-	if !testCase.ReverseTestResult && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && *testCase.LogNetwork == false {
+	if !testCase.ReverseTestResult && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && !*testCase.LogNetwork {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		logrus.Debug(errString)
 	}
@@ -403,7 +402,7 @@ func (testCase Case) run() (bool, error) {
 		}
 
 		//break if timeout or we do not have a repeater
-		if timedOut := time.Now().Sub(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
+		if timedOut := time.Since(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
 				logrus.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				r.SaveToReportLogF("Pull Timeout '%dms' exceeded", testCase.Timeout)
@@ -502,7 +501,8 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec api.Request
 	)
 
-	_, requestData, err := template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, testCase.loader)
+	reqLoader := testCase.loader
+	_, requestData, err := template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, reqLoader)
 	if err != nil {
 		return spec, fmt.Errorf("error loading request data: %s", err)
 	}
@@ -510,7 +510,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling req: %s", err)
 	}
-	err = cjson.Unmarshal(specBytes, &spec)
+	err = util.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
 
@@ -518,7 +518,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.ServerURL = testCase.ServerURL
 	}
 	if len(spec.Headers) == 0 {
-		spec.Headers = make(map[string]*string, 0)
+		spec.Headers = make(map[string]*string)
 	}
 	for k, v := range testCase.standardHeader {
 		if spec.Headers[k] == nil {
@@ -527,7 +527,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	}
 
 	if len(spec.HeaderFromStore) == 0 {
-		spec.HeaderFromStore = make(map[string]string, 0)
+		spec.HeaderFromStore = make(map[string]string)
 	}
 	for k, v := range testCase.standardHeaderFromStore {
 		if spec.HeaderFromStore[k] == "" {
@@ -543,7 +543,8 @@ func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.Respons
 		spec api.ResponseSerialization
 	)
 
-	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, testCase.loader)
+	resLoader := testCase.loader
+	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, resLoader)
 	if err != nil {
 		return spec, fmt.Errorf("error loading response data: %s", err)
 	}
@@ -552,7 +553,7 @@ func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.Respons
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling res: %s", err)
 	}
-	err = cjson.Unmarshal(specBytes, &spec)
+	err = util.Unmarshal(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("error unmarshaling res: %s", err)
 	}

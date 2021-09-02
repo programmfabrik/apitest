@@ -7,14 +7,14 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 
 	"github.com/spf13/afero"
 )
 
 func TestBuildMultipart(t *testing.T) {
 	assertContent := "mock"
-	assertFilename := "path/mockfile.json"
+	assertFilename := "mockfile.json"
 	filesystem.Fs = afero.NewMemMapFs()
 	filesystem.Fs.MkdirAll("test/path", 0755)
 	afero.WriteFile(filesystem.Fs, fmt.Sprintf("test/%s", assertFilename), []byte(assertContent), 0644)

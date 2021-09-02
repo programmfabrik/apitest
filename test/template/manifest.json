@@ -1,0 +1,14 @@
+// template-delims: /* */
+// template-remove-tokens: "<placeholder>" "...."
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "template tests",
+    "tests": [
+        /* printf "%s" "@test1.json" | marshal */"<placeholder>",
+        "@test2.json"
+    ],
+}

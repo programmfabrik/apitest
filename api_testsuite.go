@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
-	"github.com/programmfabrik/apitest/pkg/lib/cjson"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -51,6 +50,7 @@ type Suite struct {
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
+	loader          template.Loader
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -76,7 +76,6 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		datastore:      datastore,
 		index:          index,
 	}
-
 	manifest, err := suitePreload.loadManifest()
 	if err != nil {
 		err = fmt.Errorf("error loading manifest: %s", err)
@@ -84,7 +83,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		return &suitePreload, err
 	}
 
-	err = cjson.Unmarshal(manifest, &suitePreload)
+	err = util.Unmarshal(manifest, &suitePreload)
 	if err != nil {
 		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
 		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
@@ -137,13 +136,14 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	}
 	// fmt.Printf("%s", string(manifest))
 	// We unmarshall the final manifest into the final working suite
-	err = cjson.Unmarshal(manifest, &suite)
+	err = util.Unmarshal(manifest, &suite)
 	if err != nil {
 		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
 		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
 		return &suite, err
 	}
 	suite.HTTPServerHost = suitePreload.HTTPServerHost
+	suite.loader = suitePreload.loader
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
@@ -173,7 +173,7 @@ func (ats *Suite) Run() bool {
 	success := true
 	for k, v := range ats.Tests {
 		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child)
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
 		child.Leave(sTestSuccess)
 		if !sTestSuccess {
 			success = false
@@ -207,10 +207,11 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement) bool {
+func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
 	//Init variables
+	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
 	loader := template.NewLoader(ats.datastore)
-
+	loader.Delimiters = rootLoader.Delimiters
 	loader.HTTPServerHost = ats.HTTPServerHost
 	serverURL, err := url.Parse(ats.Config.ServerURL)
 	if err != nil {
@@ -240,7 +241,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 
 	//Try to directly unmarshal the manifest into testcase array
 	var testCases []json.RawMessage
-	err = cjson.Unmarshal(testObj, &testCases)
+	err = util.Unmarshal(testObj, &testCases)
 	if err == nil {
 		d := 1
 		if isParallelPathSpec || runParallel {
@@ -279,28 +280,28 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		// If objects are different, we did have a Go template, recurse one level deep
 		if string(requestBytes) != string(testObj) {
 			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-				testFilePath, k, isParallelPathSpec, r)
+				testFilePath, k, isParallelPathSpec, r, loader)
 		}
 
 		// Its a JSON at this point, assign and proceed to parse
 		testObj = requestBytes
 
 		var singleTest json.RawMessage
-		err = cjson.Unmarshal(testObj, &singleTest)
+		err = util.Unmarshal(testObj, &singleTest)
 		if err == nil {
 
 			//Check if is @ and if so load the test
 			if util.IsPathSpec(testObj) {
 				var sS string
 
-				err := cjson.Unmarshal(testObj, &sS)
+				err := util.Unmarshal(testObj, &sS)
 				if err != nil {
 					r.SaveToReportLog(err.Error())
 					logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 					return false
 				}
 
-				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r)
+				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r, template.Loader{})
 			} else {
 				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 			}
@@ -319,7 +320,7 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	r.SetName(testFilePath)
 
 	var test Case
-	jErr := cjson.Unmarshal(tc.CaseByte, &test)
+	jErr := util.Unmarshal(tc.CaseByte, &test)
 	if jErr != nil {
 
 		r.SaveToReportLog(jErr.Error())
@@ -348,7 +349,6 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	if test.LogShort == nil {
 		test.LogShort = &ats.Config.LogShort
 	}
-
 	if test.ServerURL == "" {
 		test.ServerURL = ats.Config.ServerURL
 	}
@@ -384,7 +384,10 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	if err != nil {
 		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
 	}
-	return loader.Render(manifestTmpl, ats.manifestDir, nil)
+
+	b, err := loader.Render(manifestTmpl, ats.manifestDir, nil)
+	ats.loader = loader
+	return b, err
 }
 
 func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manifestDir, dir string, r *report.ReportElement, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
@@ -394,14 +397,14 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manif
 	switch util.IsPathSpec(v) {
 	case true:
 		var sS string
-		err := cjson.Unmarshal(v, &sS)
+		err := util.Unmarshal(v, &sS)
 		if err != nil {
 			r.SaveToReportLog(err.Error())
 			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 			success = false
 			break
 		}
-		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r)
+		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r, loader)
 	default:
 		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
 			r, testFilePath, loader, ki, runParallel)
