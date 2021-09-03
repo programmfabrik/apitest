@@ -149,7 +149,6 @@ func (loader *Loader) Render(
 			return string(tmplBytes), nil
 		},
 		"file_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-
 			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return nil, err
@@ -160,7 +159,14 @@ func (loader *Loader) Render(
 				return nil, err
 			}
 
-			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
+			csvP := csvx.CSVParser{
+				Comma:            ',',
+				Comment:          '#',
+				TrimLeadingSpace: true,
+				SkipEmptyColumns: true,
+			}
+
+			csvData, err := csvP.Typed(fileBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
@@ -178,7 +184,14 @@ func (loader *Loader) Render(
 				return nil, err
 			}
 
-			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
+			csvP := csvx.CSVParser{
+				Comma:            ',',
+				Comment:          '#',
+				TrimLeadingSpace: true,
+				SkipEmptyColumns: true,
+			}
+
+			csvData, err := csvP.Typed(fileBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
