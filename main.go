@@ -18,7 +18,7 @@ import (
 var (
 	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                                       []string
+	rootDirectorys, singleTests, specificTests                                        []string
 	limitRequest, limitResponse                                                       uint
 )
 
@@ -40,6 +40,10 @@ func init() {
 	testCMD.PersistentFlags().StringSliceVarP(
 		&singleTests, "single", "s", []string{},
 		"path to a single manifest. Runs only that specified testsuite")
+
+	testCMD.PersistentFlags().StringSliceVarP(
+		&specificTests, "test", "t", []string{},
+		"path to a single test. Runs only that specified test. Only works together with -s")
 
 	testCMD.PersistentFlags().BoolVarP(
 		&logNetwork, "log-network", "n", false,
@@ -138,6 +142,21 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	if len(specificTests) > 0 {
+		if len(singleTests) == 0 {
+			logrus.Fatal("Cannot run specific tests without a manifest reference")
+		}
+		if len(singleTests) > 1 {
+			logrus.Fatal("Cannot run specific tests with more than one manifest reference")
+		}
+	}
+
+	for _, specificTest := range specificTests {
+		if _, err := os.Stat(specificTest); specificTest != "" && os.IsNotExist(err) {
+			logrus.Fatalf("The path '%s' for the specific test is not valid", specificTest)
+		}
+	}
+
 	server := Config.Apitest.Server
 	reportFormat = Config.Apitest.Report.Format
 	reportFile = Config.Apitest.Report.File
@@ -155,7 +174,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	// Actually run the tests
 	// Run test function
-	runSingleTest := func(manifestPath string, manifestDir string, reportElem *report.ReportElement) (success bool) {
+	runSingleTest := func(manifestPath string, manifestDir string, specificTests []string, reportElem *report.ReportElement) (success bool) {
 		store := datastore.NewStore(logVerbose || logDatastore)
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
@@ -164,7 +183,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, manifestDir, reportElem, store, 0)
+		suite, err := NewTestSuite(testToolConfig, manifestPath, manifestDir, specificTests, reportElem, store, 0)
 		if err != nil {
 			logrus.Error(err)
 			if reportFile != "" {
@@ -182,7 +201,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			absManifestPath, _ := filepath.Abs(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, singleTest, c)
+			success := runSingleTest(absManifestPath, singleTest, specificTests, c)
 			c.Leave(success)
 
 			if reportFile != "" {
@@ -199,7 +218,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, manifestPath, c)
+			success := runSingleTest(absManifestPath, manifestPath, nil, c)
 			c.Leave(success)
 
 			if reportFile != "" {

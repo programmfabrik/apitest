@@ -51,10 +51,11 @@ type Suite struct {
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
 	loader          template.Loader
+	specificTests   []string
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
+func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, specificTests []string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
 	suite := Suite{
 		Config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
@@ -63,6 +64,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		reporterRoot:   r,
 		datastore:      datastore,
 		index:          index,
+		specificTests: specificTests,
 	}
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
@@ -171,13 +173,27 @@ func (ats *Suite) Run() bool {
 	start := time.Now()
 
 	success := true
-	for k, v := range ats.Tests {
-		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
-		child.Leave(sTestSuccess)
-		if !sTestSuccess {
-			success = false
-			break
+
+	if len(ats.specificTests) > 0 {
+		for k, v := range ats.Tests {
+			child := r.NewChild(strconv.Itoa(k))
+			
+			sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
+			child.Leave(sTestSuccess)
+			if !sTestSuccess {
+				success = false
+				break
+			}
+		}
+	} else {
+		for k, v := range ats.Tests {
+			child := r.NewChild(strconv.Itoa(k))
+			sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
+			child.Leave(sTestSuccess)
+			if !sTestSuccess {
+				success = false
+				break
+			}
 		}
 	}
 
