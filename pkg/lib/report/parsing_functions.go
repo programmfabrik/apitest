@@ -52,7 +52,7 @@ type statsReport struct {
 	StartedAt time.Time            `json:"started_at"`
 	EndedAt   time.Time            `json:"ended_at"`
 	Version   string               `json:"version"`
-	Groups    []statsGroup         `json:"groups"`
+	Groups    statsGroups          `json:"groups"`
 	Manifests []statsReportElement `json:"manifests"`
 	User      string               `json:"user"`
 	Path      string               `json:"path"`
@@ -70,6 +70,21 @@ type statsGroup struct {
 	Number     int           `json:"number"`
 	Runtime    time.Duration `json:"-"`
 	RuntimeStr string        `json:"runtime"`
+}
+type statsGroups []statsGroup
+
+func (groups statsGroups) getLowestRuntimeGroup() (group int) {
+	if len(groups) < 1 {
+		panic("No groups to check lowest duration")
+	}
+	lowestDuration := 9999 * time.Hour
+	for i, g := range groups {
+		if g.Runtime < lowestDuration {
+			group = i
+			lowestDuration = g.Runtime
+		}
+	}
+	return
 }
 
 //ParseJSONResult Print the result to the console
@@ -109,9 +124,8 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 		return baseResult.SubTests[i].ExecutionTime > baseResult.SubTests[j].ExecutionTime
 	})
 
-	currGroup := 0
-	currGroupDir := 1
 	for _, r := range baseResult.SubTests {
+		currGroup := stats.Groups.getLowestRuntimeGroup()
 		stats.Manifests = append(stats.Manifests, statsReportElement{
 			Group:     currGroup,
 			StartedAt: r.StartTime,
@@ -119,18 +133,7 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 			RuntimeMS: r.ExecutionTime.Milliseconds(),
 			Path:      r.Name,
 		})
-
 		stats.Groups[currGroup].Runtime += r.ExecutionTime
-
-		// A very simple way to distribute
-		currGroup += currGroupDir
-		if currGroup == len(stats.Groups) {
-			currGroup = len(stats.Groups) - 1
-			currGroupDir = -1
-		} else if currGroup == -1 {
-			currGroup = 0
-			currGroupDir = 1
-		}
 	}
 
 	sort.SliceStable(stats.Manifests, func(i, j int) bool {
