@@ -19,7 +19,9 @@ var (
 	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
 	rootDirectorys, singleTests, specificTests                                        []string
-	limitRequest, limitResponse                                                       uint
+	limitRequest, limitResponse, reportStatsGroups                                    uint
+	// set via -ldflags during build
+	buildCommit, buildTime, buildVersion string
 )
 
 func init() {
@@ -42,7 +44,7 @@ func init() {
 		"path to a single manifest. Runs only that specified testsuite")
 
 	testCMD.PersistentFlags().StringSliceVarP(
-		&specificTests, "test", "t", []string{},
+		&specificTests, "test", "", []string{},
 		"path to a single test. Runs only that specified test. Only works together with -s")
 
 	testCMD.PersistentFlags().BoolVarP(
@@ -69,7 +71,11 @@ func init() {
 
 	testCMD.PersistentFlags().StringVar(
 		&reportFormat, "report-format", "",
-		"Defines how the report statements should be saved. [junit/json]")
+		"Defines how the report statements should be saved. [junit/json/stats]")
+
+	testCMD.PersistentFlags().UintVarP(
+		&reportStatsGroups, "report-format-stats-group", "", 4,
+		"Create report format stats groups distribution (default 4)")
 
 	testCMD.PersistentFlags().UintVarP(
 		&limitRequest, "limit-request", "", 20,
@@ -152,8 +158,9 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	}
 
 	for _, specificTest := range specificTests {
-		if _, err := os.Stat(specificTest); specificTest != "" && os.IsNotExist(err) {
-			logrus.Fatalf("The path '%s' for the specific test is not valid", specificTest)
+		fullPath := filepath.Join(singleTests[0], specificTest)
+		if _, err := os.Stat(fullPath); specificTest != "" && os.IsNotExist(err) {
+			logrus.Fatalf("The path '%s' for the specific test is not valid", fullPath)
 		}
 	}
 
@@ -162,6 +169,8 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	reportFile = Config.Apitest.Report.File
 
 	rep := report.NewReport()
+	rep.StatsGroups = int(reportStatsGroups)
+	rep.Version = buildCommit
 
 	// Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
@@ -204,10 +213,6 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			success := runSingleTest(absManifestPath, singleTest, specificTests, c)
 			c.Leave(success)
 
-			if reportFile != "" {
-				rep.WriteToFile(reportFile, reportFormat)
-			}
-
 			if stopOnFail && !success {
 				break
 			}
@@ -221,14 +226,14 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			success := runSingleTest(absManifestPath, manifestPath, nil, c)
 			c.Leave(success)
 
-			if reportFile != "" {
-				rep.WriteToFile(reportFile, reportFormat)
-			}
-
 			if stopOnFail && !success {
 				break
 			}
 		}
+	}
+
+	if reportFile != "" {
+		rep.WriteToFile(reportFile, reportFormat)
 	}
 
 	if rep.DidFail() {

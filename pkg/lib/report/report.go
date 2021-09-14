@@ -3,7 +3,6 @@ package report
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"sync"
 	"time"
 
@@ -11,8 +10,10 @@ import (
 )
 
 type Report struct {
-	root *ReportElement
-	m    *sync.Mutex
+	StatsGroups int
+	Version     string
+	root        *ReportElement
+	m           *sync.Mutex
 }
 
 func (r Report) Root() *ReportElement {
@@ -88,7 +89,7 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 	r.report.m.Lock()
 	defer r.report.m.Unlock()
 
-	name = strings.Replace(name, ".", "_", -1)
+	// name = strings.Replace(name, ".", "_", -1)
 
 	newElem = &ReportElement{}
 	newElem.SubTests = make([]*ReportElement, 0)
@@ -108,7 +109,7 @@ func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 func (r *ReportElement) SetName(name string) {
 	r.m.Lock()
 	defer r.m.Unlock()
-	name = strings.Replace(name, ".", "_", -1)
+	// name = strings.Replace(name, ".", "_", -1)
 	r.Name = name
 }
 
@@ -184,6 +185,8 @@ func (r *Report) WriteToFile(reportFile, reportFormat string) error {
 		parsingFunction = ParseJUnitResult
 	case "json":
 		parsingFunction = ParseJSONResult
+	case "stats":
+		parsingFunction = ParseJSONStatsResult
 	default:
 		logrus.Errorf(
 			"Given report format '%s' not supported. Saving report '%s' as json",

@@ -64,7 +64,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		reporterRoot:   r,
 		datastore:      datastore,
 		index:          index,
-		specificTests: specificTests,
+		specificTests:  specificTests,
 	}
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
@@ -175,10 +175,10 @@ func (ats *Suite) Run() bool {
 	success := true
 
 	if len(ats.specificTests) > 0 {
-		for k, v := range ats.Tests {
+		for k, v := range ats.specificTests {
 			child := r.NewChild(strconv.Itoa(k))
-			
-			sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
+			specificTest := "@" + v
+			sTestSuccess := ats.parseAndRunTest(specificTest, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
 			child.Leave(sTestSuccess)
 			if !sTestSuccess {
 				success = false

@@ -21,7 +21,7 @@ apitest:
     short: true # Configures minimal logs by default for all tests
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
-    format: "json.junit"       # Format of the report. (Supported formats: json or junit)
+    format: "json.junit"       # Format of the report. (Supported formats: json, junit or stats)
   store: # initial values for the datastore, parsed as map[string]interface{}
     email.server: smtp.google.com
   oauth2_client: # Map of client-config for oAuth clients
@@ -54,6 +54,7 @@ This starts the command with the following default settings:
 
 - `--directory testDirectory` or `-d testDirectory`: Defines which directory should be used for running the tests in it. The tool walks recursively trough all subdirectories and runs alls tests that have a "manifest.json" file in alphabetical order of the folder names. (Depth-First-Search)
 - `--single path/to/a/single/manifest.json` or `-s path/to/a/single/manifest.json`: Run only a single test. The path needs to point directly to the manifest file. (Not the directory containing it)
+- `--test some-single-test.json`: Run only some tests in the scope of a manifest. The path needs to be relative to the manifest file folder, so a single manifest should be specified using the `--single` option.
 
 ### Stop on fail
 
@@ -99,6 +100,10 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
 - `--replace-host [host][:port]`: Overwrites built-in server host in template function "replace_host"
+
+### Additional parameters
+
+- `--report-format-stats-group 3`: Sets the number of groups for manifests distrubution when using report format `stats`
 
 ### Examples
 
