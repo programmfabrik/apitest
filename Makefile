@@ -1,5 +1,7 @@
 GOOS ?= linux
 GOARCH ?= amd64
+GIT_COMMIT_SHA ?= $(shell git rev-list -1 HEAD)
+LD_FLAGS = -ldflags="-X main.buildCommit=${GIT_COMMIT_SHA}"
 
 all: test build
 
@@ -31,10 +33,10 @@ clean:
 	rm -rfv ./apitest ./bin/* ./testcoverage.out
 
 ci: deps
-	go build -o bin/apitest_$(GOOS)_$(GOARCH) *.go
+	go build $(LD_FLAGS) -o bin/apitest_$(GOOS)_$(GOARCH) *.go
 
 build: deps
-	go build
+	go build $(LD_FLAGS)
 
 build-linux: deps
 	GOOS=linux GOARCH=amd64 go build -o apitest-linux

@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"os"
+	"os/user"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -45,9 +48,79 @@ type JUnitReporter struct {
 	report Report
 }
 
+type statsReport struct {
+	StartedAt time.Time            `json:"started_at"`
+	EndedAt   time.Time            `json:"ended_at"`
+	Version   string               `json:"version"`
+	Groups    int                  `json:"groups"`
+	Manifests []statsReportElement `json:"manifests"`
+	User      string               `json:"user"`
+	Path      string               `json:"path"`
+}
+
+type statsReportElement struct {
+	Group     int       `json:"group"`
+	Path      string    `json:"path"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	RuntimeMS int64     `json:"runtime_ms"`
+}
+
 //ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
 	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
+
+	return jsonResult
+}
+
+//ParseJSONResult Print the result to the console
+func ParseJSONStatsResult(baseResult *ReportElement) []byte {
+
+	currUsername := "unknown"
+	if currUser, _ := user.Current(); currUser != nil {
+		currUsername = currUser.Username
+	}
+	currPath, _ := os.Getwd()
+
+	stats := statsReport{
+		StartedAt: baseResult.StartTime,
+		EndedAt:   baseResult.StartTime.Add(baseResult.ExecutionTime),
+		Version:   baseResult.report.Version,
+		Groups:    baseResult.report.StatsGroups,
+		Manifests: []statsReportElement{},
+		User:      currUsername,
+		Path:      currPath,
+	}
+
+	sort.SliceStable(baseResult.SubTests, func(i, j int) bool {
+		return baseResult.SubTests[i].ExecutionTime > baseResult.SubTests[j].ExecutionTime
+	})
+
+	currGroup := 0
+	currGroupDir := 1
+	for _, r := range baseResult.SubTests {
+		stats.Manifests = append(stats.Manifests, statsReportElement{
+			Group:     currGroup,
+			StartedAt: r.StartTime,
+			EndedAt:   r.StartTime.Add(r.ExecutionTime),
+			RuntimeMS: r.ExecutionTime.Milliseconds(),
+			Path:      r.Name,
+		})
+		currGroup += currGroupDir
+		if currGroup == stats.Groups {
+			currGroup = stats.Groups - 1
+			currGroupDir = -1
+		} else if currGroup == -1 {
+			currGroup = 0
+			currGroupDir = 1
+		}
+	}
+
+	sort.SliceStable(stats.Manifests, func(i, j int) bool {
+		return stats.Manifests[i].StartedAt.Before(stats.Manifests[j].StartedAt)
+	})
+
+	jsonResult, _ := json.MarshalIndent(stats, "", "  ")
 
 	return jsonResult
 }

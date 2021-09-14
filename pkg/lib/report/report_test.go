@@ -182,3 +182,62 @@ func TestReportLog(t *testing.T) {
 		}
 	}
 }
+
+func TestReportGetStatsResult(t *testing.T) {
+	r := NewReport()
+	r.StatsGroups = 2
+	r.Version = "dummy"
+
+	child := r.Root().NewChild("manifest1.json")
+	time.Sleep(10 * time.Millisecond)
+	subchild := child.NewChild("manifest1_sub1")
+	time.Sleep(20 * time.Millisecond)
+	subchild.Leave(true)
+	subchild2 := child.NewChild("manifest1_sub2")
+	time.Sleep(30 * time.Millisecond)
+	subchild2.Leave(true)
+	child.Leave(true)
+
+	child2 := r.Root().NewChild("manifest2.json")
+	time.Sleep(50 * time.Millisecond)
+	subchild3 := child2.NewChild("manifest2_sub1")
+	time.Sleep(150 * time.Millisecond)
+	subchild3.Leave(true)
+	subchild4 := child2.NewChild("manifest2_sub2")
+	time.Sleep(200 * time.Millisecond)
+	subchild4.Leave(true)
+	child2.Leave(true)
+
+	child3 := r.Root().NewChild("manifest3.json")
+	time.Sleep(50 * time.Millisecond)
+	subchild5 := child3.NewChild("manifest3_sub1")
+	time.Sleep(50 * time.Millisecond)
+	subchild5.Leave(true)
+	subchild6 := child3.NewChild("manifest3_sub2")
+	time.Sleep(50 * time.Millisecond)
+	subchild6.Leave(true)
+	child3.Leave(true)
+
+	jsonResult := r.GetTestResult(ParseJSONStatsResult)
+	var statsRep statsReport
+	util.Unmarshal(jsonResult, &statsRep)
+
+	if statsRep.Version != r.Version {
+		t.Fatalf("Got version %s, expected %s", statsRep.Version, r.Version)
+	}
+	if statsRep.Groups != r.StatsGroups {
+		t.Fatalf("Got %d groups, expected %d", statsRep.Groups, r.StatsGroups)
+	}
+	if len(statsRep.Manifests) != 3 {
+		t.Fatalf("Got %d manifests, expected 3", len(statsRep.Manifests))
+	}
+	if statsRep.Manifests[0].Group != 1 {
+		t.Fatalf("Manifest 1 in group %d, expected to be in 1", statsRep.Manifests[0].Group)
+	}
+	if statsRep.Manifests[1].Group != 0 {
+		t.Fatalf("Manifest 2 in group %d, expected to be in 0", statsRep.Manifests[1].Group)
+	}
+	if statsRep.Manifests[2].Group != 1 {
+		t.Fatalf("Manifest 3 in group %d, expected to be in 1", statsRep.Manifests[2].Group)
+	}
+}
