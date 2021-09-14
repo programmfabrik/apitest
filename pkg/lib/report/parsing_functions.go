@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"os"
+	"os/user"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -45,9 +48,100 @@ type JUnitReporter struct {
 	report Report
 }
 
+type statsReport struct {
+	StartedAt time.Time            `json:"started_at"`
+	EndedAt   time.Time            `json:"ended_at"`
+	Version   string               `json:"version"`
+	Groups    []statsGroup         `json:"groups"`
+	Manifests []statsReportElement `json:"manifests"`
+	User      string               `json:"user"`
+	Path      string               `json:"path"`
+}
+
+type statsReportElement struct {
+	Group     int       `json:"group"`
+	Path      string    `json:"path"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	RuntimeMS int64     `json:"runtime_ms"`
+}
+
+type statsGroup struct {
+	Number     int           `json:"number"`
+	Runtime    time.Duration `json:"-"`
+	RuntimeStr string        `json:"runtime"`
+}
+
 //ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
 	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
+
+	return jsonResult
+}
+
+//ParseJSONResult Print the result to the console
+func ParseJSONStatsResult(baseResult *ReportElement) []byte {
+
+	currUsername := "unknown"
+	if currUser, _ := user.Current(); currUser != nil {
+		currUsername = currUser.Username
+	}
+	currPath, _ := os.Getwd()
+
+	stats := statsReport{
+		StartedAt: baseResult.StartTime,
+		EndedAt:   baseResult.StartTime.Add(baseResult.ExecutionTime),
+		Version:   baseResult.report.Version,
+		Manifests: []statsReportElement{},
+		User:      currUsername,
+		Path:      currPath,
+	}
+
+	stats.Groups = make([]statsGroup, baseResult.report.StatsGroups)
+	for i := 0; i < baseResult.report.StatsGroups; i++ {
+		stats.Groups[i] = statsGroup{
+			Number:  i,
+			Runtime: 0,
+		}
+	}
+
+	sort.SliceStable(baseResult.SubTests, func(i, j int) bool {
+		return baseResult.SubTests[i].ExecutionTime > baseResult.SubTests[j].ExecutionTime
+	})
+
+	currGroup := 0
+	currGroupDir := 1
+	for _, r := range baseResult.SubTests {
+		stats.Manifests = append(stats.Manifests, statsReportElement{
+			Group:     currGroup,
+			StartedAt: r.StartTime,
+			EndedAt:   r.StartTime.Add(r.ExecutionTime),
+			RuntimeMS: r.ExecutionTime.Milliseconds(),
+			Path:      r.Name,
+		})
+
+		stats.Groups[currGroup].Runtime += r.ExecutionTime
+
+		// A very simple way to distribute
+		currGroup += currGroupDir
+		if currGroup == len(stats.Groups) {
+			currGroup = len(stats.Groups) - 1
+			currGroupDir = -1
+		} else if currGroup == -1 {
+			currGroup = 0
+			currGroupDir = 1
+		}
+	}
+
+	sort.SliceStable(stats.Manifests, func(i, j int) bool {
+		return stats.Manifests[i].StartedAt.Before(stats.Manifests[j].StartedAt)
+	})
+
+	for i, g := range stats.Groups {
+		stats.Groups[i].RuntimeStr = g.Runtime.String()
+	}
+
+	jsonResult, _ := json.MarshalIndent(stats, "", "  ")
 
 	return jsonResult
 }
