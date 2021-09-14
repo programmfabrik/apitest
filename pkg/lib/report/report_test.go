@@ -225,8 +225,8 @@ func TestReportGetStatsResult(t *testing.T) {
 	if statsRep.Version != r.Version {
 		t.Fatalf("Got version %s, expected %s", statsRep.Version, r.Version)
 	}
-	if statsRep.Groups != r.StatsGroups {
-		t.Fatalf("Got %d groups, expected %d", statsRep.Groups, r.StatsGroups)
+	if len(statsRep.Groups) != r.StatsGroups {
+		t.Fatalf("Got %d groups, expected %d", len(statsRep.Groups), r.StatsGroups)
 	}
 	if len(statsRep.Manifests) != 3 {
 		t.Fatalf("Got %d manifests, expected 3", len(statsRep.Manifests))

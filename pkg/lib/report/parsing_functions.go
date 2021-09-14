@@ -52,7 +52,7 @@ type statsReport struct {
 	StartedAt time.Time            `json:"started_at"`
 	EndedAt   time.Time            `json:"ended_at"`
 	Version   string               `json:"version"`
-	Groups    int                  `json:"groups"`
+	Groups    []statsGroup         `json:"groups"`
 	Manifests []statsReportElement `json:"manifests"`
 	User      string               `json:"user"`
 	Path      string               `json:"path"`
@@ -64,6 +64,12 @@ type statsReportElement struct {
 	StartedAt time.Time `json:"started_at"`
 	EndedAt   time.Time `json:"ended_at"`
 	RuntimeMS int64     `json:"runtime_ms"`
+}
+
+type statsGroup struct {
+	Number     int           `json:"number"`
+	Runtime    time.Duration `json:"-"`
+	RuntimeStr string        `json:"runtime"`
 }
 
 //ParseJSONResult Print the result to the console
@@ -86,10 +92,17 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 		StartedAt: baseResult.StartTime,
 		EndedAt:   baseResult.StartTime.Add(baseResult.ExecutionTime),
 		Version:   baseResult.report.Version,
-		Groups:    baseResult.report.StatsGroups,
 		Manifests: []statsReportElement{},
 		User:      currUsername,
 		Path:      currPath,
+	}
+
+	stats.Groups = make([]statsGroup, baseResult.report.StatsGroups)
+	for i := 0; i < baseResult.report.StatsGroups; i++ {
+		stats.Groups[i] = statsGroup{
+			Number:  i,
+			Runtime: 0,
+		}
 	}
 
 	sort.SliceStable(baseResult.SubTests, func(i, j int) bool {
@@ -106,9 +119,13 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 			RuntimeMS: r.ExecutionTime.Milliseconds(),
 			Path:      r.Name,
 		})
+
+		stats.Groups[currGroup].Runtime += r.ExecutionTime
+
+		// A very simple way to distribute
 		currGroup += currGroupDir
-		if currGroup == stats.Groups {
-			currGroup = stats.Groups - 1
+		if currGroup == len(stats.Groups) {
+			currGroup = len(stats.Groups) - 1
 			currGroupDir = -1
 		} else if currGroup == -1 {
 			currGroup = 0
@@ -119,6 +136,10 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 	sort.SliceStable(stats.Manifests, func(i, j int) bool {
 		return stats.Manifests[i].StartedAt.Before(stats.Manifests[j].StartedAt)
 	})
+
+	for i, g := range stats.Groups {
+		stats.Groups[i].RuntimeStr = g.Runtime.String()
+	}
 
 	jsonResult, _ := json.MarshalIndent(stats, "", "  ")
 
