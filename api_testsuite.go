@@ -185,13 +185,13 @@ func (ats *Suite) Run() bool {
 	r.Leave(success)
 	if success {
 		if ats.Config.LogShort {
-			fmt.Printf("OK '%s' (%.3fs)", ats.manifestRelDir, elapsed.Seconds())
+			fmt.Printf("OK '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 		}
 	} else {
 		if ats.Config.LogShort {
-			fmt.Printf("FAIL '%s' (%.3fs)", ats.manifestRelDir, elapsed.Seconds())
+			fmt.Printf("FAIL '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 		}
