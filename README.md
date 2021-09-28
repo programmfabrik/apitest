@@ -1246,6 +1246,8 @@ The content of the request and response file are execatly the same as if you wou
 
 # Template functions
 
+> **apitest** supports the [Sprig template](http://masterminds.github.io/sprig/) function library in v3. Internally provided functions like `add` overwrite the `Sprig` function.
+
 As described before, if you use an external file you can make use of so called template functions. What they are and how they work for the apitesting tool is described in the following part.
 
 Template Functions are invoked using the tags `{{ }}` and upon returning substitutes the function call with

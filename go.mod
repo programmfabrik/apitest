@@ -3,9 +3,13 @@ module github.com/programmfabrik/apitest
 go 1.13
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/clbanning/mxj v1.8.4
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/mattn/go-sqlite3 v1.14.8
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/moul/http2curl v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/programmfabrik/go-test-utils v0.0.0-20191114143449-b8e16b04adb1
