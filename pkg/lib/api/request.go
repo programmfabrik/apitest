@@ -47,6 +47,7 @@ type Request struct {
 	Endpoint             string                    `yaml:"endpoint" json:"endpoint"`
 	ServerURL            string                    `yaml:"server_url" json:"server_url"`
 	Method               string                    `yaml:"method" json:"method"`
+	NoRedirect           bool                      `yaml:"no_redirect" json:"no_redirect"`
 	QueryParams          map[string]interface{}    `yaml:"query_params" json:"query_params"`
 	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
 	Headers              map[string]*string        `yaml:"header" json:"header"`
@@ -98,6 +99,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if err != nil {
 		return req, fmt.Errorf("error creating new request")
 	}
+
 	// Remove library default agent
 	req.Header.Set("User-Agent", "")
 	req.Close = true
@@ -318,6 +320,14 @@ func (request Request) Send() (response Response, err error) {
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
 		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
+	}
+
+	if request.NoRedirect {
+		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	} else {
+		httpClient.CheckRedirect = nil
 	}
 
 	httpResponse, err := httpClient.Do(httpRequest)

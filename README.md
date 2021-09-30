@@ -200,6 +200,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET",
 
+        // If set to true, don't follow redirects.
+        "no_redirect": false,
+
         // Parameters that will be added to the url. e.g. http:// 5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
         "query_params": {
             "number": 2,
