@@ -173,7 +173,7 @@ func (ats *Suite) Run() bool {
 	success := true
 	for k, v := range ats.Tests {
 		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, false, child, ats.loader)
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, 1, false, child, ats.loader)
 		child.Leave(sTestSuccess)
 		if !sTestSuccess {
 			success = false
@@ -207,7 +207,7 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
+func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k, repeatNTimes int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
 	//Init variables
 	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
 	loader := template.NewLoader(ats.datastore)
@@ -245,20 +245,25 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	if err == nil {
 		d := 1
 		if isParallelPathSpec || runParallel {
+			if repeatNTimes > 1 {
+				logrus.Debugf("run %s parallel: repeat %d times", filepath.Base(testFilePath), repeatNTimes)
+			}
 			d = len(testCases)
 		}
 
-		waitCh := make(chan bool, d)
-		succCh := make(chan bool, len(testCases))
+		waitCh := make(chan bool, repeatNTimes*d)
+		succCh := make(chan bool, repeatNTimes*len(testCases))
 
 		go func() {
-			for ki, v := range testCases {
-				waitCh <- true
-				go testGoRoutine(k, ki, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec || runParallel)
+			for kn := 0; kn < repeatNTimes; kn++ {
+				for ki, v := range testCases {
+					waitCh <- true
+					go testGoRoutine(k, kn+ki*repeatNTimes, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec || runParallel)
+				}
 			}
 		}()
 
-		for i := 0; i < len(testCases); i++ {
+		for i := 0; i < repeatNTimes*len(testCases); i++ {
 			select {
 			case succ := <-succCh:
 				if succ == false {
@@ -268,6 +273,15 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		}
 	} else {
 		// We were not able unmarshal into array, so we try to unmarshal into raw message
+
+		// Get the (optional) number of repititions from the test path spec
+		parallelRepititions := 1
+		if isParallelPathSpec {
+			switch t := v.(type) {
+			case string:
+				parallelRepititions, _ = util.GetParallelPathSpec([]byte(t))
+			}
+		}
 
 		// Parse as template always
 		requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
@@ -280,7 +294,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		// If objects are different, we did have a Go template, recurse one level deep
 		if string(requestBytes) != string(testObj) {
 			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-				testFilePath, k, isParallelPathSpec, r, loader)
+				testFilePath, k, parallelRepititions, isParallelPathSpec, r, loader)
 		}
 
 		// Its a JSON at this point, assign and proceed to parse
@@ -301,7 +315,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 					return false
 				}
 
-				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, isParallelPathSpec, r, template.Loader{})
+				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, parallelRepititions, isParallelPathSpec, r, template.Loader{})
 			} else {
 				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 			}
@@ -404,7 +418,7 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manif
 			success = false
 			break
 		}
-		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, runParallel, r, loader)
+		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, 1, runParallel, r, loader)
 	default:
 		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
 			r, testFilePath, loader, ki, runParallel)

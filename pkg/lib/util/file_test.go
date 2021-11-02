@@ -13,10 +13,123 @@ import (
 	"github.com/spf13/afero"
 )
 
-type testStruct struct {
+type testParallelPathSpecStruct struct {
+	filename               string
+	expIsPath              bool
+	expIsParallel          bool
+	expPath                string
+	expParallelRepititions int
+}
+
+type testOpenFileStruct struct {
 	filename string
 	expError error
 	expHash  [16]byte
+}
+
+func TestGetParallelPathSpec(t *testing.T) {
+
+	tests := []testParallelPathSpecStruct{
+		{
+			filename:      "p",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "1@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "x@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "p@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "@path",
+			expIsPath:     true,
+			expIsParallel: false,
+		},
+		{
+			filename:      "1@a",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "x@a",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:      "p1@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			filename:               "p1@path",
+			expIsPath:              true,
+			expIsParallel:          true,
+			expPath:                "path",
+			expParallelRepititions: 1,
+		},
+		{
+			filename:               "p10@path",
+			expIsPath:              true,
+			expIsParallel:          true,
+			expPath:                "path",
+			expParallelRepititions: 10,
+		},
+		{
+			filename:               "p01@path",
+			expIsPath:              true,
+			expIsParallel:          true,
+			expPath:                "path",
+			expParallelRepititions: 1,
+		},
+		{
+			filename:      "@path",
+			expIsPath:     true,
+			expIsParallel: false,
+		},
+		{
+			filename:      "@../path",
+			expIsPath:     true,
+			expIsParallel: false,
+		},
+	}
+
+	for _, v := range tests {
+		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
+			isPathSpec := IsPathSpec([]byte(v.filename))
+			isParallelPathSpec := IsParallelPathSpec([]byte(v.filename))
+			if isPathSpec != v.expIsPath {
+				t.Errorf("IsPathSpec: Got %v != %v Exp", isPathSpec, v.expIsPath)
+			}
+			if isParallelPathSpec != v.expIsParallel {
+				t.Errorf("IsParallelPathSpec: Got %v != %v Exp", isParallelPathSpec, v.expIsParallel)
+			}
+
+			if v.expIsParallel {
+				parallelRepititions, path := GetParallelPathSpec([]byte(v.filename))
+				if parallelRepititions != v.expParallelRepititions {
+					t.Errorf("ParallelRepititions: Got '%d' != '%d' Exp", parallelRepititions, v.expParallelRepititions)
+				}
+				if path != v.expPath {
+					t.Errorf("Path: Got '%s' != '%s' Exp", path, v.expPath)
+				}
+			}
+		})
+	}
 }
 
 func TestOpenFileOrUrl(t *testing.T) {
@@ -32,7 +145,7 @@ func TestOpenFileOrUrl(t *testing.T) {
 
 	afero.WriteFile(filesystem.Fs, "localExists", []byte("Hallo ich bin da!"), 0644)
 
-	tests := []testStruct{
+	tests := []testOpenFileStruct{
 		{
 			filename: "localExists",
 			expError: nil,

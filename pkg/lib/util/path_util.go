@@ -2,6 +2,8 @@ package util
 
 import (
 	"path/filepath"
+	"regexp"
+	"strconv"
 )
 
 /*
@@ -17,25 +19,37 @@ func IsPathSpec(pathSpec []byte) bool {
 		return false
 	}
 
-	if rune(pathSpec[0]) == rune('@') || rune(pathSpec[1]) == rune('@') {
+	if rune(pathSpec[0]) == rune('@') {
 		return true
 	}
-	if (rune(pathSpec[0]) == rune('p') && rune(pathSpec[1]) == rune('@')) ||
-		(rune(pathSpec[1]) == rune('p') && rune(pathSpec[2]) == rune('@')) {
+	if rune(pathSpec[0]) == rune('p') && rune(pathSpec[1]) == rune('@') {
 		return true
 	}
 
-	return false
+	return IsParallelPathSpec(pathSpec)
 }
 
 func IsParallelPathSpec(pathSpec []byte) bool {
-	if len(pathSpec) < 3 {
-		return false
+	n, _ := GetParallelPathSpec(pathSpec)
+	return n > 0
+}
+
+func GetParallelPathSpec(pathSpec []byte) (parallelRepititions int, parsedPath string) {
+	regex := *regexp.MustCompile(`^p(\d+)@(.+)$`)
+	res := regex.FindAllStringSubmatch(string(pathSpec), -1)
+
+	if len(res) != 1 {
+		return 0, ""
 	}
-	if (rune(pathSpec[0]) == rune('p') && rune(pathSpec[1]) == rune('@')) ||
-		(rune(pathSpec[1]) == rune('p') && rune(pathSpec[2]) == rune('@')) {
-		return true
+	if len(res[0]) != 3 {
+		return 0, ""
 	}
 
-	return false
+	parsedPath = res[0][2]
+	parallelRepititions, err := strconv.Atoi(res[0][1])
+	if err != nil {
+		return 0, parsedPath
+	}
+
+	return parallelRepititions, parsedPath
 }

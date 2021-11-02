@@ -19,11 +19,12 @@ var c = &http.Client{
 func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
 	if strings.HasPrefix(path, "@") {
 		path = string([]rune(path)[1:])
-	}
-
-	// p@ -> parallel tests
-	if strings.HasPrefix(path, "p@") {
+	} else if strings.HasPrefix(path, "p@") {
+		// p@ -> parallel tests
 		path = string([]rune(path)[2:])
+	} else if IsParallelPathSpec([]byte(path)) {
+		// check if starts with pN@ (N parallel repetitions of tests)
+		_, path = GetParallelPathSpec([]byte(path))
 	}
 
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
