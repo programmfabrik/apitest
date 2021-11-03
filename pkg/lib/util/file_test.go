@@ -14,7 +14,7 @@ import (
 )
 
 type testParallelPathSpecStruct struct {
-	filename               string
+	pathSpec               string
 	expIsPath              bool
 	expIsParallel          bool
 	expPath                string
@@ -31,87 +31,102 @@ func TestGetParallelPathSpec(t *testing.T) {
 
 	tests := []testParallelPathSpecStruct{
 		{
-			filename:      "p",
+			pathSpec:      "\"",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "@",
+			pathSpec:      "[]",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "1@",
+			pathSpec:      "{}",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "x@",
+			pathSpec:      "p",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "p@",
+			pathSpec:      "@",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "@path",
+			pathSpec:      "1@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			pathSpec:      "x@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			pathSpec:      "p@",
+			expIsPath:     false,
+			expIsParallel: false,
+		},
+		{
+			pathSpec:      "@path",
 			expIsPath:     true,
 			expIsParallel: false,
 		},
 		{
-			filename:      "1@a",
+			pathSpec:      "1@a",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "x@a",
+			pathSpec:      "x@a",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:      "p1@",
+			pathSpec:      "p1@",
 			expIsPath:     false,
 			expIsParallel: false,
 		},
 		{
-			filename:               "p1@path",
+			pathSpec:               "p1@path",
 			expIsPath:              true,
 			expIsParallel:          true,
 			expPath:                "path",
 			expParallelRepititions: 1,
 		},
 		{
-			filename:               "p10@path",
+			pathSpec:               "p10@path",
 			expIsPath:              true,
 			expIsParallel:          true,
 			expPath:                "path",
 			expParallelRepititions: 10,
 		},
 		{
-			filename:               "p01@path",
+			pathSpec:               "p01@path",
 			expIsPath:              true,
 			expIsParallel:          true,
 			expPath:                "path",
 			expParallelRepititions: 1,
 		},
 		{
-			filename:      "@path",
+			pathSpec:      "@path",
 			expIsPath:     true,
 			expIsParallel: false,
 		},
 		{
-			filename:      "@../path",
+			pathSpec:      "@../path",
 			expIsPath:     true,
 			expIsParallel: false,
 		},
 	}
 
 	for _, v := range tests {
-		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
-			isPathSpec := IsPathSpec(v.filename)
-			isParallelPathSpec := IsParallelPathSpec(v.filename)
+		t.Run(fmt.Sprintf("pathSpec:'%s'", v.pathSpec), func(t *testing.T) {
+			isPathSpec := IsPathSpec(v.pathSpec)
+			isParallelPathSpec := IsParallelPathSpec(v.pathSpec)
 			if isPathSpec != v.expIsPath {
 				t.Errorf("IsPathSpec: Got %v != %v Exp", isPathSpec, v.expIsPath)
 			}
@@ -119,8 +134,15 @@ func TestGetParallelPathSpec(t *testing.T) {
 				t.Errorf("IsParallelPathSpec: Got %v != %v Exp", isParallelPathSpec, v.expIsParallel)
 			}
 
+			if v.expIsPath {
+				// the path must also be recognized as a path in case it has trailing quotes
+				if !IsPathSpec(fmt.Sprintf("\"%s\"", v.pathSpec)) {
+					t.Errorf("IsPathSpec (with trailing \"): Got %v != %v Exp", isPathSpec, v.expIsPath)
+				}
+			}
+
 			if v.expIsParallel {
-				parallelRepititions, path := GetParallelPathSpec(v.filename)
+				parallelRepititions, path := GetParallelPathSpec(v.pathSpec)
 				if parallelRepititions != v.expParallelRepititions {
 					t.Errorf("ParallelRepititions: Got '%d' != '%d' Exp", parallelRepititions, v.expParallelRepititions)
 				}

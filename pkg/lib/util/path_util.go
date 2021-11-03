@@ -20,6 +20,13 @@ func IsPathSpec(pathSpec string) bool {
 	if strings.HasPrefix(pathSpec, "p@") {
 		return true
 	}
+	// pathSpec could have trailing quotes
+	if strings.HasPrefix(pathSpec, "\"@") {
+		return true
+	}
+	if strings.HasPrefix(pathSpec, "\"p@") {
+		return true
+	}
 
 	return IsParallelPathSpec(pathSpec)
 }
@@ -30,7 +37,7 @@ func IsParallelPathSpec(pathSpec string) bool {
 }
 
 func GetParallelPathSpec(pathSpec string) (parallelRepititions int, parsedPath string) {
-	regex := *regexp.MustCompile(`^p(\d+)@(.+)$`)
+	regex := *regexp.MustCompile(`^\"{0,1}p(\d+)@(.+)\"{0,1}$`)
 	res := regex.FindAllStringSubmatch(pathSpec, -1)
 
 	if len(res) != 1 {
