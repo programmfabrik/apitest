@@ -9,7 +9,7 @@ import (
 )
 
 func loadFileFromPathSpec(pathSpec, manifestDir string) (string, []byte, error) {
-	if !util.IsPathSpec([]byte(pathSpec)) {
+	if !util.IsPathSpec(pathSpec) {
 		return "", nil, fmt.Errorf("spec was expected to be path spec, got %s instead", pathSpec)
 	}
 

@@ -110,8 +110,8 @@ func TestGetParallelPathSpec(t *testing.T) {
 
 	for _, v := range tests {
 		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
-			isPathSpec := IsPathSpec([]byte(v.filename))
-			isParallelPathSpec := IsParallelPathSpec([]byte(v.filename))
+			isPathSpec := IsPathSpec(v.filename)
+			isParallelPathSpec := IsParallelPathSpec(v.filename)
 			if isPathSpec != v.expIsPath {
 				t.Errorf("IsPathSpec: Got %v != %v Exp", isPathSpec, v.expIsPath)
 			}
@@ -120,7 +120,7 @@ func TestGetParallelPathSpec(t *testing.T) {
 			}
 
 			if v.expIsParallel {
-				parallelRepititions, path := GetParallelPathSpec([]byte(v.filename))
+				parallelRepititions, path := GetParallelPathSpec(v.filename)
 				if parallelRepititions != v.expParallelRepititions {
 					t.Errorf("ParallelRepititions: Got '%d' != '%d' Exp", parallelRepititions, v.expParallelRepititions)
 				}

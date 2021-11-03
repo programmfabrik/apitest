@@ -224,7 +224,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 	isParallelPathSpec := false
 	switch t := v.(type) {
 	case string:
-		isParallelPathSpec = util.IsParallelPathSpec([]byte(t))
+		isParallelPathSpec = util.IsParallelPathSpec(t)
 	}
 
 	//Get the Manifest with @ logic
@@ -279,7 +279,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		if isParallelPathSpec {
 			switch t := v.(type) {
 			case string:
-				parallelRepititions, _ = util.GetParallelPathSpec([]byte(t))
+				parallelRepititions, _ = util.GetParallelPathSpec(t)
 			}
 		}
 
@@ -305,7 +305,7 @@ func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath strin
 		if err == nil {
 
 			//Check if is @ and if so load the test
-			if util.IsPathSpec(testObj) {
+			if util.IsPathSpec(string(testObj)) {
 				var sS string
 
 				err := util.Unmarshal(testObj, &sS)
@@ -408,7 +408,7 @@ func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manif
 	success := false
 
 	//Check if is @ and if so load the test
-	switch util.IsPathSpec(v) {
+	switch util.IsPathSpec(string(v)) {
 	case true:
 		var sS string
 		err := util.Unmarshal(v, &sS)

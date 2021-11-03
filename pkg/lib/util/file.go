@@ -18,13 +18,13 @@ var c = &http.Client{
 // OpenFileOrUrl opens either a local file or gives the resp.Body from a remote file
 func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
 	if strings.HasPrefix(path, "@") {
-		path = string([]rune(path)[1:])
+		path = path[1:]
 	} else if strings.HasPrefix(path, "p@") {
 		// p@ -> parallel tests
-		path = string([]rune(path)[2:])
-	} else if IsParallelPathSpec([]byte(path)) {
-		// check if starts with pN@ (N parallel repetitions of tests)
-		_, path = GetParallelPathSpec([]byte(path))
+		path = path[2:]
+	} else if IsParallelPathSpec(path) {
+		// pN@ -> N parallel repetitions of tests
+		_, path = GetParallelPathSpec(path)
 	}
 
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
