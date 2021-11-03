@@ -128,7 +128,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 
 	for k, v := range realX.Testsuites {
 		realX.Testsuites[k].Time = 0
-		for ik, _ := range v.Testcases {
+		for ik := range v.Testcases {
 			realX.Testsuites[k].Testcases[ik].Time = 0
 		}
 	}

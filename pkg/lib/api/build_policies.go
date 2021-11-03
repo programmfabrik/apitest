@@ -40,7 +40,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
 		}
-		if !util.IsPathSpec([]byte(pathSpec)) {
+		if !util.IsPathSpec(pathSpec) {
 			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid", pathSpec)
 		}
 

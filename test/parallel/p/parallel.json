@@ -1,0 +1,27 @@
+[
+    {{ range $idx, $n := N (datastore "n_parallel") }}
+        {{ if gt $idx 0 }}, {{ end }}
+        {
+            "name": "bounce-json: bounce n={{ $idx }}",
+            "request": {
+                "server_url": "http://localhost{{ datastore "local_port" }}",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "body": {
+                    "n": {{ $idx }}
+                }
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "body": {
+                        "n": {{ $idx }}
+                    }
+                }
+            },
+            "store_response_qjson": {
+                "responses[]": "body.body.n"
+            }
+        }
+    {{ end }}
+]
