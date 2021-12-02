@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -132,6 +133,9 @@ func setup(ccmd *cobra.Command, args []string) {
 
 func runApiTests(cmd *cobra.Command, args []string) {
 
+	// timestamp: start of all tests
+	start := time.Now()
+
 	// Check if paths are valid
 	for _, rootDirectory := range rootDirectorys {
 		if _, err := os.Stat(rootDirectory); rootDirectory != "." && os.IsNotExist(err) {
@@ -215,6 +219,15 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	if reportFile != "" {
 		rep.WriteToFile(reportFile, reportFormat)
 	}
+
+	// timestamp: end of all tests
+	end := time.Now()
+
+	time_format := "2006-01-02 15:04:05"
+	format_start := start.Format(time_format)
+	format_end := end.Format(time_format)
+	format_runtime := time.Since(start).String()
+	logrus.Infof("All done in %s. Start: %s. End: %s.", format_runtime, format_start, format_end)
 
 	if rep.DidFail() {
 		os.Exit(1)
