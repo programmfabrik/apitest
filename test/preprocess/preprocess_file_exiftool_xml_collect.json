@@ -1,0 +1,102 @@
+[
+    {
+        "name": "(collect) preprocess asset camera.jpg with exiftool in xml format",
+        "request": {
+            // load static file
+            "server_url": "{{ datastore "local_url" }}",
+            "endpoint": "camera.jpg",
+            "method": "GET"
+        },
+        "collect_response": [
+            {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "exiftool",
+                            "args": [
+                                "-X",
+                                "-"
+                            ]
+                        }
+                    },
+                    "type": "xml"
+                },
+                "body": {
+                    "rdf:RDF": {
+                        "rdf:Description": {
+                            "#attr": {
+                                "et:toolkit": {
+                                    "#text:control": {
+                                        "is_string": true
+                                    }
+                                },
+                                "xmlns:Composite": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/Composite/1.0/"
+                                    }
+                                },
+                                "xmlns:ExifTool": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/ExifTool/1.0/"
+                                    }
+                                },
+                                "xmlns:File": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/File/1.0/"
+                                    }
+                                },
+                                "xmlns:ICC_Profile": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/ICC_Profile/ICC_Profile/1.0/"
+                                    }
+                                },
+                                "xmlns:JFIF": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/JFIF/JFIF/1.0/"
+                                    }
+                                },
+                                "xmlns:et": {
+                                    "#text:control": {
+                                        "regex": "http://ns.exiftool.(org|ca)/1.0/"
+                                    }
+                                }
+                            },
+                            "Composite:ImageSize": {
+                                "#text:control": {
+                                    "is_string": true
+                                }
+                            },
+                            "ExifTool:ExifToolVersion": {
+                                "#text:control": {
+                                    "is_string": true
+                                }
+                            },
+                            "File:FileType": {
+                                "#text": "JPEG"
+                            },
+                            "File:FileTypeExtension": {
+                                "#text": "jpg"
+                            },
+                            "File:MIMEType": {
+                                "#text": "image/jpeg"
+                            },
+                            "ICC_Profile:ProfileDescription": {
+                                "#text:control": {
+                                    "is_string": true
+                                }
+                            },
+                            "JFIF:JFIFVersion": {
+                                "#text:control": {
+                                    "is_string": true
+                                }
+                            }
+                        }
+                    }
+                }
+            
+            }
+        ],
+        "delay_ms": 1000,
+        "timeout_ms": 5000
+    }
+]

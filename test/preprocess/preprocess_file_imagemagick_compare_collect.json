@@ -1,0 +1,72 @@
+[
+    {
+        "name": " (collect) preprocess asset camera.jpg with imagemagick compare against itself (should pass)",
+        "request": {
+            // load static file
+            "server_url": "{{ datastore "local_url" }}",
+            "endpoint": "camera.jpg",
+            "method": "GET",
+            "header": {
+                "Accept-Encoding": "gzip"
+            }
+        },
+        "collect_response": [
+            {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "compare",
+                            "args": [
+                            "-metric",
+                            "AE",
+                            "-fuzz",
+                            "2%",
+                            "-",
+                            {{ file_path "camera.jpg" | marshal }},
+                            "/dev/null"
+                            ],
+                            "output": "stderr"
+                        }
+                    }
+                },
+                "body": 0
+            }
+        ],
+        "delay_ms": 1000,
+        "timeout_ms": 5000
+    },
+    {
+        "name": " (collect) preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
+        "request": {
+            // load static file
+            "server_url": "{{ datastore "local_url" }}",
+            "endpoint": "camera.jpg",
+            "method": "GET"
+        },
+        "collect_response": [
+            {
+                "format": {
+                    "pre_process": {
+                        "cmd": {
+                            "name": "compare",
+                            "args": [
+                            "-metric",
+                            "AE",
+                            "-fuzz",
+                            "2%",
+                            "-",
+                            {{ file_path "berlin.jpg" | marshal }},
+                            "/dev/null"
+                            ],
+                            "output": "stderr"
+                        }
+                    }
+                },
+                "body": 0
+            }
+        ],
+        "delay_ms": 1000,
+        "timeout_ms": 5000,
+        "reverse_test_result": true
+    }
+]

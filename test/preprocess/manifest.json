@@ -189,6 +189,8 @@
         },
         "@preprocess_file_exiftool_json.json",
         "@preprocess_file_exiftool_xml.json",
-        "@preprocess_file_imagemagick_compare.json"
+        "@preprocess_file_exiftool_xml_collect.json",
+        "@preprocess_file_imagemagick_compare.json",
+        "@preprocess_file_imagemagick_compare_collect.json"
     ]
 }
