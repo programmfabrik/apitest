@@ -1271,11 +1271,15 @@ Consequently, rendering `Lets meet at the {{ myfunc 1 "foo" }}` results in an in
 
 We provide the following functions:
 
-## `file "relative/path/" [param, ...]`
+## `file_render "relative/path/" [param, ...]`
 
 Helper function to load contents of a file; if this file contains templates; it will render these templates with the parameters provided in the can be accessed from the loaded file via `{{ .Param1-n }};` see example below
 
-Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
+Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt. Returns string.
+
+## `file "relative/path/"`
+
+Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt. Returns string.
 
 ### Example
 
@@ -1625,13 +1629,11 @@ As an example with pipes, the call
 
 See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
-
-
 ## `file_csv [path] [delimiter]`
 
 Helper function to load a csv file.
 - `@path`: string; a path to the csv file that should be loaded. The path is either relative to the manifest or a weburl
-- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ','
+- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ',' Defaults to ','
 - `@result`: the content of the csv as json array so we can work on this data with qjson
 
 The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error

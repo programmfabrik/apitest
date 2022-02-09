@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -20,7 +19,6 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"golang.org/x/mod/semver"
 
-	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
 	"io/ioutil"
@@ -112,60 +110,24 @@ func (loader *Loader) Render(
 			hasher.Write([]byte(fileBytes))
 			return hex.EncodeToString(hasher.Sum(nil)), nil
 		},
-		"file": func(path string, params ...interface{}) (string, error) {
-			tmplParams := map[string]interface{}{}
-			for idx, param := range params {
-				tmplParams["Param"+strconv.Itoa(idx+1)] = param
-			}
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return "", err
-			}
-
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return "", err
-			}
-
-			absPath := filepath.Join(rootDir, path)
-			fileLoader := *loader
-			tmplBytes, err := fileLoader.Render(fileBytes, filepath.Dir(absPath), tmplParams)
-			if err != nil {
-				return "", err
-			}
-			return string(tmplBytes), nil
-		},
-		"file_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return nil, err
-			}
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return nil, err
-			}
-			data, err := csv.CSVToMap(fileBytes, delimiter)
-			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
-			}
-			return data, err
-		},
-		"parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return nil, err
-			}
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return nil, err
-			}
-			data, err := csv.GenericCSVToMap(fileBytes, delimiter)
-			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
-			}
-			return data, err
-		},
+		// "parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
+		// 	_, file, err := util.OpenFileOrUrl(path, rootDir)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	fileBytes, err := ioutil.ReadAll(file)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	data, err := csv.GenericCSVToMap(fileBytes, delimiter)
+		// 	if err != nil {
+		// 		return data, fmt.Errorf("'%s' %s", path, err)
+		// 	}
+		// 	return data, err
+		// },
+		"file":        loadFile(rootDir, loader),
+		"file_render": loadFileAndRender(rootDir, loader),
+		"file_csv":    loadFileCSV(rootDir, loader),
 		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
 			sqliteFile := filepath.Join(rootDir, path)
 			database, err := sql.Open("sqlite3", sqliteFile)
