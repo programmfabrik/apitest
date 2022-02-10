@@ -138,7 +138,11 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			response.Format = expectedResponse.Format
+			if expectedResponse.Format.Type != "" {
+				response.Format = expectedResponse.Format
+			} else {
+				expectedResponse.Format = response.Format
+			}
 
 			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
@@ -192,7 +196,11 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 				return -1, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			response.Format = expectedResponse.Format
+			if expectedResponse.Format.Type != "" {
+				response.Format = expectedResponse.Format
+			} else {
+				expectedResponse.Format = response.Format
+			}
 
 			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
