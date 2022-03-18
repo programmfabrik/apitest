@@ -13,8 +13,8 @@ import (
 
 func TestResponse_ToGenericJson(t *testing.T) {
 	response := Response{
-		statusCode: 200,
-		headers: map[string][]string{
+		StatusCode: 200,
+		Headers: map[string][]string{
 			"foo": {"bar"},
 		},
 	}
@@ -55,8 +55,8 @@ func TestResponse_NewResponseFromSpec(t *testing.T) {
 	}
 	response, err := NewResponseFromSpec(responseSpec)
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
-	go_test_utils.AssertIntEquals(t, response.statusCode, responseSpec.StatusCode)
-	go_test_utils.AssertStringEquals(t, response.headers["foo"][0], "bar")
+	go_test_utils.AssertIntEquals(t, response.StatusCode, responseSpec.StatusCode)
+	go_test_utils.AssertStringEquals(t, response.Headers["foo"][0], "bar")
 }
 
 func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
@@ -65,13 +65,13 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 	}
 	response, err := NewResponseFromSpec(responseSpec)
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
-	go_test_utils.AssertIntEquals(t, response.statusCode, 200)
+	go_test_utils.AssertIntEquals(t, response.StatusCode, 200)
 }
 
 func TestResponse_NewResponse(t *testing.T) {
 	response, err := NewResponse(200, nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
-	go_test_utils.AssertIntEquals(t, response.statusCode, 200)
+	go_test_utils.AssertIntEquals(t, response.StatusCode, 200)
 }
 
 func TestResponse_String(t *testing.T) {
