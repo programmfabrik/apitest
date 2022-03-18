@@ -17,6 +17,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -403,6 +404,10 @@ func (loader *Loader) Render(
 				return 0, errors.Errorf("version string %s is invalid", w)
 			}
 			return semver.Compare(v, w), nil
+		},
+		"log": func(msg string, args ...any) string {
+			logrus.Debugf(msg, args...)
+			return ""
 		},
 	}
 	tmpl, err := template.
