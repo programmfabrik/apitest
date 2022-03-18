@@ -21,3 +21,4 @@ apitest_report.json
 *.vscode
 *.sh
 testcoverage.out
+dist/
