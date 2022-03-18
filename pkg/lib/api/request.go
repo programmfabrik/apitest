@@ -1,7 +1,6 @@
 package api
 
 import (
-	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -59,7 +58,6 @@ type Request struct {
 	Body                 interface{}               `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
-	DoNotStore  bool
 	ManifestDir string
 	DataStore   *datastore.Datastore
 }
@@ -330,37 +328,21 @@ func (request Request) Send() (response Response, err error) {
 		httpClient.CheckRedirect = nil
 	}
 
+	now := time.Now()
+
 	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return response, fmt.Errorf("Could not do http request: %s", err)
 	}
 
-	var reader io.ReadCloser
-	defer func() {
-		// Try to close body, if we have a ReadCloser
-		closer, ok := httpResponse.Body.(io.ReadCloser)
-		if !ok {
-			return
-		}
+	elapsedTime := time.Since(now)
 
-		lerr := closer.Close()
-		if lerr != nil {
-			fmt.Println("Could not close body: ", lerr)
-		}
-	}()
+	defer httpResponse.Body.Close()
 
-	// Check that the server actually sent compressed data
-	switch httpResponse.Header.Get("Content-Encoding") {
-	case "gzip":
-		reader, err = gzip.NewReader(httpResponse.Body)
-		defer reader.Close()
-	default:
-		reader = httpResponse.Body
-	}
-
-	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), reader, nil, ResponseFormat{})
+	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}
+	response.ReqDur = elapsedTime
 	return response, err
 }

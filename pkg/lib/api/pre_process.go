@@ -49,7 +49,7 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 		proc.Cmd.Output = CmdOutputStdout
 	}
 
-	bodyReader = bytes.NewReader(response.body)
+	bodyReader = bytes.NewReader(response.Body)
 
 	cmd = exec.Command(proc.Cmd.Name)
 	cmd.Stderr = &stderr
@@ -75,11 +75,11 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 
 		switch proc.Cmd.Output {
 		case CmdOutputExitCode:
-			response.body = []byte(strconv.Itoa(exitCode))
+			response.Body = []byte(strconv.Itoa(exitCode))
 		case CmdOutputStderr:
-			response.body = stderrBytes
+			response.Body = stderrBytes
 		case CmdOutputStdout:
-			response.body, err2 = json.MarshalIndent(preProcessError{
+			response.Body, err2 = json.MarshalIndent(preProcessError{
 				Command:  strings.Join(cmd.Args, " "),
 				Error:    err.Error(),
 				ExitCode: exitCode,
@@ -92,11 +92,11 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 
 	switch proc.Cmd.Output {
 	case CmdOutputExitCode:
-		response.body = []byte(strconv.Itoa(cmd.ProcessState.ExitCode()))
+		response.Body = []byte(strconv.Itoa(cmd.ProcessState.ExitCode()))
 	case CmdOutputStderr:
-		response.body = stderr.Bytes()
+		response.Body = stderr.Bytes()
 	case CmdOutputStdout:
-		response.body = stdout.Bytes()
+		response.Body = stdout.Bytes()
 	}
 
 	return response, nil
