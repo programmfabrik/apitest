@@ -392,7 +392,7 @@ Examples:
 ## Remove template 'placeholders'
 
 Go templates may break the proper JSONC format even when separators are comments.
-So we could use placeholders for filling missing parts then strip them. 
+So we could use placeholders for filling missing parts then strip them.
 ```
 // template-remove-tokens: <token> [<token>]*
 /* template-remove-tokens: <token> [<token>] */
@@ -1305,6 +1305,39 @@ Absolute path of file at `some/path/myfile.cpp`:
 ```yaml
 {{ file_path "../myfile.tmpl" }}
 ```
+
+## `pivot` "keyColumn" "typeColumn" [input]
+
+Read a CSV map and turn rows into columns and columns into rows.
+
+Assume you have the following structure in your sheet:
+
+| key       | type      | 1         | 2
+| string    | string    | string    | string
+| --------  | --------  | --------  | ------
+| name      | string    | bicyle    | car
+| wheels    | int64     | 2         | 4
+
+As a convention the data columns need to be named `1`, `2`, ... Allowed types are:
+
+* string
+* int64
+* number (JSON type number)
+* float64
+
+Calling ```pivot("key","type",(file_csv "file.csv" ','))``` returns
+
+```json
+[
+    {
+        "filename": "bicyle",
+        "wheels": 2
+    },
+    {
+        "filename": "car",
+        "wheels": 4
+    }
+]
 
 ## `rows_to_map "keyColumn" "valueColumn" [input]`
 

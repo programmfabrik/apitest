@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -65,6 +66,63 @@ func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map
 	}
 
 	return
+}
+
+// pivot turns rows into columns and columns into rows
+func pivot(key, typ string, rows []map[string]any) (sheet []map[string]any, err error) {
+
+	getStr := func(data any) (s string) {
+		s, _ = data.(string)
+		return s
+	}
+
+	for _, row := range rows {
+		sheetKey := getStr(row[key])
+		sheetType := getStr(row[typ])
+		if sheetKey == "" || sheetType == "" {
+			continue
+		}
+		switch sheetType {
+		case "string", "int64", "float64", "number":
+			// supported
+		default:
+			return nil, errors.Errorf("type %q not supported", sheetType)
+		}
+
+		for kI, vI := range row {
+			rowI, _ := strconv.Atoi(getStr(kI))
+			if rowI <= 0 {
+				continue
+			}
+			// find row in sheep
+			sheetRow := map[string]any{}
+			if len(sheet) < rowI {
+				for i := len(sheet); i < rowI; i++ {
+					sheet = append(sheet, sheetRow)
+				}
+			}
+			if vI == nil {
+				continue
+			}
+			v := getStr(vI)
+			sheetRow = sheet[rowI-1]
+			switch sheetType {
+			case "string":
+				sheetRow[sheetKey] = v
+			case "int64":
+				sheetRow[sheetKey], _ = strconv.ParseInt(v, 10, 64)
+			case "float64":
+				sheetRow[sheetKey], _ = strconv.ParseFloat(v, 10)
+			case "number":
+				var number json.Number
+				err = json.Unmarshal([]byte(v), &number)
+				if err == nil {
+					sheetRow[sheetKey] = number
+				}
+			}
+		}
+	}
+	return sheet, nil
 }
 
 // functions copied from: https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
