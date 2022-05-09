@@ -2,6 +2,7 @@ package template
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
@@ -318,7 +319,7 @@ func TestPivot(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	if !assert.EqualValues(t, exp, dataP) {
+	if !assert.Equal(t, true, reflect.DeepEqual(dataP, exp)) {
 		return
 	}
 }
