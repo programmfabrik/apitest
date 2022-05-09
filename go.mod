@@ -15,7 +15,7 @@ require (
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.9.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/jsonc v0.3.2
 	golang.org/x/mod v0.5.1
