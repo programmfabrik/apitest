@@ -1306,7 +1306,7 @@ Absolute path of file at `some/path/myfile.cpp`:
 {{ file_path "../myfile.tmpl" }}
 ```
 
-## `pivot` "keyColumn" "typeColumn" [input]
+## `pivot_rows` "keyColumn" "typeColumn" [input]
 
 Read a CSV map and turn rows into columns and columns into rows.
 
@@ -1325,7 +1325,7 @@ As a convention the data columns need to be named `1`, `2`, ... Allowed types ar
 * number (JSON type number)
 * float64
 
-Calling ```pivot("key","type",(file_csv "file.csv" ','))``` returns
+Calling ```pivot_rows("key","type",(file_csv "file.csv" ','))``` returns
 
 ```json
 [

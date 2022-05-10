@@ -315,7 +315,7 @@ func TestPivot(t *testing.T) {
 		},
 	}
 
-	dataP, err := pivot("key", "type", data)
+	dataP, err := pivotRows("key", "type", data)
 	if !assert.NoError(t, err) {
 		return
 	}

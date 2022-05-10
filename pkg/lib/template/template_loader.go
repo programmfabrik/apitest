@@ -232,7 +232,7 @@ func (loader *Loader) Render(
 		"rows_to_map": func(keyColumn, valueColumn string, rowsInput interface{}) (map[string]interface{}, error) {
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
-		"pivot": pivot,
+		"pivot_rows": pivotRows,
 		"group_map_rows": func(groupColumn string, rowsInput interface{}) (map[string][]map[string]interface{}, error) {
 			grouped_rows := make(map[string][]map[string]interface{}, 1000)
 			rows := getRowsFromInput(rowsInput)

@@ -68,8 +68,8 @@ func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map
 	return
 }
 
-// pivot turns rows into columns and columns into rows
-func pivot(key, typ string, rows []map[string]any) (sheet []map[string]any, err error) {
+// pivotRows turns rows into columns and columns into rows
+func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, err error) {
 
 	getStr := func(data any) (s string) {
 		s, _ = data.(string)
@@ -83,7 +83,7 @@ func pivot(key, typ string, rows []map[string]any) (sheet []map[string]any, err 
 			continue
 		}
 		switch sheetType {
-		case "string", "int64", "float64", "number":
+		case "string", "int64", "float64", "number", "json":
 			// supported
 		default:
 			return nil, errors.Errorf("type %q not supported", sheetType)
@@ -109,6 +109,12 @@ func pivot(key, typ string, rows []map[string]any) (sheet []map[string]any, err 
 			switch sheetType {
 			case "string":
 				sheetRow[sheetKey] = v
+			case "json":
+				var i interface{}
+				err = json.Unmarshal([]byte(v), &i)
+				if err == nil {
+					sheetRow[sheetKey] = i
+				}
 			case "int64":
 				sheetRow[sheetKey], _ = strconv.ParseInt(v, 10, 64)
 			case "float64":
