@@ -94,18 +94,17 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 			if rowI <= 0 {
 				continue
 			}
-			// find row in sheep
-			sheetRow := map[string]any{}
+			// find row in sheet
 			if len(sheet) < rowI {
 				for i := len(sheet); i < rowI; i++ {
-					sheet = append(sheet, sheetRow)
+					sheet = append(sheet, map[string]any{})
 				}
 			}
 			if vI == nil {
 				continue
 			}
 			v := getStr(vI)
-			sheetRow = sheet[rowI-1]
+			sheetRow := sheet[rowI-1]
 			switch sheetType {
 			case "string":
 				sheetRow[sheetKey] = v
@@ -126,8 +125,10 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 					sheetRow[sheetKey] = number
 				}
 			}
+			sheet[rowI-1] = sheetRow
 		}
 	}
+
 	return sheet, nil
 }
 

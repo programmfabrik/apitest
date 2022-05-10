@@ -296,12 +296,14 @@ func TestPivot(t *testing.T) {
 			"type": "string",
 			"1":    "fahrrad",
 			"2":    "auto",
+			"3":    "dreirad",
 		},
 		{
 			"key":  "wheels",
 			"type": "int64",
 			"1":    "2",
 			"2":    "4",
+			"3":    "3",
 		},
 	}
 	exp := []map[string]any{
@@ -313,8 +315,11 @@ func TestPivot(t *testing.T) {
 			"filename": "auto",
 			"wheels":   int64(4),
 		},
+		{
+			"filename": "dreirad",
+			"wheels":   int64(3),
+		},
 	}
-
 	dataP, err := pivotRows("key", "type", data)
 	if !assert.NoError(t, err) {
 		return
