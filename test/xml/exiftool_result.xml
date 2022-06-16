@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF>
+    <rdf:Description rdf:about="-">
+        <File:FileType rdf:parseType="Resource">
+            <et:desc>File Type</et:desc>
+            <et:prt>JPEG</et:prt>
+        </File:FileType>
+        <File:FileTypeExtension rdf:parseType="Resource">
+            <et:desc>File Type Extension</et:desc>
+            <et:prt>jpg</et:prt>
+            <et:val>JPG</et:val>
+        </File:FileTypeExtension>
+        <File:MIMEType rdf:parseType="Resource">
+            <et:desc>MIME Type</et:desc>
+            <et:prt>image/jpeg</et:prt>
+        </File:MIMEType>
+        <File:ImageWidth rdf:parseType="Resource">
+            <et:desc>Image Width</et:desc>
+            <et:prt>1920</et:prt>
+        </File:ImageWidth>
+        <File:ImageHeight rdf:parseType="Resource">
+            <et:desc>Image Height</et:desc>
+            <et:prt>1280</et:prt>
+        </File:ImageHeight>
+        <JFIF:XResolution rdf:parseType="Resource">
+            <et:desc>X Resolution</et:desc>
+            <et:prt>1</et:prt>
+        </JFIF:XResolution>
+        <JFIF:YResolution rdf:parseType="Resource">
+            <et:desc>Y Resolution</et:desc>
+            <et:prt>1</et:prt>
+        </JFIF:YResolution>
+        <Composite:ImageSize rdf:parseType="Resource">
+            <et:desc>Image Size</et:desc>
+            <et:prt>1920x1280</et:prt>
+            <et:val>1920 1280</et:val>
+        </Composite:ImageSize>
+    </rdf:Description>
+</rdf:RDF>
