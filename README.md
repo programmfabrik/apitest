@@ -466,15 +466,17 @@ For comparing a binary file, simply point the response to the binary file:
 
 ## XML Data comparison
 
-If the response format is specified as `"type": "xml"`, we internally marshal that XML into json. (With github.com/clbanning/mxj `NewMapXmlSeq()`).
+If the response format is specified as `"type": "xml"` or `"type": "xml2"`, we internally marshal that XML into json using [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
 
-On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+The format `"xml"` uses `NewMapXmlSeq()`, whereas the format `"xml2"` uses `NewMapXml()`, which provides a simpler json format (see also template [`file_xml2json`](#file_xml2json-path)).
+
+On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
 ## CSV Data comparison
 
 If the response format is specified as `"type": "csv"`, we internally marshal that CSV into json.
 
-On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
@@ -1788,6 +1790,61 @@ int64,string
 
 ```go
 [map[name:simon] map[name:martin] map[name:roman] map[name:klaus] map[name:sebastian]]
+```
+
+## `file_xml2json [path]`
+
+Helper function to parse an XML file and convert it into json
+- `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
+
+This function uses the function `NewMapXml()` from [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
+
+### Example
+
+Content of XML file `some/path/example.xml`:
+
+```xml
+<objects xmlns="https://schema.easydb.de/EASYDB/1.0/objects/">
+    <obj>
+        <_standard>
+            <de-DE>Beispiel Objekt</de-DE>
+            <en-US>Example Object</en-US>
+        </_standard>
+        <_system_object_id>123</_system_object_id>
+        <_id>45</_id>
+        <name type="text_oneline"
+            column-api-id="263">Example</name>
+    </obj>
+</objects>
+```
+
+The call
+
+```django
+{{ file_xml2json "some/path/example.xml" }}
+```
+
+would result in
+
+```json
+{
+    "objects": {
+        "-xmlns": "https://schema.easydb.de/EASYDB/1.0/objects/",
+        "obj": {
+            "_id": "45",
+            "_standard": {
+                "de-DE": "Beispiel Objekt",
+                "en-US": "Example Object"
+            },
+            "_system_object_id": "123",
+            "name": {
+                "#text": "Example",
+                "-column-api-id": "263",
+                "-type": "text_oneline"
+            }
+        }
+    }
+}
 ```
 
 ## `file_sqlite [path] [statement]`
