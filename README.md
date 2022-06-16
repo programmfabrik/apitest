@@ -1795,7 +1795,7 @@ int64,string
 ## `file_xml2json [path]`
 
 Helper function to parse an XML file and convert it into json
-- `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
+- `@path`: string; a path to the xml file that should be loaded. The path is either relative to the manifest or a weburl
 
 This function uses the function `NewMapXml()` from [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
 
