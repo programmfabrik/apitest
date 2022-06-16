@@ -1,0 +1,18 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res/assets",
+        "testmode": false
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
+    "name": "XML tests",
+    "tests": [
+        "@check_local_file_against_response.json"
+        , "@check_response_against_local_file.json"
+        , "@check_response_format_xml.json"
+        , "@check_response_format_xml2.json"
+    ]
+}

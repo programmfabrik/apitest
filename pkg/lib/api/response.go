@@ -9,12 +9,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -148,16 +146,8 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 
 	switch responseFormat.Type {
-	case "xml":
-		xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-		replacedXML := xmlDeclarationRegex.ReplaceAll(resp.Body, []byte{})
-
-		mv, err := mxj.NewMapXmlSeq(replacedXML)
-		if err != nil {
-			return res, errors.Wrap(err, "Could not parse xml")
-		}
-
-		bodyData, err = mv.JsonIndent("", " ")
+	case "xml", "xml2":
+		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
