@@ -208,7 +208,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 				return -1, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			if expectedResponse.Format.Type != "" {
+			if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
 				response.Format = expectedResponse.Format
 			} else {
 				expectedResponse.Format = response.Format
