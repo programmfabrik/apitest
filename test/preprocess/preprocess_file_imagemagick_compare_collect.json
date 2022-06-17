@@ -17,13 +17,13 @@
                         "cmd": {
                             "name": "compare",
                             "args": [
-                            "-metric",
-                            "AE",
-                            "-fuzz",
-                            "2%",
-                            "-",
-                            {{ file_path "camera.jpg" | marshal }},
-                            "/dev/null"
+                                "-metric",
+                                "AE",
+                                "-fuzz",
+                                "2%",
+                                "-",
+                                {{ file_path "../_res/assets/camera.jpg" | marshal }},
+                                "/dev/null"
                             ],
                             "output": "stderr"
                         }
@@ -50,13 +50,13 @@
                         "cmd": {
                             "name": "compare",
                             "args": [
-                            "-metric",
-                            "AE",
-                            "-fuzz",
-                            "2%",
-                            "-",
-                            {{ file_path "berlin.jpg" | marshal }},
-                            "/dev/null"
+                                "-metric",
+                                "AE",
+                                "-fuzz",
+                                "2%",
+                                "-",
+                                {{ file_path "../_res/assets/berlin.jpg" | marshal }},
+                                "/dev/null"
                             ],
                             "output": "stderr"
                         }

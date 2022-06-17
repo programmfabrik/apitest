@@ -34,7 +34,7 @@
             "server_url": "{{ datastore "req_base_url" }}",
             "endpoint": "proxywrite/test",
             "method": "POST",
-            "body_file": "@camera.jpg",
+            "body_file": "@../_res/assets/camera.jpg",
             "body_type": "file"
         },
         "response": {
