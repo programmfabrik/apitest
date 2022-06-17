@@ -172,6 +172,19 @@ func (loader *Loader) Render(
 
 			return data, nil
 		},
+		"file_xml2json": func(path string) (string, error) {
+			fileBytes, err := fileReadInternal(path, rootDir)
+			if err != nil {
+				return "", err
+			}
+
+			bytes, err := util.Xml2Json(fileBytes, "xml2")
+			if err != nil {
+				return "", errors.Wrap(err, "Could not marshal xml to json")
+			}
+
+			return string(bytes), nil
+		},
 		"file_path": func(path string) string {
 			return util.LocalPath(path, rootDir)
 		},

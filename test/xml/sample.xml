@@ -1,0 +1,13 @@
+<objects instance="easydb" xmlns="https://schema.easydb.de/EASYDB/1.0/objects/">
+    <main_object>
+        <_id>1</_id>
+        <_standard>
+            <de-DE>Object 1</de-DE>
+        </_standard>
+        <_urls>
+            <url type="deep-link">http://localhost/api/v1/objects/uuid/30a901fe-aae3-4bd6-b9ac-66a7c972c1ed</url>
+            <url type="easydb-id">http://localhost/detail/1</url>
+        </_urls>
+        <title type="text_oneline">Object 1</title>
+    </main_object>
+</objects>
