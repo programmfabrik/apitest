@@ -106,7 +106,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 ### Examples
 
-- Run all tests in the directory **apitests** display **all server communication** and safe the maschine report as **junit** for later parsing it with *jenkins*
+- Run all tests in the directory **apitests** display **all server communication** and save the maschine report as **junit** for later parsing it with *jenkins*
 
 ```bash
 ./apitest --directory apitests --verbosity 2 --report-format junit
