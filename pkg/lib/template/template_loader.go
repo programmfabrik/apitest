@@ -19,6 +19,7 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
+	"golang.org/x/oauth2"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
@@ -333,38 +334,39 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_password_token": func(client string, login string, password string) (tE oAuth2TokenExtended) {
+		"oauth2_password_token": func(client string, login string, password string) (tok *oauth2.Token, err error) {
+			println("client", client, login, password)
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetPasswordCredentialsAuthToken(login, password))
+			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
 
 		},
-		"oauth2_client_token": func(client string) (tE oAuth2TokenExtended) {
+		"oauth2_client_token": func(client string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetClientCredentialsAuthToken())
+			return oAuthClient.GetClientCredentialsAuthToken()
 		},
-		"oauth2_code_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
+		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetCodeAuthToken(params...))
+			return oAuthClient.GetCodeAuthToken(params...)
 		},
-		"oauth2_implicit_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
+		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetAuthToken(params...))
+			return oAuthClient.GetAuthToken(params...)
 		},
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
