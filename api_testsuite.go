@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -167,6 +168,11 @@ func (ats *Suite) Run() bool {
 	}
 
 	ats.StartHttpServer()
+
+	err := os.Chdir(ats.manifestDir)
+	if err != nil {
+		logrus.Errorf("Unable to switch working directory to %q", ats.manifestDir)
+	}
 
 	start := time.Now()
 
