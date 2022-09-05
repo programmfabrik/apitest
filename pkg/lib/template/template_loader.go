@@ -335,7 +335,7 @@ func (loader *Loader) Render(
 			return reflect.ValueOf(v).IsZero()
 		},
 		"oauth2_password_token": func(client string, login string, password string) (tok *oauth2.Token, err error) {
-			println("client", client, login, password)
+			// println("client", client, login, password)
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)

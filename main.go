@@ -188,13 +188,20 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		return suite.Run()
 	}
 
+	currDir, _ := os.Getwd()
+	absPath := func(p string) string {
+		if filepath.IsAbs(p) {
+			return p
+		}
+		return filepath.Join(currDir, p)
+	}
+
 	// Decide if run only one test
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
-			absManifestPath, _ := filepath.Abs(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, singleTest, c)
+			success := runSingleTest(absPath(singleTest), singleTest, c)
 			c.Leave(success)
 
 			if stopOnFail && !success {
@@ -204,10 +211,9 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	} else {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
-			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, manifestPath, c)
+			success := runSingleTest(absPath(manifestPath), manifestPath, c)
 			c.Leave(success)
 
 			if stopOnFail && !success {
