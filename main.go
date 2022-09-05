@@ -148,9 +148,17 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	currDir, _ := os.Getwd()
+	absPath := func(p string) string {
+		if filepath.IsAbs(p) {
+			return p
+		}
+		return filepath.Join(currDir, p)
+	}
+
 	server := Config.Apitest.Server
 	reportFormat = Config.Apitest.Report.Format
-	reportFile = Config.Apitest.Report.File
+	reportFile = absPath(Config.Apitest.Report.File)
 
 	rep := report.NewReport()
 	rep.StatsGroups = int(reportStatsGroups)
@@ -186,14 +194,6 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 
 		return suite.Run()
-	}
-
-	currDir, _ := os.Getwd()
-	absPath := func(p string) string {
-		if filepath.IsAbs(p) {
-			return p
-		}
-		return filepath.Join(currDir, p)
 	}
 
 	// Decide if run only one test

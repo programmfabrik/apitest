@@ -35,13 +35,13 @@ func NewReport() *Report {
 	return &report
 }
 
-//GetTestResult Parses the test report with the given function from the report root on
+// GetTestResult Parses the test report with the given function from the report root on
 func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
 
 	return parsingFunction(r.root.getTestResult())
 }
 
-//DidFail, Check if the testsuite did produce failures
+// DidFail, Check if the testsuite did produce failures
 func (r Report) DidFail() bool {
 	aggRes := r.root.getTestResult()
 	if aggRes.Failures > 0 {
@@ -84,7 +84,7 @@ func (re ReportElements) Flat() ReportElements {
 	return rElements
 }
 
-//NewChild create new report element and return its reference
+// NewChild create new report element and return its reference
 func (r *ReportElement) NewChild(name string) (newElem *ReportElement) {
 	r.report.m.Lock()
 	defer r.report.m.Unlock()
@@ -127,7 +127,7 @@ func (r *ReportElement) Leave(result bool) {
 	r.ExecutionTime = time.Since(r.StartTime)
 }
 
-//aggregate results of subtests
+// aggregate results of subtests
 func (r *ReportElement) getTestResult() *ReportElement {
 	for _, v := range r.SubTests {
 		subResults := v.getTestResult()
@@ -188,7 +188,7 @@ func (r *Report) WriteToFile(reportFile, reportFormat string) error {
 	case "stats":
 		parsingFunction = ParseJSONStatsResult
 	default:
-		logrus.Errorf(
+		logrus.Warnf(
 			"Given report format '%s' not supported. Saving report '%s' as json",
 			reportFormat,
 			reportFile)
