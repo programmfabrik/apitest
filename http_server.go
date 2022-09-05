@@ -27,8 +27,10 @@ func (ats *Suite) StartHttpServer() {
 
 	if ats.HttpServer.Dir == "" {
 		ats.httpServerDir = ats.manifestDir
+	} else if filepath.IsAbs(ats.HttpServer.Dir) {
+		ats.httpServerDir = filepath.Clean(ats.HttpServer.Dir)
 	} else {
-		ats.httpServerDir = filepath.Clean(ats.manifestDir + "/" + ats.HttpServer.Dir)
+		ats.httpServerDir = filepath.Join(ats.manifestDir, ats.HttpServer.Dir)
 	}
 	mux.Handle("/", logH(ats.Config.LogShort, customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
 
