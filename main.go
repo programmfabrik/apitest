@@ -158,7 +158,9 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	server := Config.Apitest.Server
 	reportFormat = Config.Apitest.Report.Format
-	reportFile = absPath(Config.Apitest.Report.File)
+	if Config.Apitest.Report.File != "" {
+		reportFile = absPath(Config.Apitest.Report.File)
+	}
 
 	rep := report.NewReport()
 	rep.StatsGroups = int(reportStatsGroups)
