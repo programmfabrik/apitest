@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/tidwall/gjson"
 )
@@ -48,8 +49,11 @@ func TestResponse_ToGenericJson(t *testing.T) {
 func TestResponse_NewResponseFromSpec(t *testing.T) {
 	responseSpec := ResponseSerialization{
 		StatusCode: 200,
-		Headers: map[string][]string{
-			"foo": {"bar"},
+		Headers: map[string]any{
+			"foo": []string{"bar"},
+			"foo2:control": util.JsonObject{
+				"must_not_exist": true,
+			},
 		},
 		Body: nil,
 	}
@@ -76,7 +80,10 @@ func TestResponse_NewResponse(t *testing.T) {
 
 func TestResponse_String(t *testing.T) {
 	requestString := `{
-		"foo": "bar"
+		"foo": "bar",
+		"foo2:control": {
+			"must_not_exist": true
+		}
 	}`
 
 	response, err := NewResponse(200, nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})

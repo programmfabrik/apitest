@@ -1,0 +1,85 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res/assets/",
+        "testmode": false
+    },
+    "name": "check control structures in header",
+    "tests": [
+        {
+            "name": "check header using control",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "header": {
+                    "header1": "ABC",
+                    "header2": "123"
+                }
+            },
+            "response": {
+                "body": {
+                    "header": {
+                        "Header1:control": [
+                            {
+                                "match": "^ABC$"
+                            }
+                        ],
+                        "Header2:control": {
+                            "element_count": 1
+                        },
+                        "Header3:control": {
+                            "must_not_exist": true
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "check header using control, use reverse_test_result",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "header": {
+                    "header1": "ABC"
+                }
+            },
+            "response": {
+                "body": {
+                    "header": {
+                        "Header2:control": {
+                            "element_count": 2
+                        }
+                    }
+                }
+            },
+            "reverse_test_result": true
+        },
+        {
+            "name": "check value in header using control, use reverse_test_result",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "header": {
+                    "header1": "ABC"
+                }
+            },
+            "response": {
+                "body": {
+                    "header": {
+                        "Header1": [
+                            {
+                                "ABC:control": {
+                                    "match": "^$"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "reverse_test_result": true
+        }
+    ]
+}

@@ -41,6 +41,14 @@ func (res Response) NeedsCheck() bool {
 	return false
 }
 
+func (res Response) SerializeHeaders() (headers map[string]any, err error) {
+	headers = map[string]any{}
+	for k, h := range res.Headers {
+		headers[k] = h
+	}
+	return headers, nil
+}
+
 // Cookie definition
 type Cookie struct {
 	Name     string        `json:"name"`
@@ -55,12 +63,32 @@ type Cookie struct {
 }
 
 type ResponseSerialization struct {
-	StatusCode  int                 `yaml:"statuscode" json:"statuscode"`
-	Headers     map[string][]string `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]Cookie   `yaml:"cookie" json:"cookie,omitempty"`
-	Body        interface{}         `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject     `yaml:"body:control" json:"body:control,omitempty"`
-	Format      ResponseFormat      `yaml:"format" json:"format,omitempty"`
+	StatusCode  int               `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Body        interface{}       `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
+}
+
+func (res ResponseSerialization) SerializeHeaders() (headers map[string][]string, err error) {
+	headers = map[string][]string{}
+	for k, hs := range res.Headers {
+		// skip all headers with :control, and also any other headers that are not string arrays
+		if strings.HasSuffix(k, ":control") {
+			continue
+		}
+		_, isStringArray := hs.([]string)
+		if !isStringArray {
+			continue
+		}
+		headers[k] = []string{}
+		for _, h := range hs.([]string) {
+			headers[k] = append(headers[k], h)
+		}
+	}
+
+	return headers, nil
 }
 
 type ResponseFormat struct {
@@ -124,7 +152,11 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		}
 	}
 
-	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
+	headers, err := spec.SerializeHeaders()
+	if err != nil {
+		return res, err
+	}
+	return NewResponse(spec.StatusCode, headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -184,11 +216,13 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
+	headers, err := resp.SerializeHeaders()
+	if err != nil {
+		return res, err
+	}
 	responseJSON := ResponseSerialization{
 		StatusCode: resp.StatusCode,
-	}
-	if len(resp.Headers) > 0 {
-		responseJSON.Headers = resp.Headers
+		Headers:    headers,
 	}
 	// Build cookies map from standard bag
 	if len(resp.Cookies) > 0 {
@@ -252,12 +286,14 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 		}
 	}
 
+	headers, err := response.SerializeHeaders()
+	if err != nil {
+		return res, err
+	}
 	responseJSON := ResponseSerialization{
 		StatusCode:  response.StatusCode,
 		BodyControl: response.bodyControl,
-	}
-	if len(response.Headers) > 0 {
-		responseJSON.Headers = response.Headers
+		Headers:     headers,
 	}
 
 	// Build cookies map from standard bag
