@@ -162,16 +162,17 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.Unmarshal(bodyBytes, &bodyJSON)
-	if err != nil {
-		errorResponse(w, 500, err, errorBody)
-		return
-	}
-
 	response := BounceResponse{
 		Header:      r.Header,
 		QueryParams: r.URL.Query(),
-		Body:        bodyJSON,
+	}
+	if len(bodyBytes) > 0 {
+		err = json.Unmarshal(bodyBytes, &bodyJSON)
+		if err != nil {
+			errorResponse(w, 500, err, errorBody)
+			return
+		}
+		response.Body = bodyJSON
 	}
 
 	responseData, err := json.MarshalIndent(response, "", "  ")
