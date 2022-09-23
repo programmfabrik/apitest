@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -21,7 +22,7 @@ import (
 
 type Response struct {
 	StatusCode  int
-	Headers     map[string][]string
+	Headers     map[string]any
 	Cookies     []*http.Cookie
 	Body        []byte
 	bodyControl util.JsonObject
@@ -49,6 +50,14 @@ func (res Response) SerializeHeaders() (headers map[string]any, err error) {
 	return headers, nil
 }
 
+func HttpHeaderToMap(header http.Header) (headers map[string]any, err error) {
+	headers = map[string]any{}
+	for k, h := range header {
+		headers[k] = h
+	}
+	return headers, nil
+}
+
 // Cookie definition
 type Cookie struct {
 	Name     string        `json:"name"`
@@ -71,26 +80,6 @@ type ResponseSerialization struct {
 	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
 }
 
-func (res ResponseSerialization) SerializeHeaders() (headers map[string][]string, err error) {
-	headers = map[string][]string{}
-	for k, hs := range res.Headers {
-		// skip all headers with :control, and also any other headers that are not string arrays
-		if strings.HasSuffix(k, ":control") {
-			continue
-		}
-		_, isStringArray := hs.([]string)
-		if !isStringArray {
-			continue
-		}
-		headers[k] = []string{}
-		for _, h := range hs.([]string) {
-			headers[k] = append(headers[k], h)
-		}
-	}
-
-	return headers, nil
-}
-
 type ResponseFormat struct {
 	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
 	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "binary"
@@ -100,7 +89,7 @@ type ResponseFormat struct {
 	PreProcess *PreProcess `json:"pre_process,omitempty"`
 }
 
-func NewResponse(statusCode int, headers map[string][]string, cookies []*http.Cookie, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
+func NewResponse(statusCode int, headers map[string]any, cookies []*http.Cookie, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
 	res = Response{
 		StatusCode:  statusCode,
 		Headers:     headers,
@@ -152,11 +141,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		}
 	}
 
-	headers, err := spec.SerializeHeaders()
-	if err != nil {
-		return res, err
-	}
-	return NewResponse(spec.StatusCode, headers, cookies, body, spec.BodyControl, spec.Format)
+	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -361,8 +346,14 @@ func (response Response) ToString() string {
 	)
 
 	for k, v := range response.Headers {
+		if reflect.TypeOf(v).Kind() != reflect.Array {
+			continue
+		}
+		if reflect.TypeOf(v).Elem().Kind() != reflect.String {
+			continue
+		}
 		value := ""
-		for _, iv := range v {
+		for _, iv := range v.([]string) {
 			value = fmt.Sprintf("%s %s", value, iv)
 		}
 		if strings.TrimSpace(value) == "" {

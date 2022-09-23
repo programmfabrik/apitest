@@ -15,8 +15,8 @@ import (
 func TestResponse_ToGenericJson(t *testing.T) {
 	response := Response{
 		StatusCode: 200,
-		Headers: map[string][]string{
-			"foo": {"bar"},
+		Headers: map[string]any{
+			"foo": []string{"bar"},
 		},
 	}
 	genericJson, err := response.ToGenericJSON()
@@ -60,7 +60,7 @@ func TestResponse_NewResponseFromSpec(t *testing.T) {
 	response, err := NewResponseFromSpec(responseSpec)
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
 	go_test_utils.AssertIntEquals(t, response.StatusCode, responseSpec.StatusCode)
-	go_test_utils.AssertStringEquals(t, response.Headers["foo"][0], "bar")
+	go_test_utils.AssertStringEquals(t, response.Headers["foo"].([]string)[0], "bar")
 }
 
 func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
@@ -115,7 +115,11 @@ func TestResponse_Cookies(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	response, err := NewResponse(res.StatusCode, res.Header, res.Cookies(), res.Body, nil, ResponseFormat{})
+	header, err := HttpHeaderToMap(res.Header)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := NewResponse(res.StatusCode, header, res.Cookies(), res.Body, nil, ResponseFormat{})
 	if err != nil {
 		t.Fatal(err)
 	}

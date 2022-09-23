@@ -406,7 +406,7 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 func Test_DataStore_QJson(t *testing.T) {
 	response, _ := api.NewResponse(
 		200,
-		map[string][]string{"x-header": {"foo", "bar"}},
+		map[string]any{"x-header": []string{"foo", "bar"}},
 		nil,
 		strings.NewReader(`{
 			"flib": [
