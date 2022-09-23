@@ -1,10 +1,16 @@
 package template
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"strconv"
 
+	"github.com/pkg/errors"
+	"github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/tidwall/gjson"
 )
 
@@ -60,6 +66,70 @@ func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map
 	}
 
 	return
+}
+
+// pivotRows turns rows into columns and columns into rows
+func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, err error) {
+
+	getStr := func(data any) (s string) {
+		s, _ = data.(string)
+		return s
+	}
+
+	for _, row := range rows {
+		sheetKey := getStr(row[key])
+		sheetType := getStr(row[typ])
+		if sheetKey == "" || sheetType == "" {
+			continue
+		}
+		switch sheetType {
+		case "string", "int64", "float64", "number", "json":
+			// supported
+		default:
+			return nil, errors.Errorf("type %q not supported", sheetType)
+		}
+
+		for kI, vI := range row {
+			rowI, _ := strconv.Atoi(getStr(kI))
+			if rowI <= 0 {
+				continue
+			}
+			// find row in sheet
+			if len(sheet) < rowI {
+				for i := len(sheet); i < rowI; i++ {
+					sheet = append(sheet, map[string]any{})
+				}
+			}
+			if vI == nil {
+				continue
+			}
+			v := getStr(vI)
+			sheetRow := sheet[rowI-1]
+			switch sheetType {
+			case "string":
+				sheetRow[sheetKey] = v
+			case "json":
+				var i interface{}
+				err = json.Unmarshal([]byte(v), &i)
+				if err == nil {
+					sheetRow[sheetKey] = i
+				}
+			case "int64":
+				sheetRow[sheetKey], _ = strconv.ParseInt(v, 10, 64)
+			case "float64":
+				sheetRow[sheetKey], _ = strconv.ParseFloat(v, 10)
+			case "number":
+				var number json.Number
+				err = json.Unmarshal([]byte(v), &number)
+				if err == nil {
+					sheetRow[sheetKey] = number
+				}
+			}
+			sheet[rowI-1] = sheetRow
+		}
+	}
+
+	return sheet, nil
 }
 
 // functions copied from: https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
@@ -249,5 +319,75 @@ func divide(b, a interface{}) (interface{}, error) {
 		}
 	default:
 		return nil, fmt.Errorf("divide: unknown type for %q (%T)", av, a)
+	}
+}
+
+func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
+	_, file, err := util.OpenFileOrUrl(pathOrURL, rootDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
+	}
+	return data, nil
+}
+
+// fileRender loads file from path and renders is as Go template passing
+// the arguments as ".Param1", ".Param2" into the template.
+func loadFileAndRender(rootDir string, loader *Loader) interface{} {
+	return func(path string, params ...interface{}) (st string, err error) {
+		data, err := fileReadInternal(path, rootDir)
+		if err != nil {
+			return "", err
+		}
+		tmplParams := map[string]interface{}{}
+		for idx, param := range params {
+			tmplParams["Param"+strconv.Itoa(idx+1)] = param
+		}
+		data, err = loader.Render(data, filepath.Dir(filepath.Join(rootDir, path)), tmplParams)
+		if err != nil {
+			return "", errors.Wrapf(err, "Render error in file %q", path)
+		}
+		return string(data), nil
+	}
+}
+
+// fileRender loads file from path and renders is as Go template passing
+// the arguments as ".Param1", ".Param2" into the template.
+func loadFile(rootDir string, loader *Loader) interface{} {
+	return func(path string, params ...interface{}) (st string, err error) {
+		data, err := fileReadInternal(path, rootDir)
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	}
+}
+
+// loadFileCSV reads file and parses it in the CSV map. A delimiter can
+// be specified. Defaults to ','
+func loadFileCSV(rootDir string, loader *Loader) interface{} {
+	return func(path string, delimiters ...rune) (m []map[string]interface{}, err error) {
+		var delimiter rune
+		switch len(delimiters) {
+		case 0:
+			delimiter = ','
+		case 1:
+			delimiter = delimiters[0]
+		default:
+			return nil, errors.New("loadFileCSV: only one or non delimiter parameter allowed")
+		}
+		fileBytes, err := fileReadInternal(path, rootDir)
+		if err != nil {
+			return nil, err
+		}
+		data, err := csv.CSVToMap(fileBytes, delimiter)
+		if err != nil {
+			return data, errors.Wrapf(err, "CSV map error in file %q", path)
+		}
+		return data, err
 	}
 }

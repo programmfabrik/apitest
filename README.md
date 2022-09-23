@@ -21,7 +21,7 @@ apitest:
     short: true # Configures minimal logs by default for all tests
   report: # Configures the maschine report. For usage with jenkis or any other CI tool
     file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
-    format: "json.junit"       # Format of the report. (Supported formats: json or junit)
+    format: "json.junit"       # Format of the report. (Supported formats: json, junit or stats)
   store: # initial values for the datastore, parsed as map[string]interface{}
     email.server: smtp.google.com
   oauth2_client: # Map of client-config for oAuth clients
@@ -100,9 +100,13 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 - `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
 - `--replace-host [host][:port]`: Overwrites built-in server host in template function "replace_host"
 
+### Additional parameters
+
+- `--report-format-stats-group 3`: Sets the number of groups for manifests distrubution when using report format `stats`
+
 ### Examples
 
-- Run all tests in the directory **apitests** display **all server communication** and safe the maschine report as **junit** for later parsing it with *jenkins*
+- Run all tests in the directory **apitests** display **all server communication** and save the maschine report as **junit** for later parsing it with *jenkins*
 
 ```bash
 ./apitest --directory apitests --verbosity 2 --report-format junit
@@ -195,6 +199,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
         // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
         "method": "GET",
+
+        // If set to true, don't follow redirects.
+        "no_redirect": false,
 
         // Parameters that will be added to the url. e.g. http:// 5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
         "query_params": {
@@ -385,7 +392,7 @@ Examples:
 ## Remove template 'placeholders'
 
 Go templates may break the proper JSONC format even when separators are comments.
-So we could use placeholders for filling missing parts then strip them. 
+So we could use placeholders for filling missing parts then strip them.
 ```
 // template-remove-tokens: <token> [<token>]*
 /* template-remove-tokens: <token> [<token>] */
@@ -459,15 +466,17 @@ For comparing a binary file, simply point the response to the binary file:
 
 ## XML Data comparison
 
-If the response format is specified as `"type": "xml"`, we internally marshal that XML into json. (With github.com/clbanning/mxj `NewMapXmlSeq()`).
+If the response format is specified as `"type": "xml"` or `"type": "xml2"`, we internally marshal that XML into json using [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
 
-On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+The format `"xml"` uses `NewMapXmlSeq()`, whereas the format `"xml2"` uses `NewMapXml()`, which provides a simpler json format (see also template [`file_xml2json`](#file_xml2json-path)).
+
+On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
 ## CSV Data comparison
 
 If the response format is specified as `"type": "csv"`, we internally marshal that CSV into json.
 
-On that json you can work as you are used to with the json syntax. For seeing how the convert json looks you can use the `--log-verbose` command line flag
+On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
@@ -1242,6 +1251,8 @@ The content of the request and response file are execatly the same as if you wou
 
 # Template functions
 
+> **apitest** supports the [Sprig template](http://masterminds.github.io/sprig/) function library in v3. Internally provided functions like `add` overwrite the `Sprig` function.
+
 As described before, if you use an external file you can make use of so called template functions. What they are and how they work for the apitesting tool is described in the following part.
 
 Template Functions are invoked using the tags `{{ }}` and upon returning substitutes the function call with
@@ -1262,11 +1273,15 @@ Consequently, rendering `Lets meet at the {{ myfunc 1 "foo" }}` results in an in
 
 We provide the following functions:
 
-## `file "relative/path/" [param, ...]`
+## `file_render "relative/path/" [param, ...]`
 
 Helper function to load contents of a file; if this file contains templates; it will render these templates with the parameters provided in the can be accessed from the loaded file via `{{ .Param1-n }};` see example below
 
-Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt
+Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt. Returns string.
+
+## `file "relative/path/"`
+
+Loads the file with the relative path ( to the file this template function is invoked in ) "relative/path" or a weburl e.g. https://docs.google.com/test/tmpl.txt. Returns string.
 
 ### Example
 
@@ -1292,6 +1307,39 @@ Absolute path of file at `some/path/myfile.cpp`:
 ```yaml
 {{ file_path "../myfile.tmpl" }}
 ```
+
+## `pivot_rows` "keyColumn" "typeColumn" [input]
+
+Read a CSV map and turn rows into columns and columns into rows.
+
+Assume you have the following structure in your sheet:
+
+| key       | type      | 1         | 2
+| string    | string    | string    | string
+| --------  | --------  | --------  | ------
+| name      | string    | bicyle    | car
+| wheels    | int64     | 2         | 4
+
+As a convention the data columns need to be named `1`, `2`, ... Allowed types are:
+
+* string
+* int64
+* number (JSON type number)
+* float64
+
+Calling ```pivot_rows("key","type",(file_csv "file.csv" ','))``` returns
+
+```json
+[
+    {
+        "filename": "bicyle",
+        "wheels": 2
+    },
+    {
+        "filename": "car",
+        "wheels": 4
+    }
+]
 
 ## `rows_to_map "keyColumn" "valueColumn" [input]`
 
@@ -1616,13 +1664,11 @@ As an example with pipes, the call
 
 See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
-
-
 ## `file_csv [path] [delimiter]`
 
 Helper function to load a csv file.
 - `@path`: string; a path to the csv file that should be loaded. The path is either relative to the manifest or a weburl
-- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ','
+- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ',' Defaults to ','
 - `@result`: the content of the csv as json array so we can work on this data with qjson
 
 The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error
@@ -1744,6 +1790,61 @@ int64,string
 
 ```go
 [map[name:simon] map[name:martin] map[name:roman] map[name:klaus] map[name:sebastian]]
+```
+
+## `file_xml2json [path]`
+
+Helper function to parse an XML file and convert it into json
+- `@path`: string; a path to the xml file that should be loaded. The path is either relative to the manifest or a weburl
+
+This function uses the function `NewMapXml()` from [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
+
+### Example
+
+Content of XML file `some/path/example.xml`:
+
+```xml
+<objects xmlns="https://schema.easydb.de/EASYDB/1.0/objects/">
+    <obj>
+        <_standard>
+            <de-DE>Beispiel Objekt</de-DE>
+            <en-US>Example Object</en-US>
+        </_standard>
+        <_system_object_id>123</_system_object_id>
+        <_id>45</_id>
+        <name type="text_oneline"
+            column-api-id="263">Example</name>
+    </obj>
+</objects>
+```
+
+The call
+
+```django
+{{ file_xml2json "some/path/example.xml" }}
+```
+
+would result in
+
+```json
+{
+    "objects": {
+        "-xmlns": "https://schema.easydb.de/EASYDB/1.0/objects/",
+        "obj": {
+            "_id": "45",
+            "_standard": {
+                "de-DE": "Beispiel Objekt",
+                "en-US": "Example Object"
+            },
+            "_system_object_id": "123",
+            "name": {
+                "#text": "Example",
+                "-column-api-id": "263",
+                "-type": "text_oneline"
+            }
+        }
+    }
+}
 ```
 
 ## `file_sqlite [path] [statement]`
@@ -2005,6 +2106,10 @@ Example:
 ## `semver_compare [version 1] [version 2]`
 
 **semver_compare** compares to semantic version strings. This calls https://pkg.go.dev/golang.org/x/mod/semver#Compare, so check there for additional documentation. If the version is `""` the version `v0.0.0` is assumed. Before comparing, the function checks if the strings are valid. In case they are not, an error is returned.
+
+## `log` [msg] [args...]
+
+Write **msg** to log output. Args can be given. This uses logrus.Debugf to output.
 
 # HTTP Server
 

@@ -1,0 +1,16 @@
+{
+    "name": "Get existing XML file",
+    "request": {
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {{ file_xml2json "sample.xml" }}
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "header": {},
+            "body": {{ file "result_xml2.json" }}
+        }
+    }
+}

@@ -50,7 +50,7 @@
                 "type": "binary"
             },
             "body": {
-                "md5sum": {{ md5sum "@camera.jpg" | marshal }}
+                "md5sum": {{ md5sum "@../_res/assets/camera.jpg" | marshal }}
             }
         }
     },

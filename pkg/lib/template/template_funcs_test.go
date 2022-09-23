@@ -2,10 +2,12 @@ package template
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_QJson_String(t *testing.T) {
@@ -284,5 +286,45 @@ func TestRowsToMap(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func TestPivot(t *testing.T) {
+	data := []map[string]any{
+		{
+			"key":  "filename",
+			"type": "string",
+			"1":    "fahrrad",
+			"2":    "auto",
+			"3":    "dreirad",
+		},
+		{
+			"key":  "wheels",
+			"type": "int64",
+			"1":    "2",
+			"2":    "4",
+			"3":    "3",
+		},
+	}
+	exp := []map[string]any{
+		{
+			"filename": "fahrrad",
+			"wheels":   int64(2),
+		},
+		{
+			"filename": "auto",
+			"wheels":   int64(4),
+		},
+		{
+			"filename": "dreirad",
+			"wheels":   int64(3),
+		},
+	}
+	dataP, err := pivotRows("key", "type", data)
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, true, reflect.DeepEqual(dataP, exp)) {
+		return
 	}
 }

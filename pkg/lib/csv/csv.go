@@ -227,7 +227,7 @@ func getTyped(value, format string) (interface{}, error) {
 
 		//Check if we only have one row. If not return error
 		if len(records) > 1 {
-			return nil, fmt.Errorf("Only one row is allowed for type 'string,array'")
+			return nil, fmt.Errorf("Only one row is allowed for type 'string,array': %s", value)
 		}
 
 		retArray := make([]string, 0)

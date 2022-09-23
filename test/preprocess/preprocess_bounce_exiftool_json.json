@@ -1,0 +1,75 @@
+[
+    {
+        "name": "bounce (binary), pre_process exiftool",
+        "request": {
+            "server_url": "{{ datastore "local_url" }}",
+            "endpoint": "bounce",
+            "method": "POST",
+            "query_params": {
+                "param1": "abc",
+                "param2": 123,
+                "param3": true
+            },
+            "header": {
+                "Accept-Encoding": "gzip",
+                "header1": "RST",
+                "header2": "XYZ"
+            },
+            "body": {
+                "file": "@../_res/assets/camera.jpg"
+            },
+            "body_type": "multipart"
+        },
+        "response": {
+            "format": {
+                "pre_process": {
+                    "cmd": {
+                        "name": "exiftool",
+                        "args": [
+                            "-j",
+                            "-g",
+                            "-"
+                        ]
+                    }
+                }
+            },
+            "statuscode": 200,
+            "header": {
+                "Content-Type": [
+                    "application/octet-stream"
+                ],
+                "Date": [],
+                "X-Req-Header-Accept-Encoding": [
+                    "gzip"
+                ],
+                "X-Req-Header-Content-Length": [],
+                "X-Req-Header-Content-Type": [],
+                "X-Req-Header-Header1": [
+                    "RST"
+                ],
+                "X-Req-Header-Header2": [
+                    "XYZ"
+                ],
+                "X-Req-Query-Param1": [
+                    "abc"
+                ],
+                "X-Req-Query-Param2": [
+                    "123"
+                ],
+                "X-Req-Query-Param3": [
+                    "true"
+                ]
+            },
+            "body": [
+                {
+                    "SourceFile": "-",
+                    "ExifTool": {},
+                    "JFIF": {},
+                    "ICC_Profile": {},
+                    "File": {},
+                    "Composite": {}
+                }
+            ]
+        }
+    }
+]

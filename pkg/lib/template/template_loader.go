@@ -11,15 +11,16 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
+	"golang.org/x/oauth2"
 
-	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
 	"io/ioutil"
@@ -111,60 +112,24 @@ func (loader *Loader) Render(
 			hasher.Write([]byte(fileBytes))
 			return hex.EncodeToString(hasher.Sum(nil)), nil
 		},
-		"file": func(path string, params ...interface{}) (string, error) {
-			tmplParams := map[string]interface{}{}
-			for idx, param := range params {
-				tmplParams["Param"+strconv.Itoa(idx+1)] = param
-			}
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return "", err
-			}
-
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return "", err
-			}
-
-			absPath := filepath.Join(rootDir, path)
-			fileLoader := *loader
-			tmplBytes, err := fileLoader.Render(fileBytes, filepath.Dir(absPath), tmplParams)
-			if err != nil {
-				return "", err
-			}
-			return string(tmplBytes), nil
-		},
-		"file_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return nil, err
-			}
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return nil, err
-			}
-			data, err := csv.CSVToMap(fileBytes, delimiter)
-			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
-			}
-			return data, err
-		},
-		"parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return nil, err
-			}
-			fileBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				return nil, err
-			}
-			data, err := csv.GenericCSVToMap(fileBytes, delimiter)
-			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
-			}
-			return data, err
-		},
+		// "parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
+		// 	_, file, err := util.OpenFileOrUrl(path, rootDir)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	fileBytes, err := ioutil.ReadAll(file)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	data, err := csv.GenericCSVToMap(fileBytes, delimiter)
+		// 	if err != nil {
+		// 		return data, fmt.Errorf("'%s' %s", path, err)
+		// 	}
+		// 	return data, err
+		// },
+		"file":        loadFile(rootDir, loader),
+		"file_render": loadFileAndRender(rootDir, loader),
+		"file_csv":    loadFileCSV(rootDir, loader),
 		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
 			sqliteFile := filepath.Join(rootDir, path)
 			database, err := sql.Open("sqlite3", sqliteFile)
@@ -207,6 +172,19 @@ func (loader *Loader) Render(
 			}
 
 			return data, nil
+		},
+		"file_xml2json": func(path string) (string, error) {
+			fileBytes, err := fileReadInternal(path, rootDir)
+			if err != nil {
+				return "", err
+			}
+
+			bytes, err := util.Xml2Json(fileBytes, "xml2")
+			if err != nil {
+				return "", errors.Wrap(err, "Could not marshal xml to json")
+			}
+
+			return string(bytes), nil
 		},
 		"file_path": func(path string) string {
 			return util.LocalPath(path, rootDir)
@@ -268,6 +246,7 @@ func (loader *Loader) Render(
 		"rows_to_map": func(keyColumn, valueColumn string, rowsInput interface{}) (map[string]interface{}, error) {
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
+		"pivot_rows": pivotRows,
 		"group_map_rows": func(groupColumn string, rowsInput interface{}) (map[string][]map[string]interface{}, error) {
 			grouped_rows := make(map[string][]map[string]interface{}, 1000)
 			rows := getRowsFromInput(rowsInput)
@@ -355,38 +334,39 @@ func (loader *Loader) Render(
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_password_token": func(client string, login string, password string) (tE oAuth2TokenExtended) {
+		"oauth2_password_token": func(client string, login string, password string) (tok *oauth2.Token, err error) {
+			// println("client", client, login, password)
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetPasswordCredentialsAuthToken(login, password))
+			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
 
 		},
-		"oauth2_client_token": func(client string) (tE oAuth2TokenExtended) {
+		"oauth2_client_token": func(client string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetClientCredentialsAuthToken())
+			return oAuthClient.GetClientCredentialsAuthToken()
 		},
-		"oauth2_code_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
+		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetCodeAuthToken(params...))
+			return oAuthClient.GetCodeAuthToken(params...)
 		},
-		"oauth2_implicit_token": func(client string, params ...string) (tE oAuth2TokenExtended) {
+		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return readOAuthReturnValue(nil, errors.Errorf("OAuth client %q not configured", client))
+				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
 			oAuthClient.Client = client
-			return readOAuthReturnValue(oAuthClient.GetAuthToken(params...))
+			return oAuthClient.GetAuthToken(params...)
 		},
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
@@ -441,10 +421,15 @@ func (loader *Loader) Render(
 			}
 			return semver.Compare(v, w), nil
 		},
+		"log": func(msg string, args ...any) string {
+			logrus.Debugf(msg, args...)
+			return ""
+		},
 	}
 	tmpl, err := template.
 		New("tmpl").
 		Delims(loader.Delimiters.Left, loader.Delimiters.Right).
+		Funcs(sprig.TxtFuncMap()).
 		Funcs(funcMap).
 		Parse(string(tmplBytes))
 	if err != nil {

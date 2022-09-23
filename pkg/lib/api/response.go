@@ -9,12 +9,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -22,12 +20,25 @@ import (
 )
 
 type Response struct {
-	statusCode  int
-	headers     map[string][]string
-	cookies     []*http.Cookie
-	body        []byte
+	StatusCode  int
+	Headers     map[string][]string
+	Cookies     []*http.Cookie
+	Body        []byte
 	bodyControl util.JsonObject
 	Format      ResponseFormat
+
+	ReqDur      time.Duration
+	BodyLoadDur time.Duration
+}
+
+func (res Response) NeedsCheck() bool {
+	if res.StatusCode != http.StatusOK {
+		return true
+	}
+	if len(res.Headers) > 0 || len(res.Cookies) > 0 || len(res.Body) > 0 {
+		return true
+	}
+	return false
 }
 
 // Cookie definition
@@ -54,7 +65,7 @@ type ResponseSerialization struct {
 
 type ResponseFormat struct {
 	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
-	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "binary"
+	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "binary"
 	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
@@ -62,17 +73,32 @@ type ResponseFormat struct {
 }
 
 func NewResponse(statusCode int, headers map[string][]string, cookies []*http.Cookie, body io.Reader, bodyControl util.JsonObject, bodyFormat ResponseFormat) (res Response, err error) {
-	bodyBytes, err := ioutil.ReadAll(body)
-	if err != nil {
-		return res, err
+	res = Response{
+		StatusCode:  statusCode,
+		Headers:     headers,
+		Cookies:     cookies,
+		bodyControl: bodyControl,
+		Format:      bodyFormat,
 	}
-	return Response{statusCode: statusCode, headers: headers, cookies: cookies, body: bodyBytes, bodyControl: bodyControl, Format: bodyFormat}, nil
+	if body != nil {
+		start := time.Now()
+		res.Body, err = ioutil.ReadAll(body)
+		if err != nil {
+			return res, err
+		}
+		res.BodyLoadDur = time.Since(start)
+	}
+	return res, nil
 }
 
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
-	bodyBytes, err := json.Marshal(spec.Body)
-	if err != nil {
-		return res, err
+	var body io.Reader
+	if spec.Body != nil {
+		bodyBytes, err := json.Marshal(spec.Body)
+		if err != nil {
+			return res, err
+		}
+		body = bytes.NewReader(bodyBytes)
 	}
 	// if statuscode is not explicitly set; we assume 200
 	if spec.StatusCode == 0 {
@@ -98,7 +124,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		}
 	}
 
-	return NewResponse(spec.StatusCode, spec.Headers, cookies, bytes.NewReader(bodyBytes), spec.BodyControl, spec.Format)
+	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -120,16 +146,8 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 
 	switch responseFormat.Type {
-	case "xml":
-		xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-		replacedXML := xmlDeclarationRegex.ReplaceAll(resp.Body(), []byte{})
-
-		mv, err := mxj.NewMapXmlSeq(replacedXML)
-		if err != nil {
-			return res, errors.Wrap(err, "Could not parse xml")
-		}
-
-		bodyData, err = mv.JsonIndent("", " ")
+	case "xml", "xml2":
+		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
@@ -139,7 +157,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			runeComma = []rune(responseFormat.CSV.Comma)[0]
 		}
 
-		csvData, err := csv.GenericCSVToMap(resp.Body(), runeComma)
+		csvData, err := csv.GenericCSVToMap(resp.Body, runeComma)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not parse csv")
 		}
@@ -151,7 +169,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	case "binary":
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
-		hasher.Write([]byte(resp.Body()))
+		hasher.Write([]byte(resp.Body))
 		JsonObject := util.JsonObject{
 			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
@@ -161,21 +179,21 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		}
 	case "":
 		// no specific format, we assume a json, and thereby try to unmarshal it into our body
-		bodyData = resp.Body()
+		bodyData = resp.Body
 	default:
 		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
 	responseJSON := ResponseSerialization{
-		StatusCode: resp.statusCode,
+		StatusCode: resp.StatusCode,
 	}
-	if len(resp.headers) > 0 {
-		responseJSON.Headers = resp.headers
+	if len(resp.Headers) > 0 {
+		responseJSON.Headers = resp.Headers
 	}
 	// Build cookies map from standard bag
-	if len(resp.cookies) > 0 {
+	if len(resp.Cookies) > 0 {
 		responseJSON.Cookies = make(map[string]Cookie)
-		for _, ck := range resp.cookies {
+		for _, ck := range resp.Cookies {
 			if ck != nil {
 				responseJSON.Cookies[ck.Name] = Cookie{
 					Name:     ck.Name,
@@ -226,7 +244,7 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 	)
 
 	// We have a json, and thereby try to unmarshal it into our body
-	resBody := response.Body()
+	resBody := response.Body
 	if len(resBody) > 0 {
 		err = json.Unmarshal(resBody, &bodyJSON)
 		if err != nil {
@@ -235,17 +253,17 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 	}
 
 	responseJSON := ResponseSerialization{
-		StatusCode:  response.statusCode,
+		StatusCode:  response.StatusCode,
 		BodyControl: response.bodyControl,
 	}
-	if len(response.headers) > 0 {
-		responseJSON.Headers = response.headers
+	if len(response.Headers) > 0 {
+		responseJSON.Headers = response.Headers
 	}
 
 	// Build cookies map from standard bag
-	if len(response.cookies) > 0 {
+	if len(response.Cookies) > 0 {
 		responseJSON.Cookies = make(map[string]Cookie)
-		for _, ck := range response.cookies {
+		for _, ck := range response.Cookies {
 			if ck != nil {
 				responseJSON.Cookies[ck.Name] = Cookie{
 					Name:     ck.Name,
@@ -288,22 +306,8 @@ func (response Response) ServerResponseToJsonString(bodyOnly bool) (string, erro
 	return string(bytes), nil
 }
 
-func (response Response) Body() []byte {
-	// some endpoints return empty strings;
-	// since that is no valid json so we interpret it as the json null literal to
-	// establish the invariant that api endpoints return json responses
-
-	// hmmm, does not really make sense
-	// shouldn't a byte array always be checked
-	// before actually attempting to decode it?
-	// if bytes.Compare(response.body, []byte("")) == 0 {
-	// 	return []byte("null")
-	// }
-	return response.body
-}
-
 func (response *Response) marshalBodyInto(target interface{}) (err error) {
-	bodyBytes := response.Body()
+	bodyBytes := response.Body
 	if len(bodyBytes) > 0 {
 		if err = json.Unmarshal(bodyBytes, target); err != nil {
 			return fmt.Errorf("error unmarshaling response: %s", err)
@@ -320,7 +324,7 @@ func (response Response) ToString() string {
 		resp          Response
 	)
 
-	for k, v := range response.headers {
+	for k, v := range response.Headers {
 		value := ""
 		for _, iv := range v {
 			value = fmt.Sprintf("%s %s", value, iv)
@@ -343,9 +347,9 @@ func (response Response) ToString() string {
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
 
-	body := resp.Body()
+	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "csv":
+	case "xml", "xml2", "csv":
 		if utf8.Valid(body) {
 			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {
@@ -368,5 +372,5 @@ func (response Response) ToString() string {
 		}
 	}
 
-	return fmt.Sprintf("%d\n%s\n\n%s", resp.statusCode, headersString, bodyString)
+	return fmt.Sprintf("%d\n%s\n\n%s", resp.StatusCode, headersString, bodyString)
 }

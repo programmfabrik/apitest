@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -19,7 +20,9 @@ var (
 	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                                       []string
-	limitRequest, limitResponse                                                       uint
+	limitRequest, limitResponse, reportStatsGroups                                    uint
+	// set via -ldflags during build
+	buildCommit, buildTime, buildVersion string
 )
 
 func init() {
@@ -65,7 +68,11 @@ func init() {
 
 	testCMD.PersistentFlags().StringVar(
 		&reportFormat, "report-format", "",
-		"Defines how the report statements should be saved. [junit/json]")
+		"Defines how the report statements should be saved. [junit/json/stats]")
+
+	testCMD.PersistentFlags().UintVarP(
+		&reportStatsGroups, "report-format-stats-group", "", 4,
+		"Create report format stats groups distribution (default 4)")
 
 	testCMD.PersistentFlags().UintVarP(
 		&limitRequest, "limit-request", "", 20,
@@ -126,6 +133,9 @@ func setup(ccmd *cobra.Command, args []string) {
 
 func runApiTests(cmd *cobra.Command, args []string) {
 
+	// timestamp: start of all tests
+	start := time.Now()
+
 	// Check if paths are valid
 	for _, rootDirectory := range rootDirectorys {
 		if _, err := os.Stat(rootDirectory); rootDirectory != "." && os.IsNotExist(err) {
@@ -138,11 +148,23 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	currDir, _ := os.Getwd()
+	absPath := func(p string) string {
+		if filepath.IsAbs(p) {
+			return p
+		}
+		return filepath.Join(currDir, p)
+	}
+
 	server := Config.Apitest.Server
 	reportFormat = Config.Apitest.Report.Format
-	reportFile = Config.Apitest.Report.File
+	if Config.Apitest.Report.File != "" {
+		reportFile = absPath(Config.Apitest.Report.File)
+	}
 
 	rep := report.NewReport()
+	rep.StatsGroups = int(reportStatsGroups)
+	rep.Version = buildCommit
 
 	// Save the config into TestToolConfig
 	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
@@ -179,15 +201,10 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	// Decide if run only one test
 	if len(singleTests) > 0 {
 		for _, singleTest := range singleTests {
-			absManifestPath, _ := filepath.Abs(singleTest)
 			c := rep.Root().NewChild(singleTest)
 
-			success := runSingleTest(absManifestPath, singleTest, c)
+			success := runSingleTest(absPath(singleTest), singleTest, c)
 			c.Leave(success)
-
-			if reportFile != "" {
-				rep.WriteToFile(reportFile, reportFormat)
-			}
 
 			if stopOnFail && !success {
 				break
@@ -196,21 +213,29 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	} else {
 		for _, singlerootDirectory := range testToolConfig.TestDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
-			absManifestPath, _ := filepath.Abs(manifestPath)
 			c := rep.Root().NewChild(manifestPath)
 
-			success := runSingleTest(absManifestPath, manifestPath, c)
+			success := runSingleTest(absPath(manifestPath), manifestPath, c)
 			c.Leave(success)
-
-			if reportFile != "" {
-				rep.WriteToFile(reportFile, reportFormat)
-			}
 
 			if stopOnFail && !success {
 				break
 			}
 		}
 	}
+
+	if reportFile != "" {
+		rep.WriteToFile(reportFile, reportFormat)
+	}
+
+	// timestamp: end of all tests
+	end := time.Now()
+
+	time_format := "2006-01-02 15:04:05"
+	format_start := start.Format(time_format)
+	format_end := end.Format(time_format)
+	format_runtime := time.Since(start).String()
+	logrus.Infof("All done in %s. Start: %s. End: %s.", format_runtime, format_start, format_end)
 
 	if rep.DidFail() {
 		os.Exit(1)

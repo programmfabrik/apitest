@@ -1,41 +1,57 @@
 package util
 
 import (
-	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 /*
 throughout this file we assume 'manifestDir' to be an absolute path
 */
 
-func GetAbsPath(manifestDir, pathSpec string) string {
-	return filepath.Join(manifestDir, pathSpec[1:])
-}
-
-func IsPathSpec(pathSpec []byte) bool {
+func IsPathSpec(pathSpec string) bool {
 	if len(pathSpec) < 3 {
 		return false
 	}
-
-	if rune(pathSpec[0]) == rune('@') || rune(pathSpec[1]) == rune('@') {
+	if strings.HasPrefix(pathSpec, "@") {
 		return true
 	}
-	if (rune(pathSpec[0]) == rune('p') && rune(pathSpec[1]) == rune('@')) ||
-		(rune(pathSpec[1]) == rune('p') && rune(pathSpec[2]) == rune('@')) {
+	if strings.HasPrefix(pathSpec, "p@") {
+		return true
+	}
+	// pathSpec could have trailing quotes
+	if strings.HasPrefix(pathSpec, "\"@") {
+		return true
+	}
+	if strings.HasPrefix(pathSpec, "\"p@") {
 		return true
 	}
 
-	return false
+	return IsParallelPathSpec(pathSpec)
 }
 
-func IsParallelPathSpec(pathSpec []byte) bool {
-	if len(pathSpec) < 3 {
-		return false
+func IsParallelPathSpec(pathSpec string) bool {
+	n, _ := GetParallelPathSpec(pathSpec)
+	return n > 0
+}
+
+func GetParallelPathSpec(pathSpec string) (parallelRepititions int, parsedPath string) {
+	regex := *regexp.MustCompile(`^\"{0,1}p(\d+)@(.+)\"{0,1}$`)
+	res := regex.FindAllStringSubmatch(pathSpec, -1)
+
+	if len(res) != 1 {
+		return 0, ""
 	}
-	if (rune(pathSpec[0]) == rune('p') && rune(pathSpec[1]) == rune('@')) ||
-		(rune(pathSpec[1]) == rune('p') && rune(pathSpec[2]) == rune('@')) {
-		return true
+	if len(res[0]) != 3 {
+		return 0, ""
 	}
 
-	return false
+	parsedPath = res[0][2]
+	parallelRepititions, err := strconv.Atoi(res[0][1])
+	if err != nil {
+		return 0, parsedPath
+	}
+
+	return parallelRepititions, parsedPath
 }

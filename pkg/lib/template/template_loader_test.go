@@ -46,7 +46,7 @@ func TestRender_Custom_Delimiters_Comments_Stripped(t *testing.T) {
 }
 
 func TestRender_LoadFile_withParam(t *testing.T) {
-	root := []byte(`{{ file "somefile.json" "bogus"}}`)
+	root := []byte(`{{ file_render "somefile.json" "bogus"}}`)
 	target := []byte(`{{ .Param1 }}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
@@ -60,8 +60,8 @@ func TestRender_LoadFile_withParam(t *testing.T) {
 }
 
 func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
-	root := []byte(`{{ file "a/next.tmpl" "bogus" }}`)
-	next := []byte(`{{ file "b/last.tmpl" .Param1 }}`)
+	root := []byte(`{{ file_render "a/next.tmpl" "bogus" }}`)
+	next := []byte(`{{ file_render "b/last.tmpl" .Param1 }}`)
 	last := []byte(`{{ .Param1 }}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
@@ -113,7 +113,7 @@ func TestRowsToMapTemplate(t *testing.T) {
 }
 
 func TestRender_LoadFile_QJson_Params(t *testing.T) {
-	root := []byte(`{{ file "somefile.json" "foo" "bar" | qjson "key.1" }}`)
+	root := []byte(`{{ file_render "somefile.json" "foo" "bar" | qjson "key.1" }}`)
 	target := []byte(`{ "key": ["{{ .Param1 }}", "{{ .Param2 }}"]}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
@@ -128,26 +128,26 @@ func TestRender_LoadFile_QJson_Params(t *testing.T) {
 
 func TestRender_LoadFile_CSV(t *testing.T) {
 	testCases := []struct {
-		csv         string
-		expected    string
-		expectedErr error
+		csv       string
+		expected  string
+		expectErr bool
 	}{
 		{`id,name,friends,ages
 int64,string,"string,array","int64,array"
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
+1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, false},
 		{`id,name,friends,ages
 
 int64,string,"string,array","int64,array"
 
 ,,,
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
+1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, false},
 		{`id,name,friends,ages
 
 int64,string,"string,array","int64,array"
 
 ,,,
 ,hans,,
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[],"friends":[],"id":0,"name":"hans"},{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
+1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[],"friends":[],"id":0,"name":"hans"},{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, false},
 		{`id,name,friends,ages
 
 int64,string,"string,array","int64,array"
@@ -156,7 +156,7 @@ int64,string,"string,array","int64,array"
 ,hans,,
 1,simon,"simon,jo
 nas,ste
-fan","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' Only one row is allowed for type 'string,array'`)},
+fan","21,24,12"`, ``, true},
 
 		{`id,name,friends,ages
 
@@ -165,7 +165,7 @@ int64,string,"string,array","int64,array"
 ,,,
 #,hans,,
 1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
+nas"",""a,b""","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, false},
 		{`id,name,friends,ages
 
 int64,string,"string,array"
@@ -173,7 +173,7 @@ int64,string,"string,array"
 ,,,
 #,hans,,
 1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
+nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, false},
 		{`id,name, ,ages
 
 int64,string,"string,array"
@@ -181,7 +181,7 @@ int64,string,"string,array"
 ,,,
 #,hans,,
 1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"id":1,"name":"simon"}]`, nil},
+nas"",""a,b""","21,24,12"`, `[{"id":1,"name":"simon"}]`, false},
 		{`id,name,de,friends,ages
 
 int64,string,,"string,array"
@@ -189,7 +189,7 @@ int64,string,,"string,array"
 ,,,
 #,hans,,
 1,simon,LALALALA,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
+nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, false},
 		{`id,name,de,friends,ages
 
 int64,string,s,"string,array"
@@ -197,11 +197,11 @@ int64,string,s,"string,array"
 ,,,
 #,hans,,
 1,simon,LALALALA,"simon,""jo
-nas"",""a,b""","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 's' is no valid format`)},
+nas"",""a,b""","21,24,12"`, ``, true},
 		{`id,name,,ages
-int64,string,"string,array","int64,array"`, `[]`, nil},
+int64,string,"string,array","int64,array"`, `[]`, false},
 		{`id,name,friends,ages
-int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 'stringer,array' is no valid format`)},
+int64,string,"stringer,array","int64,array"`, ``, true},
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
@@ -225,13 +225,11 @@ int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing te
 
 				}
 			} else {
-				if err.Error() != testCase.expectedErr.Error() {
-					dmp := diffmatchpatch.New()
-
-					diffs := dmp.DiffMain(testCase.expectedErr.Error(), err.Error(), false)
-
-					t.Errorf("Error differs: %s", dmp.DiffPrettyText(diffs))
-
+				if testCase.expectErr && err == nil {
+					t.Errorf("Error expected")
+				}
+				if !testCase.expectErr && err != nil {
+					t.Errorf("No error expected %q", err)
 				}
 			}
 		})

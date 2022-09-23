@@ -1,0 +1,20 @@
+{
+    "name": "bounce xml file, use response format \"xml2\"",
+    "request": {
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "bounce",
+        "method": "POST",
+        "body": {
+            "file": "@sample.xml"
+        },
+        "body_type": "multipart"
+    },
+    "response": {
+        "format": {
+            // new simpler format without #seq
+            // uses mxj.NewMapXml from https://github.com/clbanning/mxj
+            "type": "xml2"
+        },
+        "body": {{ file "result_xml2.json" }}
+    }
+}

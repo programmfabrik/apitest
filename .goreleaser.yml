@@ -1,0 +1,86 @@
+before:
+  hooks:
+    - make deps
+
+builds:
+  - id: apitest
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      # darwin / macos binaries
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: amd64
+      # windows binaries
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: arm
+      # linux binaries
+      - goos: linux
+        goarch: arm
+      - goos: linux
+        goarch: arm64
+    main: ./
+    binary: apitest
+
+archives:
+  - id: apitest
+    name_template: "apitest_{{ .Os }}_{{ .Arch }}"
+    format: binary
+    builds:
+    - apitest
+
+release:
+  draft: true
+  prerelease: auto
+  name_template: "apitest-{{.Tag}}"
+  github:
+    name: ""
+
+checksum:
+  disable: false
+
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: 'Enhancements'
+      regexp: "^.*enthancement[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^typo:'
+      - '^ci:'
+      - '^cd:'
+      - '^ci/cd:'
+      - '^docker:'
+      - '^k8s:'
+      - '^config:'
+      - '^git:'
+      - '^go:'
+      - '^gomod:'

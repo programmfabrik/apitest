@@ -1,0 +1,25 @@
+{
+    "name": "preprocess asset berlin.jpg with exiftool in xml format, compare \"exiftool_result.xml\"",
+    "request": {
+        // load static file
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "berlin.jpg",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "pre_process": {
+                "cmd": {
+                    "name": "exiftool",
+                    "args": [
+                        "-X",
+                        "-l",
+                        "-"
+                    ]
+                }
+            },
+            "type": "xml2"
+        },
+        "body": {{ file_xml2json "exiftool_result.xml" }}
+    }
+}

@@ -2,14 +2,15 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/golib"
 
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
@@ -57,7 +58,7 @@ type Case struct {
 	Filename string
 }
 
-func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool {
+func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (success bool) {
 	if testCase.Name == "" {
 		testCase.Name = "<no name>"
 	}
@@ -79,7 +80,6 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		err := fmt.Errorf("error setting datastore. Datastore is nil")
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		logrus.Errorf("     [%2d] %s", testCase.index, err)
-
 		return false
 	}
 	err := testCase.dataStore.SetMap(testCase.Store)
@@ -87,13 +87,13 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 		err = fmt.Errorf("error setting datastore map:%s", err)
 		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
 		logrus.Errorf("     [%2d] %s", testCase.index, err)
-
 		return false
 	}
 
-	success := true
+	success = true
+	var apiResponse api.Response
 	if testCase.RequestData != nil {
-		success, err = testCase.run()
+		success, apiResponse, err = testCase.run()
 	}
 
 	elapsed := time.Since(start)
@@ -111,15 +111,27 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 	}
 
 	fileBasename := filepath.Base(testCase.Filename)
+	logF := logrus.Fields{
+		"elapsed": elapsed.String(),
+		"size":    golib.HumanByteSize(uint64(len(apiResponse.Body))),
+		"request": apiResponse.ReqDur.String(),
+		"body":    apiResponse.BodyLoadDur.String(),
+		"file":    fileBasename,
+	}
+
 	if !success {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Warnf("     [%2d] failure", testCase.index)
+		logrus.WithFields(logF).Warnf("     [%2d] failure", testCase.index)
 	} else if testCase.LogShort == nil || !*testCase.LogShort {
-		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds(), "file": fileBasename}).Infof("     [%2d] success", testCase.index)
+		logrus.WithFields(logF).Infof("     [%2d] success", testCase.index)
 	}
 
 	r.Leave(success)
-
 	return success
+	// res.Success = success
+	// res.BodySize = uint64(len(apiResponse.Body))
+	// res.BodyLoadDur = apiResponse.BodyLoadDur
+	// res.RequestDur = apiResponse.ReqDur
+	// return res
 }
 
 // cheRckForBreak Response tests the given response for a so called break response.
@@ -138,7 +150,11 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 				return false, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			expectedResponse.Format = response.Format
+			if expectedResponse.Format.Type != "" {
+				response.Format = expectedResponse.Format
+			} else {
+				expectedResponse.Format = response.Format
+			}
 
 			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
@@ -192,7 +208,11 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 				return -1, fmt.Errorf("error loading check response from spec: %s", err)
 			}
 
-			expectedResponse.Format = response.Format
+			if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
+				response.Format = expectedResponse.Format
+			} else {
+				expectedResponse.Format = response.Format
+			}
 
 			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
 			if err != nil {
@@ -216,14 +236,7 @@ func (testCase *Case) checkCollectResponse(request api.Request, response api.Res
 	return 0, nil
 }
 
-func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Request, api.Response, error) {
-	var (
-		responsesMatch    compare.CompareResult
-		req               api.Request
-		apiResp           api.Response
-		apiRespJsonString string
-		err               error
-	)
+func (testCase Case) executeRequest(counter int) (responsesMatch compare.CompareResult, req api.Request, apiResp api.Response, err error) {
 
 	// Store datastore
 	err = testCase.dataStore.SetMap(testCase.Store)
@@ -244,6 +257,13 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 	}
 
+	expRes, err := testCase.loadExpectedResponse()
+	if err != nil {
+		testCase.LogReq(req)
+		err = fmt.Errorf("error loading response: %s", err)
+		return responsesMatch, req, apiResp, err
+	}
+
 	apiResp, err = req.Send()
 	if err != nil {
 		testCase.LogReq(req)
@@ -251,20 +271,13 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		return responsesMatch, req, apiResp, err
 	}
 
-	expectedResponse, err := testCase.loadResponse()
-	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error loading response: %s", err)
-		return responsesMatch, req, apiResp, err
-	}
-	apiResp.Format = expectedResponse.Format
+	apiResp.Format = expRes.Format
 
-	apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
+	apiRespJsonString, err := apiResp.ServerResponseToJsonString(false)
 	// If we don't define an expected response, we won't have a format
 	// That's problematic if the response is not JSON, as we try to parse it for the datastore anyway
 	// So we don't fail the test in that edge case
-	if err != nil && (testCase.ResponseData != nil || testCase.CollectResponse != nil ||
-		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0) {
+	if err != nil && (testCase.ResponseData != nil || len(testCase.StoreResponse) > 0) {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error getting json from response: %s", err)
 		return responsesMatch, req, apiResp, err
@@ -278,17 +291,15 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 		return responsesMatch, req, apiResp, err
 	}
 
-	if !req.DoNotStore {
-		// Store in datastore -1 list
-		if counter == 0 {
-			testCase.dataStore.AppendResponse(apiRespJsonString)
-		} else {
-			testCase.dataStore.UpdateLastResponse(apiRespJsonString)
-		}
+	// Store in datastore -1 list
+	if counter == 0 {
+		testCase.dataStore.AppendResponse(apiRespJsonString)
+	} else {
+		testCase.dataStore.UpdateLastResponse(apiRespJsonString)
 	}
 
 	// Compare Responses
-	responsesMatch, err = testCase.responsesEqual(expectedResponse, apiResp)
+	responsesMatch, err = testCase.responsesEqual(expRes, apiResp)
 	if err != nil {
 		testCase.LogReq(req)
 		err = fmt.Errorf("error matching responses: %s", err)
@@ -335,13 +346,11 @@ func limitLines(in string, limitCount int) string {
 	return out
 }
 
-func (testCase Case) run() (bool, error) {
+func (testCase Case) run() (successs bool, apiResponse api.Response, err error) {
 	var (
 		responsesMatch compare.CompareResult
 		request        api.Request
-		apiResponse    api.Response
 		timedOutFlag   bool
-		err            error
 	)
 
 	startTime := time.Now()
@@ -369,7 +378,7 @@ func (testCase Case) run() (bool, error) {
 		}
 		if err != nil {
 			testCase.LogResp(apiResponse)
-			return false, err
+			return false, apiResponse, err
 		}
 
 		if responsesMatch.Equal && !collectPresent {
@@ -380,25 +389,24 @@ func (testCase Case) run() (bool, error) {
 		if err != nil {
 			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
-			return false, fmt.Errorf("error checking for break response: %s", err)
+			return false, apiResponse, fmt.Errorf("error checking for break response: %s", err)
 		}
 
 		if breakPresent {
 			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
-			return false, fmt.Errorf("Break response found")
+			return false, apiResponse, fmt.Errorf("Break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
 		if err != nil {
 			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
-			return false, fmt.Errorf("error checking for continue response: %s", err)
+			return false, apiResponse, fmt.Errorf("error checking for continue response: %s", err)
 		}
 
 		if collectPresent && collectLeft <= 0 {
 			break
-
 		}
 
 		//break if timeout or we do not have a repeater
@@ -429,7 +437,7 @@ func (testCase Case) run() (bool, error) {
 				if err != nil {
 					testCase.LogReq(request)
 					testCase.LogResp(apiResponse)
-					return false, err
+					return false, apiResponse, err
 				}
 				logrus.Errorf("Collect response not found: %s", jsonV)
 				r.SaveToReportLog(fmt.Sprintf("Collect response not found: %s", jsonV))
@@ -438,7 +446,7 @@ func (testCase Case) run() (bool, error) {
 
 		testCase.LogReq(request)
 		testCase.LogResp(apiResponse)
-		return false, nil
+		return false, apiResponse, nil
 	}
 
 	if testCase.WaitAfter != nil {
@@ -448,7 +456,7 @@ func (testCase Case) run() (bool, error) {
 		time.Sleep(time.Duration(*testCase.WaitAfter) * time.Millisecond)
 	}
 
-	return true, nil
+	return true, apiResponse, nil
 }
 
 func (testCase Case) loadRequest() (api.Request, error) {
@@ -460,15 +468,10 @@ func (testCase Case) loadRequest() (api.Request, error) {
 	return req, err
 }
 
-func (testCase Case) loadResponse() (api.Response, error) {
-	var (
-		res api.Response
-		err error
-	)
-
+func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(200, nil, nil, bytes.NewReader([]byte("")), nil, res.Format)
+		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -486,7 +489,7 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
 	}
-	if testCase.ResponseData == nil && testCase.CollectResponse == nil && len(testCase.BreakResponse) == 0 {
+	if len(expected.Body) < 1 {
 		expected.Format.IgnoreBody = true
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
@@ -538,11 +541,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	return spec, nil
 }
 
-func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.ResponseSerialization, error) {
-	var (
-		spec api.ResponseSerialization
-	)
-
+func (testCase Case) loadResponseSerialization(genJSON interface{}) (spec api.ResponseSerialization, err error) {
 	resLoader := testCase.loader
 	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, resLoader)
 	if err != nil {
@@ -553,13 +552,14 @@ func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.Respons
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling res: %s", err)
 	}
+
 	err = util.Unmarshal(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("error unmarshaling res: %s", err)
 	}
 
 	// the body must not be parsed if it is not expected in the response, or should not be stored
-	if spec.Body == nil && len(testCase.StoreResponse) < 1 {
+	if spec.Body == nil && len(testCase.StoreResponse) == 0 {
 		spec.Format.IgnoreBody = true
 	}
 
