@@ -350,7 +350,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
 		}
 
-		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] len(expected response) > len(actual response) \nExpected response:\n%s\nActual response:\n%s\n", string(leftJson), string(rightJson))})
+		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})
 		return res, nil
 	}
 
