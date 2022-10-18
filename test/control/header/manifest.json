@@ -1,0 +1,82 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res/assets/",
+        "testmode": false
+    },
+    "name": "check control structures in header",
+    "tests": [
+        {
+            "name": "check HTTP header and bounced header using control",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "header": {
+                    "header1": "ABC",
+                    "header2": "123"
+                }
+            },
+            "response": {
+                // check actual HTTP headers
+                "header": {
+                    "Content-Type:control": {
+                        "element_count": 1
+                    },
+                    "xxx:control": {
+                        "must_not_exist": true
+                    }
+                },
+                "body": {
+                    // check bounced headers as part of the response body
+                    "header": {
+                        "Header1": [
+                            "ABC"
+                        ],
+                        "Header2:control": {
+                            "element_count": 1
+                        },
+                        "Header3:control": {
+                            "must_not_exist": true
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "check HTTP header using control, use reverse_test_result",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST"
+            },
+            "response": {
+                // check number of HTTP headers, should always be > 0
+                "header:control": {
+                    "element_count": 0
+                }
+            },
+            "reverse_test_result": true
+        },
+        {
+            "name": "check value in HTTP header using control, use reverse_test_result",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "header": {
+                    "header1": "ABC"
+                }
+            },
+            "response": {
+                "header": {
+                    // HTTP header should never exist twice
+                    "Content-Type:control": {
+                        "element_count": 2
+                    }
+                }
+            },
+            "reverse_test_result": true
+        }
+    ]
+}

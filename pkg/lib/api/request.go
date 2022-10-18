@@ -339,7 +339,11 @@ func (request Request) Send() (response Response, err error) {
 
 	defer httpResponse.Body.Close()
 
-	response, err = NewResponse(httpResponse.StatusCode, httpResponse.Header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
+	header, err := HttpHeaderToMap(httpResponse.Header)
+	if err != nil {
+		return response, err
+	}
+	response, err = NewResponse(httpResponse.StatusCode, header, nil, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response")
 	}
