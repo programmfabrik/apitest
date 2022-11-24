@@ -25,7 +25,7 @@ type Response struct {
 	headerControl util.JsonObject
 	Cookies       []*http.Cookie
 	Body          []byte
-	bodyControl   util.JsonObject
+	BodyControl   util.JsonObject
 	Format        ResponseFormat
 
 	ReqDur      time.Duration
@@ -36,7 +36,7 @@ func (res Response) NeedsCheck() bool {
 	if res.StatusCode != http.StatusOK {
 		return true
 	}
-	if len(res.Headers) > 0 || len(res.Cookies) > 0 || len(res.Body) > 0 {
+	if len(res.Headers) > 0 || len(res.Cookies) > 0 || len(res.Body) > 0 || len(res.BodyControl) > 0 {
 		return true
 	}
 	return false
@@ -95,7 +95,7 @@ func NewResponse(statusCode int, headers map[string]any, headerControl util.Json
 		StatusCode:    statusCode,
 		Headers:       headers,
 		Cookies:       cookies,
-		bodyControl:   bodyControl,
+		BodyControl:   bodyControl,
 		headerControl: headerControl,
 		Format:        bodyFormat,
 	}
@@ -279,7 +279,7 @@ func (response Response) ToGenericJSON() (interface{}, error) {
 	}
 	responseJSON := ResponseSerialization{
 		StatusCode:    response.StatusCode,
-		BodyControl:   response.bodyControl,
+		BodyControl:   response.BodyControl,
 		Headers:       headers,
 		HeaderControl: response.headerControl,
 	}

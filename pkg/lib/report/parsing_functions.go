@@ -87,14 +87,14 @@ func (groups statsGroups) getLowestRuntimeGroup() (group int) {
 	return
 }
 
-//ParseJSONResult Print the result to the console
+// ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
 	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
 
 	return jsonResult
 }
 
-//ParseJSONResult Print the result to the console
+// ParseJSONResult Print the result to the console
 func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 
 	currUsername := "unknown"
@@ -149,7 +149,7 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 	return jsonResult
 }
 
-//ParseJUnitResult Print the result to the console
+// ParseJUnitResult Print the result to the console
 func ParseJUnitResult(baseResult *ReportElement) []byte {
 
 	testName := time.Now().Format("2006-01-02 15:04")

@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Get information
+// Get information
 type info struct {
 	name   string
 	format string

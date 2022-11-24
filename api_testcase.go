@@ -489,8 +489,10 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
 	}
-	if len(expected.Body) < 1 {
+	if len(expected.Body) == 0 && len(expected.BodyControl) == 0 {
 		expected.Format.IgnoreBody = true
+	} else {
+		expected.Format.IgnoreBody = false
 	}
 	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {

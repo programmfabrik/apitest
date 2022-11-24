@@ -625,7 +625,7 @@ func getJsonType(value interface{}) string {
 	case util.JsonBool:
 		return "Bool"
 	default:
-		return "No JSON Type"
+		return "No JSON Type: " + fmt.Sprintf("%v", value)
 	}
 }
 
