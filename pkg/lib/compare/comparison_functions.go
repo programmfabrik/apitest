@@ -29,6 +29,7 @@ type ComparisonContext struct {
 	numberLT       *util.JsonNumber
 	numberLE       *util.JsonNumber
 	regexMatch     *util.JsonString
+	regexMatchNot  *util.JsonString
 	startsWith     *util.JsonString
 	endsWith       *util.JsonString
 }
@@ -99,6 +100,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.regexMatch = &tV
+		case "not_match":
+			tV, ok := v.(string)
+			if !ok {
+				err = fmt.Errorf("not_match is no string")
+				return
+
+			}
+			out.regexMatchNot = &tV
 		case "starts_with":
 			tV, ok := v.(string)
 			if !ok || tV == "" {
@@ -584,6 +593,22 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 		}
 		if !doesMatch {
 			return fmt.Errorf("does not match regex '%s'", *control.regexMatch)
+		}
+	}
+
+	// Check if string does not match regex
+	if control.regexMatchNot != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
+		}
+
+		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(right.(util.JsonString)))
+		if err != nil {
+			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatchNot, err)
+		}
+		if doesMatch {
+			return fmt.Errorf("matches regex '%s' but should not match", *control.regexMatchNot)
 		}
 	}
 

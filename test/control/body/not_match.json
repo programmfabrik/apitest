@@ -1,0 +1,115 @@
+[
+    {
+        "name": "check control not_match",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "path:control": {
+                        "not_match": "^.*/no-2-sid-10-mona-lisa-1.*$"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_match (should fail)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "path:control": {
+                        "not_match": "^.*/no-4-sid-9-art.*$"
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    },
+    {
+        "name": "check control not_match in array",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "_files": [
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.csv"
+                    },
+                    {
+                        "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "_files": [
+                        {
+                            "path:control": {
+                                "not_match": "^.*/no-2-sid-10-mona-lisa-1.*$"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "not_match": "^.*no-3-sid-9-Gustav_Klimt_016.*$"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_match in array (should fail)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "_files": [
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.csv"
+                    },
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.json"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "_files": [
+                        {
+                            "path:control": {
+                                "match": "^.*Gustav_Klimt_016.*$"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "reverse_test_result": true
+    }
+]

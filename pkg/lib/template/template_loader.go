@@ -304,6 +304,10 @@ func (loader *Loader) Render(
 		"match": func(regex, text string) (bool, error) {
 			return regexp.Match(regex, []byte(text))
 		},
+		"not_match": func(regex, text string) (bool, error) {
+			match, err := regexp.Match(regex, []byte(text))
+			return !match, err
+		},
 		"replace_host": func(srcURL string) (string, error) {
 			// If no override provided, return original one
 			if loader.HTTPServerHost == "" {
