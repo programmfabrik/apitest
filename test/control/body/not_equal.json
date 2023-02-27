@@ -1,131 +1,235 @@
 [
+    // not_equal, compare with string
     {
-        "name": "check control match in array",
+        "name": "check control not_equal (different types string, bool)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
             "method": "POST",
             "body": {
-                "_files": [
-                    {
-                        "path": "Test XML+CSV+JSON/1-2.csv"
-                    },
-                    {
-                        "path": "Test XML+CSV+JSON/1-2.json"
-                    },
-                    {
-                        "path": "files/no-1-sid-10-berlin.jpg"
-                    },
-                    {
-                        "path": "files/no-2-sid-10-mona-lisa-1.jpg"
-                    },
-                    {
-                        "path": "files/no-3-sid-9-Gustav_Klimt_016.jpg"
-                    },
-                    {
-                        "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
-                    },
-                    {
-                        "path": "files/so-henk-was-here_small.png"
-                    }
-                ]
+                "str": false
             }
         },
         "response": {
             "statuscode": 200,
             "body": {
                 "body": {
-                    "_files": [
-                        {
-                            "path:control": {
-                                "match": "^.*Gustav_Klimt_016.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*art-exposition-735518_1920.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*berlin.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*mona-lisa-1.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*henk.*$"
-                            }
-                        }
-                    ]
+                    "str:control": {
+                        "not_equal": "right"
+                    }
                 }
             }
         }
     },
     {
-        "name": "check control match in array (should fail)",
+        "name": "check control not_equal (different types string, number)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
             "method": "POST",
             "body": {
-                "_files": [
-                    {
-                        "path": "Test XML+CSV+JSON/1-2.csv"
-                    },
-                    {
-                        "path": "Test XML+CSV+JSON/1-2.json"
-                    },
-                    {
-                        "path": "files/no-1-sid-10-berlin.jpg"
-                    },
-                    {
-                        "path": "files/no-2-sid-10-mona-lisa-1.jpg"
-                    },
-                    {
-                        "path": "files/no-3-sid-9-Gustav_Klimt_016.jpg"
-                    },
-                    {
-                        "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
-                    }
-                ]
+                "str": 123.456
             }
         },
         "response": {
             "statuscode": 200,
             "body": {
                 "body": {
-                    "_files": [
-                        {
-                            "path:control": {
-                                "match": "^.*Gustav_Klimt_016.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*art-exposition-735518_1920.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*berlin.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*mona-lisa-1.*$"
-                            }
-                        },
-                        {
-                            "path:control": {
-                                "match": "^.*henk.*$"
-                            }
-                        }
-                    ]
+                    "str:control": {
+                        "not_equal": "right"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (different types string, number)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "str": 123
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "str:control": {
+                        "not_equal": "right"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type string)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "str": "left"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "str:control": {
+                        "not_equal": "right"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type string) (equal value, should fail)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "str": "left"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "str:control": {
+                        "not_equal": "left"
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    }
+
+    // not_equal, compare with number
+    , {
+        "name": "check control not_equal (different types number, bool)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": false
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 123
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (different types number, string)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "left"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 123
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (different types number, string)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "left"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 123.456
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type number)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": 123
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 124
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type number)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": 123.456
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 123.457
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type number) (equal value, should fail)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": 123.456
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num:control": {
+                        "not_equal": 123.456
+                    }
                 }
             }
         },

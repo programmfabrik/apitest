@@ -6,11 +6,12 @@
     },
     "name": "check control structures in array",
     "tests": [
-        "@match.json"
+        "@invalid_control.json"
+        ,"@match.json"
         ,"@no_extra.json"
         ,"@starts_ends_with.json"
         ,"@order_matters.json"
         ,"@not_match.json"
-        // ,"@not_equal.json" todo
+        ,"@not_equal.json"
     ]
 }

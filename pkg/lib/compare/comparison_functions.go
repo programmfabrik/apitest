@@ -32,6 +32,8 @@ type ComparisonContext struct {
 	regexMatchNot  *util.JsonString
 	startsWith     *util.JsonString
 	endsWith       *util.JsonString
+	notEqualString *util.JsonString
+	notEqualNumber *util.JsonNumber
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -178,7 +180,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be equal or bigger
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_gt is no numbr")
+				err = fmt.Errorf("number_gt is no number")
 				return
 
 			}
@@ -188,7 +190,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be smaller
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_lt is no numbr")
+				err = fmt.Errorf("number_lt is no number")
 				return
 
 			}
@@ -198,12 +200,35 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be equal or smaller
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_le is no numbr")
+				err = fmt.Errorf("number_le is no number")
 				return
-
 			}
 			out.numberLE = &tV
 			out.isNumber = true
+		case "not_equal":
+			switch getJsonType(v) {
+			case "String":
+				tV, ok := v.(util.JsonString)
+				if !ok {
+					err = fmt.Errorf("invalid type for not_equal")
+					return
+				}
+				out.notEqualString = &tV
+			case "Number":
+				tV, ok := v.(util.JsonNumber)
+				if !ok {
+					err = fmt.Errorf("invalid type for not_equal")
+					return
+				}
+				out.notEqualNumber = &tV
+			default:
+				err = fmt.Errorf("invalid type for not_equal: %v", v)
+				return
+			}
+
+		default:
+			err = fmt.Errorf("unknown key in control: %s", k)
+			return
 		}
 	}
 
@@ -631,6 +656,25 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 
 		if !strings.HasSuffix(right.(util.JsonString), *control.endsWith) {
 			return fmt.Errorf("does not end with '%s'", *control.endsWith)
+		}
+	}
+
+	if control.notEqualString != nil {
+		jsonType := getJsonType(right)
+		// only compare with other string, different types are not equal
+		if jsonType == "String" {
+			if *control.notEqualString == right.(util.JsonString) {
+				return fmt.Errorf("is equal to '%s', should not be equal", *control.notEqualString)
+			}
+		}
+	}
+	if control.notEqualNumber != nil {
+		jsonType := getJsonType(right)
+		// only compare with other number, different types are not equal
+		if jsonType == "Number" {
+			if *control.notEqualNumber == right.(util.JsonNumber) {
+				return fmt.Errorf("is equal to %v, should not be equal", *control.notEqualNumber)
+			}
 		}
 	}
 
