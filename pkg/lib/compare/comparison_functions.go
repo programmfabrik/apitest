@@ -209,7 +209,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			if v == nil {
 				out.notEqualNull = true
 			} else {
-				out.notEqual = &v
+				// only allow the not_equal for types string, number, bool
+				switch getJsonType(v) {
+				case "String", "Number", "Bool":
+					out.notEqual = &v
+				default:
+					err = fmt.Errorf("not_equal has invalid type %s", getJsonType(v))
+					return
+				}
 			}
 
 		default:

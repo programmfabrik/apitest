@@ -882,7 +882,7 @@ func TestComparison(t *testing.T) {
 			name: "check control not_equal (different types string, number)",
 			left: util.JsonObject{
 				"v:control": util.JsonObject{
-					"not_equal": 123,
+					"not_equal": 123.45,
 				},
 			},
 			right: util.JsonObject{
@@ -895,7 +895,7 @@ func TestComparison(t *testing.T) {
 			name: "check control not_equal (different types bool, number)",
 			left: util.JsonObject{
 				"v:control": util.JsonObject{
-					"not_equal": 456,
+					"not_equal": 456.789,
 				},
 			},
 			right: util.JsonObject{
