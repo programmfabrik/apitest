@@ -63,6 +63,43 @@ func TestComparison(t *testing.T) {
 			eFailures: nil,
 		},
 		{
+			name: "String must not match regex",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"not_match": "\\d+\\..+",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "matches regex '\\d+\\..+' but should not match",
+				},
+			},
+		},
+		{
+			name: "String must not match regex",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"not_match": "\\d+\\..+",
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "matches regex '\\d+\\..+' but should not match",
+				},
+			},
+		},
+		{
 			name: "String does not match regex",
 			left: util.JsonObject{
 				"stringerino:control": util.JsonObject{
@@ -825,6 +862,195 @@ func TestComparison(t *testing.T) {
 				{
 					Key:     "body",
 					Message: "extra elements found in array",
+				},
+			},
+		},
+		{
+			name: "check control not_equal (different types number, string)",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": "right",
+				},
+			},
+			right: util.JsonObject{
+				"v": 123.456,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "check control not_equal (different types string, number)",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": 123,
+				},
+			},
+			right: util.JsonObject{
+				"v": "left",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "check control not_equal (different types bool, number)",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": 456,
+				},
+			},
+			right: util.JsonObject{
+				"v": true,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "check control not_equal (different types number, bool)",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": true,
+				},
+			},
+			right: util.JsonObject{
+				"v": 789.0001,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal with null and null",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": nil,
+				},
+			},
+			right: util.JsonObject{
+				"v": nil,
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "v",
+					Message: "is null",
+				},
+			},
+		},
+		{
+			name: "Check not_equal with null and string",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": nil,
+				},
+			},
+			right: util.JsonObject{
+				"v": "not null",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal with string and null",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": "not null",
+				},
+			},
+			right: util.JsonObject{
+				"v": nil,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal: string with different value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": "left",
+				},
+			},
+			right: util.JsonObject{
+				"v": "right",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal: string with same value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": "left",
+				},
+			},
+			right: util.JsonObject{
+				"v": "left",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "v",
+					Message: "is equal to String 'left', should not be equal",
+				},
+			},
+		},
+		{
+			name: "Check not_equal: number with different value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": 123.45,
+				},
+			},
+			right: util.JsonObject{
+				"v": 6.789,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal: number with same value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": 0.111,
+				},
+			},
+			right: util.JsonObject{
+				"v": 0.111,
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "v",
+					Message: "is equal to Number 0.111, should not be equal",
+				},
+			},
+		},
+		{
+			name: "Check not_equal: boolean with different value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": false,
+				},
+			},
+			right: util.JsonObject{
+				"v": true,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal: boolean with same value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": false,
+				},
+			},
+			right: util.JsonObject{
+				"v": false,
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "v",
+					Message: "is equal to Bool false, should not be equal",
 				},
 			},
 		},

@@ -32,9 +32,8 @@ type ComparisonContext struct {
 	regexMatchNot  *util.JsonString
 	startsWith     *util.JsonString
 	endsWith       *util.JsonString
-	notEqualString *util.JsonString
-	notEqualNumber *util.JsonNumber
 	notEqualNull   bool
+	notEqual       *interface{}
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -210,25 +209,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			if v == nil {
 				out.notEqualNull = true
 			} else {
-				switch getJsonType(v) {
-				case "String":
-					tV, ok := v.(util.JsonString)
-					if !ok {
-						err = fmt.Errorf("invalid type for not_equal")
-						return
-					}
-					out.notEqualString = &tV
-				case "Number":
-					tV, ok := v.(util.JsonNumber)
-					if !ok {
-						err = fmt.Errorf("invalid type for not_equal")
-						return
-					}
-					out.notEqualNumber = &tV
-				default:
-					err = fmt.Errorf("invalid type for not_equal: %v", v)
-					return
-				}
+				out.notEqual = &v
 			}
 
 		default:
@@ -669,22 +650,26 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 			return fmt.Errorf("is null")
 		}
 	}
-	if control.notEqualString != nil {
+	if control.notEqual != nil {
+		controlJsonType := getJsonType(*control.notEqual)
 		jsonType := getJsonType(right)
-		if jsonType != "String" {
-			return fmt.Errorf("should be 'String' for not_equal but is '%s'", jsonType)
-		}
-		if *control.notEqualString == right.(util.JsonString) {
-			return fmt.Errorf("is equal to '%s', should not be equal", *control.notEqualString)
-		}
-	}
-	if control.notEqualNumber != nil {
-		jsonType := getJsonType(right)
-		if jsonType != "Number" {
-			return fmt.Errorf("should be 'Number' for not_equal but is '%s'", jsonType)
-		}
-		if *control.notEqualNumber == right.(util.JsonNumber) {
-			return fmt.Errorf("is equal to %v, should not be equal", *control.notEqualNumber)
+		// only compare value if type is equal and a low level json type (string, number, bool)
+		// different type is always not_equal
+		if jsonType == controlJsonType {
+			switch jsonType {
+			case "String":
+				if (*control.notEqual).(util.JsonString) == right.(util.JsonString) {
+					return fmt.Errorf("is equal to %s '%s', should not be equal", jsonType, (*control.notEqual).(util.JsonString))
+				}
+			case "Number":
+				if (*control.notEqual).(util.JsonNumber) == right.(util.JsonNumber) {
+					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, (*control.notEqual).(util.JsonNumber))
+				}
+			case "Bool":
+				if (*control.notEqual).(util.JsonBool) == right.(util.JsonBool) {
+					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, (*control.notEqual).(util.JsonBool))
+				}
+			}
 		}
 	}
 
