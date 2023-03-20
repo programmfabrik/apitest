@@ -1,0 +1,27 @@
+{
+    "html": {
+        "-xmlns": "http://www.w3.org/1999/xhtml",
+        "head": {
+            "link": {
+                "-href": "/css/easydb.css",
+                "-rel": "stylesheet",
+                "-type": "text/css"
+            },
+            "title": "easydb documentation"
+        },
+        "body": {
+            "h1": {
+                "#text": "Welcome to the easydb documentation",
+                "-id": "welcome-to-the-easydb-documentation"
+            },
+            "h2": {
+                "#text": "General",
+                "-id": "general"
+            },
+            "p": [
+                "easydb is a flexible web application that allows customers to manage data and information for images and multimedia.",
+                "easydb has a flexible data model that allows each instance to be tailored to customer needs."
+            ]
+        }
+    }
+}
