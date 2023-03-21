@@ -171,7 +171,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
 	case "xhtml":
-		bodyData, err = util.Xhtml2Json(resp.Body, responseFormat.Type)
+		bodyData, err = util.Xhtml2Json(resp.Body)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal xhtml to json")
 		}
@@ -381,7 +381,7 @@ func (response Response) ToString() string {
 
 	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html":
+	case "xml", "xml2", "csv", "xhtml":
 		if utf8.Valid(body) {
 			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {

@@ -10,6 +10,7 @@
     },
     "name": "XHTML tests",
     "tests": [
+        "@check_local_file_against_response.json",
         "@check_response_format_xhtml.json"
     ]
 }
