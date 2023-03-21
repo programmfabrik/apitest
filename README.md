@@ -468,15 +468,23 @@ For comparing a binary file, simply point the response to the binary file:
 
 If the response format is specified as `"type": "xml"` or `"type": "xml2"`, we internally marshal that XML into json using [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
 
-The format `"xml"` uses `NewMapXmlSeq()`, whereas the format `"xml2"` uses `NewMapXml()`, which provides a simpler json format (see also template [`file_xml2json`](#file_xml2json-path)).
+The format `"xml"` uses `NewMapXmlSeq()`, whereas the format `"xml2"` uses `NewMapXml()`, which provides a simpler json format.
+
+See also template [`file_xml2json`](#file_xml2json-path).
 
 On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
+
+## XHTML Data comparison
+
+If the response format is specified as `"type": "xhtml"`, we internally marshal that XHTML into json using [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
+
+The XHTML code in the response must comply to the [XHTML standard](https://www.w3.org/TR/xhtml1/), which means it must be parsable as XML.
+
+See also template [`file_xhtml2json`](#file_xhtml2json-path).
 
 ## CSV Data comparison
 
 If the response format is specified as `"type": "csv"`, we internally marshal that CSV into json.
-
-On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
@@ -1795,7 +1803,7 @@ int64,string
 ## `file_xml2json [path]`
 
 Helper function to parse an XML file and convert it into json
-- `@path`: string; a path to the xml file that should be loaded. The path is either relative to the manifest or a weburl
+- `@path`: string; a path to the XML file that should be loaded. The path is either relative to the manifest or a weburl
 
 This function uses the function `NewMapXml()` from [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
 
@@ -1841,6 +1849,58 @@ would result in
                 "#text": "Example",
                 "-column-api-id": "263",
                 "-type": "text_oneline"
+            }
+        }
+    }
+}
+```
+
+## `file_xhtml2json [path]`
+
+Helper function to parse an XHTML file and convert it into json
+- `@path`: string; a path to the XHTML file that should be loaded. The path is either relative to the manifest or a weburl
+
+### Example
+
+Content of XHTML file `some/path/example.xhtml`:
+
+```html
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <link href="/css/easydb.css" rel="stylesheet" type="text/css" />
+        <title>easydb documentation</title>
+    </head>
+    <body>
+        <h1 id="welcome-to-the-easydb-documentation">Welcome to the easydb documentation</h1>
+    </body>
+</html>
+```
+
+The call
+
+```django
+{{ file_xhtml2json "some/path/example.xhtml" }}
+```
+
+would result in
+
+```json
+{
+    "html": {
+        "-xmlns": "http://www.w3.org/1999/xhtml",
+        "head": {
+            "link": {
+                "-href": "/css/easydb.css",
+                "-rel": "stylesheet",
+                "-type": "text/css"
+            },
+            "title": "easydb documentation"
+        },
+        "body": {
+            "h1": {
+                "#text": "Welcome to the easydb documentation",
+                "-id": "welcome-to-the-easydb-documentation"
             }
         }
     }
