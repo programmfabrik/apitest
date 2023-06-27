@@ -199,6 +199,19 @@ func (loader *Loader) Render(
 
 			return string(bytes), nil
 		},
+		"file_html2json": func(path string) (string, error) {
+			fileBytes, err := fileReadInternal(path, rootDir)
+			if err != nil {
+				return "", err
+			}
+
+			bytes, err := util.Html2Json(fileBytes)
+			if err != nil {
+				return "", errors.Wrap(err, "Could not marshal html to json")
+			}
+
+			return string(bytes), nil
+		},
 		"file_path": func(path string) string {
 			return util.LocalPath(path, rootDir)
 		},

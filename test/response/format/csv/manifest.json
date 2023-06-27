@@ -1,0 +1,17 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../../../_res/assets",
+        "testmode": false
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
+    "name": "CSV tests",
+    "tests": [
+        "@csv_requests.json",
+        "@check_store_values.json",
+        "@preserve_trailing_spaces.json"
+    ]
+}

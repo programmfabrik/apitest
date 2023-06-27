@@ -2,7 +2,7 @@
 {
     "http_server": {
         "addr": "{{ $local_port }}",
-        "dir": "../_res/assets/",
+        "dir": "../../_res/assets",
         "testmode": false
     },
     "name": "new feature pre_process",

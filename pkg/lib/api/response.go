@@ -83,7 +83,7 @@ type ResponseSerialization struct {
 
 type ResponseFormat struct {
 	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
-	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "xhtml", "binary"
+	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary"
 	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
@@ -169,6 +169,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
 			return res, errors.Wrap(err, "Could not marshal xml to json")
+		}
+	case "html":
+		bodyData, err = util.Html2Json(resp.Body)
+		if err != nil {
+			return res, errors.Wrap(err, "Could not marshal html to json")
 		}
 	case "xhtml":
 		bodyData, err = util.Xhtml2Json(resp.Body)
@@ -381,7 +386,7 @@ func (response Response) ToString() string {
 
 	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "xhtml":
+	case "xml", "xml2", "csv", "html", "xhtml":
 		if utf8.Valid(body) {
 			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {

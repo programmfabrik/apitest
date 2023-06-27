@@ -1,0 +1,311 @@
+{
+    "html": [
+        {
+            "#attr": {
+                "lang": "de"
+            },
+            "#text:control": {
+                "must_not_exist": true
+            },
+            "body": [
+                {
+                    "#text:control": {
+                        "must_not_exist": true
+                    },
+                    "main": [
+                        {
+                            "#attr": {
+                                "class": "page-register"
+                            },
+                            "#text:control": {
+                                "must_not_exist": true
+                            },
+                            "article": [
+                                {
+                                    "#attr": {
+                                        "class": "access-container  access-container--wide "
+                                    },
+                                    "#text:control": {
+                                        "must_not_exist": true
+                                    },
+                                    "div": [
+                                        {
+                                            "#attr": {
+                                                "class": "container"
+                                            },
+                                            "#text:control": {
+                                                "must_not_exist": true
+                                            },
+                                            "footer": [
+                                                {
+                                                    "#text:control": {
+                                                        "must_not_exist": true
+                                                    },
+                                                    "nav": [
+                                                        {
+                                                            "div": [
+                                                                {
+                                                                    "#attr": {
+                                                                        "class": "language-switcher"
+                                                                    },
+                                                                    "#text:control": {
+                                                                        "must_not_exist": true
+                                                                    },
+                                                                    "select": [
+                                                                        {
+                                                                            "#attr": {
+                                                                                "onchange": "onLanguageChange(event)"
+                                                                            },
+                                                                            "#text:control": {
+                                                                                "must_not_exist": true
+                                                                            },
+                                                                            "option": [
+                                                                                {
+                                                                                    "#attr": {
+                                                                                        "value": "en-US"
+                                                                                    },
+                                                                                    "#text": "American English (Amerikanisches Englisch)"
+                                                                                },
+                                                                                {
+                                                                                    "#attr": {
+                                                                                        "selected": "selected",
+                                                                                        "value": "de-DE"
+                                                                                    },
+                                                                                    "#text": "Deutsch"
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ],
+                                                            "script": [
+                                                                {
+                                                                    "#text:control": {
+                                                                        "starts_with": "function onLanguageChange(evt) {"
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "h1": [
+                                                {
+                                                    "#text": "Registrieren"
+                                                }
+                                            ],
+                                            "section": [
+                                                {
+                                                    "#text:control": {
+                                                        "must_not_exist": true
+                                                    },
+                                                    "form": [
+                                                        {
+                                                            "#attr": {
+                                                                "action": "",
+                                                                "class": "form-grid",
+                                                                "id": "registerForm",
+                                                                "method": "POST"
+                                                            },
+                                                            "#text:control": {
+                                                                "must_not_exist": true
+                                                            },
+                                                            "fieldset": [
+                                                                {
+                                                                    "#attr": {
+                                                                        "data-field-name": "email",
+                                                                        "data-width": "1"
+                                                                    },
+                                                                    "#text:control": {
+                                                                        "must_not_exist": true
+                                                                    },
+                                                                    "label": [
+                                                                        {
+                                                                            "#attr": {
+                                                                                "for": "email"
+                                                                            },
+                                                                            "#text:control": {
+                                                                                "must_not_exist": true
+                                                                            },
+                                                                            "input": [
+                                                                                {
+                                                                                    "#attr": {
+                                                                                        "autocomplete": "email",
+                                                                                        "class": "has-error",
+                                                                                        "id": "email",
+                                                                                        "name": "email",
+                                                                                        "placeholder": " ",
+                                                                                        "required": "",
+                                                                                        "type": "email"
+                                                                                    },
+                                                                                    "#text:control": {
+                                                                                        "must_not_exist": true
+                                                                                    }
+                                                                                }
+                                                                            ],
+                                                                            "span": [
+                                                                                {
+                                                                                    "#attr": {
+                                                                                        "class": "field-label"
+                                                                                    },
+                                                                                    "#text:control": {
+                                                                                        "must_not_exist": true
+                                                                                    },
+                                                                                    "sup": [
+                                                                                        {
+                                                                                            "#attr": {
+                                                                                                "class": "required"
+                                                                                            },
+                                                                                            "#text": "*"
+                                                                                        }
+                                                                                    ]
+                                                                                },
+                                                                                {
+                                                                                    "#attr": {
+                                                                                        "class": "field-hint",
+                                                                                        "title": "Nutzer exisitert bereits"
+                                                                                    },
+                                                                                    "#text:control": {
+                                                                                        "starts_with": "Nutzer exisitert"
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "#attr": {
+                                                                        "class": "actions",
+                                                                        "data-pre": "1",
+                                                                        "data-width": "1"
+                                                                    },
+                                                                    "#text:control": {
+                                                                        "must_not_exist": true
+                                                                    },
+                                                                    "button": [
+                                                                        {
+                                                                            "#attr": {
+                                                                                "type": "submit"
+                                                                            },
+                                                                            "#text": "Jetzt registrieren"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "#attr": {
+                                                                        "class": "secondary-actions"
+                                                                    },
+                                                                    "#text:control": {
+                                                                        "must_not_exist": true
+                                                                    },
+                                                                    "a": [
+                                                                        {
+                                                                            "#attr": {
+                                                                                "href": "http://localhost:8085/"
+                                                                            },
+                                                                            "#text": "Zur Startseite"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ],
+                                                            "p": [
+                                                                {
+                                                                    "#attr": {
+                                                                        "class": "required-information"
+                                                                    },
+                                                                    "#text:control": {
+                                                                        "must_not_exist": true
+                                                                    },
+                                                                    "sup": [
+                                                                        {
+                                                                            "#text": "*"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "#attr": {
+                                                                        "class": "error-summary"
+                                                                    },
+                                                                    "#text": "Das Formular enthält Fehler"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "head": [
+                {
+                    "#text:control": {
+                        "must_not_exist": true
+                    },
+                    "link": [
+                        {
+                            "#attr": {
+                                "href": "/api/page/static/images/favicon.png",
+                                "rel": "icon"
+                            },
+                            "#text:control": {
+                                "must_not_exist": true
+                            }
+                        },
+                        {
+                            "#attr": {
+                                "href": "/api/page/static/css/main.css",
+                                "rel": "stylesheet"
+                            },
+                            "#text:control": {
+                                "must_not_exist": true
+                            }
+                        }
+                    ],
+                    "meta": [
+                        {
+                            "#attr": {
+                                "charset": "utf-8"
+                            },
+                            "#text:control": {
+                                "must_not_exist": true
+                            }
+                        },
+                        {
+                            "#attr": {
+                                "content": "fylr - manage your data",
+                                "name": "description"
+                            },
+                            "#text:control": {
+                                "must_not_exist": true
+                            }
+                        }
+                    ],
+                    "script": [
+                        {
+                            "#text:control": {
+                                "starts_with": "async function submitForm(form) {"
+                            }
+                        }
+                    ],
+                    "style": [
+                        {
+                            "#text:control": {
+                                "starts_with": ":root {}"
+                            }
+                        }
+                    ],
+                    "title": [
+                        {
+                            "#text": "fylr"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

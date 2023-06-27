@@ -1,11 +1,14 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
 )
@@ -69,11 +72,11 @@ func Xml2Json(rawXml []byte, format string) ([]byte, error) {
 		return []byte{}, errors.Wrap(err, "Could not parse xml")
 	}
 
-	json, err := mv.JsonIndent("", " ")
+	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
 		return []byte{}, errors.Wrap(err, "Could not convert to json")
 	}
-	return json, nil
+	return jsonStr, nil
 }
 
 // Xhtml2Json parses the raw xhtml data and converts it into a json string
@@ -88,9 +91,70 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 		return []byte{}, errors.Wrap(err, "Could not parse xhtml")
 	}
 
-	json, err := mv.JsonIndent("", " ")
+	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
 		return []byte{}, errors.Wrap(err, "Could not convert to json")
 	}
-	return json, nil
+	return jsonStr, nil
+}
+
+// Html2Json parses the raw html data and converts it into a json string
+func Html2Json(rawHtml []byte) ([]byte, error) {
+	var (
+		htmlDoc *goquery.Document
+		err     error
+	)
+
+	htmlDoc, err = goquery.NewDocumentFromReader(bytes.NewReader(rawHtml))
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "Could not parse html")
+	}
+
+	htmlData := parseHtmlNode(htmlDoc.Selection)
+	jsonStr, err := json.MarshalIndent(htmlData, "", " ")
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "Could not convert html to json")
+	}
+
+	return jsonStr, nil
+}
+
+func parseHtmlNode(node *goquery.Selection) map[string]interface{} {
+	tagName := node.Get(0).Data
+	tagData := map[string]interface{}{}
+
+	// include attributes
+	attrs := map[string]interface{}{}
+	for _, attr := range node.Get(0).Attr {
+		attrs[attr.Key] = attr.Val
+	}
+	if len(attrs) > 0 {
+		tagData["#attr"] = attrs
+	}
+
+	// recursively parse child nodes
+	childrenByName := map[string][]interface{}{}
+	node.Children().Each(func(i int, childNode *goquery.Selection) {
+		for childName, childContent := range parseHtmlNode(childNode) {
+			childrenByName[childName] = append(childrenByName[childName], childContent)
+		}
+	})
+	for childName, children := range childrenByName {
+		tagData[childName] = children
+	}
+
+	text := strings.Trim(node.Text(), " \n\t")
+	if len(text) > 0 && len(childrenByName) < 1 {
+		// include the text only if there are no children, since goquery would render all children into a single string
+		tagData["#text"] = text
+	}
+
+	// there might be an empty top level tag (eg '<!DOCTYPE')
+	if tagName == "" {
+		return tagData
+	}
+
+	return map[string]interface{}{
+		tagName: tagData,
+	}
 }

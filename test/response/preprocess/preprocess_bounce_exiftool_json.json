@@ -16,7 +16,7 @@
                 "header2": "XYZ"
             },
             "body": {
-                "file": "@../_res/assets/camera.jpg"
+                "file": "@../../_res/assets/camera.jpg"
             },
             "body_type": "multipart"
         },
