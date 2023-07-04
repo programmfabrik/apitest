@@ -119,27 +119,32 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 	return jsonStr, nil
 }
 
-func parseHtmlNode(node *goquery.Selection) map[string]interface{} {
+// parseHtmlNode recursivly parses the html node and adds it to a map
+// the resulting structure is the same as the result of format "xml2" (using mxj.NewMapXmlSeq)
+func parseHtmlNode(node *goquery.Selection) map[string]any {
 	tagName := node.Get(0).Data
-	tagData := map[string]interface{}{}
+	tagData := map[string]any{}
 
 	// include attributes
-	attrs := map[string]interface{}{}
 	for _, attr := range node.Get(0).Attr {
-		attrs[attr.Key] = attr.Val
-	}
-	if len(attrs) > 0 {
-		tagData["#attr"] = attrs
+		tagData["-"+attr.Key] = attr.Val
 	}
 
 	// recursively parse child nodes
-	childrenByName := map[string][]interface{}{}
+	childrenByName := map[string][]any{}
 	node.Children().Each(func(i int, childNode *goquery.Selection) {
 		for childName, childContent := range parseHtmlNode(childNode) {
 			childrenByName[childName] = append(childrenByName[childName], childContent)
 		}
 	})
 	for childName, children := range childrenByName {
+		if len(children) < 1 {
+			continue
+		}
+		if len(children) == 1 {
+			tagData[childName] = children[0]
+			continue
+		}
 		tagData[childName] = children
 	}
 
@@ -154,7 +159,7 @@ func parseHtmlNode(node *goquery.Selection) map[string]interface{} {
 		return tagData
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		tagName: tagData,
 	}
 }
