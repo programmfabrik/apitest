@@ -75,3 +75,22 @@ func Xml2Json(rawXml []byte, format string) ([]byte, error) {
 	}
 	return json, nil
 }
+
+// Xhtml2Json parses the raw xhtml data and converts it into a json string
+func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
+	var (
+		mv  mxj.Map
+		err error
+	)
+
+	mv, err = mxj.NewMapXml(rawXhtml)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "Could not parse xhtml")
+	}
+
+	json, err := mv.JsonIndent("", " ")
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "Could not convert to json")
+	}
+	return json, nil
+}

@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Get existing XHTML file",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {{ file_xhtml2json "sample.xhtml" }}
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "header": {},
+                "body": {{ file "result_xhtml.json" }}
+            }
+        }
+    }
+]
