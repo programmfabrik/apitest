@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/sirupsen/logrus"
-	"github.com/yudai/pp"
 	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 
@@ -320,7 +319,6 @@ func (loader *Loader) Render(
 		},
 		"not_match": func(regex, text string) (bool, error) {
 			match, err := regexp.Match(regex, []byte(text))
-			pp.Println("not_match -", match, err)
 			return !match, err
 		},
 		"replace_host": func(srcURL string) (string, error) {
