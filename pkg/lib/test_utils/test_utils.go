@@ -109,7 +109,7 @@ func AssertLoggingEqualsRegex(log bytes.Buffer, want []LoggingRegexAssertion) (b
 func AssertJsonStringEquals(t testing.TB, expected, got string) {
 
 	var (
-		expectedJson, gotJson        interface{}
+		expectedJson, gotJson        any
 		expectedMinified, gotMinifed []byte
 	)
 

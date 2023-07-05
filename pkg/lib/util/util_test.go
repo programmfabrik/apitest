@@ -3,7 +3,7 @@ package util
 import "testing"
 
 func TestRemoveFromJsonArray(t *testing.T) {
-	input := []interface{}{JsonString("0"), JsonString("1"), JsonString("2"), JsonString("3"), JsonString("4"), JsonString("5")}
+	input := []any{JsonString("0"), JsonString("1"), JsonString("2"), JsonString("3"), JsonString("4"), JsonString("5")}
 
 	output := RemoveFromJsonArray(input, 2)
 	if len(output) != 5 || output[2] != JsonString("3") {

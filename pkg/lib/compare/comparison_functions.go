@@ -223,7 +223,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		if takenInLeft[ck] {
 			continue
 		}
-		var rv, lv interface{}
+		var rv, lv any
 		var rOK, lOK bool
 		control := &ComparisonContext{}
 		var k string
@@ -480,7 +480,7 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 	return arrayComparison(left, right, control, nextControl)
 }
 
-func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext) (err error) {
+func keyChecks(lk string, right any, rOK bool, control ComparisonContext) (err error) {
 	if control.isString {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")
@@ -613,7 +613,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	return nil
 }
 
-func getJsonType(value interface{}) string {
+func getJsonType(value any) string {
 	switch value.(type) {
 	case util.JsonObject:
 		return "Object"
@@ -630,7 +630,7 @@ func getJsonType(value interface{}) string {
 	}
 }
 
-func getAsInt64(value interface{}) (int64, error) {
+func getAsInt64(value any) (int64, error) {
 	switch t := value.(type) {
 	case int64:
 		return t, nil

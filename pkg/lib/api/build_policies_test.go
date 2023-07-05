@@ -20,7 +20,7 @@ func TestBuildMultipart(t *testing.T) {
 	afero.WriteFile(filesystem.Fs, fmt.Sprintf("test/%s", assertFilename), []byte(assertContent), 0644)
 
 	testRequest := Request{
-		Body: map[string]interface{}{
+		Body: map[string]any{
 			"somekey": fmt.Sprintf("@%s", assertFilename),
 		},
 		ManifestDir: "test/",
@@ -43,7 +43,7 @@ func TestBuildMultipart(t *testing.T) {
 
 func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 	testRequest := Request{
-		Body: map[string]interface{}{
+		Body: map[string]any{
 			"somekey": fmt.Sprintf("noPathspec"),
 		},
 		ManifestDir: "test/path/",
@@ -60,7 +60,7 @@ func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 
 func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 	testRequest := Request{
-		Body: map[string]interface{}{
+		Body: map[string]any{
 			"somekey": 1,
 		},
 		ManifestDir: "test/path/",
@@ -77,7 +77,7 @@ func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 
 func TestBuildMultipart_FileDoesNotExist(t *testing.T) {
 	testRequest := Request{
-		Body: map[string]interface{}{
+		Body: map[string]any{
 			"somekey": "@does_not_exist.json",
 		},
 		ManifestDir: "test/path/",

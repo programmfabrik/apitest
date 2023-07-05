@@ -17,8 +17,8 @@ import (
 
 type ConfigStruct struct {
 	Apitest struct {
-		Server    string                 `mapstructure:"server"`
-		StoreInit map[string]interface{} `mapstructure:"store"`
+		Server    string         `mapstructure:"server"`
+		StoreInit map[string]any `mapstructure:"store"`
 		Limit     struct {
 			Request  int `mapstructure:"request"`
 			Response int `mapstructure:"response"`

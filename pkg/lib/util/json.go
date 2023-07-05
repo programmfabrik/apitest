@@ -12,8 +12,8 @@ import (
 	"github.com/tidwall/jsonc"
 )
 
-type JsonObject = map[string]interface{}
-type JsonArray = []interface{}
+type JsonObject = map[string]any
+type JsonArray = []any
 type JsonString = string
 type JsonNumber = float64
 type JsonBool = bool
@@ -24,7 +24,7 @@ func init() {
 	coloredError = true
 }
 
-func Unmarshal(input []byte, output interface{}) error {
+func Unmarshal(input []byte, output any) error {
 
 	// Remove # comments from template
 	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)

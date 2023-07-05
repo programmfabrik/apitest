@@ -13,15 +13,15 @@ import (
 )
 
 type Datastore struct {
-	storage      map[string]interface{} // custom storage
-	responseJson []string               // store the responses
+	storage      map[string]any // custom storage
+	responseJson []string       // store the responses
 	logDatastore bool
 	lock         *sync.Mutex
 }
 
 func NewStore(logDatastore bool) *Datastore {
 	ds := Datastore{}
-	ds.storage = make(map[string]interface{}, 0)
+	ds.storage = make(map[string]any, 0)
 	ds.responseJson = make([]string, 0)
 	ds.logDatastore = logDatastore
 	ds.lock = &sync.Mutex{}
@@ -92,7 +92,7 @@ func (ds *Datastore) AppendResponse(s string) {
 	ds.responseJson = append(ds.responseJson, s)
 }
 
-func (ds *Datastore) SetMap(smap map[string]interface{}) error {
+func (ds *Datastore) SetMap(smap map[string]any) error {
 	for k, v := range smap {
 		err := ds.Set(k, v)
 		if err != nil {
@@ -102,7 +102,7 @@ func (ds *Datastore) SetMap(smap map[string]interface{}) error {
 	return nil
 }
 
-func (ds *Datastore) Set(index string, value interface{}) error {
+func (ds *Datastore) Set(index string, value any) error {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
 	//typeswitch for checking if float is actually int
@@ -123,14 +123,14 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 		use_index := index[:len(index)-2]
 		_, ok := ds.storage[use_index]
 		if !ok {
-			ds.storage[use_index] = make([]interface{}, 0)
+			ds.storage[use_index] = make([]any, 0)
 		}
 
-		s, ok := ds.storage[use_index].([]interface{})
+		s, ok := ds.storage[use_index].([]any)
 		if !ok {
 			tmp := ds.storage[use_index]
-			ds.storage[use_index] = make([]interface{}, 0)
-			s = ds.storage[use_index].([]interface{})
+			ds.storage[use_index] = make([]any, 0)
+			s = ds.storage[use_index].([]any)
 
 			if tmp != nil {
 				ds.storage[use_index] = append(s, tmp)
@@ -144,13 +144,13 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 		use_index := rego[1]
 		_, ok := ds.storage[use_index]
 		if !ok {
-			ds.storage[use_index] = make(map[string]interface{}, 0)
+			ds.storage[use_index] = make(map[string]any, 0)
 		}
 
-		s, ok := ds.storage[use_index].(map[string]interface{})
+		s, ok := ds.storage[use_index].(map[string]any)
 		if !ok {
-			ds.storage[use_index] = make(map[string]interface{}, 0)
-			s = ds.storage[use_index].(map[string]interface{})
+			ds.storage[use_index] = make(map[string]any, 0)
+			s = ds.storage[use_index].(map[string]any)
 		}
 		s[rego[2]] = value
 		ds.storage[use_index] = s
@@ -166,7 +166,7 @@ func (ds *Datastore) Set(index string, value interface{}) error {
 	return nil
 }
 
-func (ds Datastore) Get(index string) (res interface{}, err error) {
+func (ds Datastore) Get(index string) (res any, err error) {
 	// strings are evalulated as int, so
 	// that we can support "-<int>" notations
 
@@ -188,7 +188,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 			return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
 		}
 
-		tmpResMap, ok := tmpRes.(map[string]interface{})
+		tmpResMap, ok := tmpRes.(map[string]any)
 		if ok {
 			//We have a map
 			mapVal, ok := tmpResMap[mapIndex]
@@ -200,7 +200,7 @@ func (ds Datastore) Get(index string) (res interface{}, err error) {
 			}
 		}
 
-		tmpResSlice, ok := tmpRes.([]interface{})
+		tmpResSlice, ok := tmpRes.([]any)
 		if ok {
 			//We have a slice
 			sliceIdx, err := strconv.Atoi(mapIndex)

@@ -77,7 +77,7 @@ type ResponseSerialization struct {
 	Headers       map[string]any    `yaml:"header" json:"header,omitempty"`
 	HeaderControl util.JsonObject   `yaml:"header:control" json:"header:control,omitempty"`
 	Cookies       map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
-	Body          interface{}       `yaml:"body" json:"body,omitempty"`
+	Body          any               `yaml:"body" json:"body,omitempty"`
 	BodyControl   util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
 	Format        ResponseFormat    `yaml:"format" json:"format,omitempty"`
 }
@@ -148,9 +148,9 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
-func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (interface{}, error) {
+func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (any, error) {
 	var (
-		res, bodyJSON interface{}
+		res, bodyJSON any
 		bodyData      []byte
 		err           error
 		resp          Response
@@ -269,9 +269,9 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 }
 
 // ToGenericJSON parse expected response
-func (response Response) ToGenericJSON() (interface{}, error) {
+func (response Response) ToGenericJSON() (any, error) {
 	var (
-		bodyJSON, res interface{}
+		bodyJSON, res any
 		err           error
 	)
 
@@ -341,7 +341,7 @@ func (response Response) ServerResponseToJsonString(bodyOnly bool) (string, erro
 	return string(bytes), nil
 }
 
-func (response *Response) marshalBodyInto(target interface{}) (err error) {
+func (response *Response) marshalBodyInto(target any) (err error) {
 	bodyBytes := response.Body
 	if len(bodyBytes) > 0 {
 		if err = json.Unmarshal(bodyBytes, target); err != nil {

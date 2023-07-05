@@ -21,8 +21,8 @@ func Max(x, y int) int {
 	return y
 }
 
-func RemoveFromJsonArray(input []interface{}, removeIndex int) (output []interface{}) {
-	output = make([]interface{}, len(input))
+func RemoveFromJsonArray(input []any, removeIndex int) (output []any) {
+	output = make([]any, len(input))
 	copy(output, input)
 
 	// Remove the element at index i from a.
@@ -33,7 +33,7 @@ func RemoveFromJsonArray(input []interface{}, removeIndex int) (output []interfa
 	return output
 }
 
-func GetStringFromInterface(queryParam interface{}) (string, error) {
+func GetStringFromInterface(queryParam any) (string, error) {
 	switch t := queryParam.(type) {
 	case string:
 		return t, nil

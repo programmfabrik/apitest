@@ -80,7 +80,7 @@ func TestReportGetJSONResult(t *testing.T) {
  ]
 }`)
 
-	var expJ, realJ interface{}
+	var expJ, realJ any
 
 	util.Unmarshal(jsonResult, &realJ)
 	util.Unmarshal(expResult, &expJ)
@@ -136,7 +136,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	expJBytes, _ := json.Marshal(expX)
 	realJBytes, _ := json.Marshal(realX)
 
-	var expJ, realJ interface{}
+	var expJ, realJ any
 
 	util.Unmarshal(expJBytes, &expJ)
 	util.Unmarshal(realJBytes, &realJ)

@@ -22,7 +22,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 	genericJson, err := response.ToGenericJSON()
 	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJson")
 
-	jsonObjResp, ok := genericJson.(map[string]interface{})
+	jsonObjResp, ok := genericJson.(map[string]any)
 	if !ok {
 		t.Fatalf("responseJson should be object")
 	}
@@ -37,11 +37,11 @@ func TestResponse_ToGenericJson(t *testing.T) {
 	if !ok {
 		t.Fatalf("responseJsonObj should have headers")
 	}
-	headersMap, ok := jsonHeaders.(map[string]interface{})
+	headersMap, ok := jsonHeaders.(map[string]any)
 	if !ok {
 		t.Fatalf("headers should be map")
 	}
-	if headersMap["foo"].([]interface{})[0].(string) != "bar" {
+	if headersMap["foo"].([]any)[0].(string) != "bar" {
 		t.Errorf("expected foo header to be bar")
 	}
 }

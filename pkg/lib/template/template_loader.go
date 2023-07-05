@@ -53,7 +53,7 @@ func NewLoader(datastore *datastore.Datastore) Loader {
 func (loader *Loader) Render(
 	tmplBytes []byte,
 	rootDir string,
-	ctx interface{}) (res []byte, err error) {
+	ctx any) (res []byte, err error) {
 
 	// First check for custom delimiters
 	matches := delimsRE.FindStringSubmatch(string(tmplBytes))
@@ -112,7 +112,7 @@ func (loader *Loader) Render(
 			hasher.Write([]byte(fileBytes))
 			return hex.EncodeToString(hasher.Sum(nil)), nil
 		},
-		// "parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
+		// "parse_csv": func(path string, delimiter rune) ([]map[string]any, error) {
 		// 	_, file, err := util.OpenFileOrUrl(path, rootDir)
 		// 	if err != nil {
 		// 		return nil, err
@@ -130,7 +130,7 @@ func (loader *Loader) Render(
 		"file":        loadFile(rootDir, loader),
 		"file_render": loadFileAndRender(rootDir, loader),
 		"file_csv":    loadFileCSV(rootDir, loader),
-		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
+		"file_sqlite": func(path, statement string) ([]map[string]any, error) {
 			sqliteFile := filepath.Join(rootDir, path)
 			database, err := sql.Open("sqlite3", sqliteFile)
 			if err != nil {
@@ -148,14 +148,14 @@ func (loader *Loader) Render(
 			if err != nil {
 				return nil, err
 			}
-			row := make([]interface{}, len(columns))
+			row := make([]any, len(columns))
 
-			data := []map[string]interface{}{}
+			data := []map[string]any{}
 
 			for rows.Next() {
-				dataEntry := map[string]interface{}{}
+				dataEntry := map[string]any{}
 				for idx, col := range columns {
-					dataEntry[col.Name()] = new(interface{})
+					dataEntry[col.Name()] = new(any)
 					row[idx] = dataEntry[col.Name()]
 				}
 
@@ -215,7 +215,7 @@ func (loader *Loader) Render(
 		"file_path": func(path string) string {
 			return util.LocalPath(path, rootDir)
 		},
-		"datastore": func(index interface{}) (interface{}, error) {
+		"datastore": func(index any) (any, error) {
 			var key string
 
 			switch idxType := index.(type) {
@@ -232,8 +232,8 @@ func (loader *Loader) Render(
 
 			return loader.datastore.Get(key)
 		},
-		"unmarshal": func(s string) (interface{}, error) {
-			var gj interface{}
+		"unmarshal": func(s string) (any, error) {
+			var gj any
 			err := util.Unmarshal([]byte(s), &gj)
 			if err != nil {
 				return nil, err
@@ -241,7 +241,7 @@ func (loader *Loader) Render(
 			return gj, nil
 		},
 		"N": N,
-		"marshal": func(data interface{}) (string, error) {
+		"marshal": func(data any) (string, error) {
 			bytes, err := json.Marshal(data)
 			if err != nil {
 				return "", err
@@ -266,15 +266,15 @@ func (loader *Loader) Render(
 		// divide a / b
 		"divide": divide,
 		// create a slice
-		"slice": func(args ...interface{}) []interface{} {
+		"slice": func(args ...any) []any {
 			return args
 		},
-		"rows_to_map": func(keyColumn, valueColumn string, rowsInput interface{}) (map[string]interface{}, error) {
+		"rows_to_map": func(keyColumn, valueColumn string, rowsInput any) (map[string]any, error) {
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
 		"pivot_rows": pivotRows,
-		"group_map_rows": func(groupColumn string, rowsInput interface{}) (map[string][]map[string]interface{}, error) {
-			grouped_rows := make(map[string][]map[string]interface{}, 1000)
+		"group_map_rows": func(groupColumn string, rowsInput any) (map[string][]map[string]any, error) {
+			grouped_rows := make(map[string][]map[string]any, 1000)
 			rows := getRowsFromInput(rowsInput)
 			for _, row := range rows {
 				group_key, ok := row[groupColumn]
@@ -285,7 +285,7 @@ func (loader *Loader) Render(
 				case string:
 					_, ok := grouped_rows[idx]
 					if !ok {
-						grouped_rows[idx] = make([]map[string]interface{}, 0)
+						grouped_rows[idx] = make([]map[string]any, 0)
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
@@ -294,8 +294,8 @@ func (loader *Loader) Render(
 			}
 			return grouped_rows, nil
 		},
-		"group_rows": func(groupColumn string, rowsInput interface{}) ([][]map[string]interface{}, error) {
-			grouped_rows := make([][]map[string]interface{}, 1000)
+		"group_rows": func(groupColumn string, rowsInput any) ([][]map[string]any, error) {
+			grouped_rows := make([][]map[string]any, 1000)
 			rows := getRowsFromInput(rowsInput)
 
 			for _, row := range rows {
@@ -310,7 +310,7 @@ func (loader *Loader) Render(
 					}
 					rows2 := grouped_rows[idx]
 					if rows2 == nil {
-						grouped_rows[idx] = make([]map[string]interface{}, 0)
+						grouped_rows[idx] = make([]map[string]any, 0)
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
@@ -318,7 +318,7 @@ func (loader *Loader) Render(
 				}
 			}
 			// remove empty rows
-			g_rows := make([][]map[string]interface{}, 0)
+			g_rows := make([][]map[string]any, 0)
 			for _, row := range grouped_rows {
 				if row == nil {
 					continue
@@ -354,7 +354,7 @@ func (loader *Loader) Render(
 			u.User = nil
 			return u
 		},
-		"is_zero": func(v interface{}) bool {
+		"is_zero": func(v any) bool {
 			if v == nil {
 				return true
 			}
@@ -470,14 +470,14 @@ func (loader *Loader) Render(
 	return buf.Bytes(), nil
 }
 
-func getRowsFromInput(rowsInput interface{}) []map[string]interface{} {
-	rows := make([]map[string]interface{}, 0)
+func getRowsFromInput(rowsInput any) []map[string]any {
+	rows := make([]map[string]any, 0)
 	switch t := rowsInput.(type) {
-	case []map[string]interface{}:
+	case []map[string]any:
 		rows = t
-	case []interface{}:
+	case []any:
 		for _, v := range t {
-			rows = append(rows, v.(map[string]interface{}))
+			rows = append(rows, v.(map[string]any))
 		}
 	}
 	return rows

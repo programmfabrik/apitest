@@ -111,11 +111,11 @@ func (ats *Suite) StopHttpServer() {
 }
 
 type ErrorResponse struct {
-	Error string      `json:"error"`
-	Body  interface{} `json:"body,omitempty"`
+	Error string `json:"error"`
+	Body  any    `json:"body,omitempty"`
 }
 
-func errorResponse(w http.ResponseWriter, statuscode int, err error, body interface{}) {
+func errorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
 	resp := ErrorResponse{
 		Error: err.Error(),
 		Body:  body,
@@ -133,17 +133,16 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body interf
 type BounceResponse struct {
 	Header      http.Header `json:"header"`
 	QueryParams url.Values  `json:"query_params"`
-	Body        interface{} `json:"body"`
+	Body        any         `json:"body"`
 }
 
 // bounceJSON builds a json response including the header, query params and body of the request
 func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	var (
-		err       error
-		bodyBytes []byte
-		bodyJSON  interface{}
-		errorBody interface{}
+		err                 error
+		bodyBytes           []byte
+		bodyJSON, errorBody any
 	)
 
 	bodyBytes, err = ioutil.ReadAll(r.Body)

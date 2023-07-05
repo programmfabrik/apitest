@@ -17,7 +17,7 @@ func TestRequestBuildHttp(t *testing.T) {
 	request := Request{
 		Endpoint: "endpoint",
 		Method:   "DO!",
-		QueryParams: map[string]interface{}{
+		QueryParams: map[string]any{
 			"query_param": "value",
 		},
 		ServerURL: "serverUrl",
@@ -45,7 +45,7 @@ func TestBuildCurl(t *testing.T) {
 	request := Request{
 		Endpoint: "endpoint",
 		Method:   "GET",
-		QueryParams: map[string]interface{}{
+		QueryParams: map[string]any{
 			"query_param": "value",
 		},
 		ServerURL: "https://serverUrl",
