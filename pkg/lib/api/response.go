@@ -17,6 +17,7 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/golib"
 )
 
 type Response struct {
@@ -333,7 +334,7 @@ func (response Response) ServerResponseToJsonString(bodyOnly bool) (string, erro
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}
-	bytes, err := json.MarshalIndent(genericJSON, "", "  ")
+	bytes, err := golib.JsonBytesIndent(genericJSON, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("error formatting response: %s", err)
 	}

@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
 
@@ -120,7 +121,7 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body interf
 		Body:  body,
 	}
 
-	b, err2 := json.MarshalIndent(resp, "", "  ")
+	b, err2 := golib.JsonBytesIndent(resp, "", "  ")
 	if err2 != nil {
 		logrus.Debugf("Could not marshall error message %s: %s", err, err2)
 		http.Error(w, err2.Error(), 500)
@@ -175,7 +176,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		response.Body = bodyJSON
 	}
 
-	responseData, err := json.MarshalIndent(response, "", "  ")
+	responseData, err := golib.JsonBytesIndent(response, "", "  ")
 	if err != nil {
 		errorResponse(w, 500, err, response)
 		return

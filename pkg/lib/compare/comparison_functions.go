@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/golib"
 )
 
 type ComparisonContext struct {
@@ -341,11 +342,11 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 	if len(left) > len(right) {
 		res.Equal = false
 
-		leftJson, err := json.MarshalIndent(left, "", "  ")
+		leftJson, err := golib.JsonBytesIndent(left, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal expected array")
 		}
-		rightJson, err := json.MarshalIndent(right, "", "  ")
+		rightJson, err := golib.JsonBytesIndent(right, "", "  ")
 		if err != nil {
 			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
 		}

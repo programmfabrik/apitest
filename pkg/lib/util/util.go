@@ -11,6 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
+	"github.com/programmfabrik/golib"
 )
 
 func Max(x, y int) int {
@@ -111,7 +112,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 	}
 
 	htmlData := parseHtmlNode(htmlDoc.Selection)
-	jsonStr, err := json.MarshalIndent(htmlData, "", " ")
+	jsonStr, err := golib.JsonBytesIndent(htmlData, "", " ")
 	if err != nil {
 		return []byte{}, errors.Wrap(err, "Could not convert html to json")
 	}

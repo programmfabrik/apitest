@@ -1,7 +1,6 @@
 package report
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/programmfabrik/golib"
 )
 
 type XMLRoot struct {
@@ -89,7 +90,7 @@ func (groups statsGroups) getLowestRuntimeGroup() (group int) {
 
 // ParseJSONResult Print the result to the console
 func ParseJSONResult(baseResult *ReportElement) []byte {
-	jsonResult, _ := json.MarshalIndent(baseResult, "", "  ")
+	jsonResult, _ := golib.JsonBytesIndent(baseResult, "", "  ")
 
 	return jsonResult
 }
@@ -144,7 +145,7 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 		stats.Groups[i].RuntimeStr = g.Runtime.String()
 	}
 
-	jsonResult, _ := json.MarshalIndent(stats, "", "  ")
+	jsonResult, _ := golib.JsonBytesIndent(stats, "", "  ")
 
 	return jsonResult
 }
