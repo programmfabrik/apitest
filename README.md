@@ -1914,76 +1914,48 @@ would result in
 
 ```json
 {
-	"html": [
-		{
-			"#attr": {
-				"lang": "en"
-			},
-			"head": [
-				{
-					"meta": [
-						{
-							"#attr": {
-								"charset": "utf-8"
-							}
-						},
-                        {
-							"#attr": {
-								"content": "fylr - manage your data",
-								"name": "description"
-							}
-						}
-					],
-					"title": [
-						{
-							"#text": "fylr"
-						}
-					],
-					"script": [
-						{
-							"#text": "function onInputHandler(event) {\n\t\t\t\tconst form = event.currentTarget;\n\t\t\t\tsubmitForm(form);\n\t\t\t}"
-						}
-					]
-				}
-			],
-			"body": [
-				{
-					"div": [
-						{
-							"#attr": {
-								"class": "container"
-							},
-							"h1": [
-								{
-									"#text": "Register"
-								}
-							],
-							"p": [
-								{
-									"#attr": {
-										"class": "error-summary"
-									},
-									"#text": "Form has errors"
-								},
-                                {
-									"#attr": {
-										"class": "required-information"
-									},
-									"br": [{}],
-									"sup": [
-										{
-											"#text": "*"
-										}
-									]
-								}
-							],
-							"hr": [{}]
-						}
-					]
-				}
-			]
-		}
-	]
+    "html": {
+        "-lang": "en",
+        "head": {
+            "meta": [
+                {
+                    "-charset": "utf-8"
+                },
+                {
+                    "-content": "fylr - manage your data",
+                    "-name": "description"
+                }
+            ],
+            "title": {
+                "#text": "fylr"
+            },
+            "script": {
+                "#text": "function onInputHandler(event) {\n\t\t\t\tconst form = event.currentTarget;\n\t\t\t\tsubmitForm(form);\n\t\t\t}"
+            }
+        },
+        "body": {
+            "div": {
+                "-class": "container",
+                "h1": {
+                    "#text": "Register"
+                },
+                "p": [
+                    {
+                        "-class": "required-information",
+                        "sup": {
+                            "#text": "*"
+                        },
+                        "br": {}
+                    },
+                    {
+                        "#text": "Form has errors",
+                        "-class": "error-summary"
+                    }
+                ],
+                "hr": {}
+            }
+        }
+    }
 }
 ```
 
