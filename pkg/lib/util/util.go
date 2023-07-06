@@ -12,6 +12,7 @@ import (
 	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/golib"
+	"golang.org/x/net/html"
 )
 
 func Max(x, y int) int {
@@ -111,7 +112,17 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 		return []byte{}, errors.Wrap(err, "Could not parse html")
 	}
 
-	htmlData := parseHtmlNode(htmlDoc.Selection)
+	htmlData := map[string]any{}
+	htmlDoc.Selection.Contents().Each(func(_ int, node *goquery.Selection) {
+		switch node.Get(0).Type {
+		case html.ElementNode:
+			htmlData = parseHtmlNode(node)
+			return
+		default:
+			return
+		}
+	})
+
 	jsonStr, err := golib.JsonBytesIndent(htmlData, "", " ")
 	if err != nil {
 		return []byte{}, errors.Wrap(err, "Could not convert html to json")
@@ -123,23 +134,40 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 // parseHtmlNode recursivly parses the html node and adds it to a map
 // the resulting structure is the same as the result of format "xml2" (using mxj.NewMapXmlSeq)
 func parseHtmlNode(node *goquery.Selection) map[string]any {
-	tagName := node.Get(0).Data
 	tagData := map[string]any{}
+
+	childrenByName := map[string][]any{}
+	comments := []string{}
+
+	node.Contents().Each(func(i int, content *goquery.Selection) {
+		switch content.Get(0).Type {
+		case html.ElementNode:
+			// recursively parse child nodes
+			for childName, childContent := range parseHtmlNode(content) {
+				childrenByName[childName] = append(childrenByName[childName], childContent)
+			}
+		case html.CommentNode:
+			comments = append(comments, strings.Trim(content.Get(0).Data, " \n\t"))
+		default:
+			return
+		}
+	})
 
 	// include attributes
 	for _, attr := range node.Get(0).Attr {
 		tagData["-"+attr.Key] = attr.Val
 	}
 
-	// recursively parse child nodes
-	childrenByName := map[string][]any{}
-	node.Children().Each(func(i int, childNode *goquery.Selection) {
-		for childName, childContent := range parseHtmlNode(childNode) {
-			childrenByName[childName] = append(childrenByName[childName], childContent)
-		}
-	})
+	// include comments
+	if len(comments) == 1 {
+		tagData["#comment"] = comments[0]
+	} else if len(comments) > 1 {
+		tagData["#comment"] = comments
+	}
+
+	// include children
 	for childName, children := range childrenByName {
-		if len(children) < 1 {
+		if len(children) == 0 {
 			continue
 		}
 		if len(children) == 1 {
@@ -149,18 +177,15 @@ func parseHtmlNode(node *goquery.Selection) map[string]any {
 		tagData[childName] = children
 	}
 
-	text := strings.Trim(node.Text(), " \n\t")
-	if len(text) > 0 && len(childrenByName) < 1 {
-		// include the text only if there are no children, since goquery would render all children into a single string
-		tagData["#text"] = text
-	}
-
-	// there might be an empty top level tag (eg '<!DOCTYPE')
-	if tagName == "" {
-		return tagData
+	// include tag text only if there are no children, since goquery would render all children into a single string
+	if len(childrenByName) == 0 {
+		text := strings.Trim(node.Text(), " \n\t")
+		if len(text) > 0 {
+			tagData["#text"] = text
+		}
 	}
 
 	return map[string]any{
-		tagName: tagData,
+		node.Get(0).Data: tagData,
 	}
 }

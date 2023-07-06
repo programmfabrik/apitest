@@ -5,6 +5,7 @@
             "must_not_exist": true
         },
         "body": {
+            "#comment": "comment body",
             "#text:control": {
                 "must_not_exist": true
             },
@@ -24,6 +25,10 @@
                             "must_not_exist": true
                         },
                         "footer": {
+                            "#comment": [
+                                "1. comment in footer",
+                                "2. comment in footer"
+                            ],
                             "#text:control": {
                                 "must_not_exist": true
                             },
@@ -153,6 +158,9 @@
                                     },
                                     {
                                         "-class": "error-summary",
+                                        "#comment:control": {
+                                            "match": "comment form\\n\\s*multiline"
+                                        },
                                         "#text": "Das Formular enthält Fehler"
                                     }
                                 ]
@@ -163,6 +171,7 @@
             }
         },
         "head": {
+            "#comment": "comment head",
             "#text:control": {
                 "must_not_exist": true
             },
