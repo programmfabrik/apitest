@@ -370,7 +370,7 @@ var trivialComparerTestData = []struct {
 }
 
 func TestTrivialJsonComparer(t *testing.T) {
-	var json1, json2 interface{}
+	var json1, json2 any
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
 			util.Unmarshal([]byte(td.want), &json1)

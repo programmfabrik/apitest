@@ -2,15 +2,15 @@
 {
     "http_server": {
         "addr": "{{ $local_port }}",
-        "dir": "../_res/assets",
+        "dir": ".",
         "testmode": false
     },
     "store": {
         "req_base_url": "http://localhost{{ $local_port }}"
     },
-    "name": "XHTML tests",
+    "name": "HTML tests",
     "tests": [
-        "@check_local_file_against_response.json",
-        "@check_response_format_xhtml.json"
+        "@check_response_format_html.json",
+        "@check_local_file_against_response.json"
     ]
 }

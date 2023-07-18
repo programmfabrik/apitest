@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Get existing HTML file",
+        "request": {
+            "server_url": "{{ datastore "req_base_url" }}",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {{ file_html2json "sample.html" }}
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "header": {},
+                "body": {{ file "result_html.json" }}
+            }
+        }
+    }
+]

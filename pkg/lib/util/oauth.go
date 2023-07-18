@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"time"
 
+	"log"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -52,8 +54,13 @@ func getOAuthClientCredentialsConfig(c OAuthClientConfig) clientcredentials.Conf
 
 // GetPasswordCredentialsAuthToken sends request to oAuth token endpoint
 // to get a token on behalf of a user
-func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, password string) (*oauth2.Token, error) {
+func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, password string) (tok *oauth2.Token, err error) {
 	cfg := getOAuthClientConfig(c)
+	defer func() {
+		if err != nil {
+			log.Printf("oauth2 password error: %s client: %s secret: %s", err.Error(), cfg.ClientID, cfg.ClientSecret)
+		}
+	}()
 	httpClient := &http.Client{Timeout: 60 * time.Second}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return cfg.PasswordCredentialsToken(ctx, username, password)

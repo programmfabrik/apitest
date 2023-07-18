@@ -1,6 +1,6 @@
 [
     {
-        "name": " (collect) preprocess asset camera.jpg with imagemagick compare against itself (should pass)",
+        "name": "(collect) preprocess asset camera.jpg with imagemagick compare against itself (should pass)",
         "request": {
             // load static file
             "server_url": "{{ datastore "local_url" }}",
@@ -22,7 +22,7 @@
                                 "-fuzz",
                                 "2%",
                                 "-",
-                                {{ file_path "../_res/assets/camera.jpg" | marshal }},
+                                {{ file_path "../../_res/assets/camera.jpg" | marshal }},
                                 "/dev/null"
                             ],
                             "output": "stderr"
@@ -36,7 +36,7 @@
         "timeout_ms": 5000
     },
     {
-        "name": " (collect) preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
+        "name": "(collect) preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
         "request": {
             // load static file
             "server_url": "{{ datastore "local_url" }}",
@@ -55,7 +55,7 @@
                                 "-fuzz",
                                 "2%",
                                 "-",
-                                {{ file_path "../_res/assets/berlin.jpg" | marshal }},
+                                {{ file_path "../../_res/assets/berlin.jpg" | marshal }},
                                 "/dev/null"
                             ],
                             "output": "stderr"

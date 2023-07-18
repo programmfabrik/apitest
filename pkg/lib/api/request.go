@@ -47,7 +47,7 @@ type Request struct {
 	ServerURL            string                    `yaml:"server_url" json:"server_url"`
 	Method               string                    `yaml:"method" json:"method"`
 	NoRedirect           bool                      `yaml:"no_redirect" json:"no_redirect"`
-	QueryParams          map[string]interface{}    `yaml:"query_params" json:"query_params"`
+	QueryParams          map[string]any            `yaml:"query_params" json:"query_params"`
 	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
 	Headers              map[string]*string        `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
@@ -55,7 +55,7 @@ type Request struct {
 	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
-	Body                 interface{}               `yaml:"body" json:"body"`
+	Body                 any                       `yaml:"body" json:"body"`
 
 	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
 	ManifestDir string
@@ -175,7 +175,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
 		}
 
-		ownHeaders, ok := headersInt.([]interface{})
+		ownHeaders, ok := headersInt.([]any)
 		if ok {
 			for _, val := range ownHeaders {
 				valString, ok := val.(string)
@@ -296,7 +296,7 @@ func (request Request) ToString(curl bool) (res string) {
 		cString := curl.String()
 
 		rep := ""
-		for key, val := range request.Body.(map[string]interface{}) {
+		for key, val := range request.Body.(map[string]any) {
 			pathSpec, ok := val.(util.JsonString)
 			if !ok {
 				panic(fmt.Errorf("pathSpec should be a string"))

@@ -1,0 +1,224 @@
+{
+    "html": {
+        "-lang": "de",
+        "#text:control": {
+            "must_not_exist": true
+        },
+        "body": {
+            "#comment": "comment body",
+            "#text:control": {
+                "must_not_exist": true
+            },
+            "main": {
+                "-class": "page-register",
+                "#text:control": {
+                    "must_not_exist": true
+                },
+                "article": {
+                    "-class": "access-container  access-container--wide",
+                    "#text:control": {
+                        "must_not_exist": true
+                    },
+                    "div": {
+                        "-class": "container",
+                        "#text:control": {
+                            "must_not_exist": true
+                        },
+                        "footer": {
+                            "#comment": [
+                                "1. comment in footer",
+                                "2. comment in footer"
+                            ],
+                            "#text:control": {
+                                "must_not_exist": true
+                            },
+                            "nav": {
+                                "div": {
+                                    "-class": "language-switcher",
+                                    "#text:control": {
+                                        "must_not_exist": true
+                                    },
+                                    "select": {
+                                        "-onchange": "onLanguageChange(event)",
+                                        "#text:control": {
+                                            "must_not_exist": true
+                                        },
+                                        "option": [
+                                            {
+                                                "-value": "en-US",
+                                                "#text": "American English (Amerikanisches Englisch)"
+                                            },
+                                            {
+                                                "-selected": "selected",
+                                                "-value": "de-DE",
+                                                "#text": "Deutsch"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "script": {
+                                    "#text:control": {
+                                        "starts_with": "function onLanguageChange(evt) {"
+                                    }
+                                }
+                            }
+                        },
+                        "h1": {
+                            "#text": "Registrieren"
+                        },
+                        "section": {
+                            "#text:control": {
+                                "must_not_exist": true
+                            },
+                            "form": {
+                                "-action": "",
+                                "-class": "form-grid",
+                                "-id": "registerForm",
+                                "-method": "POST",
+                                "#text:control": {
+                                    "must_not_exist": true
+                                },
+                                "fieldset": [
+                                    {
+                                        "-data-field-name": "email",
+                                        "-data-width": "1",
+                                        "#text:control": {
+                                            "must_not_exist": true
+                                        },
+                                        "label": {
+                                            "-for": "email",
+                                            "#text:control": {
+                                                "must_not_exist": true
+                                            },
+                                            "input": {
+                                                "-autocomplete": "email",
+                                                "-class": "has-error",
+                                                "-id": "email",
+                                                "-name": "email",
+                                                "-placeholder": " ",
+                                                "-required": "",
+                                                "-type": "email",
+                                                "#text:control": {
+                                                    "must_not_exist": true
+                                                }
+                                            },
+                                            "span": [
+                                                {
+                                                    "-class": "field-label",
+                                                    "#text:control": {
+                                                        "must_not_exist": true
+                                                    },
+                                                    "sup": {
+                                                        "-class": "required",
+                                                        "#text": "*"
+                                                    }
+                                                },
+                                                {
+                                                    "-class": "field-hint",
+                                                    "-title": "Nutzer exisitert bereits",
+                                                    "#text:control": {
+                                                        "starts_with": "Nutzer exisitert"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "-class": "actions",
+                                        "-data-pre": "1",
+                                        "-data-width": "1",
+                                        "#text:control": {
+                                            "must_not_exist": true
+                                        },
+                                        "button": {
+                                            "-type": "submit",
+                                            "#text": "Jetzt registrieren"
+                                        }
+                                    },
+                                    {
+                                        "-class": "secondary-actions",
+                                        "#text:control": {
+                                            "must_not_exist": true
+                                        },
+                                        "a": {
+                                            "-href": "http://localhost:8085/",
+                                            "#text": "Zur Startseite"
+                                        }
+                                    }
+                                ],
+                                "p": [
+                                    {
+                                        "-class": "required-information",
+                                        "#text:control": {
+                                            "must_not_exist": true
+                                        },
+                                        "sup": {
+                                            "#text": "*"
+                                        }
+                                    },
+                                    {
+                                        "-class": "error-summary",
+                                        "#comment:control": {
+                                            "match": "comment form\\n\\s*multiline"
+                                        },
+                                        "#text": "Das Formular enthält Fehler"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "head": {
+            "#comment": "comment head",
+            "#text:control": {
+                "must_not_exist": true
+            },
+            "link": [
+                {
+                    "-href": "/api/page/static/images/favicon.png",
+                    "-rel": "icon",
+                    "#text:control": {
+                        "must_not_exist": true
+                    }
+                },
+                {
+                    "-href": "/api/page/static/css/main.css",
+                    "-rel": "stylesheet",
+                    "#text:control": {
+                        "must_not_exist": true
+                    }
+                }
+            ],
+            "meta": [
+                {
+                    "-charset": "utf-8",
+                    "#text:control": {
+                        "must_not_exist": true
+                    }
+                },
+                {
+                    "-content": "fylr - manage your data",
+                    "-name": "description",
+                    "#text:control": {
+                        "must_not_exist": true
+                    }
+                }
+            ],
+            "script": {
+                "#text:control": {
+                    "starts_with": "async function submitForm(form) {"
+                }
+            },
+            "style": {
+                "#text:control": {
+                    "starts_with": ":root {}"
+                }
+            },
+            "title": {
+                "#text": "fylr"
+            }
+        }
+    }
+}

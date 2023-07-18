@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
 
@@ -110,17 +111,17 @@ func (ats *Suite) StopHttpServer() {
 }
 
 type ErrorResponse struct {
-	Error string      `json:"error"`
-	Body  interface{} `json:"body,omitempty"`
+	Error string `json:"error"`
+	Body  any    `json:"body,omitempty"`
 }
 
-func errorResponse(w http.ResponseWriter, statuscode int, err error, body interface{}) {
+func errorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
 	resp := ErrorResponse{
 		Error: err.Error(),
 		Body:  body,
 	}
 
-	b, err2 := json.MarshalIndent(resp, "", "  ")
+	b, err2 := golib.JsonBytesIndent(resp, "", "  ")
 	if err2 != nil {
 		logrus.Debugf("Could not marshall error message %s: %s", err, err2)
 		http.Error(w, err2.Error(), 500)
@@ -132,17 +133,16 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body interf
 type BounceResponse struct {
 	Header      http.Header `json:"header"`
 	QueryParams url.Values  `json:"query_params"`
-	Body        interface{} `json:"body"`
+	Body        any         `json:"body"`
 }
 
 // bounceJSON builds a json response including the header, query params and body of the request
 func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	var (
-		err       error
-		bodyBytes []byte
-		bodyJSON  interface{}
-		errorBody interface{}
+		err                 error
+		bodyBytes           []byte
+		bodyJSON, errorBody any
 	)
 
 	bodyBytes, err = ioutil.ReadAll(r.Body)
@@ -175,7 +175,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		response.Body = bodyJSON
 	}
 
-	responseData, err := json.MarshalIndent(response, "", "  ")
+	responseData, err := golib.JsonBytesIndent(response, "", "  ")
 	if err != nil {
 		errorResponse(w, 500, err, response)
 		return

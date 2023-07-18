@@ -43,14 +43,14 @@ func Test_QJson_Object(t *testing.T) {
 
 func TestRowsToMap(t *testing.T) {
 	tests := []struct {
-		In     []map[string]interface{}
+		In     []map[string]any
 		Key    string
 		Value  string
-		Out    map[string]interface{}
+		Out    map[string]any
 		ExpErr error
 	}{
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -64,14 +64,14 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_b",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "row1b",
 				"row2a": "row2b",
 			},
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -85,14 +85,14 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_c",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "row1c",
 				"row2a": "row2c",
 			},
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -106,13 +106,13 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "",
-			Out: map[string]interface{}{
-				"row1a": map[string]interface{}{
+			Out: map[string]any{
+				"row1a": map[string]any{
 					"column_a": "row1a",
 					"column_b": "row1b",
 					"column_c": "row1c",
 				},
-				"row2a": map[string]interface{}{
+				"row2a": map[string]any{
 					"column_a": "row2a",
 					"column_b": "row2b",
 					"column_c": "row2c",
@@ -121,7 +121,7 @@ func TestRowsToMap(t *testing.T) {
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -137,7 +137,7 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_b",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "row1b",
 				"row2a": "row2b",
 				"row3a": "row3b",
@@ -145,7 +145,7 @@ func TestRowsToMap(t *testing.T) {
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -160,7 +160,7 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_b",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "row1b",
 				"row2a": "",
 				"row3a": "row3b",
@@ -168,7 +168,7 @@ func TestRowsToMap(t *testing.T) {
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -184,14 +184,14 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_b",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "row1b",
 				"row3a": "row3b",
 			},
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -207,11 +207,11 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:    "column_ZZ",
 			Value:  "column_b",
-			Out:    map[string]interface{}{},
+			Out:    map[string]any{},
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -227,7 +227,7 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_ZZ",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "",
 				"row2a": "",
 				"row3a": "",
@@ -235,7 +235,7 @@ func TestRowsToMap(t *testing.T) {
 			ExpErr: nil,
 		},
 		{
-			In: []map[string]interface{}{
+			In: []map[string]any{
 				{
 					"column_a": "row1a",
 					"column_b": "row1b",
@@ -251,7 +251,7 @@ func TestRowsToMap(t *testing.T) {
 			},
 			Key:   "column_a",
 			Value: "column_ZZ",
-			Out: map[string]interface{}{
+			Out: map[string]any{
 				"row1a": "",
 				"row2a": "",
 				"row3a": "",
@@ -272,7 +272,7 @@ func TestRowsToMap(t *testing.T) {
 				}
 			} else {
 				for k, v := range v.Out {
-					mapV, ok := v.(map[string]interface{})
+					mapV, ok := v.(map[string]any)
 
 					if !ok {
 
@@ -280,7 +280,7 @@ func TestRowsToMap(t *testing.T) {
 							t.Errorf("Value: Want '%s' != '%s' Got", v, aOut[k])
 						}
 					} else {
-						go_test_utils.AssertMapsEqual(t, aOut[k].(map[string]interface{}), mapV)
+						go_test_utils.AssertMapsEqual(t, aOut[k].(map[string]any), mapV)
 					}
 				}
 			}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+
+	<head>
+		<!-- comment head -->
+		<meta charset="utf-8" />
+		<title>fylr</title>
+		<meta name="description" content="fylr - manage your data" />
+		<link rel="icon" href="/api/page/static/images/favicon.png" />
+		<link href="/api/page/static/css/main.css" rel="stylesheet" />
+		<style>
+			:root {}
+
+			html {}
+		</style>
+
+		<script>
+			async function submitForm(form) {
+				const url = form.action + '&check=true';
+
+				const formData = new FormData(form);
+
+				const formDataJson = Object.fromEntries(formData.entries());
+				const body = JSON.stringify(formDataJson);
+
+				const request = {
+					method: form.method,
+					headers: {
+						'Content-type': 'application/json',
+					},
+					body: body
+				};
+
+				const data = await fetch(url, request).then(response => response.json()).catch(error => console.error(error));
+
+				for (let fieldName in data) {
+					form.elements[fieldName]?.classList.toggle('has-error', data[fieldName].Invalid)
+					console.debug(fieldName, data[fieldName]);
+				};
+			}
+
+			function onInputHandler(event) {
+				const form = event.currentTarget;
+				submitForm(form);
+			}
+		</script>
+	</head>
+
+	<body>
+		<!-- comment body -->
+		<main class="page-register">
+			<article class="access-container  access-container--wide">
+				<div class="container">
+					<h1>Registrieren</h1>
+					<section>
+
+						<form class="form-grid" id="registerForm" action="" method="POST">
+							<p class="required-information"><sup>*</sup>Pflichtfelder<br>
+							<p class="error-summary">Das Formular enthält Fehler
+
+								<!--
+									comment form
+									multiline
+								-->
+								<hr>
+
+							<fieldset data-width="1" data-field-name="email">
+								<label for="email">
+									<span class="field-label">E-Mail<sup class="required">*</sup></span>
+									<span class="field-hint" title="Nutzer exisitert bereits">Nutzer exisitert
+										bereits</span>
+									<input name="email" id="email" class="has-error" type="email" placeholder=" " required
+										autocomplete="email" />
+								</label>
+							</fieldset>
+
+							<fieldset class="actions" data-width="1" data-pre="1">
+								<button type="submit">Jetzt registrieren</button>
+							</fieldset>
+
+							<fieldset class="secondary-actions">
+								<a href="http://localhost:8085/">Zur Startseite</a>
+							</fieldset>
+						</form>
+					</section>
+
+					<footer>
+						<!--
+							1. comment in footer
+						-->
+						<nav>
+							<div class="language-switcher">
+								<select onChange="onLanguageChange(event)">
+									<option value="en-US">American English (Amerikanisches Englisch)</option>
+									<option value="de-DE" selected="selected">Deutsch</option>
+								</select>
+							</div>
+							<script>
+								function onLanguageChange(evt) {
+									let url = new URL(document.location.href);
+									url.searchParams.set("lang", evt.target.value)
+									document.location.assign(url.toString());
+								}
+							</script>
+						</nav>
+						<!-- 2. comment in footer -->
+					</footer>
+
+				</div>
+			</article>
+		</main>
+
+	</body>
+
+</html>

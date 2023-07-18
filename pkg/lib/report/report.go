@@ -170,7 +170,7 @@ func (r *ReportElement) SaveToReportLog(v string) {
 	}
 }
 
-func (r *ReportElement) SaveToReportLogF(v string, args ...interface{}) {
+func (r *ReportElement) SaveToReportLogF(v string, args ...any) {
 	r.m.Lock()
 	defer r.m.Unlock()
 

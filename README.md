@@ -474,6 +474,14 @@ See also template [`file_xml2json`](#file_xml2json-path).
 
 On that json you can work as you are used to with the json syntax. For seeing how the converted json looks you can use the `--log-verbose` command line flag
 
+## HTML Data comparison
+
+If the response format is specified as `"type": "html"`, we internally marshal that HTML into json using [github.com/PuerkitoBio/goquery](https://github.com/PuerkitoBio/goquery).
+
+This marshalling is less strict than for [XHTML](#file_xhtml2json-path). For example it will not raise errors for unclosed tags like `<p>` or `<hr>`, as well as Javascript code inside the HTML code. But it is possible that unclosed tags are missing in the resulting JSON if the tokenizer can not find a matching closing tag.
+
+See also template [`file_html2json`](#file_html2json-path).
+
 ## XHTML Data comparison
 
 If the response format is specified as `"type": "xhtml"`, we internally marshal that XHTML into json using [github.com/clbanning/mxj](https://github.com/clbanning/mxj).
@@ -1855,6 +1863,102 @@ would result in
 }
 ```
 
+## `file_html2json [path]`
+
+Helper function to parse an HTML file and convert it into json
+- `@path`: string; a path to the HTML file that should be loaded. The path is either relative to the manifest or a weburl
+
+This marshalling is less strict than for [XHTML](#file_xhtml2json-path). For example it will not raise errors for unclosed tags like `<p>` or `<hr>`, as well as Javascript code inside the HTML code. But it is possible that unclosed tags are missing in the resulting JSON if the [goquery](https://github.com/PuerkitoBio/goquery) tokenizer can not find a matching closing tag.
+
+### Example
+
+Content of HTML file `some/path/example.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8" />
+		<title>fylr</title>
+		<meta name="description" content="fylr - manage your data" />
+		<script>
+			function onInputHandler(event) {
+				const form = event.currentTarget;
+				submitForm(form);
+			}
+		</script>
+	</head>
+
+	<body>
+		<div class="container">
+			<h1>Register</h1>
+
+			<p class="required-information"><sup>*</sup>Mandatory fields<br>
+			<p class="error-summary">Form has errors
+
+			<hr>
+		</div>
+	</body>
+
+</html>
+```
+
+The call
+
+```django
+{{ file_html2json "some/path/example.html" }}
+```
+
+would result in
+
+```json
+{
+    "html": {
+        "-lang": "en",
+        "head": {
+            "meta": [
+                {
+                    "-charset": "utf-8"
+                },
+                {
+                    "-content": "fylr - manage your data",
+                    "-name": "description"
+                }
+            ],
+            "title": {
+                "#text": "fylr"
+            },
+            "script": {
+                "#text": "function onInputHandler(event) {\n\t\t\t\tconst form = event.currentTarget;\n\t\t\t\tsubmitForm(form);\n\t\t\t}"
+            }
+        },
+        "body": {
+            "div": {
+                "-class": "container",
+                "h1": {
+                    "#text": "Register"
+                },
+                "p": [
+                    {
+                        "-class": "required-information",
+                        "sup": {
+                            "#text": "*"
+                        },
+                        "br": {}
+                    },
+                    {
+                        "#text": "Form has errors",
+                        "-class": "error-summary"
+                    }
+                ],
+                "hr": {}
+            }
+        }
+    }
+}
+```
+
 ## `file_xhtml2json [path]`
 
 Helper function to parse an XHTML file and convert it into json
@@ -1865,6 +1969,7 @@ Helper function to parse an XHTML file and convert it into json
 Content of XHTML file `some/path/example.xhtml`:
 
 ```html
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>

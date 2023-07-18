@@ -3,7 +3,7 @@ package datastore
 import (
 	"testing"
 
-	"github.com/programmfabrik/go-test-utils"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestDataStore_Get(t *testing.T) {
@@ -101,12 +101,12 @@ func TestDataStore_MAP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if tA.(map[string]interface{})["head1"] != 1 {
-		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]interface{})["head1"], 1)
+	if tA.(map[string]any)["head1"] != 1 {
+		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]any)["head1"], 1)
 	}
 
-	if tA.(map[string]interface{})["head3"] != 3 {
-		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]interface{})["head1"], 3)
+	if tA.(map[string]any)["head3"] != 3 {
+		t.Errorf("Have '%v' != '%d' Want", tA.(map[string]any)["head1"], 3)
 	}
 }
 

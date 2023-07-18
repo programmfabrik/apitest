@@ -20,7 +20,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	w := multipart.NewWriter(buf)
 
 	var replaceFilename *string
-	val, ok := request.Body.(map[string]interface{})["file:filename"]
+	val, ok := request.Body.(map[string]any)["file:filename"]
 	if ok {
 		f, ok := val.(util.JsonString)
 		if !ok {
@@ -30,7 +30,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	}
 
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
-	for key, val := range request.Body.(map[string]interface{}) {
+	for key, val := range request.Body.(map[string]any) {
 
 		if key == "file:filename" {
 			continue
@@ -75,7 +75,7 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
-	for key, value := range request.Body.(map[string]interface{}) {
+	for key, value := range request.Body.(map[string]any) {
 		switch v := value.(type) {
 		case string:
 			formParams.Set(key, v)

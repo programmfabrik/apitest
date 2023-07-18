@@ -20,7 +20,7 @@ func qjson(path string, json string) string {
 }
 
 // N returns a slice of n 0-sized elements, suitable for ranging over. (github.com/bradfitz)
-func N(n interface{}) ([]struct{}, error) {
+func N(n any) ([]struct{}, error) {
 	switch v := n.(type) {
 	case float64:
 		return make([]struct{}, int(v)), nil
@@ -34,8 +34,8 @@ func N(n interface{}) ([]struct{}, error) {
 
 // rowsToMap creates a new map, maps "key" column of each to the "value" column of that row. #51482
 // if "value" is empty "", the whole row is mapped
-func rowsToMap(keyCol, valCol string, rows []map[string]interface{}) (retMap map[string]interface{}, err error) {
-	retMap = make(map[string]interface{})
+func rowsToMap(keyCol, valCol string, rows []map[string]any) (retMap map[string]any, err error) {
+	retMap = make(map[string]any)
 
 	//If there is no keyCol, return empty map
 	if keyCol == "" {
@@ -109,7 +109,7 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 			case "string":
 				sheetRow[sheetKey] = v
 			case "json":
-				var i interface{}
+				var i any
 				err = json.Unmarshal([]byte(v), &i)
 				if err == nil {
 					sheetRow[sheetKey] = i
@@ -135,7 +135,7 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 // functions copied from: https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // add returns the sum of a and b.
-func add(b, a interface{}) (interface{}, error) {
+func add(b, a any) (any, error) {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -189,7 +189,7 @@ func add(b, a interface{}) (interface{}, error) {
 }
 
 // subtract returns the difference of b from a.
-func subtract(b, a interface{}) (interface{}, error) {
+func subtract(b, a any) (any, error) {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -233,7 +233,7 @@ func subtract(b, a interface{}) (interface{}, error) {
 }
 
 // multiply returns the product of a and b.
-func multiply(b, a interface{}) (interface{}, error) {
+func multiply(b, a any) (any, error) {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -279,7 +279,7 @@ func multiply(b, a interface{}) (interface{}, error) {
 // FROM https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // divide returns the division of b from a.
-func divide(b, a interface{}) (interface{}, error) {
+func divide(b, a any) (any, error) {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -337,13 +337,13 @@ func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
 
 // fileRender loads file from path and renders is as Go template passing
 // the arguments as ".Param1", ".Param2" into the template.
-func loadFileAndRender(rootDir string, loader *Loader) interface{} {
-	return func(path string, params ...interface{}) (st string, err error) {
+func loadFileAndRender(rootDir string, loader *Loader) any {
+	return func(path string, params ...any) (st string, err error) {
 		data, err := fileReadInternal(path, rootDir)
 		if err != nil {
 			return "", err
 		}
-		tmplParams := map[string]interface{}{}
+		tmplParams := map[string]any{}
 		for idx, param := range params {
 			tmplParams["Param"+strconv.Itoa(idx+1)] = param
 		}
@@ -357,8 +357,8 @@ func loadFileAndRender(rootDir string, loader *Loader) interface{} {
 
 // fileRender loads file from path and renders is as Go template passing
 // the arguments as ".Param1", ".Param2" into the template.
-func loadFile(rootDir string, loader *Loader) interface{} {
-	return func(path string, params ...interface{}) (st string, err error) {
+func loadFile(rootDir string, loader *Loader) any {
+	return func(path string, params ...any) (st string, err error) {
 		data, err := fileReadInternal(path, rootDir)
 		if err != nil {
 			return "", err
@@ -369,8 +369,8 @@ func loadFile(rootDir string, loader *Loader) interface{} {
 
 // loadFileCSV reads file and parses it in the CSV map. A delimiter can
 // be specified. Defaults to ','
-func loadFileCSV(rootDir string, loader *Loader) interface{} {
-	return func(path string, delimiters ...rune) (m []map[string]interface{}, err error) {
+func loadFileCSV(rootDir string, loader *Loader) any {
+	return func(path string, delimiters ...rune) (m []map[string]any, err error) {
 		var delimiter rune
 		switch len(delimiters) {
 		case 0:

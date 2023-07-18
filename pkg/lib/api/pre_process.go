@@ -2,11 +2,12 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/programmfabrik/golib"
 )
 
 type CmdOutputType string
@@ -79,7 +80,7 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 		case CmdOutputStderr:
 			response.Body = stderrBytes
 		case CmdOutputStdout:
-			response.Body, err2 = json.MarshalIndent(preProcessError{
+			response.Body, err2 = golib.JsonBytesIndent(preProcessError{
 				Command:  strings.Join(cmd.Args, " "),
 				Error:    err.Error(),
 				ExitCode: exitCode,

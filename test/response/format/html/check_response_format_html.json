@@ -1,0 +1,14 @@
+{
+    "name": "get sample.html from test server, use response format \"html\"",
+    "request": {
+        "server_url": "{{ datastore "req_base_url" }}",
+        "endpoint": "sample.html",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "type": "html"
+        },
+        "body": {{ file "result_html.json" }}
+    }
+}

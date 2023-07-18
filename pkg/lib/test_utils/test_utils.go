@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	go_test_utils "github.com/programmfabrik/go-test-utils"
+	"github.com/programmfabrik/golib"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -108,7 +109,7 @@ func AssertLoggingEqualsRegex(log bytes.Buffer, want []LoggingRegexAssertion) (b
 func AssertJsonStringEquals(t testing.TB, expected, got string) {
 
 	var (
-		expectedJson, gotJson        interface{}
+		expectedJson, gotJson        any
 		expectedMinified, gotMinifed []byte
 	)
 
@@ -116,7 +117,7 @@ func AssertJsonStringEquals(t testing.TB, expected, got string) {
 	if err != nil {
 		t.Error(err)
 	}
-	expectedMinified, err = json.MarshalIndent(expectedJson, "", "")
+	expectedMinified, err = golib.JsonBytesIndent(expectedJson, "", "")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,7 +126,7 @@ func AssertJsonStringEquals(t testing.TB, expected, got string) {
 	if err != nil {
 		t.Error(err)
 	}
-	gotMinifed, err = json.MarshalIndent(gotJson, "", "")
+	gotMinifed, err = golib.JsonBytesIndent(gotJson, "", "")
 	if err != nil {
 		log.Fatal(err)
 	}

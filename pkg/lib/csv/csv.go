@@ -18,7 +18,7 @@ type info struct {
 	format string
 }
 
-func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
+func CSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
@@ -35,11 +35,11 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 		return nil, err
 	}
 
-	output := []map[string]interface{}{}
+	output := []map[string]any{}
 
 	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[2:] {
-		tmpRow := make(map[string]interface{}, 0)
+		tmpRow := make(map[string]any, 0)
 
 		for ki, vi := range v {
 			if ki >= len(infos) || infos[ki].format == "SKIP_COLUMN" {
@@ -74,7 +74,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
 
 }
 
-func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, error) {
+func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
@@ -89,11 +89,11 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]interface{}, err
 		infos = append(infos, info{name: strings.TrimSpace(v)})
 	}
 
-	output := []map[string]interface{}{}
+	output := []map[string]any{}
 
 	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[1:] {
-		tmpRow := make(map[string]interface{}, 0)
+		tmpRow := make(map[string]any, 0)
 
 		for ki, vi := range v {
 			if ki >= len(infos) {
@@ -189,7 +189,7 @@ func isValidFormat(format string) bool {
 }
 
 // getTyped
-func getTyped(value, format string) (interface{}, error) {
+func getTyped(value, format string) (any, error) {
 
 	switch format {
 	case "string":
@@ -318,7 +318,7 @@ func getTyped(value, format string) (interface{}, error) {
 		if value == "" {
 			return nil, nil
 		}
-		var data interface{}
+		var data any
 		err := json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			return nil, fmt.Errorf("file_csv: Error in JSON: \"%s\": %s", value, err)

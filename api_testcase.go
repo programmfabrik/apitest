@@ -23,20 +23,20 @@ import (
 // Case defines the structure of our single testcase
 // It gets read in by our config reader at the moment the mainfest.json gets parsed
 type Case struct {
-	Name              string                 `json:"name"`
-	Description       string                 `json:"description"`
-	RequestData       *interface{}           `json:"request"`
-	ResponseData      interface{}            `json:"response"`
-	ContinueOnFailure bool                   `json:"continue_on_failure"`
-	Store             map[string]interface{} `json:"store"`                // init datastore before testrun
-	StoreResponse     map[string]string      `json:"store_response_qjson"` // store qjson parsed response in datastore
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	RequestData       *any              `json:"request"`
+	ResponseData      any               `json:"response"`
+	ContinueOnFailure bool              `json:"continue_on_failure"`
+	Store             map[string]any    `json:"store"`                // init datastore before testrun
+	StoreResponse     map[string]string `json:"store_response_qjson"` // store qjson parsed response in datastore
 
-	Timeout         int           `json:"timeout_ms"`
-	WaitBefore      *int          `json:"wait_before_ms"`
-	WaitAfter       *int          `json:"wait_after_ms"`
-	Delay           *int          `json:"delay_ms"`
-	BreakResponse   []interface{} `json:"break_response"`
-	CollectResponse interface{}   `json:"collect_response"`
+	Timeout         int   `json:"timeout_ms"`
+	WaitBefore      *int  `json:"wait_before_ms"`
+	WaitAfter       *int  `json:"wait_after_ms"`
+	Delay           *int  `json:"delay_ms"`
+	BreakResponse   []any `json:"break_response"`
+	CollectResponse any   `json:"collect_response"`
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
@@ -543,7 +543,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	return spec, nil
 }
 
-func (testCase Case) loadResponseSerialization(genJSON interface{}) (spec api.ResponseSerialization, err error) {
+func (testCase Case) loadResponseSerialization(genJSON any) (spec api.ResponseSerialization, err error) {
 	resLoader := testCase.loader
 	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, resLoader)
 	if err != nil {

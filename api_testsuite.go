@@ -32,8 +32,8 @@ type Suite struct {
 		Testmode bool                  `json:"testmode"`
 		Proxy    httpproxy.ProxyConfig `json:"proxy"`
 	} `json:"http_server,omitempty"`
-	Tests []interface{}          `json:"tests"`
-	Store map[string]interface{} `json:"store"`
+	Tests []any          `json:"tests"`
+	Store map[string]any `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
@@ -213,7 +213,7 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v interface{}, manifestDir, testFilePath string, k, repeatNTimes int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
+func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, repeatNTimes int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
 	//Init variables
 	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
 	loader := template.NewLoader(ats.datastore)
