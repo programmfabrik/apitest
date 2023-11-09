@@ -455,6 +455,27 @@ func (loader *Loader) Render(
 			logrus.Debugf(msg, args...)
 			return ""
 		},
+		// remove_from_url removes key from url's query part, returns
+		// the new url
+		"remove_from_url": func(qKey, urlStr string) (urlPatched string) {
+			u, err := url.Parse(urlStr)
+			if err != nil {
+				return urlStr
+			}
+			q := u.Query()
+			q.Del(qKey)
+			u.RawQuery = q.Encode()
+			return u.String()
+		},
+		// value_from_url returns the value from url's query part
+		"value_from_url": func(qKey, urlStr string) string {
+			u, err := url.Parse(urlStr)
+			if err != nil {
+				return ""
+			}
+			q := u.Query()
+			return q.Get(qKey)
+		},
 	}
 	tmpl, err := template.
 		New("tmpl").

@@ -2276,6 +2276,14 @@ Example:
 
 Write **msg** to log output. Args can be given. This uses logrus.Debugf to output.
 
+## `remove_from_url` [key] [url]
+
+Removes from **key** from **url**'s query, returns the **url** with the **key** removed. In case of an error, the **url** is returned as is. Unparsable urls are ignored and the **url** is returned.
+
+## `value_from_url` [key]
+
+Returns the **value** from the **url**'s query for **key**. In case of an error, an empty string is returned. Unparsable urls are ignored and an empty string is returned.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
