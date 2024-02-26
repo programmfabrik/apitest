@@ -246,7 +246,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if !responseFormat.IgnoreBody {
 
 		if len(bodyData) > 0 {
-			err = json.Unmarshal(bodyData, &bodyJSON)
+			err = golib.JsonUnmarshalWithNumber(bodyData, &bodyJSON)
 			if err != nil {
 				return res, err
 			}
