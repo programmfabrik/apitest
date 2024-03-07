@@ -1,13 +1,13 @@
 name: unit-tests
 
-on: 
+on:
   push:
     branches:
       - "**"
       - "!production"
 
 env:
-  go_version: 1.18
+  go_version: 1.22
   slack_channel: github-fylr
 
 jobs:
@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run go ${{ env.go_version }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.go_version }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: execute unit tests
         shell: bash
