@@ -3,6 +3,7 @@ package compare
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
 	"strconv"
 	"strings"
@@ -229,12 +230,6 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 	return
 }
 
-// ObjectComparison offerst the compare feature to other packages, with the standard behavior
-// noExtra=false
-func ObjectComparison(left, right util.JsonObject) (res CompareResult, err error) {
-	return objectComparison(left, right, false)
-}
-
 // objectComparsion checks if two objects are equal
 // hereby we also check our control structures and the noExtra parameter. If noExtra is true it is not allowed to have
 // elements than set
@@ -246,7 +241,8 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	takenInLeft := make(map[string]bool)
 
 	// Iterate over normal fields
-	for ck, cv := range left {
+	leftCopy := maps.Clone(left)
+	for ck, cv := range leftCopy {
 		if takenInLeft[ck] {
 			continue
 		}
@@ -262,21 +258,19 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			if !takenInRight[k] {
 				rv, rOK = right[k]
 			}
-			lv, lOK = left[k]
+			lv, lOK = leftCopy[k]
 
 			takenInLeft[k] = true
 			takenInRight[k] = true
 
 			cvObj, ok := cv.(util.JsonObject)
 			if ok {
-
 				control, err = fillComparisonContext(cvObj)
 				if err != nil {
 					return res, err
 				}
 			}
-
-			delete(left, ck)
+			delete(leftCopy, ck)
 		} else {
 			// Normal key
 			k = ck
@@ -289,7 +283,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			takenInLeft[k] = true
 			takenInRight[k] = true
 
-			leftObj, ok := left[k+":control"].(util.JsonObject)
+			leftObj, ok := leftCopy[k+":control"].(util.JsonObject)
 			if ok {
 				iControl, err := fillComparisonContext(leftObj)
 				if err != nil {
@@ -297,8 +291,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 				}
 				if iControl != nil {
 					control = iControl
-
-					delete(left, k+":control")
+					delete(leftCopy, k+":control")
 				}
 			}
 		}
@@ -313,7 +306,6 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		if err != nil {
 			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
-
 			// There is no use in checking the equality of the value if the preconditions do not work
 			continue
 		}
@@ -323,7 +315,6 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			tmp, err := JsonEqual(lv, rv, *control)
 			if err != nil {
 				return CompareResult{}, err
-
 			}
 
 			for ik, iv := range tmp.Failures {
@@ -351,7 +342,6 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			}
 		}
 	}
-
 	return res, nil
 }
 
@@ -414,6 +404,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 		} else {
 			found := false
 			allTmpFailures := make([]CompareFailure, 0)
+
 			for rk, rv := range right {
 				if takenInRight[rk] {
 					continue
@@ -422,21 +413,8 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 				// We need to check the left interface against the right one multiple times
 				// JsonEqual modifies such interface (it deletes it afterwards)
 				// Therefore we need a copy of it for this case
-				var (
-					err error
-					tmp CompareResult
-				)
-				switch jo := lv.(type) {
-				case util.JsonObject:
-					lvv := util.JsonObject{}
-					for k, v := range jo {
-						lvv[k] = v
-					}
-					tmp, err = JsonEqual(lvv, rv, nextControl)
-				default:
-					tmp, err = JsonEqual(lv, rv, nextControl)
-				}
 
+				tmp, err := JsonEqual(lv, rv, nextControl)
 				if err != nil {
 					return CompareResult{}, err
 				}
@@ -445,7 +423,6 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 					// Found an element fitting
 					found = true
 					takenInRight[rk] = true
-
 					break
 				}
 
@@ -476,16 +453,11 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 		}
 	}
 
-	return
+	return res, nil
 }
 
 func ObjectEqualWithControl(left, right util.JsonObject, control ComparisonContext) (res CompareResult, err error) {
-	if control.noExtra {
-		return objectComparison(left, right, true)
-	}
-
-	return objectComparison(left, right, false)
-
+	return objectComparison(left, right, control.noExtra)
 }
 
 func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext) (res CompareResult, err error) {
@@ -611,7 +583,7 @@ func keyChecks(lk string, right any, rOK bool, control ComparisonContext) (err e
 			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatch, err)
 		}
 		if !doesMatch {
-			return fmt.Errorf("does not match regex '%s'", *control.regexMatch)
+			return fmt.Errorf("%q does not match regex '%s'", right, *control.regexMatch)
 		}
 	}
 
@@ -692,12 +664,12 @@ func getJsonType(value any) string {
 		return "Array"
 	case util.JsonString:
 		return "String"
-	case util.JsonNumber:
+	case util.JsonNumber, int:
 		return "Number"
 	case util.JsonBool:
 		return "Bool"
 	default:
-		return "No JSON Type: " + fmt.Sprintf("%v", value)
+		return "No JSON Type: " + fmt.Sprintf("%v[%T]", value, value)
 	}
 }
 
