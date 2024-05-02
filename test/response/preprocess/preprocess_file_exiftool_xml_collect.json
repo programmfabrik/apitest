@@ -32,32 +32,32 @@
                                 },
                                 "xmlns:Composite": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/Composite/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/Composite/1.0/"
                                     }
                                 },
                                 "xmlns:ExifTool": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/ExifTool/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/ExifTool/1.0/"
                                     }
                                 },
                                 "xmlns:File": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/File/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/File/1.0/"
                                     }
                                 },
                                 "xmlns:ICC_Profile": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/ICC_Profile/ICC_Profile/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/ICC_Profile/ICC_Profile/1.0/"
                                     }
                                 },
                                 "xmlns:JFIF": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/JFIF/JFIF/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/JFIF/JFIF/1.0/"
                                     }
                                 },
                                 "xmlns:et": {
                                     "#text:control": {
-                                        "regex": "http://ns.exiftool.(org|ca)/1.0/"
+                                        "match": "http://ns.exiftool.(org|ca)/1.0/"
                                     }
                                 }
                             },
