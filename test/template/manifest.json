@@ -6,9 +6,16 @@
         "dir": "../_res",
         "testmode": false
     },
+    "store": {
+        "test_int": 123,
+        "test_text": "lorem ipsum"
+    },
     "name": "template tests",
     "tests": [
-        /* printf "%s" "@test1.json" | marshal */"<placeholder>",
-        "@test2.json"
-    ],
+        /* printf "%s" "@test1.json" | marshal */"<placeholder>"
+        ,"@test2.json"
+        ,"@test3.json"
+        ,"@test4.json"
+        ,"@test5.json"
+    ]
 }

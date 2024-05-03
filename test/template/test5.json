@@ -1,0 +1,87 @@
+// template-delims: {{ }}
+[
+    {
+        "name": "delimiter in templates: \"",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "integer from datastore: {{ datastore "test_int" }}",
+                "text": "string from datastore: {{ datastore "test_text" }}"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num": "integer from datastore: 123",
+                    "text": "string from datastore: lorem ipsum"
+                }
+            }
+        }
+    },
+    {
+        "name": "delimiter in templates: `",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "integer from datastore: {{ datastore `test_int` }}",
+                "text": "string from datastore: {{ datastore `test_text` }}"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num": "integer from datastore: 123",
+                    "text": "string from datastore: lorem ipsum"
+                }
+            }
+        }
+    },
+    {
+        "name": "delimiter in templates: \"",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "integer from datastore: 123",
+                "text": "string from datastore: lorem ipsum"
+        }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num": "integer from datastore: {{ datastore "test_int" }}",
+                    "text": "string from datastore: {{ datastore "test_text" }}"
+                }
+            }
+        }
+    },
+    {
+        "name": "delimiter in templates: `",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "num": "integer from datastore: 123",
+                "text": "string from datastore: lorem ipsum"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "num": "integer from datastore: {{ datastore `test_int` }}",
+                    "text": "string from datastore: {{ datastore `test_text` }}"
+                }
+            }
+        }
+    }
+]
