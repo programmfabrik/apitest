@@ -8,7 +8,8 @@
     },
     "store": {
         "test_int": 123,
-        "test_text": "lorem ipsum"
+        "test_text": "lorem ipsum",
+        "server_endpoint": "bounce-json"
     },
     "name": "template tests",
     "tests": [
