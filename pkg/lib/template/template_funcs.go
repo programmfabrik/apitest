@@ -357,7 +357,7 @@ func loadFileAndRender(rootDir string, loader *Loader) any {
 
 // fileRender loads file from path and renders is as Go template passing
 // the arguments as ".Param1", ".Param2" into the template.
-func loadFile(rootDir string, loader *Loader) any {
+func loadFile(rootDir string) any {
 	return func(path string, params ...any) (st string, err error) {
 		data, err := fileReadInternal(path, rootDir)
 		if err != nil {
@@ -369,7 +369,7 @@ func loadFile(rootDir string, loader *Loader) any {
 
 // loadFileCSV reads file and parses it in the CSV map. A delimiter can
 // be specified. Defaults to ','
-func loadFileCSV(rootDir string, loader *Loader) any {
+func loadFileCSV(rootDir string) any {
 	return func(path string, delimiters ...rune) (m []map[string]any, err error) {
 		var delimiter rune
 		switch len(delimiters) {

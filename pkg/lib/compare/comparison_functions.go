@@ -302,7 +302,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		}
 
 		// Check for the given key functions
-		err := keyChecks(k, rv, rOK, *control)
+		err := keyChecks(rv, rOK, *control)
 		if err != nil {
 			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
@@ -479,7 +479,7 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 	return arrayComparison(left, right, control, nextControl)
 }
 
-func keyChecks(lk string, right any, rOK bool, control ComparisonContext) (err error) {
+func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 	if control.isString {
 		if right == nil {
 			return fmt.Errorf("== nil but should exist")

@@ -136,7 +136,7 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 
 // cheRckForBreak Response tests the given response for a so called break response.
 // If this break response is present it returns a true
-func (testCase Case) breakResponseIsPresent(request api.Request, response api.Response) (bool, error) {
+func (testCase Case) breakResponseIsPresent(response api.Response) (bool, error) {
 
 	if testCase.BreakResponse != nil {
 		for _, v := range testCase.BreakResponse {
@@ -177,7 +177,7 @@ func (testCase Case) breakResponseIsPresent(request api.Request, response api.Re
 // checkCollectResponse loops over all given collect responses and than
 // If this continue response is present it returns a true.
 // If no continue response is set, it also returns true to keep the testsuite running
-func (testCase *Case) checkCollectResponse(request api.Request, response api.Response) (int, error) {
+func (testCase *Case) checkCollectResponse(response api.Response) (int, error) {
 
 	if testCase.CollectResponse != nil {
 		_, loadedResponses, err := template.LoadManifestDataAsObject(testCase.CollectResponse, testCase.manifestDir, testCase.loader)
@@ -385,7 +385,7 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			break
 		}
 
-		breakPresent, err := testCase.breakResponseIsPresent(request, apiResponse)
+		breakPresent, err := testCase.breakResponseIsPresent(apiResponse)
 		if err != nil {
 			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
@@ -398,7 +398,7 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			return false, apiResponse, fmt.Errorf("Break response found")
 		}
 
-		collectLeft, err := testCase.checkCollectResponse(request, apiResponse)
+		collectLeft, err := testCase.checkCollectResponse(apiResponse)
 		if err != nil {
 			testCase.LogReq(request)
 			testCase.LogResp(apiResponse)
