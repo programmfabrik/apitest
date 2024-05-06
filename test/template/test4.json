@@ -1,6 +1,6 @@
 // template-delims: {{ }}
 {
-    "name": "delimiter in templates: `",
+    "name": "delimiter in templates in request endpoint and body: `",
     "request": {
         "server_url": "http://localhost:9999",
         "endpoint": "{{ datastore `server_endpoint` }}",
