@@ -227,10 +227,19 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 
+	// Get the (optional) number of repititions from the test path spec
 	isParallelPathSpec := false
-	switch t := v.(type) {
-	case string:
-		isParallelPathSpec = util.IsParallelPathSpec(t)
+	parallelRepititions := 1
+	if isParallelPathSpec {
+		switch t := v.(type) {
+		case string:
+			parallelRepititions, _ = util.GetParallelPathSpec(t)
+
+			// FIXME - Shouldn't this be > 1 (also in util.IsParallelPathSpec)?
+			// If so, the declaration in L.6 can be removed and this can be turned
+			// into a declaration and moved to after the if block.
+			isParallelPathSpec = parallelRepititions > 0
+		}
 	}
 
 	//Get the Manifest with @ logic
@@ -244,6 +253,22 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
 		return false
 	}
+
+	// Parse as template always
+	requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+	if lErr != nil {
+		r.SaveToReportLog(lErr.Error())
+		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
+		return false
+	}
+
+	// If objects are different, we did have a Go template, recurse one level deep
+	if string(requestBytes) != string(testObj) {
+		return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
+			testFilePath, k, parallelRepititions, isParallelPathSpec, r, loader)
+	}
+
+	testObj = requestBytes
 
 	//Try to directly unmarshal the manifest into testcase array
 	var testCases []json.RawMessage
@@ -280,56 +305,29 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	} else {
 		// We were not able unmarshal into array, so we try to unmarshal into raw message
 
-		// Get the (optional) number of repititions from the test path spec
-		parallelRepititions := 1
-		if isParallelPathSpec {
-			switch t := v.(type) {
-			case string:
-				parallelRepititions, _ = util.GetParallelPathSpec(t)
-			}
-		}
-
-		// Parse as template always
-		requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-		if lErr != nil {
-			r.SaveToReportLog(lErr.Error())
-			logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
-			return false
-		}
-
-		// If objects are different, we did have a Go template, recurse one level deep
-		if string(requestBytes) != string(testObj) {
-			return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-				testFilePath, k, parallelRepititions, isParallelPathSpec, r, loader)
-		}
-
-		// Its a JSON at this point, assign and proceed to parse
-		testObj = requestBytes
-
 		var singleTest json.RawMessage
 		err = util.Unmarshal(testObj, &singleTest)
-		if err == nil {
-
-			//Check if is @ and if so load the test
-			if util.IsPathSpec(string(testObj)) {
-				var sS string
-
-				err := util.Unmarshal(testObj, &sS)
-				if err != nil {
-					r.SaveToReportLog(err.Error())
-					logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-					return false
-				}
-
-				return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, parallelRepititions, isParallelPathSpec, r, template.Loader{})
-			} else {
-				return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
-			}
-		} else {
+		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
 			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
 			return false
+		}
+
+		//Check if is @ and if so load the test
+		if util.IsPathSpec(string(testObj)) {
+			var sS string
+
+			err := util.Unmarshal(testObj, &sS)
+			if err != nil {
+				r.SaveToReportLog(err.Error())
+				logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+				return false
+			}
+
+			return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, parallelRepititions, isParallelPathSpec, r, template.Loader{})
+		} else {
+			return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
 		}
 	}
 

@@ -38,6 +38,11 @@ type delimiters struct {
 
 var delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
 
+// Loader loads and executes a manifest template.
+//
+// A manifest template is a customized version of Go's text/template, plus
+// custom template functions (which are initialized with the Loader's
+// properties, where applicable).
 type Loader struct {
 	datastore      *datastore.Datastore
 	HTTPServerHost string
@@ -50,6 +55,14 @@ func NewLoader(datastore *datastore.Datastore) Loader {
 	return Loader{datastore: datastore}
 }
 
+// Render loads and executes a manifest template.
+//
+// For a description of the manifest template, refer to Loader's docstring.
+//
+//   - tmplBytes is the manifest template, as loaded from disk.
+//   - rootDir is the path of the directory in which manifest resides.
+//   - ctx is the data passed on to the template's Execute function.
+//     Contrary to what convention may suggest, it is not a context.Context.
 func (loader *Loader) Render(
 	tmplBytes []byte,
 	rootDir string,
