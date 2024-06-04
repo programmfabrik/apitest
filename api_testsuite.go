@@ -234,10 +234,11 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	case string:
 		parallelRepititions, _ = util.GetParallelPathSpec(t)
 
-		// FIXME - Shouldn't this be > 1 (also in util.IsParallelPathSpec)?
-		// If so, the declaration in L.6 can be removed and this can be turned
-		// into a declaration and moved to after the if block.
 		isParallelPathSpec = parallelRepititions > 0
+
+		if parallelRepititions < 1 {
+			parallelRepititions = 1
+		}
 	}
 
 	//Get the Manifest with @ logic
@@ -253,12 +254,20 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	}
 
 	// Parse as template always
-	testObj, err = loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-	if err != nil {
-		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
+	requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+	if lErr != nil {
+		r.SaveToReportLog(lErr.Error())
+		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
 		return false
 	}
+
+	// If objects are different, we did have a Go template, recurse one level deep
+	if string(requestBytes) != string(testObj) {
+		return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
+			testFilePath, k, parallelRepititions, isParallelPathSpec, r, loader)
+	}
+
+	testObj = requestBytes
 
 	//Try to directly unmarshal the manifest into testcase array
 	var testCases []json.RawMessage
