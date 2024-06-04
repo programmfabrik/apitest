@@ -1,0 +1,29 @@
+[
+    {
+        "name": "file_render to marshal pipeline should pass",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "dummy.txt",
+            "method": "GET"
+        },
+        "response": {
+            "body": {
+                "foo": {{ file_render "dummy_template.json" | marshal }}
+            }
+        }
+    },
+    {
+        "name": "file to marshal pipeline should fail",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "dummy.txt",
+            "method": "GET"
+        },
+        "response": {
+            "body": {
+                "foo": {{ file "dummy_template.json" | marshal }}
+            }
+        },
+        "reverse_test_result": true
+    }
+]
