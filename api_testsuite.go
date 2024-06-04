@@ -233,12 +233,10 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	switch t := v.(type) {
 	case string:
 		parallelRepititions, _ = util.GetParallelPathSpec(t)
-
-		isParallelPathSpec = parallelRepititions > 0
-
 		if parallelRepititions < 1 {
 			parallelRepititions = 1
 		}
+		isParallelPathSpec = parallelRepititions > 1
 	}
 
 	//Get the Manifest with @ logic
