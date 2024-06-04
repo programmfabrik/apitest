@@ -17,34 +17,11 @@
         "statuscode": 200,
         "body": {
             "body": {
-                "semver_easydb_release:control": {
-                    "is_integer": true
-                },
                 "semver_easydb_release": -1,
-
-                "semver_easydb_patch:control": {
-                    "is_integer": true
-                },
                 "semver_easydb_patch": -1,
-
-                "semver_lt:control": {
-                    "is_integer": true
-                },
                 "semver_lt": -1,
-
-                "semver_eq:control": {
-                    "is_integer": true
-                },
                 "semver_eq": 0,
-
-                "semver_gt:control": {
-                    "is_integer": true
-                },
                 "semver_gt": 1,
-
-                "semver_eq2:control": {
-                    "is_integer": true
-                },
                 "semver_eq2": 0
             }
         }
