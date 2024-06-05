@@ -27,6 +27,10 @@ jobs:
         shell: bash
         run: make test
 
+      - name: execute apitest
+        shell: bash
+        run: make apitest
+
       - name: Notify slack channel about a failure
         if: ${{ failure() }}
         uses: rtCamp/action-slack-notify@v2
