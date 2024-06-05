@@ -268,10 +268,14 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k int
 	for i, testCase := range testCases {
 		var success bool
 
-		if util.IsPathSpec(string(testCase)) {
+		// If testCase can be unmarshalled as string, we may have a
+		// reference to another test using @ notation at hand
+		var testCaseStr string
+		err = util.Unmarshal(testCase, &testCaseStr)
+		if err == nil && util.IsPathSpec(testCaseStr) {
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
-				testCase,
+				testCaseStr,
 				filepath.Join(manifestDir, dir),
 				testFilePath,
 				i,
@@ -280,7 +284,16 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k int
 			)
 		} else {
 			// Otherwise simply run the literal test case
-			success = ats.runLiteralTest(TestContainer{CaseByte: testCase, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, i)
+			success = ats.runLiteralTest(
+				TestContainer{
+					CaseByte: testCase,
+					Path:     filepath.Join(manifestDir, dir),
+				},
+				r,
+				testFilePath,
+				loader,
+				i,
+			)
 		}
 
 		if !success {
