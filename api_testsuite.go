@@ -179,7 +179,7 @@ func (ats *Suite) Run() bool {
 	success := true
 	for k, v := range ats.Tests {
 		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, 1, false, child, ats.loader)
+		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, k, child, ats.loader)
 		child.Leave(sTestSuccess)
 		if !sTestSuccess {
 			success = false
@@ -213,7 +213,7 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, repeatNTimes int, runParallel bool, r *report.ReportElement, rootLoader template.Loader) bool {
+func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k int, r *report.ReportElement, rootLoader template.Loader) bool {
 	//Init variables
 	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
 	loader := template.NewLoader(ats.datastore)
@@ -226,18 +226,6 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	}
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
-
-	// Get the (optional) number of repititions from the test path spec
-	isParallelPathSpec := false
-	parallelRepititions := 1
-	switch t := v.(type) {
-	case string:
-		parallelRepititions, _ = util.GetParallelPathSpec(t)
-		if parallelRepititions < 1 {
-			parallelRepititions = 1
-		}
-		isParallelPathSpec = parallelRepititions > 1
-	}
 
 	//Get the Manifest with @ logic
 	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
@@ -252,56 +240,18 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 	}
 
 	// Parse as template always
-	requestBytes, lErr := loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-	if lErr != nil {
-		r.SaveToReportLog(lErr.Error())
-		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, lErr))
+	testObj, err = loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
 		return false
 	}
 
-	// If objects are different, we did have a Go template, recurse one level deep
-	if string(requestBytes) != string(testObj) {
-		return ats.parseAndRunTest([]byte(requestBytes), filepath.Join(manifestDir, dir),
-			testFilePath, k, parallelRepititions, isParallelPathSpec, r, loader)
-	}
-
-	testObj = requestBytes
-
-	//Try to directly unmarshal the manifest into testcase array
+	// Build list of test cases
 	var testCases []json.RawMessage
 	err = util.Unmarshal(testObj, &testCases)
-	if err == nil {
-		d := 1
-		if isParallelPathSpec || runParallel {
-			if repeatNTimes > 1 {
-				logrus.Debugf("run %s parallel: repeat %d times", filepath.Base(testFilePath), repeatNTimes)
-			}
-			d = len(testCases)
-		}
-
-		waitCh := make(chan bool, repeatNTimes*d)
-		succCh := make(chan bool, repeatNTimes*len(testCases))
-
-		go func() {
-			for kn := 0; kn < repeatNTimes; kn++ {
-				for ki, v := range testCases {
-					waitCh <- true
-					go testGoRoutine(k, kn+ki*repeatNTimes, v, ats, testFilePath, manifestDir, dir, r, loader, waitCh, succCh, isParallelPathSpec || runParallel)
-				}
-			}
-		}()
-
-		for i := 0; i < repeatNTimes*len(testCases); i++ {
-			select {
-			case succ := <-succCh:
-				if succ == false {
-					return false
-				}
-			}
-		}
-	} else {
-		// We were not able unmarshal into array, so we try to unmarshal into raw message
-
+	if err != nil {
+		// Input could not be deserialized into list, try to deserialize into single object
 		var singleTest json.RawMessage
 		err = util.Unmarshal(testObj, &singleTest)
 		if err != nil {
@@ -311,27 +261,37 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, k, re
 			return false
 		}
 
-		//Check if is @ and if so load the test
-		if util.IsPathSpec(string(testObj)) {
-			var sS string
+		testCases = []json.RawMessage{singleTest}
+	}
 
-			err := util.Unmarshal(testObj, &sS)
-			if err != nil {
-				r.SaveToReportLog(err.Error())
-				logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-				return false
-			}
+	// Execute test cases
+	for i, testCase := range testCases {
+		var success bool
 
-			return ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k, parallelRepititions, isParallelPathSpec, r, template.Loader{})
+		if util.IsPathSpec(string(testCase)) {
+			// Recurse if the testCase points to another file using @ notation
+			success = ats.parseAndRunTest(
+				testCase,
+				filepath.Join(manifestDir, dir),
+				testFilePath,
+				i,
+				r,
+				loader,
+			)
 		} else {
-			return ats.runSingleTest(TestContainer{CaseByte: testObj, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, k, runParallel)
+			// Otherwise simply run the literal test case
+			success = ats.runLiteralTest(TestContainer{CaseByte: testCase, Path: filepath.Join(manifestDir, dir)}, r, testFilePath, loader, i)
+		}
+
+		if !success {
+			return false
 		}
 	}
 
 	return true
 }
 
-func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int, isParallel bool) bool {
+func (ats *Suite) runLiteralTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int) bool {
 	r.SetName(testFilePath)
 
 	var test Case
@@ -352,9 +312,6 @@ func (ats *Suite) runSingleTest(tc TestContainer, r *report.ReportElement, testF
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
-	if isParallel {
-		test.ContinueOnFailure = true
-	}
 	if test.LogNetwork == nil {
 		test.LogNetwork = &ats.Config.LogNetwork
 	}
@@ -403,30 +360,4 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	b, err := loader.Render(manifestTmpl, ats.manifestDir, nil)
 	ats.loader = loader
 	return b, err
-}
-
-func testGoRoutine(k, ki int, v json.RawMessage, ats *Suite, testFilePath, manifestDir, dir string, r *report.ReportElement, loader template.Loader, waitCh, succCh chan bool, runParallel bool) {
-	success := false
-
-	//Check if is @ and if so load the test
-	switch util.IsPathSpec(string(v)) {
-	case true:
-		var sS string
-		err := util.Unmarshal(v, &sS)
-		if err != nil {
-			r.SaveToReportLog(err.Error())
-			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-			success = false
-			break
-		}
-		success = ats.parseAndRunTest(sS, filepath.Join(manifestDir, dir), testFilePath, k+ki, 1, runParallel, r, loader)
-	default:
-		success = ats.runSingleTest(TestContainer{CaseByte: v, Path: filepath.Join(manifestDir, dir)},
-			r, testFilePath, loader, ki, runParallel)
-	}
-
-	succCh <- success
-	if success {
-		<-waitCh
-	}
 }
