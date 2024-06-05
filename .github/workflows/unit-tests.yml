@@ -29,7 +29,7 @@ jobs:
 
       - name: execute apitest
         shell: bash
-        run: make apitest
+        run: make build apitest
 
       - name: Notify slack channel about a failure
         if: ${{ failure() }}
