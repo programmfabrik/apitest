@@ -1,0 +1,11 @@
+{
+    "name": "an arbitrary test",
+    "request": {
+	"server_url": "http://localhost:9999",
+	"endpoint": "assets/empty.json",
+	"method": "GET"
+    },
+    "response": {
+	"statuscode": 200
+    }
+}

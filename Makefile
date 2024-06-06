@@ -3,7 +3,7 @@ GOARCH ?= amd64
 GIT_COMMIT_SHA ?= $(shell git rev-list -1 HEAD)
 LD_FLAGS = -ldflags="-X main.buildCommit=${GIT_COMMIT_SHA}"
 
-all: test build
+all: test build apitest
 
 deps:
 	go mod download github.com/clbanning/mxj

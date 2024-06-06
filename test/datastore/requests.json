@@ -1,9 +1,9 @@
 [
     {
-        "name": "add data thru request - 1",
+        "name": "add data thru {{ printf `data1.json` }} request - 1",
         "request": {
             "server_url": "http://localhost:9999",
-            "endpoint": "data1.json",
+            "endpoint": "{{ printf `data1.json` }}",
             "method": "GET"
         },
         "response": {
@@ -11,18 +11,18 @@
         }
     },
     {
-        "name": "add data thru request - 2",
+        "name": "add data thru {{ printf `data2.json` }} request - 2",
         "request": {
             "server_url": "http://localhost:9999",
-            "endpoint": "data2.json",
+            "endpoint": "{{ printf `data2.json` }}",
             "method": "GET"
         }
     },
     {
-        "name": "add data thru request - 3",
+        "name": "add data thru {{ printf `data1.json` }} request - 3",
         "request": {
             "server_url": "http://localhost:9999",
-            "endpoint": "data1.json",
+            "endpoint": "{{ printf `data1.json` }}",
             "method": "GET"
         }
     }

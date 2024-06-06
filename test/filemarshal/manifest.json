@@ -1,0 +1,11 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "./",
+        "testmode": false
+    },
+    "name": "ensure a file_render to JSON marshal pipe works as expected",
+    "tests": [
+        "@requests.json"
+    ]
+}
