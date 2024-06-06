@@ -151,9 +151,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
         // We also support the external loading of a complete test:
         "@pathToTest.json"
-
-        // By prefixing it with a p the testtool runs the tests all in parallel. All parallel tests are then set to ContinueOnFailure !
-        "p@pathToTestsThatShouldRunInParallel.json"
     ]
 }
 ```
@@ -415,26 +412,6 @@ However that one will be stripped before parsing the template, which would be ju
 ```
 
 ** Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
-
-## Run tests in parallel
-
-The tool is able to do run tests in parallel. You activate this mechanism by including a external testfile with `p@pathtofile.json`.
-The `p@` indicates to load that external file and run all tests in it in parallel.
-
-**All tests that are run in parallel are implicit set to ContinueOnFailure as otherwise the log and report would make no
-sense**
-
-```yaml
-{
-    "name": "Binary Comparison",
-    "request": {
-        "endpoint": "suggest",
-        "method": "GET"
-    },
-    // Path to binary file with @
-    "response": "@simple.bin"
-}
-```
 
 ## Binary data comparison
 
