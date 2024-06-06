@@ -383,7 +383,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
 
 		},
@@ -392,7 +392,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetClientCredentialsAuthToken()
 		},
 		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
@@ -400,7 +400,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetCodeAuthToken(params...)
 		},
 		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
@@ -408,7 +408,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetAuthToken(params...)
 		},
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
@@ -416,7 +416,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return &oAuthClient, nil
 		},
 		"oauth2_basic_auth": func(client string) (string, error) {
@@ -424,7 +424,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return "", errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
 		},
 		"query_escape": func(in string) string {
