@@ -49,8 +49,9 @@ func TestParsePathSpec(t *testing.T) {
 	t.Run("invalid path specs are detected", func(t *testing.T) {
 		testCases := []string{
 			"",                             // empty
-			`foo@bar.baz`, `1.23@foo.json`, // non-digit parallel runs
-			`p@old.syntax`, `p5@old.syntax`, `p123@old.syntax`, // old syntax
+			"foo@bar.baz", "1.23@foo.json", // non-digit parallel runs
+			"p@old.syntax", "p5@old.syntax", "p123@old.syntax", // old syntax
+			"0@foo.json", "-1@foo.json", "-123@foo.json", // zero or negative parallel runs
 		}
 
 		for _, testCase := range testCases {
