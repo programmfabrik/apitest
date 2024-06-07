@@ -242,20 +242,20 @@ func (ats *Suite) parseAndRunTest(
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 
-	// Determine number of parallel repetitions, if any
-	repetitions := 1
+	// Determine number of parallel runs
+	parallelRuns := 1
 	if vStr, ok := v.(string); ok {
 		pathSpec, ok := util.ParsePathSpec(vStr)
 		if ok {
-			repetitions = pathSpec.Repetitions
+			parallelRuns = pathSpec.ParallelRuns
 		}
 	}
 
-	// Configure parallel repetitions, if specified
-	if repetitions > 1 {
-		// Check that parallel repetitions are actually allowed
+	// Configure parallel runs, if specified
+	if parallelRuns > 1 {
+		// Check that parallel runs are actually allowed
 		if !allowParallelExec {
-			logrus.Error(fmt.Errorf("parallel repetitions are not allowed in nested tests (%s)", testFilePath))
+			logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
 			return false
 		}
 	}
@@ -301,9 +301,9 @@ func (ats *Suite) parseAndRunTest(
 	var successCount atomic.Uint32
 	var waitGroup sync.WaitGroup
 
-	waitGroup.Add(repetitions)
+	waitGroup.Add(parallelRuns)
 
-	for repeatIdx := range repetitions {
+	for repeatIdx := range parallelRuns {
 		go func() {
 			defer waitGroup.Done()
 
@@ -350,7 +350,7 @@ func (ats *Suite) parseAndRunTest(
 
 	waitGroup.Wait()
 
-	return successCount.Load() == uint32(repetitions)
+	return successCount.Load() == uint32(parallelRuns)
 }
 
 func (ats *Suite) runLiteralTest(

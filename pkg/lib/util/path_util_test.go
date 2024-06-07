@@ -15,22 +15,22 @@ func TestParsePathSpec(t *testing.T) {
 			{
 				s: "@foo.json",
 				expected: PathSpec{
-					Repetitions: 1,
-					Path:        "foo.json",
+					ParallelRuns: 1,
+					Path:         "foo.json",
 				},
 			},
 			{
 				s: "5@bar.json",
 				expected: PathSpec{
-					Repetitions: 5,
-					Path:        "bar.json",
+					ParallelRuns: 5,
+					Path:         "bar.json",
 				},
 			},
 			{
 				s: "123@baz.json",
 				expected: PathSpec{
-					Repetitions: 123,
-					Path:        "baz.json",
+					ParallelRuns: 123,
+					Path:         "baz.json",
 				},
 			},
 		}
@@ -58,7 +58,7 @@ func TestParsePathSpec(t *testing.T) {
 		testCases := []string{
 			"",                         // empty
 			`"@foo.json`, `@foo.json"`, // superfluous quotes
-			`foo@bar.baz`, `1.23@foo.json`, // non-digit repetitions
+			`foo@bar.baz`, `1.23@foo.json`, // non-digit parallel runs
 			`p@old.syntax`, `p5@old.syntax`, `p123@old.syntax`, // old syntax
 		}
 

@@ -6,7 +6,7 @@
         "dir": "../_res",
         "testmode": false
     },
-    "name": "parallel run of N={{ $n_parallel }} repetitions",
+    "name": "parallel run of N={{ $n_parallel }} parallel runs",
     "tests": [
         {
             "name": "port {{ $local_port }}",

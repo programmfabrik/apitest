@@ -13,9 +13,9 @@ var pathSpecRegex *regexp.Regexp = regexp.MustCompile(`^([0-9]*)@([^"]+)$`)
 
 // PathSpec is a path specifier for including tests within manifests.
 type PathSpec struct {
-	// Repetitions matches the number of repetitions specified
+	// ParallelRuns matches the number of parallel runs specified
 	// in a path spec like "5@foo.json"
-	Repetitions int
+	ParallelRuns int
 
 	// Path matches the literal path, e.g. foo.json in "@foo.json"
 	Path string
@@ -43,19 +43,19 @@ func ParsePathSpec(s string) (PathSpec, bool) {
 	}
 
 	spec := PathSpec{
-		Repetitions: 1,
-		Path:        matches[2], // can't be empty, or else it wouldn't match the regex
+		ParallelRuns: 1,
+		Path:         matches[2], // can't be empty, or else it wouldn't match the regex
 	}
 
-	// Determine number of repetitions, if supplied
+	// Determine number of parallel runs, if supplied
 	if matches[1] != "" {
-		reps, err := strconv.Atoi(matches[1])
+		prs, err := strconv.Atoi(matches[1])
 		if err != nil {
 			// matches[1] is all digits, so there must be something seriously wrong
 			panic("error Atoi-ing all-decimal regex match")
 		}
 
-		spec.Repetitions = reps
+		spec.ParallelRuns = prs
 	}
 
 	return spec, true
