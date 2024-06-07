@@ -5,10 +5,8 @@ import (
 	"strconv"
 )
 
-/*
-throughout this file we assume 'manifestDir' to be an absolute path
-*/
-
+// pathSpecRegex validates and (via its capture groups) breaks up a
+// path spec string in a single step (see ParsePathSpec).
 var pathSpecRegex *regexp.Regexp = regexp.MustCompile(`^([0-9]*)@([^"]+)$`)
 
 // PathSpec is a path specifier for including tests within manifests.
