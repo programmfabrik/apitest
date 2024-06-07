@@ -263,13 +263,10 @@ func (ats *Suite) parseAndRunTest(
 		parallelRuns = pathSpec.ParallelRuns
 	}
 
-	// Configure parallel runs, if specified
-	if parallelRuns > 1 {
-		// Check that parallel runs are actually allowed
-		if !allowParallelExec {
-			logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
-			return false
-		}
+	// If parallel runs are requested, check that they're actually allowed
+	if parallelRuns > 1 && !allowParallelExec {
+		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
+		return false
 	}
 
 	// Get the Manifest with @ logic
