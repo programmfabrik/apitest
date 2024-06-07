@@ -1,8 +1,8 @@
 [
     {
-        "name": "bounce-json: bounce collected responses from N={{datastore "n_parallel"}} parallel runs: {{ datastore "responses" }}",
+        "name": "bounce-json: bounce collected responses from N={{datastore `n_parallel` }} parallel runs: {{ datastore `responses` }}",
         "request": {
-            "server_url": "http://localhost{{ datastore "local_port" }}",
+            "server_url": "http://localhost{{ datastore `local_port` }}",
             "endpoint": "bounce-json",
             "method": "POST",
             "body": {

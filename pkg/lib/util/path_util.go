@@ -1,13 +1,9 @@
 package util
 
 import (
-	"regexp"
 	"strconv"
+	"strings"
 )
-
-// pathSpecRegex validates and (via its capture groups) breaks up a
-// path spec string in a single step (see ParsePathSpec).
-var pathSpecRegex *regexp.Regexp = regexp.MustCompile(`^([0-9]*)@(.+)$`)
 
 // PathSpec is a path specifier for including tests within manifests.
 type PathSpec struct {
@@ -21,30 +17,19 @@ type PathSpec struct {
 
 // ParsePathSpec tries to parse the given string into a PathSpec.
 //
-// It returns a boolean result that indicates if parsing was successful
-// (i.e. if s is a valid path specifier).
-func ParsePathSpec(s string) (PathSpec, bool) {
-	matches := pathSpecRegex.FindStringSubmatch(s)
-	if matches == nil {
+// It returns a boolean result that indicates if parsing was successful (i.e. if
+// s is a valid path specifier). The string takes the format "[n]@file.json".
+func ParsePathSpec(s string) (spec PathSpec, ok bool) {
+	var parallelRuns string
+	parallelRuns, spec.Path, ok = strings.Cut(s, "@")
+	if parallelRuns != "" {
+		spec.ParallelRuns, _ = strconv.Atoi(parallelRuns)
+	} else {
+		spec.ParallelRuns = 1
+	}
+	if !ok || spec.Path == "" || spec.ParallelRuns <= 0 {
 		return PathSpec{}, false
 	}
-
-	spec := PathSpec{
-		ParallelRuns: 1,
-		Path:         matches[2], // can't be empty, or else it wouldn't match the regex
-	}
-
-	// Determine number of parallel runs, if supplied
-	if matches[1] != "" {
-		prs, err := strconv.Atoi(matches[1])
-		if err != nil {
-			// matches[1] is all digits, so there must be something seriously wrong
-			panic("error Atoi-ing all-decimal regex match")
-		}
-
-		spec.ParallelRuns = prs
-	}
-
 	return spec, true
 }
 

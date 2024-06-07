@@ -2,7 +2,7 @@
     {
         "name": "bounce-json: bounce n=1",
         "request": {
-            "server_url": "http://localhost{{ datastore "local_port" }}",
+            "server_url": "http://localhost{{ datastore `local_port` }}",
             "endpoint": "bounce-json",
             "method": "POST",
             "body": {
