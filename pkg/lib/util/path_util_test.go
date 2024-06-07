@@ -48,7 +48,7 @@ func TestParsePathSpec(t *testing.T) {
 			t.Run(testCase.s, func(t *testing.T) {
 				actual, err := ParsePathSpec(testCase.s)
 				require.NoError(t, err)
-				require.Equal(t, testCase.expected, actual)
+				require.Equal(t, testCase.expected, *actual)
 			})
 		}
 	})
@@ -67,7 +67,7 @@ func TestParsePathSpec(t *testing.T) {
 			t.Run(s, func(t *testing.T) {
 				actual, err := ParsePathSpec(s)
 				require.Error(t, err)
-				require.Zero(t, actual)
+				require.Nil(t, actual)
 			})
 		}
 	})

@@ -20,25 +20,27 @@ type PathSpec struct {
 //
 // The string takes the format "[n]@file.json". Invalid path specs
 // result in an error.
-func ParsePathSpec(s string) (spec PathSpec, err error) {
+func ParsePathSpec(s string) (*PathSpec, error) {
 	var ok bool
+	var err error
 	var parallelRuns string
+	var spec PathSpec
 
 	parallelRuns, spec.Path, ok = strings.Cut(s, "@")
 	if parallelRuns != "" {
 		spec.ParallelRuns, err = strconv.Atoi(parallelRuns)
 		if err != nil {
-			return PathSpec{}, fmt.Errorf("error parsing ParallelRuns of path spec %q: %w", s, err)
+			return nil, fmt.Errorf("error parsing ParallelRuns of path spec %q: %w", s, err)
 		}
 	} else {
 		spec.ParallelRuns = 1
 	}
 
 	if !ok || spec.Path == "" || spec.ParallelRuns < 0 {
-		return PathSpec{}, fmt.Errorf("invalid path spec %q", s)
+		return nil, fmt.Errorf("invalid path spec %q", s)
 	}
 
-	return spec, err
+	return &spec, err
 }
 
 // IsPathSpec is a wrapper around ParsePathSpec that discards the parsed PathSpec.
