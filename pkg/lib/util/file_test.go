@@ -13,14 +13,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-type testParallelPathSpecStruct struct {
-	pathSpec               string
-	expIsPath              bool
-	expIsParallel          bool
-	expPath                string
-	expParallelRepititions int
-}
-
 type testOpenFileStruct struct {
 	filename string
 	expError error
