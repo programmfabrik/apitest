@@ -33,6 +33,13 @@ func TestParsePathSpec(t *testing.T) {
 					Path:         "baz.json",
 				},
 			},
+			{
+				s: "0@foobar.json",
+				expected: PathSpec{
+					ParallelRuns: 0,
+					Path:         "foobar.json",
+				},
+			},
 		}
 
 		for i := range testCases {
@@ -51,7 +58,7 @@ func TestParsePathSpec(t *testing.T) {
 			"",                             // empty
 			"foo@bar.baz", "1.23@foo.json", // non-digit parallel runs
 			"p@old.syntax", "p5@old.syntax", "p123@old.syntax", // old syntax
-			"0@foo.json", "-1@foo.json", "-123@foo.json", // zero or negative parallel runs
+			"-1@foo.json", "-123@foo.json", // negative parallel runs
 		}
 
 		for _, testCase := range testCases {

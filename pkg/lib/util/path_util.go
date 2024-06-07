@@ -34,7 +34,7 @@ func ParsePathSpec(s string) (spec PathSpec, err error) {
 		spec.ParallelRuns = 1
 	}
 
-	if !ok || spec.Path == "" || spec.ParallelRuns <= 0 {
+	if !ok || spec.Path == "" || spec.ParallelRuns < 0 {
 		return PathSpec{}, fmt.Errorf("invalid path spec %q", s)
 	}
 
