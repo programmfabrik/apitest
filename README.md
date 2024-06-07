@@ -2293,6 +2293,10 @@ Removes from **key** from **url**'s query, returns the **url** with the **key** 
 
 Returns the **value** from the **url**'s query for **key**. In case of an error, an empty string is returned. Unparsable urls are ignored and an empty string is returned.
 
+## `parallel_run_idx`
+Returns the index of the Parallel Run that the template is executed in, or -1 if it is not executed
+within a parallel run.
+
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
