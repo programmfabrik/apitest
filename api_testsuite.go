@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -296,10 +298,15 @@ func (ats *Suite) parseAndRunTest(
 	}
 
 	// Execute test cases
-	successCh := make(chan bool, repetitions)
+	var successCount atomic.Uint32
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(repetitions)
 
 	for repeatIdx := range repetitions {
 		go func() {
+			defer waitGroup.Done()
+
 			for testIdx, testCase := range testCases {
 				var success bool
 
@@ -332,22 +339,18 @@ func (ats *Suite) parseAndRunTest(
 				}
 
 				if !success {
-					successCh <- false
+					// note that successCount is not incremented
 					return
 				}
 			}
 
-			successCh <- true
+			successCount.Add(1)
 		}()
 	}
 
-	for range repetitions {
-		if success := <-successCh; !success {
-			return false
-		}
-	}
+	waitGroup.Wait()
 
-	return true
+	return successCount.Load() == uint32(repetitions)
 }
 
 func (ats *Suite) runLiteralTest(
