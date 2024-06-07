@@ -291,85 +291,94 @@ func (ats *Suite) parseAndRunTest(
 	waitGroup.Add(parallelRuns)
 
 	for runIdx := range parallelRuns {
-		go func(runIdx int) {
-			defer waitGroup.Done()
-
-			// Build template loader
-			loader := ats.buildLoader(rootLoader, runIdx)
-
-			// Parse as template always
-			testRendered, err := loader.Render(testRaw, filepath.Join(manifestDir, dir), nil)
-			if err != nil {
-				r.SaveToReportLog(err.Error())
-				logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
-
-				// note that successCount is not incremented
-				return
-			}
-
-			// Build list of test cases
-			var testCases []json.RawMessage
-			err = util.Unmarshal(testRendered, &testCases)
-			if err != nil {
-				// Input could not be deserialized into list, try to deserialize into single object
-				var singleTest json.RawMessage
-				err = util.Unmarshal(testRendered, &singleTest)
-				if err != nil {
-					// Malformed json
-					r.SaveToReportLog(err.Error())
-					logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-
-					// note that successCount is not incremented
-					return
-				}
-
-				testCases = []json.RawMessage{singleTest}
-			}
-
-			for testIdx, testCase := range testCases {
-				var success bool
-
-				// If testCase can be unmarshalled as string, we may have a
-				// reference to another test using @ notation at hand
-				var testCaseStr string
-				err = util.Unmarshal(testCase, &testCaseStr)
-				if err == nil && util.IsPathSpec(testCaseStr) {
-					// Recurse if the testCase points to another file using @ notation
-					success = ats.parseAndRunTest(
-						testCaseStr,
-						filepath.Join(manifestDir, dir),
-						testFilePath,
-						r,
-						loader,
-						false, // no parallel exec allowed in nested tests
-					)
-				} else {
-					// Otherwise simply run the literal test case
-					success = ats.runLiteralTest(
-						TestContainer{
-							CaseByte: testCase,
-							Path:     filepath.Join(manifestDir, dir),
-						},
-						r,
-						testFilePath,
-						loader,
-						runIdx*len(testCases)+testIdx,
-					)
-				}
-
-				if !success {
-					// note that successCount is not incremented
-					return
-				}
-			}
-
-			successCount.Add(1)
-		}(runIdx)
+		go ats.testGoroutine(
+			&waitGroup, &successCount, manifestDir, testFilePath, r, rootLoader,
+			runIdx, testRaw, dir,
+		)
 	}
 
 	waitGroup.Wait()
 
 	return successCount.Load() == uint32(parallelRuns)
+}
+
+func (ats *Suite) testGoroutine(
+	waitGroup *sync.WaitGroup, successCount *atomic.Uint32,
+	manifestDir, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	runIdx int, testRaw json.RawMessage, dir string, // TODO: refactor paths / dirs (including DRY below at filepath.Join(mainfestDir, dir)
+) {
+	defer waitGroup.Done()
+
+	// Build template loader
+	loader := ats.buildLoader(rootLoader, runIdx)
+
+	// Parse testRaw as template
+	testRendered, err := loader.Render(testRaw, filepath.Join(manifestDir, dir), nil)
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
+
+		// note that successCount is not incremented
+		return
+	}
+
+	// Build list of test cases
+	var testCases []json.RawMessage
+	err = util.Unmarshal(testRendered, &testCases)
+	if err != nil {
+		// Input could not be deserialized into list, try to deserialize into single object
+		var singleTest json.RawMessage
+		err = util.Unmarshal(testRendered, &singleTest)
+		if err != nil {
+			// Malformed json
+			r.SaveToReportLog(err.Error())
+			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+
+			// note that successCount is not incremented
+			return
+		}
+
+		testCases = []json.RawMessage{singleTest}
+	}
+
+	for testIdx, testCase := range testCases {
+		var success bool
+
+		// If testCase can be unmarshalled as string, we may have a
+		// reference to another test using @ notation at hand
+		var testCaseStr string
+		err = util.Unmarshal(testCase, &testCaseStr)
+		if err == nil && util.IsPathSpec(testCaseStr) {
+			// Recurse if the testCase points to another file using @ notation
+			success = ats.parseAndRunTest(
+				testCaseStr,
+				filepath.Join(manifestDir, dir),
+				testFilePath,
+				r,
+				loader,
+				false, // no parallel exec allowed in nested tests
+			)
+		} else {
+			// Otherwise simply run the literal test case
+			success = ats.runLiteralTest(
+				TestContainer{
+					CaseByte: testCase,
+					Path:     filepath.Join(manifestDir, dir),
+				},
+				r,
+				testFilePath,
+				loader,
+				runIdx*len(testCases)+testIdx,
+			)
+		}
+
+		if !success {
+			// note that successCount is not incremented
+			return
+		}
+	}
+
+	successCount.Add(1)
 }
 
 func (ats *Suite) runLiteralTest(
