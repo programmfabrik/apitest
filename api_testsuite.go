@@ -179,8 +179,19 @@ func (ats *Suite) Run() bool {
 	success := true
 	for k, v := range ats.Tests {
 		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, child, ats.loader)
+
+		sTestSuccess := ats.parseAndRunTest(
+			v,
+			ats.manifestDir,
+			ats.manifestPath,
+			child,
+			ats.loader,
+			true,  // parallel exec allowed for top-level tests
+			false, // don't force ContinueOnFail at this point
+		)
+
 		child.Leave(sTestSuccess)
+
 		if !sTestSuccess {
 			success = false
 			break
@@ -213,7 +224,10 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *report.ReportElement, rootLoader template.Loader) bool {
+func (ats *Suite) parseAndRunTest(
+	v any, manifestDir, testFilePath string, r *report.ReportElement,
+	rootLoader template.Loader, allowParallelExec bool, forceContinueOnFail bool,
+) bool {
 	//Init variables
 	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
 	loader := template.NewLoader(ats.datastore)
@@ -227,7 +241,28 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *re
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 
-	//Get the Manifest with @ logic
+	// Determine number of parallel repetitions, if any
+	repetitions := 1
+	if vStr, ok := v.(string); ok {
+		pathSpec, ok := util.ParsePathSpec(vStr)
+		if ok {
+			repetitions = pathSpec.Repetitions
+		}
+	}
+
+	// Configure parallel repetitions, if specified
+	if repetitions > 1 {
+		// Check that parallel repetitions are actually allowed
+		if !allowParallelExec {
+			logrus.Error(fmt.Errorf("parallel repetitions are not allowed in nested tests (%s)", testFilePath))
+			return false
+		}
+
+		// If we're running in parallel repetition mode, force subordinate tests to ContinueOnFail
+		forceContinueOnFail = true
+	}
+
+	// Get the Manifest with @ logic
 	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
 	dir := filepath.Dir(fileh)
 	if fileh != "" {
@@ -265,37 +300,55 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *re
 	}
 
 	// Execute test cases
-	for i, testCase := range testCases {
-		var success bool
+	successCh := make(chan bool, repetitions)
 
-		// If testCase can be unmarshalled as string, we may have a
-		// reference to another test using @ notation at hand
-		var testCaseStr string
-		err = util.Unmarshal(testCase, &testCaseStr)
-		if err == nil && util.IsPathSpec(testCaseStr) {
-			// Recurse if the testCase points to another file using @ notation
-			success = ats.parseAndRunTest(
-				testCaseStr,
-				filepath.Join(manifestDir, dir),
-				testFilePath,
-				r,
-				loader,
-			)
-		} else {
-			// Otherwise simply run the literal test case
-			success = ats.runLiteralTest(
-				TestContainer{
-					CaseByte: testCase,
-					Path:     filepath.Join(manifestDir, dir),
-				},
-				r,
-				testFilePath,
-				loader,
-				i,
-			)
-		}
+	for repeatIdx := range repetitions {
+		go func() {
+			for testIdx, testCase := range testCases {
+				var success bool
 
-		if !success {
+				// If testCase can be unmarshalled as string, we may have a
+				// reference to another test using @ notation at hand
+				var testCaseStr string
+				err = util.Unmarshal(testCase, &testCaseStr)
+				if err == nil && util.IsPathSpec(testCaseStr) {
+					// Recurse if the testCase points to another file using @ notation
+					success = ats.parseAndRunTest(
+						testCaseStr,
+						filepath.Join(manifestDir, dir),
+						testFilePath,
+						r,
+						loader,
+						false, // no parallel exec allowed in nested tests
+						forceContinueOnFail,
+					)
+				} else {
+					// Otherwise simply run the literal test case
+					success = ats.runLiteralTest(
+						TestContainer{
+							CaseByte: testCase,
+							Path:     filepath.Join(manifestDir, dir),
+						},
+						r,
+						testFilePath,
+						loader,
+						repeatIdx*len(testCases)+testIdx,
+						forceContinueOnFail,
+					)
+				}
+
+				if !success {
+					successCh <- false
+					return
+				}
+			}
+
+			successCh <- true
+		}()
+	}
+
+	for range repetitions {
+		if success := <-successCh; !success {
 			return false
 		}
 	}
@@ -303,7 +356,10 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *re
 	return true
 }
 
-func (ats *Suite) runLiteralTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int) bool {
+func (ats *Suite) runLiteralTest(
+	tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader,
+	index int, forceContinueOnFailure bool,
+) bool {
 	r.SetName(testFilePath)
 
 	var test Case
@@ -320,10 +376,13 @@ func (ats *Suite) runLiteralTest(tc TestContainer, r *report.ReportElement, test
 	test.loader = loader
 	test.manifestDir = tc.Path
 	test.suiteIndex = ats.index
-	test.index = k
+	test.index = index
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
+	if forceContinueOnFailure {
+		test.ContinueOnFailure = true
+	}
 	if test.LogNetwork == nil {
 		test.LogNetwork = &ats.Config.LogNetwork
 	}

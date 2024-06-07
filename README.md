@@ -150,7 +150,14 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // [SINGLE TESTCASE]: See below for more information
 
         // We also support the external loading of a complete test:
-        "@pathToTest.json"
+        "@pathToTest.json",
+
+        // By prefixing it with a number, the testtool runs that many instances of
+        // the included test file in parallel to each other.
+        //
+        // Only tests directly included by the manifest are allowed to run in parallel.
+        // All parallel tests are set to ContinueOnFailure.
+        "5@pathToTestsThatShouldRunInParallel.json"
     ]
 }
 ```
@@ -412,6 +419,34 @@ However that one will be stripped before parsing the template, which would be ju
 ```
 
 ** Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
+
+## Run tests in parallel
+The tool is able to run tests in parallel to themselves. You activate this
+mechanism by including an external test file with `N@pathtofile.json`, where N
+is the number of parallel "clones" you want to have of the included tests.
+
+The included tests themselves are still run serially, only the entire set of
+tests will run in parallel for the specified number of replications.
+
+This is useful e.g. for stress-testing an API.
+
+Only tests directly included by a manifest are allowed to run in parallel.
+
+**All tests that are run in parallel are implicitly set to ContinueOnFailure,
+since otherwise the log/report output would be confusing.**
+
+```yaml
+{
+    "name": "Binary Comparison",
+    "request": {
+        "endpoint": "suggest",
+        "method": "GET"
+    },
+
+    // Path to binary file with N@
+    "response": "123@simple.bin"
+}
+```
 
 ## Binary data comparison
 
