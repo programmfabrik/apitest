@@ -55,7 +55,7 @@ type Loader struct {
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
-	return Loader{datastore: datastore}
+	return Loader{datastore: datastore, ParallelRunIdx: -1}
 }
 
 // Render loads and executes a manifest template.

@@ -193,7 +193,7 @@ func (ats *Suite) Run() bool {
 			ats.manifestDir,
 			ats.manifestPath,
 			child,
-			ats.buildLoader(ats.loader, -1),
+			ats.loader,
 			true, // parallel exec allowed for top-level tests
 		)
 
@@ -237,14 +237,19 @@ func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) te
 	loader.HTTPServerHost = ats.HTTPServerHost
 	loader.ServerURL = ats.serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
-	loader.ParallelRunIdx = parallelRunIdx
+
+	if rootLoader.ParallelRunIdx < 0 {
+		loader.ParallelRunIdx = parallelRunIdx
+	} else {
+		loader.ParallelRunIdx = rootLoader.ParallelRunIdx
+	}
 
 	return loader
 }
 
 func (ats *Suite) parseAndRunTest(
 	v any, manifestDir, testFilePath string, r *report.ReportElement,
-	loader template.Loader, allowParallelExec bool,
+	rootLoader template.Loader, allowParallelExec bool,
 ) bool {
 	// Parse PathSpec (if any) and determine number of parallel runs
 	parallelRuns := 1
@@ -268,7 +273,7 @@ func (ats *Suite) parseAndRunTest(
 	}
 
 	// Get the Manifest with @ logic
-	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
+	fileh, testRaw, err := template.LoadManifestDataAsRawJson(v, manifestDir)
 	dir := filepath.Dir(fileh)
 	if fileh != "" {
 		testFilePath = filepath.Join(filepath.Dir(testFilePath), fileh)
@@ -279,31 +284,6 @@ func (ats *Suite) parseAndRunTest(
 		return false
 	}
 
-	// Parse as template always
-	testObj, err = loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
-	if err != nil {
-		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
-		return false
-	}
-
-	// Build list of test cases
-	var testCases []json.RawMessage
-	err = util.Unmarshal(testObj, &testCases)
-	if err != nil {
-		// Input could not be deserialized into list, try to deserialize into single object
-		var singleTest json.RawMessage
-		err = util.Unmarshal(testObj, &singleTest)
-		if err != nil {
-			// Malformed json
-			r.SaveToReportLog(err.Error())
-			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-			return false
-		}
-
-		testCases = []json.RawMessage{singleTest}
-	}
-
 	// Execute test cases
 	var successCount atomic.Uint32
 	var waitGroup sync.WaitGroup
@@ -311,15 +291,43 @@ func (ats *Suite) parseAndRunTest(
 	waitGroup.Add(parallelRuns)
 
 	for runIdx := range parallelRuns {
-		runIdxCapture := runIdx
-
-		go func() {
+		go func(runIdx int) {
 			defer waitGroup.Done()
+
+			// Build template loader
+			loader := ats.buildLoader(rootLoader, runIdx)
+
+			// Parse as template always
+			testRendered, err := loader.Render(testRaw, filepath.Join(manifestDir, dir), nil)
+			if err != nil {
+				r.SaveToReportLog(err.Error())
+				logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
+
+				// note that successCount is not incremented
+				return
+			}
+
+			// Build list of test cases
+			var testCases []json.RawMessage
+			err = util.Unmarshal(testRendered, &testCases)
+			if err != nil {
+				// Input could not be deserialized into list, try to deserialize into single object
+				var singleTest json.RawMessage
+				err = util.Unmarshal(testRendered, &singleTest)
+				if err != nil {
+					// Malformed json
+					r.SaveToReportLog(err.Error())
+					logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+
+					// note that successCount is not incremented
+					return
+				}
+
+				testCases = []json.RawMessage{singleTest}
+			}
 
 			for testIdx, testCase := range testCases {
 				var success bool
-
-				caseLoader := ats.buildLoader(loader, runIdxCapture)
 
 				// If testCase can be unmarshalled as string, we may have a
 				// reference to another test using @ notation at hand
@@ -332,7 +340,7 @@ func (ats *Suite) parseAndRunTest(
 						filepath.Join(manifestDir, dir),
 						testFilePath,
 						r,
-						caseLoader,
+						loader,
 						false, // no parallel exec allowed in nested tests
 					)
 				} else {
@@ -344,8 +352,8 @@ func (ats *Suite) parseAndRunTest(
 						},
 						r,
 						testFilePath,
-						caseLoader,
-						runIdxCapture*len(testCases)+testIdx,
+						loader,
+						runIdx*len(testCases)+testIdx,
 					)
 				}
 
@@ -356,7 +364,7 @@ func (ats *Suite) parseAndRunTest(
 			}
 
 			successCount.Add(1)
-		}()
+		}(runIdx)
 	}
 
 	waitGroup.Wait()

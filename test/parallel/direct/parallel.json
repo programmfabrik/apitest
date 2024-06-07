@@ -1,6 +1,6 @@
 [
     {
-        "name": "bounce-json: bounce n=1",
+        "name": "bounce-json: bounce n={{ parallel_run_idx }}",
         "request": {
             "server_url": "http://localhost{{ datastore `local_port` }}",
             "endpoint": "bounce-json",
