@@ -156,7 +156,6 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // the included test file in parallel to each other.
         //
         // Only tests directly included by the manifest are allowed to run in parallel.
-        // All parallel tests are set to ContinueOnFailure.
         "5@pathToTestsThatShouldRunInParallel.json"
     ]
 }
@@ -167,8 +166,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 ### manifest.json
 ```yaml
 {
-    // Define if the testuite should continue even if this test fails. (default:false)
+    // Define if the test suite should continue even if this test fails. (default: false)
     "continue_on_failure": true,
+
     // Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname",
 
@@ -431,9 +431,6 @@ tests will run in parallel for the specified number of replications.
 This is useful e.g. for stress-testing an API.
 
 Only tests directly included by a manifest are allowed to run in parallel.
-
-**All tests that are run in parallel are implicitly set to ContinueOnFailure,
-since otherwise the log/report output would be confusing.**
 
 ```yaml
 {

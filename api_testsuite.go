@@ -186,8 +186,7 @@ func (ats *Suite) Run() bool {
 			ats.manifestPath,
 			child,
 			ats.loader,
-			true,  // parallel exec allowed for top-level tests
-			false, // don't force ContinueOnFail at this point
+			true, // parallel exec allowed for top-level tests
 		)
 
 		child.Leave(sTestSuccess)
@@ -226,7 +225,7 @@ type TestContainer struct {
 
 func (ats *Suite) parseAndRunTest(
 	v any, manifestDir, testFilePath string, r *report.ReportElement,
-	rootLoader template.Loader, allowParallelExec bool, forceContinueOnFail bool,
+	rootLoader template.Loader, allowParallelExec bool,
 ) bool {
 	//Init variables
 	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
@@ -257,9 +256,6 @@ func (ats *Suite) parseAndRunTest(
 			logrus.Error(fmt.Errorf("parallel repetitions are not allowed in nested tests (%s)", testFilePath))
 			return false
 		}
-
-		// If we're running in parallel repetition mode, force subordinate tests to ContinueOnFail
-		forceContinueOnFail = true
 	}
 
 	// Get the Manifest with @ logic
@@ -320,7 +316,6 @@ func (ats *Suite) parseAndRunTest(
 						r,
 						loader,
 						false, // no parallel exec allowed in nested tests
-						forceContinueOnFail,
 					)
 				} else {
 					// Otherwise simply run the literal test case
@@ -333,7 +328,6 @@ func (ats *Suite) parseAndRunTest(
 						testFilePath,
 						loader,
 						repeatIdx*len(testCases)+testIdx,
-						forceContinueOnFail,
 					)
 				}
 
@@ -358,7 +352,7 @@ func (ats *Suite) parseAndRunTest(
 
 func (ats *Suite) runLiteralTest(
 	tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader,
-	index int, forceContinueOnFailure bool,
+	index int,
 ) bool {
 	r.SetName(testFilePath)
 
@@ -380,9 +374,6 @@ func (ats *Suite) runLiteralTest(
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
-	if forceContinueOnFailure {
-		test.ContinueOnFailure = true
-	}
 	if test.LogNetwork == nil {
 		test.LogNetwork = &ats.Config.LogNetwork
 	}
