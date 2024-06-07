@@ -306,7 +306,7 @@ func (ats *Suite) parseAndRunTest(
 
 	waitGroup.Add(parallelRuns)
 
-	for repeatIdx := range parallelRuns {
+	for runIdx := range parallelRuns {
 		go func() {
 			defer waitGroup.Done()
 
@@ -337,7 +337,7 @@ func (ats *Suite) parseAndRunTest(
 						r,
 						testFilePath,
 						loader,
-						repeatIdx*len(testCases)+testIdx,
+						runIdx*len(testCases)+testIdx,
 					)
 				}
 
