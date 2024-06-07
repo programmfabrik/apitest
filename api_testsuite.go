@@ -242,13 +242,16 @@ func (ats *Suite) parseAndRunTest(
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 
-	// Determine number of parallel runs
+	// Parse PathSpec (if any) and determine number of parallel runs
 	parallelRuns := 1
 	if vStr, ok := v.(string); ok {
-		pathSpec, ok := util.ParsePathSpec(vStr)
-		if ok {
-			parallelRuns = pathSpec.ParallelRuns
+		pathSpec, err := util.ParsePathSpec(vStr)
+		if err != nil {
+			logrus.Error(fmt.Errorf("test string is not a valid path spec: %w", err))
+			return false
 		}
+
+		parallelRuns = pathSpec.ParallelRuns
 	}
 
 	// Configure parallel runs, if specified

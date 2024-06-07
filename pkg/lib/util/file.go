@@ -17,8 +17,8 @@ var c = &http.Client{
 
 // OpenFileOrUrl opens either a local file or gives the resp.Body from a remote file
 func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
-	pathSpec, ok := ParsePathSpec(path)
-	if ok {
+	pathSpec, err := ParsePathSpec(path)
+	if err == nil {
 		path = pathSpec.Path
 	}
 
