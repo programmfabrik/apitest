@@ -190,7 +190,6 @@ func (ats *Suite) Run() bool {
 
 		sTestSuccess := ats.parseAndRunTest(
 			v,
-			ats.manifestDir,
 			ats.manifestPath,
 			child,
 			ats.loader,
@@ -248,8 +247,8 @@ func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) te
 }
 
 func (ats *Suite) parseAndRunTest(
-	v any, manifestDir, testFilePath string, r *report.ReportElement,
-	rootLoader template.Loader, allowParallelExec bool,
+	v any, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	allowParallelExec bool,
 ) bool {
 	// Parse PathSpec (if any) and determine number of parallel runs
 	parallelRuns := 1
@@ -270,10 +269,9 @@ func (ats *Suite) parseAndRunTest(
 	}
 
 	// Get the Manifest with @ logic
-	fileh, testRaw, err := template.LoadManifestDataAsRawJson(v, manifestDir)
-	dir := filepath.Dir(fileh)
-	if fileh != "" {
-		testFilePath = filepath.Join(filepath.Dir(testFilePath), fileh)
+	referencedFilePath, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
+	if referencedFilePath != "" {
+		testFilePath = filepath.Join(filepath.Dir(testFilePath), referencedFilePath)
 	}
 	if err != nil {
 		r.SaveToReportLog(err.Error())
@@ -289,8 +287,8 @@ func (ats *Suite) parseAndRunTest(
 
 	for runIdx := range parallelRuns {
 		go ats.testGoroutine(
-			&waitGroup, &successCount, manifestDir, testFilePath, r, rootLoader,
-			runIdx, testRaw, dir,
+			&waitGroup, &successCount, testFilePath, r, rootLoader,
+			runIdx, testRaw,
 		)
 	}
 
@@ -301,16 +299,18 @@ func (ats *Suite) parseAndRunTest(
 
 func (ats *Suite) testGoroutine(
 	waitGroup *sync.WaitGroup, successCount *atomic.Uint32,
-	manifestDir, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
-	runIdx int, testRaw json.RawMessage, dir string, // TODO: refactor paths / dirs (including DRY below at filepath.Join(mainfestDir, dir)
+	testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	runIdx int, testRaw json.RawMessage,
 ) {
 	defer waitGroup.Done()
+
+	testFileDir := filepath.Dir(testFilePath)
 
 	// Build template loader
 	loader := ats.buildLoader(rootLoader, runIdx)
 
 	// Parse testRaw as template
-	testRendered, err := loader.Render(testRaw, filepath.Join(manifestDir, dir), nil)
+	testRendered, err := loader.Render(testRaw, testFileDir, nil)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
 		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
@@ -349,7 +349,6 @@ func (ats *Suite) testGoroutine(
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
 				testCaseStr,
-				filepath.Join(manifestDir, dir),
 				testFilePath,
 				r,
 				loader,
@@ -360,7 +359,7 @@ func (ats *Suite) testGoroutine(
 			success = ats.runLiteralTest(
 				TestContainer{
 					CaseByte: testCase,
-					Path:     filepath.Join(manifestDir, dir),
+					Path:     testFileDir,
 				},
 				r,
 				testFilePath,
