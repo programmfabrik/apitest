@@ -43,21 +43,12 @@ func TestParsePathSpec(t *testing.T) {
 				require.True(t, ok)
 				require.Equal(t, testCase.expected, actual)
 			})
-
-			t.Run(testCase.s+" quoted", func(t *testing.T) {
-				s := `"` + testCase.s + `"`
-
-				actual, ok := ParsePathSpec(s)
-				require.True(t, ok)
-				require.Equal(t, testCase.expected, actual)
-			})
 		}
 	})
 
 	t.Run("invalid path specs are detected", func(t *testing.T) {
 		testCases := []string{
-			"",                         // empty
-			`"@foo.json`, `@foo.json"`, // superfluous quotes
+			"",                             // empty
 			`foo@bar.baz`, `1.23@foo.json`, // non-digit parallel runs
 			`p@old.syntax`, `p5@old.syntax`, `p123@old.syntax`, // old syntax
 		}
@@ -67,14 +58,6 @@ func TestParsePathSpec(t *testing.T) {
 
 			t.Run(s, func(t *testing.T) {
 				actual, ok := ParsePathSpec(s)
-				require.False(t, ok)
-				require.Zero(t, actual)
-			})
-
-			t.Run(s+" quoted", func(t *testing.T) {
-				sq := `"` + s + `"`
-
-				actual, ok := ParsePathSpec(sq)
 				require.False(t, ok)
 				require.Zero(t, actual)
 			})

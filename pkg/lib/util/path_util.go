@@ -7,7 +7,7 @@ import (
 
 // pathSpecRegex validates and (via its capture groups) breaks up a
 // path spec string in a single step (see ParsePathSpec).
-var pathSpecRegex *regexp.Regexp = regexp.MustCompile(`^([0-9]*)@([^"]+)$`)
+var pathSpecRegex *regexp.Regexp = regexp.MustCompile(`^([0-9]*)@(.+)$`)
 
 // PathSpec is a path specifier for including tests within manifests.
 type PathSpec struct {
@@ -24,17 +24,6 @@ type PathSpec struct {
 // It returns a boolean result that indicates if parsing was successful
 // (i.e. if s is a valid path specifier).
 func ParsePathSpec(s string) (PathSpec, bool) {
-	// Remove outer quotes, if present
-	if len(s) >= 2 && s[0] == '"' {
-		if s[len(s)-1] != '"' {
-			// path spec must have matching quotes, if quotes are present
-			return PathSpec{}, false
-		}
-
-		s = s[1 : len(s)-1]
-	}
-
-	// Parse
 	matches := pathSpecRegex.FindStringSubmatch(s)
 	if matches == nil {
 		return PathSpec{}, false
