@@ -1,24 +1,3 @@
 [
-    {
-        "name": "bounce-json: bounce n=1",
-        "request": {
-            "server_url": "http://localhost{{ datastore `local_port` }}",
-            "endpoint": "bounce-json",
-            "method": "POST",
-            "body": {
-                "n": 1
-            }
-        },
-        "response": {
-            "statuscode": 200,
-            "body": {
-                "body": {
-                    "n": 1
-                }
-            }
-        },
-        "store_response_qjson": {
-            "responses[]": "body.body.n"
-        }
-    }
+    "@parallel_case.json"
 ]

@@ -16,7 +16,7 @@
                     "responses": [
                         {{ range $idx, $n := N (datastore "n_parallel") }}
                             {{ if gt $idx 0 }}, {{ end }}
-                            1
+			    {{ $idx }}
                         {{ end }}
                     ]
                 }

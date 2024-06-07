@@ -49,6 +49,9 @@ type Loader struct {
 	ServerURL      *url.URL
 	OAuthClient    util.OAuthClientsConfig
 	Delimiters     delimiters
+
+	// ParallelRunIdx is the index of the Parallel Run that this Loader is used in
+	ParallelRunIdx int
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
@@ -488,6 +491,11 @@ func (loader *Loader) Render(
 			}
 			q := u.Query()
 			return q.Get(qKey)
+		},
+		// parallel_run_idx returns the index of the Parallel Run that the current template
+		// is rendered in.
+		"parallel_run_idx": func() int {
+			return loader.ParallelRunIdx
 		},
 	}
 	tmpl, err := template.

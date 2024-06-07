@@ -47,7 +47,7 @@ type Suite struct {
 	manifestPath    string
 	reporterRoot    *report.ReportElement
 	index           int
-	serverURL       string
+	serverURL       *url.URL
 	httpServer      http.Server
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
@@ -151,6 +151,12 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
+	// Parse serverURL
+	suite.serverURL, err = url.Parse(suite.Config.ServerURL)
+	if err != nil {
+		return nil, fmt.Errorf("can not load server url : %s", err)
+	}
+
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
@@ -187,7 +193,7 @@ func (ats *Suite) Run() bool {
 			ats.manifestDir,
 			ats.manifestPath,
 			child,
-			ats.loader,
+			ats.buildLoader(ats.loader, -1),
 			true, // parallel exec allowed for top-level tests
 		)
 
@@ -225,23 +231,21 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(
-	v any, manifestDir, testFilePath string, r *report.ReportElement,
-	rootLoader template.Loader, allowParallelExec bool,
-) bool {
-	//Init variables
-	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
+func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) template.Loader {
 	loader := template.NewLoader(ats.datastore)
 	loader.Delimiters = rootLoader.Delimiters
 	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := url.Parse(ats.Config.ServerURL)
-	if err != nil {
-		logrus.Error(fmt.Errorf("can not load server url into test (%s): %s", testFilePath, err))
-		return false
-	}
-	loader.ServerURL = serverURL
+	loader.ServerURL = ats.serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
+	loader.ParallelRunIdx = parallelRunIdx
 
+	return loader
+}
+
+func (ats *Suite) parseAndRunTest(
+	v any, manifestDir, testFilePath string, r *report.ReportElement,
+	loader template.Loader, allowParallelExec bool,
+) bool {
 	// Parse PathSpec (if any) and determine number of parallel runs
 	parallelRuns := 1
 	if vStr, ok := v.(string); ok {
@@ -307,11 +311,15 @@ func (ats *Suite) parseAndRunTest(
 	waitGroup.Add(parallelRuns)
 
 	for runIdx := range parallelRuns {
+		runIdxCapture := runIdx
+
 		go func() {
 			defer waitGroup.Done()
 
 			for testIdx, testCase := range testCases {
 				var success bool
+
+				caseLoader := ats.buildLoader(loader, runIdxCapture)
 
 				// If testCase can be unmarshalled as string, we may have a
 				// reference to another test using @ notation at hand
@@ -324,7 +332,7 @@ func (ats *Suite) parseAndRunTest(
 						filepath.Join(manifestDir, dir),
 						testFilePath,
 						r,
-						loader,
+						caseLoader,
 						false, // no parallel exec allowed in nested tests
 					)
 				} else {
@@ -336,8 +344,8 @@ func (ats *Suite) parseAndRunTest(
 						},
 						r,
 						testFilePath,
-						loader,
-						runIdx*len(testCases)+testIdx,
+						caseLoader,
+						runIdxCapture*len(testCases)+testIdx,
 					)
 				}
 
