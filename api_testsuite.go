@@ -250,32 +250,23 @@ func (ats *Suite) parseAndRunTest(
 	v any, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
 	allowParallelExec bool,
 ) bool {
-	// Parse PathSpec (if any) and determine number of parallel runs
 	parallelRuns := 1
-	if vStr, ok := v.(string); ok {
-		pathSpec, err := util.ParsePathSpec(vStr)
-		if err != nil {
-			logrus.Error(fmt.Errorf("test string is not a valid path spec: %w", err))
-			return false
-		}
 
-		parallelRuns = pathSpec.ParallelRuns
+	// Get the Manifest with @ logic
+	referencedPathSpec, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
+		return false
+	}
+	if referencedPathSpec != nil {
+		testFilePath = filepath.Join(filepath.Dir(testFilePath), referencedPathSpec.Path)
+		parallelRuns = referencedPathSpec.ParallelRuns
 	}
 
 	// If parallel runs are requested, check that they're actually allowed
 	if parallelRuns > 1 && !allowParallelExec {
 		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
-		return false
-	}
-
-	// Get the Manifest with @ logic
-	referencedFilePath, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
-	if referencedFilePath != "" {
-		testFilePath = filepath.Join(filepath.Dir(testFilePath), referencedFilePath)
-	}
-	if err != nil {
-		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
 		return false
 	}
 
