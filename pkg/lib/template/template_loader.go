@@ -23,7 +23,6 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
-	"io/ioutil"
 	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -114,12 +113,7 @@ func (loader *Loader) Render(
 			return strings.Split(s, sep)
 		},
 		"md5sum": func(path string) (string, error) {
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return "", err
-			}
-
-			fileBytes, err := ioutil.ReadAll(file)
+			fileBytes, err := fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}

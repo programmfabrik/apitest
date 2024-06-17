@@ -3,7 +3,7 @@ package util
 import (
 	"crypto/md5"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -57,13 +57,14 @@ func TestOpenFileOrUrl(t *testing.T) {
 
 	for _, v := range tests {
 		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
-			_, io, err := OpenFileOrUrl(v.filename, "")
+			file, err := OpenFileOrUrl(v.filename, "")
 			if err != nil {
 				if err.Error() != v.expError.Error() {
 					t.Errorf("Got '%s' != '%s' Exp", err, v.expError)
 				}
 			} else {
-				data, err := ioutil.ReadAll(io)
+				defer file.Close() // FIXME: defer in for
+				data, err := io.ReadAll(file)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -88,7 +89,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Root File: ", err)
 	}
-	rootFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	rootFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Root File: ", err)
 	}
@@ -100,7 +102,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Manifest file: ", err)
 	}
-	manifestFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	manifestFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Manifest file: ", err)
 	}
@@ -113,7 +116,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Binary file: ", err)
 	}
-	binaryFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	binaryFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Binary file: ", err)
 	}

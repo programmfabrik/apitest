@@ -31,30 +31,28 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
 	for key, val := range request.Body.(map[string]any) {
-
 		if key == "file:filename" {
 			continue
 		}
 
-		pathSpec, ok := val.(util.JsonString)
+		rawPathSpec, ok := val.(util.JsonString)
 		if !ok {
 			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
 		}
-		if !util.IsPathSpec(pathSpec) {
-			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid", pathSpec)
+		pathSpec, err := util.ParsePathSpec(rawPathSpec)
+		if err != nil {
+			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid: %w", rawPathSpec, err)
 		}
 
-		var err error
-
-		_, file, err := util.OpenFileOrUrl(pathSpec, request.ManifestDir)
+		file, err := util.OpenFileOrUrl(pathSpec.Path, request.ManifestDir)
 		if err != nil {
 			return additionalHeaders, nil, err
 		}
-		defer file.Close()
+		defer file.Close() // FIXME: defer in for
 
 		var part io.Writer
 		if replaceFilename == nil {
-			part, err = w.CreateFormFile(key, pathSpec[1:])
+			part, err = w.CreateFormFile(key, pathSpec.Path)
 		} else {
 			part, err = w.CreateFormFile(key, *replaceFilename)
 		}
@@ -107,17 +105,23 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 }
 
 func buildFile(req Request) (map[string]string, io.Reader, error) {
-
 	headers := map[string]string{}
 
 	if req.BodyFile == "" {
 		return nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
 	}
 
-	_, file, err := util.OpenFileOrUrl(req.BodyFile, req.ManifestDir)
+	path := req.BodyFile
+	pathSpec, err := util.ParsePathSpec(req.BodyFile)
+	if err == nil && pathSpec != nil { // we unwrap the path, if an @-notation path spec was passed into body_file
+		path = pathSpec.Path
+	}
+
+	file, err := util.OpenFileOrUrl(path, req.ManifestDir)
 	if err != nil {
 		return nil, nil, err
 	}
+	// FIXME: file is left open AND passed out of function wihout ReadCloser!
 
 	return headers, file, err
 }

@@ -3,29 +3,30 @@ package template
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-func loadFileFromPathSpec(pathSpec, manifestDir string) (string, []byte, error) {
-	if !util.IsPathSpec(pathSpec) {
-		return "", nil, fmt.Errorf("spec was expected to be path spec, got %s instead", pathSpec)
+func loadFileFromPathSpec(rawPathSpec, manifestDir string) (string, []byte, error) {
+	pathSpec, err := util.ParsePathSpec(rawPathSpec)
+	if err != nil {
+		return "", nil, fmt.Errorf("error parsing path spec: %w", err)
 	}
 
-	filepath, requestFile, err := util.OpenFileOrUrl(pathSpec, manifestDir)
+	requestFile, err := util.OpenFileOrUrl(pathSpec.Path, manifestDir)
 	if err != nil {
 		return "", nil, fmt.Errorf("error opening path: %s", err)
 	}
 
 	defer requestFile.Close()
-	requestTmpl, err := ioutil.ReadAll(requestFile)
+	requestTmpl, err := io.ReadAll(requestFile)
 
 	if err != nil {
 		return "", nil, fmt.Errorf("error loading file %s: %s", requestFile, err)
 	}
 
-	return filepath, requestTmpl, nil
+	return pathSpec.Path, requestTmpl, nil
 }
 
 func LoadManifestDataAsObject(data any, manifestDir string, loader Loader) (filepath string, res any, err error) {
