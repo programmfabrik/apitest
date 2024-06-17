@@ -17,6 +17,10 @@ var c = &http.Client{
 
 // OpenFileOrUrl opens either a local file or gives the resp.Body from a remote file
 func OpenFileOrUrl(path, rootDir string) (string, io.ReadCloser, error) {
+	// Note that err is not propagated here since we're only checking
+	// *if* path is an @-Notation PathSpec. If so, we unwrap its path.
+	// If not, we assume we don't have an @-Notation at hand in the first place.
+	// Validation of PathSpec is performed further up in calling code.
 	pathSpec, err := ParsePathSpec(path)
 	if err == nil {
 		path = pathSpec.Path
