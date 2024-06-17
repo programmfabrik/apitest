@@ -30,25 +30,26 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	}
 
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
-	for key, val := range request.Body.(map[string]any) {
+
+	createPart := func(key string, val any) error {
 		if key == "file:filename" {
-			continue
+			return nil
 		}
 
 		rawPathSpec, ok := val.(util.JsonString)
 		if !ok {
-			return additionalHeaders, body, nil, fmt.Errorf("pathSpec should be a string")
+			return fmt.Errorf("pathSpec should be a string")
 		}
 		pathSpec, err := util.ParsePathSpec(rawPathSpec)
 		if err != nil {
-			return additionalHeaders, body, nil, fmt.Errorf("pathSpec %s is not valid: %w", rawPathSpec, err)
+			return fmt.Errorf("pathSpec %s is not valid: %w", rawPathSpec, err)
 		}
 
 		file, err := util.OpenFileOrUrl(pathSpec.Path, request.ManifestDir)
 		if err != nil {
-			return additionalHeaders, nil, nil, err
+			return err
 		}
-		defer file.Close() // FIXME: defer in for
+		defer file.Close()
 
 		var part io.Writer
 		if replaceFilename == nil {
@@ -57,12 +58,22 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			part, err = w.CreateFormFile(key, *replaceFilename)
 		}
 		if err != nil {
-			return additionalHeaders, nil, nil, err
+			return err
 		}
 		if _, err := io.Copy(part, file); err != nil {
-			return additionalHeaders, nil, nil, err
+			return err
+		}
+
+		return nil
+	}
+
+	for key, val := range request.Body.(map[string]any) {
+		err = createPart(key, val)
+		if err != nil {
+			return additionalHeaders, body, bodyCloser, err
 		}
 	}
+
 	err = w.Close()
 	body = bytes.NewBuffer(buf.Bytes())
 

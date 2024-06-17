@@ -63,7 +63,7 @@ func TestOpenFileOrUrl(t *testing.T) {
 					t.Errorf("Got '%s' != '%s' Exp", err, v.expError)
 				}
 			} else {
-				defer file.Close() // FIXME: defer in for
+				defer file.Close()
 				data, err := io.ReadAll(file)
 				if err != nil {
 					t.Fatal(err)
