@@ -21,10 +21,12 @@ type PathSpec struct {
 // The string takes the format "[n]@file.json". Invalid path specs
 // result in an error.
 func ParsePathSpec(s string) (*PathSpec, error) {
-	var ok bool
-	var err error
-	var parallelRuns string
-	var spec PathSpec
+	var (
+		ok           bool
+		err          error
+		parallelRuns string
+		spec         PathSpec
+	)
 
 	parallelRuns, spec.Path, ok = strings.Cut(s, "@")
 	if parallelRuns != "" {
