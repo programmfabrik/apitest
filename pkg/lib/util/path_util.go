@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -50,4 +51,20 @@ func ParsePathSpec(s string) (*PathSpec, error) {
 func IsPathSpec(s string) bool {
 	_, err := ParsePathSpec(s)
 	return err == nil
+}
+
+// Load loads the contents of the file pointed to by the PathSpec into a byte array.
+func (ps PathSpec) LoadContents(manifestDir string) ([]byte, error) {
+	requestFile, err := OpenFileOrUrl(ps.Path, manifestDir)
+	if err != nil {
+		return nil, fmt.Errorf("error opening path: %w", err)
+	}
+	defer requestFile.Close()
+
+	contents, err := io.ReadAll(requestFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading file at %q: %w", ps, err)
+	}
+
+	return contents, nil
 }
