@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -22,17 +21,18 @@ func TestRequestBuildHttp(t *testing.T) {
 		},
 		ServerURL: "serverUrl",
 	}
-	request.buildPolicy = func(request Request) (ah map[string]string, b io.Reader, err error) {
+	defer request.Close()
+	request.buildPolicy = func(request Request) (ah map[string]string, b io.Reader, c io.Closer, err error) {
 		ah = make(map[string]string)
 		ah["mock-header"] = "application/mock"
 		b = strings.NewReader("mock_body")
-		return ah, b, nil
+		return ah, b, c, nil
 	}
 	httpRequest, err := request.buildHttpRequest()
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
 	go_test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
 
-	assertBody, err := ioutil.ReadAll(httpRequest.Body)
+	assertBody, err := io.ReadAll(httpRequest.Body)
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error reading http-request body: %s", err))
 	go_test_utils.AssertStringEquals(t, string(assertBody), "mock_body")
 
@@ -88,6 +88,7 @@ func TestRequestBuildHttpWithCookie(t *testing.T) {
 		Method:   "GET",
 		Cookies:  reqCookies,
 	}
+	defer request.Close()
 	request.buildPolicy = buildRegular
 	ds := datastore.NewStore(false)
 	for key, val := range storeCookies {

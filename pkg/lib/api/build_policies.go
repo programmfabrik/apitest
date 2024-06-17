@@ -13,7 +13,7 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
+func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
 	additionalHeaders = make(map[string]string, 0)
 
 	var buf = bytes.NewBuffer([]byte{})
@@ -24,7 +24,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	if ok {
 		f, ok := val.(util.JsonString)
 		if !ok {
-			return additionalHeaders, body, fmt.Errorf("file:filename should be a string")
+			return additionalHeaders, body, nil, fmt.Errorf("file:filename should be a string")
 		}
 		replaceFilename = &f
 	}
@@ -37,16 +37,16 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 
 		rawPathSpec, ok := val.(util.JsonString)
 		if !ok {
-			return additionalHeaders, body, fmt.Errorf("pathSpec should be a string")
+			return additionalHeaders, body, nil, fmt.Errorf("pathSpec should be a string")
 		}
 		pathSpec, err := util.ParsePathSpec(rawPathSpec)
 		if err != nil {
-			return additionalHeaders, body, fmt.Errorf("pathSpec %s is not valid: %w", rawPathSpec, err)
+			return additionalHeaders, body, nil, fmt.Errorf("pathSpec %s is not valid: %w", rawPathSpec, err)
 		}
 
 		file, err := util.OpenFileOrUrl(pathSpec.Path, request.ManifestDir)
 		if err != nil {
-			return additionalHeaders, nil, err
+			return additionalHeaders, nil, nil, err
 		}
 		defer file.Close() // FIXME: defer in for
 
@@ -57,10 +57,10 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			part, err = w.CreateFormFile(key, *replaceFilename)
 		}
 		if err != nil {
-			return additionalHeaders, nil, err
+			return additionalHeaders, nil, nil, err
 		}
 		if _, err := io.Copy(part, file); err != nil {
-			return additionalHeaders, nil, err
+			return additionalHeaders, nil, nil, err
 		}
 	}
 	err = w.Close()
@@ -69,7 +69,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	return
 }
 
-func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
+func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
@@ -84,11 +84,11 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 		}
 	}
 	body = strings.NewReader(formParams.Encode())
-	return additionalHeaders, body, nil
+	return additionalHeaders, body, nil, nil
 
 }
 
-func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
+func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
 
@@ -97,18 +97,18 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 	} else {
 		bodyBytes, err := json.Marshal(request.Body)
 		if err != nil {
-			return additionalHeaders, body, fmt.Errorf("error marshaling request body: %s", err)
+			return additionalHeaders, body, nil, fmt.Errorf("error marshaling request body: %s", err)
 		}
 		body = bytes.NewBuffer(bodyBytes)
 	}
-	return additionalHeaders, body, nil
+	return additionalHeaders, body, nil, nil
 }
 
-func buildFile(req Request) (map[string]string, io.Reader, error) {
+func buildFile(req Request) (map[string]string, io.Reader, io.Closer, error) {
 	headers := map[string]string{}
 
 	if req.BodyFile == "" {
-		return nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
+		return nil, nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
 	}
 
 	path := req.BodyFile
@@ -119,9 +119,7 @@ func buildFile(req Request) (map[string]string, io.Reader, error) {
 
 	file, err := util.OpenFileOrUrl(path, req.ManifestDir)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	// FIXME: file is left open AND passed out of function wihout ReadCloser!
-
-	return headers, file, err
+	return headers, file, file, err
 }

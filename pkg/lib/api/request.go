@@ -57,7 +57,8 @@ type Request struct {
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 any                       `yaml:"body" json:"body"`
 
-	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, err error)
+	buildPolicy func(Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error)
+	bodyCloser  io.Closer
 	ManifestDir string
 	DataStore   *datastore.Datastore
 }
@@ -88,10 +89,16 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		return nil, errors.Wrapf(err, "Unable to buildHttpRequest with URL %q", requestUrl)
 	}
 
-	additionalHeaders, body, err := request.buildPolicy(request)
+	if request.bodyCloser != nil {
+		// in case bodyCloser is already set, close the old body first
+		request.bodyCloser.Close()
+	}
+
+	additionalHeaders, body, bodyCloser, err := request.buildPolicy(request)
 	if err != nil {
 		return req, fmt.Errorf("error executing buildpolicy: %s", err)
 	}
+	request.bodyCloser = bodyCloser
 
 	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
@@ -264,6 +271,14 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	}
 
 	return req, nil
+}
+
+func (request Request) Close() error {
+	if request.bodyCloser != nil {
+		return request.bodyCloser.Close()
+	}
+
+	return nil
 }
 
 func (request Request) ToString(curl bool) (res string) {
