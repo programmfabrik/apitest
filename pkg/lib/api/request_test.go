@@ -21,12 +21,11 @@ func TestRequestBuildHttp(t *testing.T) {
 		},
 		ServerURL: "serverUrl",
 	}
-	defer request.Close()
-	request.buildPolicy = func(request Request) (ah map[string]string, b io.Reader, c io.Closer, err error) {
+	request.buildPolicy = func(request Request) (ah map[string]string, b io.Reader, err error) {
 		ah = make(map[string]string)
 		ah["mock-header"] = "application/mock"
 		b = strings.NewReader("mock_body")
-		return ah, b, c, nil
+		return ah, b, nil
 	}
 	httpRequest, err := request.buildHttpRequest()
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
@@ -88,7 +87,6 @@ func TestRequestBuildHttpWithCookie(t *testing.T) {
 		Method:   "GET",
 		Cookies:  reqCookies,
 	}
-	defer request.Close()
 	request.buildPolicy = buildRegular
 	ds := datastore.NewStore(false)
 	for key, val := range storeCookies {

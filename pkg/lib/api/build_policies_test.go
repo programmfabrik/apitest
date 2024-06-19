@@ -26,7 +26,6 @@ func TestBuildMultipart(t *testing.T) {
 		ManifestDir: "test/",
 		BodyType:    "multipart",
 	}
-	defer testRequest.Close()
 
 	httpRequest, err := testRequest.buildHttpRequest()
 	go_test_utils.ExpectNoError(t, err, "error building multipart request")
@@ -50,7 +49,7 @@ func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 		ManifestDir: "test/path/",
 	}
 
-	_, _, _, err := buildMultipart(testRequest)
+	_, _, err := buildMultipart(testRequest)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -67,7 +66,7 @@ func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 		ManifestDir: "test/path/",
 	}
 
-	_, _, _, err := buildMultipart(testRequest)
+	_, _, err := buildMultipart(testRequest)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -84,7 +83,7 @@ func TestBuildMultipart_FileDoesNotExist(t *testing.T) {
 		ManifestDir: "test/path/",
 	}
 
-	_, _, _, err := buildMultipart(testRequest)
+	_, _, err := buildMultipart(testRequest)
 	if err == nil {
 		t.Fatal("expected error")
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
+func buildMultipart(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 
 	var buf = bytes.NewBuffer([]byte{})
@@ -24,7 +24,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	if ok {
 		f, ok := val.(util.JsonString)
 		if !ok {
-			return additionalHeaders, body, nil, fmt.Errorf("file:filename should be a string")
+			return nil, nil, fmt.Errorf("file:filename should be a string")
 		}
 		replaceFilename = &f
 	}
@@ -70,7 +70,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	for key, val := range request.Body.(map[string]any) {
 		err = createPart(key, val)
 		if err != nil {
-			return additionalHeaders, body, bodyCloser, err
+			return nil, nil, err
 		}
 	}
 
@@ -80,7 +80,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	return
 }
 
-func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
+func buildUrlencoded(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	formParams := url.Values{}
@@ -95,11 +95,11 @@ func buildUrlencoded(request Request) (additionalHeaders map[string]string, body
 		}
 	}
 	body = strings.NewReader(formParams.Encode())
-	return additionalHeaders, body, nil, nil
+	return additionalHeaders, body, nil
 
 }
 
-func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, bodyCloser io.Closer, err error) {
+func buildRegular(request Request) (additionalHeaders map[string]string, body io.Reader, err error) {
 	additionalHeaders = make(map[string]string, 0)
 	additionalHeaders["Content-Type"] = "application/json"
 
@@ -108,18 +108,20 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 	} else {
 		bodyBytes, err := json.Marshal(request.Body)
 		if err != nil {
-			return additionalHeaders, body, nil, fmt.Errorf("error marshaling request body: %s", err)
+			return nil, nil, fmt.Errorf("error marshaling request body: %s", err)
 		}
 		body = bytes.NewBuffer(bodyBytes)
 	}
-	return additionalHeaders, body, nil, nil
+	return additionalHeaders, body, nil
 }
 
-func buildFile(req Request) (map[string]string, io.Reader, io.Closer, error) {
+// buildFile opens a file for use with buildPolicy.
+// WARNING: This returns a file handle that must be closed!
+func buildFile(req Request) (map[string]string, io.Reader, error) {
 	headers := map[string]string{}
 
 	if req.BodyFile == "" {
-		return nil, nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
+		return nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
 	}
 
 	path := req.BodyFile
@@ -130,7 +132,7 @@ func buildFile(req Request) (map[string]string, io.Reader, io.Closer, error) {
 
 	file, err := util.OpenFileOrUrl(path, req.ManifestDir)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	return headers, file, file, err
+	return headers, file, err
 }
