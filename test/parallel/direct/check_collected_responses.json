@@ -1,0 +1,26 @@
+[
+    {
+        "name": "bounce-json: bounce collected responses from N={{datastore `n_parallel` }} parallel runs: {{ datastore `responses` }}",
+        "request": {
+            "server_url": "http://localhost{{ datastore `local_port` }}",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "responses": {{ datastore "responses" | marshal }}
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "responses": [
+                        {{ range $idx, $n := N (datastore "n_parallel") }}
+                            {{ if gt $idx 0 }}, {{ end }}
+                            {{ $idx }}
+                        {{ end }}
+                    ]
+                }
+            }
+        }
+    }
+]

@@ -23,7 +23,6 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
-	"io/ioutil"
 	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -49,10 +48,13 @@ type Loader struct {
 	ServerURL      *url.URL
 	OAuthClient    util.OAuthClientsConfig
 	Delimiters     delimiters
+
+	// ParallelRunIdx is the index of the Parallel Run that this Loader is used in
+	ParallelRunIdx int
 }
 
 func NewLoader(datastore *datastore.Datastore) Loader {
-	return Loader{datastore: datastore}
+	return Loader{datastore: datastore, ParallelRunIdx: -1}
 }
 
 // Render loads and executes a manifest template.
@@ -111,12 +113,7 @@ func (loader *Loader) Render(
 			return strings.Split(s, sep)
 		},
 		"md5sum": func(path string) (string, error) {
-			_, file, err := util.OpenFileOrUrl(path, rootDir)
-			if err != nil {
-				return "", err
-			}
-
-			fileBytes, err := ioutil.ReadAll(file)
+			fileBytes, err := fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}
@@ -383,7 +380,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
 
 		},
@@ -392,7 +389,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetClientCredentialsAuthToken()
 		},
 		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
@@ -400,7 +397,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetCodeAuthToken(params...)
 		},
 		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
@@ -408,7 +405,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %q not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return oAuthClient.GetAuthToken(params...)
 		},
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
@@ -416,7 +413,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return nil, errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return &oAuthClient, nil
 		},
 		"oauth2_basic_auth": func(client string) (string, error) {
@@ -424,7 +421,7 @@ func (loader *Loader) Render(
 			if !ok {
 				return "", errors.Errorf("OAuth client %s not configured", client)
 			}
-			oAuthClient.Client = client
+
 			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
 		},
 		"query_escape": func(in string) string {
@@ -488,6 +485,11 @@ func (loader *Loader) Render(
 			}
 			q := u.Query()
 			return q.Get(qKey)
+		},
+		// parallel_run_idx returns the index of the Parallel Run that the current template
+		// is rendered in.
+		"parallel_run_idx": func() int {
+			return loader.ParallelRunIdx
 		},
 	}
 	tmpl, err := template.

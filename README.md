@@ -150,7 +150,13 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // [SINGLE TESTCASE]: See below for more information
 
         // We also support the external loading of a complete test:
-        "@pathToTest.json"
+        "@pathToTest.json",
+
+        // By prefixing it with a number, the testtool runs that many instances of
+        // the included test file in parallel to each other.
+        //
+        // Only tests directly included by the manifest are allowed to run in parallel.
+        "5@pathToTestsThatShouldRunInParallel.json"
     ]
 }
 ```
@@ -160,8 +166,9 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 ### manifest.json
 ```yaml
 {
-    // Define if the testuite should continue even if this test fails. (default:false)
+    // Define if the test suite should continue even if this test fails. (default: false)
     "continue_on_failure": true,
+
     // Name to identify this single test. Is important for the log. Try to give an explaning name
     "name": "Testname",
 
@@ -412,6 +419,33 @@ However that one will be stripped before parsing the template, which would be ju
 ```
 
 ** Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
+
+## Run tests in parallel
+The tool is able to run tests in parallel to themselves. You activate this
+mechanism by including an external test file with `N@pathtofile.json`, where N
+is the number of parallel "clones" you want to have of the included tests.
+
+The included tests themselves are still run serially, only the entire set of
+tests will run in parallel for the specified number of replications.
+
+This is useful e.g. for stress-testing an API.
+
+Only tests directly included by a manifest are allowed to run in parallel.
+
+Using "0@file.json" will not run that specific test.
+
+```yaml
+{
+    "name": "Binary Comparison",
+    "request": {
+        "endpoint": "suggest",
+        "method": "GET"
+    },
+
+    // Path to binary file with N@
+    "response": "123@simple.bin"
+}
+```
 
 ## Binary data comparison
 
@@ -2260,6 +2294,10 @@ Removes from **key** from **url**'s query, returns the **url** with the **key** 
 ## `value_from_url` [key]
 
 Returns the **value** from the **url**'s query for **key**. In case of an error, an empty string is returned. Unparsable urls are ignored and an empty string is returned.
+
+## `parallel_run_idx`
+Returns the index of the Parallel Run that the template is executed in, or -1 if it is not executed
+within a parallel run.
 
 # HTTP Server
 

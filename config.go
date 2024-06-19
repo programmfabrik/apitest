@@ -75,6 +75,9 @@ func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool
 		LogShort:       logShort,
 		OAuthClient:    Config.Apitest.OAuthClient,
 	}
+
+	config.fillInOAuthClientNames()
+
 	err = config.extractTestDirectories()
 	return config, err
 }
@@ -115,4 +118,15 @@ func (config *TestToolConfig) extractTestDirectories() error {
 		}
 	}
 	return nil
+}
+
+// fillInOAuthClientNames fills in the Client field of loaded OAuthClientConfig
+// structs, which the user may have left unset in the config yaml file.
+func (config *TestToolConfig) fillInOAuthClientNames() {
+	for key, clientConfig := range config.OAuthClient {
+		if clientConfig.Client == "" {
+			clientConfig.Client = key
+			config.OAuthClient[key] = clientConfig
+		}
+	}
 }

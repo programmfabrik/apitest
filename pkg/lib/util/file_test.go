@@ -3,7 +3,7 @@ package util
 import (
 	"crypto/md5"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -13,145 +13,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-type testParallelPathSpecStruct struct {
-	pathSpec               string
-	expIsPath              bool
-	expIsParallel          bool
-	expPath                string
-	expParallelRepititions int
-}
-
 type testOpenFileStruct struct {
 	filename string
 	expError error
 	expHash  [16]byte
-}
-
-func TestGetParallelPathSpec(t *testing.T) {
-
-	tests := []testParallelPathSpecStruct{
-		{
-			pathSpec:      "\"",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "[]",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "{}",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "p",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "@",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "1@",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "x@",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "p@",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "@path",
-			expIsPath:     true,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "1@a",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "x@a",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "p1@",
-			expIsPath:     false,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:               "p1@path",
-			expIsPath:              true,
-			expIsParallel:          true,
-			expPath:                "path",
-			expParallelRepititions: 1,
-		},
-		{
-			pathSpec:               "p10@path",
-			expIsPath:              true,
-			expIsParallel:          true,
-			expPath:                "path",
-			expParallelRepititions: 10,
-		},
-		{
-			pathSpec:               "p01@path",
-			expIsPath:              true,
-			expIsParallel:          true,
-			expPath:                "path",
-			expParallelRepititions: 1,
-		},
-		{
-			pathSpec:      "@path",
-			expIsPath:     true,
-			expIsParallel: false,
-		},
-		{
-			pathSpec:      "@../path",
-			expIsPath:     true,
-			expIsParallel: false,
-		},
-	}
-
-	for _, v := range tests {
-		t.Run(fmt.Sprintf("pathSpec:'%s'", v.pathSpec), func(t *testing.T) {
-			isPathSpec := IsPathSpec(v.pathSpec)
-			isParallelPathSpec := IsParallelPathSpec(v.pathSpec)
-			if isPathSpec != v.expIsPath {
-				t.Errorf("IsPathSpec: Got %v != %v Exp", isPathSpec, v.expIsPath)
-			}
-			if isParallelPathSpec != v.expIsParallel {
-				t.Errorf("IsParallelPathSpec: Got %v != %v Exp", isParallelPathSpec, v.expIsParallel)
-			}
-
-			if v.expIsPath {
-				// the path must also be recognized as a path in case it has trailing quotes
-				if !IsPathSpec(fmt.Sprintf("\"%s\"", v.pathSpec)) {
-					t.Errorf("IsPathSpec (with trailing \"): Got %v != %v Exp", isPathSpec, v.expIsPath)
-				}
-			}
-
-			if v.expIsParallel {
-				parallelRepititions, path := GetParallelPathSpec(v.pathSpec)
-				if parallelRepititions != v.expParallelRepititions {
-					t.Errorf("ParallelRepititions: Got '%d' != '%d' Exp", parallelRepititions, v.expParallelRepititions)
-				}
-				if path != v.expPath {
-					t.Errorf("Path: Got '%s' != '%s' Exp", path, v.expPath)
-				}
-			}
-		})
-	}
 }
 
 func TestOpenFileOrUrl(t *testing.T) {
@@ -192,13 +57,14 @@ func TestOpenFileOrUrl(t *testing.T) {
 
 	for _, v := range tests {
 		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
-			_, io, err := OpenFileOrUrl(v.filename, "")
+			file, err := OpenFileOrUrl(v.filename, "")
 			if err != nil {
 				if err.Error() != v.expError.Error() {
 					t.Errorf("Got '%s' != '%s' Exp", err, v.expError)
 				}
 			} else {
-				data, err := ioutil.ReadAll(io)
+				defer file.Close()
+				data, err := io.ReadAll(file)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -223,7 +89,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Root File: ", err)
 	}
-	rootFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	rootFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Root File: ", err)
 	}
@@ -235,7 +102,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Manifest file: ", err)
 	}
-	manifestFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	manifestFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Manifest file: ", err)
 	}
@@ -248,7 +116,8 @@ func TestOpenLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Binary file: ", err)
 	}
-	binaryFile, err := ioutil.ReadAll(reader)
+	defer reader.Close()
+	binaryFile, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal("Binary file: ", err)
 	}
