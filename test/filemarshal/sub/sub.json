@@ -1,0 +1,13 @@
+{
+    "name": "file_render to marshal pipeline in subdirectory should pass",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "dummy.txt",
+        "method": "GET"
+    },
+    "response": {
+        "body": {
+    	"foo": {{ file_render "sub_template.json" | marshal }}
+        }
+    }
+},
