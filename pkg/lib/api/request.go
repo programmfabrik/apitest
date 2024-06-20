@@ -88,6 +88,10 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		return nil, errors.Wrapf(err, "Unable to buildHttpRequest with URL %q", requestUrl)
 	}
 
+	// Note that buildPolicy may return a file handle that needs to be
+	// closed. According to standard library documentation, the NewRequest
+	// call below will take into account if body also happens to implement
+	// io.Closer.
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
 		return req, fmt.Errorf("error executing buildpolicy: %s", err)

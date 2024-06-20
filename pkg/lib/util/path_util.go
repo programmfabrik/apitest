@@ -1,57 +1,70 @@
 package util
 
 import (
-	"regexp"
+	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
 
-/*
-throughout this file we assume 'manifestDir' to be an absolute path
-*/
+// PathSpec is a path specifier for including tests within manifests.
+type PathSpec struct {
+	// ParallelRuns matches the number of parallel runs specified
+	// in a path spec like "5@foo.json"
+	ParallelRuns int
 
-func IsPathSpec(pathSpec string) bool {
-	if len(pathSpec) < 3 {
-		return false
-	}
-	if strings.HasPrefix(pathSpec, "@") {
-		return true
-	}
-	if strings.HasPrefix(pathSpec, "p@") {
-		return true
-	}
-	// pathSpec could have trailing quotes
-	if strings.HasPrefix(pathSpec, "\"@") {
-		return true
-	}
-	if strings.HasPrefix(pathSpec, "\"p@") {
-		return true
-	}
-
-	return IsParallelPathSpec(pathSpec)
+	// Path matches the literal path, e.g. foo.json in "@foo.json"
+	Path string
 }
 
-func IsParallelPathSpec(pathSpec string) bool {
-	n, _ := GetParallelPathSpec(pathSpec)
-	return n > 0
+// ParsePathSpec tries to parse the given string into a PathSpec.
+//
+// The string takes the format "[n]@file.json". Invalid path specs
+// result in an error.
+func ParsePathSpec(s string) (*PathSpec, error) {
+	var (
+		ok           bool
+		err          error
+		parallelRuns string
+		spec         PathSpec
+	)
+
+	parallelRuns, spec.Path, ok = strings.Cut(s, "@")
+	if parallelRuns != "" {
+		spec.ParallelRuns, err = strconv.Atoi(parallelRuns)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing ParallelRuns of path spec %q: %w", s, err)
+		}
+	} else {
+		spec.ParallelRuns = 1
+	}
+
+	if !ok || spec.Path == "" || spec.ParallelRuns < 0 {
+		return nil, fmt.Errorf("invalid path spec %q", s)
+	}
+
+	return &spec, err
 }
 
-func GetParallelPathSpec(pathSpec string) (parallelRepititions int, parsedPath string) {
-	regex := *regexp.MustCompile(`^\"{0,1}p(\d+)@(.+)\"{0,1}$`)
-	res := regex.FindAllStringSubmatch(pathSpec, -1)
+// IsPathSpec is a wrapper around ParsePathSpec that discards the parsed PathSpec.
+// It's useful for chaining within boolean expressions.
+func IsPathSpec(s string) bool {
+	_, err := ParsePathSpec(s)
+	return err == nil
+}
 
-	if len(res) != 1 {
-		return 0, ""
-	}
-	if len(res[0]) != 3 {
-		return 0, ""
-	}
-
-	parsedPath = res[0][2]
-	parallelRepititions, err := strconv.Atoi(res[0][1])
+// Load loads the contents of the file pointed to by the PathSpec into a byte array.
+func (ps PathSpec) LoadContents(manifestDir string) ([]byte, error) {
+	requestFile, err := OpenFileOrUrl(ps.Path, manifestDir)
 	if err != nil {
-		return 0, parsedPath
+		return nil, fmt.Errorf("error opening path: %w", err)
+	}
+	defer requestFile.Close()
+
+	contents, err := io.ReadAll(requestFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading file at %q: %w", ps, err)
 	}
 
-	return parallelRepititions, parsedPath
+	return contents, nil
 }

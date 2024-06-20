@@ -1,0 +1,21 @@
+{{ $local_port := ":9999" }}
+{{ $n_parallel := 5 }}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "parallel run of N={{ $n_parallel }} parallel runs (indirect)",
+    "tests": [
+        {
+            "name": "port {{ $local_port }}",
+            "store": {
+                "n_parallel": {{ $n_parallel }},
+                "local_port": {{ $local_port | marshal }}
+            }
+        }
+        , "{{ $n_parallel }}@parallel.json"
+        , "@check_collected_responses.json"
+    ]
+}

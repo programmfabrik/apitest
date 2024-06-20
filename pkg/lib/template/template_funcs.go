@@ -3,7 +3,7 @@ package template
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -323,12 +323,13 @@ func divide(b, a any) (any, error) {
 }
 
 func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
-	_, file, err := util.OpenFileOrUrl(pathOrURL, rootDir)
+	file, err := util.OpenFileOrUrl(pathOrURL, rootDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
 	}
+	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
 	}

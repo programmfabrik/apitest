@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -45,7 +47,7 @@ type Suite struct {
 	manifestPath    string
 	reporterRoot    *report.ReportElement
 	index           int
-	serverURL       string
+	serverURL       *url.URL
 	httpServer      http.Server
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
@@ -149,6 +151,12 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
+	// Parse serverURL
+	suite.serverURL, err = url.Parse(suite.Config.ServerURL)
+	if err != nil {
+		return nil, fmt.Errorf("can not load server url : %s", err)
+	}
+
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
@@ -179,8 +187,17 @@ func (ats *Suite) Run() bool {
 	success := true
 	for k, v := range ats.Tests {
 		child := r.NewChild(strconv.Itoa(k))
-		sTestSuccess := ats.parseAndRunTest(v, ats.manifestDir, ats.manifestPath, child, ats.loader)
+
+		sTestSuccess := ats.parseAndRunTest(
+			v,
+			ats.manifestPath,
+			child,
+			ats.loader,
+			true, // parallel exec allowed for top-level tests
+		)
+
 		child.Leave(sTestSuccess)
+
 		if !sTestSuccess {
 			success = false
 			break
@@ -213,59 +230,106 @@ type TestContainer struct {
 	Path     string
 }
 
-func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *report.ReportElement, rootLoader template.Loader) bool {
-	//Init variables
-	// logrus.Warnf("Test %s, Prev delimiters: %#v", testFilePath, rootLoader.Delimiters)
+func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) template.Loader {
 	loader := template.NewLoader(ats.datastore)
 	loader.Delimiters = rootLoader.Delimiters
 	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := url.Parse(ats.Config.ServerURL)
-	if err != nil {
-		logrus.Error(fmt.Errorf("can not load server url into test (%s): %s", testFilePath, err))
-		return false
-	}
-	loader.ServerURL = serverURL
+	loader.ServerURL = ats.serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 
-	//Get the Manifest with @ logic
-	fileh, testObj, err := template.LoadManifestDataAsRawJson(v, manifestDir)
-	dir := filepath.Dir(fileh)
-	if fileh != "" {
-		testFilePath = filepath.Join(filepath.Dir(testFilePath), fileh)
+	if rootLoader.ParallelRunIdx < 0 {
+		loader.ParallelRunIdx = parallelRunIdx
+	} else {
+		loader.ParallelRunIdx = rootLoader.ParallelRunIdx
 	}
+
+	return loader
+}
+
+func (ats *Suite) parseAndRunTest(
+	v any, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	allowParallelExec bool,
+) bool {
+	parallelRuns := 1
+
+	// Get the Manifest with @ logic
+	referencedPathSpec, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
 	if err != nil {
 		r.SaveToReportLog(err.Error())
 		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
 		return false
 	}
+	if referencedPathSpec != nil {
+		testFilePath = filepath.Join(filepath.Dir(testFilePath), referencedPathSpec.Path)
+		parallelRuns = referencedPathSpec.ParallelRuns
+	}
 
-	// Parse as template always
-	testObj, err = loader.Render(testObj, filepath.Join(manifestDir, dir), nil)
+	// If parallel runs are requested, check that they're actually allowed
+	if parallelRuns > 1 && !allowParallelExec {
+		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
+		return false
+	}
+
+	// Execute test cases
+	var successCount atomic.Uint32
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(parallelRuns)
+
+	for runIdx := range parallelRuns {
+		go ats.testGoroutine(
+			&waitGroup, &successCount, testFilePath, r, rootLoader,
+			runIdx, testRaw,
+		)
+	}
+
+	waitGroup.Wait()
+
+	return successCount.Load() == uint32(parallelRuns)
+}
+
+func (ats *Suite) testGoroutine(
+	waitGroup *sync.WaitGroup, successCount *atomic.Uint32,
+	testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	runIdx int, testRaw json.RawMessage,
+) {
+	defer waitGroup.Done()
+
+	testFileDir := filepath.Dir(testFilePath)
+
+	// Build template loader
+	loader := ats.buildLoader(rootLoader, runIdx)
+
+	// Parse testRaw as template
+	testRendered, err := loader.Render(testRaw, testFileDir, nil)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
 		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
-		return false
+
+		// note that successCount is not incremented
+		return
 	}
 
 	// Build list of test cases
 	var testCases []json.RawMessage
-	err = util.Unmarshal(testObj, &testCases)
+	err = util.Unmarshal(testRendered, &testCases)
 	if err != nil {
 		// Input could not be deserialized into list, try to deserialize into single object
 		var singleTest json.RawMessage
-		err = util.Unmarshal(testObj, &singleTest)
+		err = util.Unmarshal(testRendered, &singleTest)
 		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
 			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
-			return false
+
+			// note that successCount is not incremented
+			return
 		}
 
 		testCases = []json.RawMessage{singleTest}
 	}
 
-	// Execute test cases
-	for i, testCase := range testCases {
+	for testIdx, testCase := range testCases {
 		var success bool
 
 		// If testCase can be unmarshalled as string, we may have a
@@ -276,34 +340,38 @@ func (ats *Suite) parseAndRunTest(v any, manifestDir, testFilePath string, r *re
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
 				testCaseStr,
-				filepath.Join(manifestDir, dir),
 				testFilePath,
 				r,
 				loader,
+				false, // no parallel exec allowed in nested tests
 			)
 		} else {
 			// Otherwise simply run the literal test case
 			success = ats.runLiteralTest(
 				TestContainer{
 					CaseByte: testCase,
-					Path:     filepath.Join(manifestDir, dir),
+					Path:     testFileDir,
 				},
 				r,
 				testFilePath,
 				loader,
-				i,
+				runIdx*len(testCases)+testIdx,
 			)
 		}
 
 		if !success {
-			return false
+			// note that successCount is not incremented
+			return
 		}
 	}
 
-	return true
+	successCount.Add(1)
 }
 
-func (ats *Suite) runLiteralTest(tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader, k int) bool {
+func (ats *Suite) runLiteralTest(
+	tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader,
+	index int,
+) bool {
 	r.SetName(testFilePath)
 
 	var test Case
@@ -320,7 +388,7 @@ func (ats *Suite) runLiteralTest(tc TestContainer, r *report.ReportElement, test
 	test.loader = loader
 	test.manifestDir = tc.Path
 	test.suiteIndex = ats.index
-	test.index = k
+	test.index = index
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore

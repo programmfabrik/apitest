@@ -16,7 +16,7 @@ type Datastore struct {
 	storage      map[string]any // custom storage
 	responseJson []string       // store the responses
 	logDatastore bool
-	lock         *sync.Mutex
+	lock         *sync.RWMutex
 }
 
 func NewStore(logDatastore bool) *Datastore {
@@ -24,7 +24,7 @@ func NewStore(logDatastore bool) *Datastore {
 	ds.storage = make(map[string]any, 0)
 	ds.responseJson = make([]string, 0)
 	ds.logDatastore = logDatastore
-	ds.lock = &sync.Mutex{}
+	ds.lock = &sync.RWMutex{}
 	return &ds
 }
 
@@ -84,11 +84,17 @@ func (ds *Datastore) Delete(k string) {
 
 // We store the response
 func (ds *Datastore) UpdateLastResponse(s string) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
 	ds.responseJson[len(ds.responseJson)-1] = s
 }
 
 // We store the response
 func (ds *Datastore) AppendResponse(s string) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
 	ds.responseJson = append(ds.responseJson, s)
 }
 
@@ -167,6 +173,9 @@ func (ds *Datastore) Set(index string, value any) error {
 }
 
 func (ds Datastore) Get(index string) (res any, err error) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
 	// strings are evalulated as int, so
 	// that we can support "-<int>" notations
 

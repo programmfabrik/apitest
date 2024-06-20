@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -32,7 +31,7 @@ func TestRequestBuildHttp(t *testing.T) {
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
 	go_test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
 
-	assertBody, err := ioutil.ReadAll(httpRequest.Body)
+	assertBody, err := io.ReadAll(httpRequest.Body)
 	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error reading http-request body: %s", err))
 	go_test_utils.AssertStringEquals(t, string(assertBody), "mock_body")
 
