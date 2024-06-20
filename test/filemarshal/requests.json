@@ -25,5 +25,6 @@
             }
         },
         "reverse_test_result": true
-    }
+    },
+    "@sub/sub.json"
 ]
