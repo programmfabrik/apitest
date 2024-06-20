@@ -15,6 +15,10 @@ jobs:
     name: unit-tests
     runs-on: ubuntu-latest
     steps:
+      - name: Install prerequisites
+        shell: bash
+        run: sudo apt install libimage-exiftool-perl
+
       - name: Run go ${{ env.go_version }}
         uses: actions/setup-go@v5
         with:
@@ -26,6 +30,14 @@ jobs:
       - name: execute unit tests
         shell: bash
         run: make test
+
+      - name: build executable for test suite
+        shell: bash
+        run: make build
+
+      - name: execute apitest
+        shell: bash
+        run: make apitest
 
       - name: Notify slack channel about a failure
         if: ${{ failure() }}
