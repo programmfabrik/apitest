@@ -19,10 +19,12 @@ import (
 // StartHttpServer start a simple http server that can server local test resources during the testsuite is running
 func (ats *Suite) StartHttpServer() {
 
+	// FIXME: This doesn't check if the http server is already initialized
 	if ats.HttpServer == nil {
 		return
 	}
 
+	// TODO: Find out what idleConnsClosed does and if SMTP server needs it too
 	ats.idleConnsClosed = make(chan struct{})
 	mux := http.NewServeMux()
 
@@ -48,6 +50,11 @@ func (ats *Suite) StartHttpServer() {
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
 	ats.httpServerProxy.RegisterRoutes(mux, "/", ats.Config.LogShort)
 
+	// Register SMTP server query routes
+	if ats.smtpServer != nil {
+		ats.smtpServer.RegisterRoutes(mux, "/")
+	}
+
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
 		Handler: mux,
@@ -59,10 +66,11 @@ func (ats *Suite) StartHttpServer() {
 		}
 
 		err := ats.httpServer.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err != http.ErrServerClosed { // FIXME: Use errors.Is
 			// Error starting or closing listener:
+			// FIXME: Use logrus.Fatal
 			logrus.Errorf("HTTP server ListenAndServe: %v", err)
-			return
+			return // FIXME: This is redundant
 		}
 	}
 
@@ -98,6 +106,8 @@ func (ats *Suite) StopHttpServer() {
 		return
 	}
 
+	// FIXME: There is no nil check for ats.httpServer; no protection against calling twice
+
 	err := ats.httpServer.Shutdown(context.Background())
 	if err != nil {
 		// Error from closing listeners, or context timeout:
@@ -107,7 +117,7 @@ func (ats *Suite) StopHttpServer() {
 	} else if !ats.Config.LogShort {
 		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
 	}
-	return
+	return // FIXME: This is redundant
 }
 
 type ErrorResponse struct {

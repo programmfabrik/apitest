@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/clbanning/mxj v1.8.4
+	github.com/emersion/go-smtp v0.21.2
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/moul/http2curl v1.0.0
 	github.com/pkg/errors v0.9.1
@@ -32,6 +33,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.18 // indirect
 	github.com/antchfx/xpath v1.2.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect

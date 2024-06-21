@@ -2855,3 +2855,6 @@ The expected response:
     }
 }
 ```
+
+## SMTP Server
+TODO: Add section about SMTP Server

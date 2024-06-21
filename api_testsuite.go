@@ -34,6 +34,9 @@ type Suite struct {
 		Testmode bool                  `json:"testmode"`
 		Proxy    httpproxy.ProxyConfig `json:"proxy"`
 	} `json:"http_server,omitempty"`
+	SmtpServer *struct {
+		Addr string `json:"addr"`
+	}
 	Tests []any          `json:"tests"`
 	Store map[string]any `json:"store"`
 
@@ -54,6 +57,7 @@ type Suite struct {
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
 	loader          template.Loader
+	smtpServer      *SmtpServer
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -175,10 +179,15 @@ func (ats *Suite) Run() bool {
 		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 	}
 
+	ats.StartSmtpServer()
+	defer ats.StopSmtpServer()
+
 	ats.StartHttpServer()
+	// FIXME: Defer stop
 
 	err := os.Chdir(ats.manifestDir)
 	if err != nil {
+		// FIXME: This should be a fatal error - also check other occurrences of Error/Errorf
 		logrus.Errorf("Unable to switch working directory to %q", ats.manifestDir)
 	}
 
