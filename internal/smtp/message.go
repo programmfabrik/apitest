@@ -10,6 +10,19 @@ type ReceivedMessage struct {
 	receivedAt     time.Time
 }
 
-// TODO: Constructor that takes in from, rcptTo, rawMessageData, receivedAt and that also parses the message
+func NewReceivedMessage(
+	from string, rcptTo []string, rawMessageData []byte, receivedAt time.Time,
+) (*ReceivedMessage, error) {
+	msg := &ReceivedMessage{
+		smtpFrom:       from,
+		smtpRcptTo:     rcptTo,
+		rawMessageData: rawMessageData,
+		receivedAt:     receivedAt,
+	}
+
+	// TODO: Parse message
+
+	return msg, nil
+}
 
 // TODO: Getters

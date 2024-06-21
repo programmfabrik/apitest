@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	esmtp "github.com/emersion/go-smtp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -35,7 +37,8 @@ func (ats *Suite) StopSmtpServer() {
 		return
 	}
 
-	err := ats.smtpServer.Shutdown()
+	// TODO: Shouldn't this use a context with a timeout (also at http_server.go)?
+	err := ats.smtpServer.Shutdown(context.Background())
 	if err != nil {
 		// logrus.Error is used instead of Fatal, because an error
 		// during closing of a server shouldn't affect the outcome of
