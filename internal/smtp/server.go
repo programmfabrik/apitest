@@ -109,6 +109,7 @@ func newSession(server *Server, c *smtp.Conn) (smtp.Session, error) {
 
 // Implements smtp.Session's Data method.
 func (s *session) Data(r io.Reader) error {
+	// TODO: Limit length?
 	rawData, err := io.ReadAll(r)
 	if err != nil {
 		return fmt.Errorf("could not read mail data from SMTP: %w", err)
