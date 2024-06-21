@@ -1,0 +1,10 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "testmode": true
+    },
+    "smtp_server": {
+        "addr": ":9925"
+    },
+    "name": "smtp server test mode"
+}

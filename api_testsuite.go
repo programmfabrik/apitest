@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/internal/smtp"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -36,7 +37,7 @@ type Suite struct {
 	} `json:"http_server,omitempty"`
 	SmtpServer *struct {
 		Addr string `json:"addr"`
-	}
+	} `json:"smtp_server,omitempty"`
 	Tests []any          `json:"tests"`
 	Store map[string]any `json:"store"`
 
@@ -57,7 +58,7 @@ type Suite struct {
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
 	loader          template.Loader
-	smtpServer      *SmtpServer
+	smtpServer      *smtp.Server
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
