@@ -16,7 +16,7 @@ func (ats *Suite) StartSmtpServer() {
 		return
 	}
 
-	ats.smtpServer = smtp.NewServer(ats.SmtpServer.Addr)
+	ats.smtpServer = smtp.NewServer(ats.SmtpServer.Addr, ats.SmtpServer.MaxMessageSize)
 
 	go func() {
 		if !ats.Config.LogShort {

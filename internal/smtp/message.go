@@ -37,16 +37,26 @@ type ReceivedPart struct {
 	body    []byte
 }
 
+// NewReceivedMessage parses a raw message as received via SMTP into a
+// ReceivedMessage struct.
+//
+// Incoming data is truncated after the given maximum message size.
+// If a maxMessageSize of 0 is given, this function will default to using
+// DefaultMaxMessageSize.
 func NewReceivedMessage(
 	from string, rcptTo []string, rawMessageData []byte, receivedAt time.Time,
+	maxMessageSize int64,
 ) (*ReceivedMessage, error) {
+	if maxMessageSize == 0 {
+		maxMessageSize = DefaultMaxMessageSize
+	}
+
 	parsedMsg, err := mail.ReadMessage(bytes.NewReader(rawMessageData))
 	if err != nil {
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
-	// TODO: Limit length?
-	body, err := io.ReadAll(parsedMsg.Body)
+	body, err := io.ReadAll(io.LimitReader(parsedMsg.Body, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message body: %w", err)
 	}
@@ -91,7 +101,7 @@ func NewReceivedMessage(
 				}
 			}
 
-			part, err := NewReceivedPart(rawPart)
+			part, err := NewReceivedPart(rawPart, maxMessageSize)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse message part: %w", err)
 			}
@@ -103,9 +113,17 @@ func NewReceivedMessage(
 	return msg, nil
 }
 
-func NewReceivedPart(p *multipart.Part) (*ReceivedPart, error) {
-	// TODO: Limit length?
-	body, err := io.ReadAll(p)
+// NewReceivedPart parses a MIME multipart part into a ReceivedPart struct.
+//
+// Incoming data is truncated after the given maximum message size.
+// If a maxMessageSize of 0 is given, this function will default to using
+// DefaultMaxMessageSize.
+func NewReceivedPart(p *multipart.Part, maxMessageSize int64) (*ReceivedPart, error) {
+	if maxMessageSize == 0 {
+		maxMessageSize = DefaultMaxMessageSize
+	}
+
+	body, err := io.ReadAll(io.LimitReader(p, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message part body: %w", err)
 	}
