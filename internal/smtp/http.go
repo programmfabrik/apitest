@@ -115,6 +115,8 @@ func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Reque
 
 	out := buildMessageBasicMeta(msg, idx)
 
+	out["body_size"] = len(msg.Body())
+
 	headers := make(map[string]any)
 	for k, v := range msg.Headers() {
 		headers[k] = v
@@ -242,7 +244,8 @@ func buildMessageBasicMeta(msg *ReceivedMessage, idx int) map[string]any {
 
 func buildMultipartMeta(part *ReceivedPart, partIdx int) map[string]any {
 	out := map[string]any{
-		"idx": partIdx,
+		"idx":       partIdx,
+		"body_size": len(part.Body()),
 	}
 
 	headers := make(map[string]any)
