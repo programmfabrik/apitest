@@ -97,10 +97,7 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	messagesOut := make([]any, 0)
 
 	for i, msg := range receivedMessages {
-		messagesOut = append(messagesOut, map[string]any{
-			"idx":        i,
-			"receivedAt": msg.ReceivedAt(),
-		})
+		messagesOut = append(messagesOut, buildMessageBasicMeta(msg, i))
 	}
 
 	out := make(map[string]any)
@@ -111,8 +108,20 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, idx int) {
-	// TODO: Implement
-	fmt.Println("=== MESSAGE META ===", idx)
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+
+	out := buildMessageBasicMeta(msg, idx)
+
+	headers := make(map[string]any)
+	for k, v := range msg.Headers() {
+		headers[k] = v
+	}
+	out["headers"] = headers
+
+	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
 func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Request, idx int) {
@@ -155,9 +164,12 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 	if !ensureIsMultipart(w, msg) {
 		return
 	}
+	part := retrievePart(w, msg, partIdx)
+	if part == nil {
+		return
+	}
 
-	// TODO: Implement
-	fmt.Println("=== MULTIPART META ===", idx, partIdx)
+	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part, partIdx))
 }
 
 func (h *smtpHTTPHandler) handleMultipartBody(
@@ -188,14 +200,39 @@ func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, idx int) *Recei
 	return msg
 }
 
+// retrievePart tries to retrieve the ReceivedPart with the given index.
+// If found, returns the part. If not found, responds with Status 404
+// and returns nil.
+func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *ReceivedPart {
+	multiparts := msg.Multiparts()
+
+	if partIdx >= len(multiparts) {
+		handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
+			"ReceivedMessage does not contain multipart with index %d", partIdx,
+		))
+		return nil
+	}
+
+	return msg.Multiparts()[partIdx]
+}
+
+func buildMessageBasicMeta(msg *ReceivedMessage, idx int) map[string]any {
+	return map[string]any{
+		"idx":        idx,
+		"receivedAt": msg.ReceivedAt(),
+	}
+}
+
 func buildMultipartMeta(part *ReceivedPart, partIdx int) map[string]any {
 	out := map[string]any{
 		"idx": partIdx,
 	}
 
+	headers := make(map[string]any)
 	for k, v := range part.Headers() {
-		out[k] = v
+		headers[k] = v
 	}
+	out["headers"] = headers
 
 	return out
 }
