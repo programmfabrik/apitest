@@ -24,12 +24,13 @@ func New(cfg ProxyConfig) *Proxy {
 // RegisterRoutes for the proxy store/retrieve
 func (proxy *Proxy) RegisterRoutes(mux *http.ServeMux, prefix string, skipLogs bool) {
 	for _, s := range *proxy {
-		mux.Handle(prefix+"proxywrite/"+s.Name, logH(skipLogs, http.HandlerFunc(s.write)))
-		mux.Handle(prefix+"proxyread/"+s.Name, logH(skipLogs, http.HandlerFunc(s.read)))
+		mux.Handle(prefix+"proxywrite/"+s.Name, LogH(skipLogs, http.HandlerFunc(s.write)))
+		mux.Handle(prefix+"proxyread/"+s.Name, LogH(skipLogs, http.HandlerFunc(s.read)))
 	}
 }
 
-func logH(skipLogs bool, next http.Handler) http.Handler {
+// TODO: Move to utility package?
+func LogH(skipLogs bool, next http.Handler) http.Handler {
 	if skipLogs {
 		return next
 	}

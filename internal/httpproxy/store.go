@@ -69,7 +69,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 	if r.Body != nil {
 		reqData.Body, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
+			RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
 			return
 		}
 	}
@@ -80,7 +80,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 		Offset int `json:"offset"`
 	}{offset})
 	if err != nil {
-		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+		RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }
 
@@ -98,14 +98,14 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			respondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
+			RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
 			return
 		}
 	}
 
 	count := len(st.Data)
 	if offset >= count {
-		respondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
+		RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
 		return
 	}
 
@@ -130,12 +130,13 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(req.Body)
 	if err != nil {
-		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+		RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }
 
-// respondWithErr helper
-func respondWithErr(w http.ResponseWriter, status int, err error) {
+// RespondWithErr helper
+// TODO: Move to utility package?
+func RespondWithErr(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
 	err2 := json.NewEncoder(w).Encode(errorResponse{err.Error()})
 	if err2 != nil {
