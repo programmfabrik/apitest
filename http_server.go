@@ -52,7 +52,7 @@ func (ats *Suite) StartHttpServer() {
 
 	// Register SMTP server query routes
 	if ats.smtpServer != nil {
-		ats.smtpServer.RegisterRoutes(mux, "/")
+		ats.smtpServer.RegisterRoutes(mux, "/", ats.Config.LogShort)
 	}
 
 	ats.httpServer = http.Server{
