@@ -109,12 +109,31 @@ func (s *Server) ReceivedMessages() []*ReceivedMessage {
 
 // SearchByHeader returns the list of all received messages that have at
 // least one header matching the given regular expression.
-func (s *Server) SearchByHeader(re *regexp.Regexp) []ReceivedMessage {
+//
+// Note that the regex is performed for each header value individually,
+// including for multi-value headers. The header value is first serialized
+// by concatenating it after the header name, colon and space. It is not
+// being encoded as if for transport (e.g. quoted-printable),
+// but concatenated as-is.
+func (s *Server) SearchByHeader(re *regexp.Regexp) []*ReceivedMessage {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	// TODO
-	panic("not implemented")
+	receivedMessages := s.ReceivedMessages()
+
+	headerIdxList := make([]map[string][]string, len(receivedMessages))
+	for i, v := range receivedMessages {
+		headerIdxList[i] = v.Headers()
+	}
+
+	foundIndices := searchByHeaderCommon(headerIdxList, re)
+
+	results := make([]*ReceivedMessage, 0, len(foundIndices))
+	for _, idx := range foundIndices {
+		results = append(results, receivedMessages[idx])
+	}
+
+	return results
 }
 
 func newSession(server *Server, c *smtp.Conn) (smtp.Session, error) {

@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/mail"
 	"net/textproto"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -111,6 +112,37 @@ func NewReceivedMessage(
 	}
 
 	return msg, nil
+}
+
+// SearchPartsByHeader returns the list of all received multiparts that
+// have at least one header matching the given regular expression.
+//
+// For details on how the matching is performed, please refer to the
+// documentation for Server.SearchByHeader.
+//
+// If the message is not a multipart message, this returns nil.
+// If no matching multiparts are found, this may return nil or an empty
+// list.
+func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart {
+	if !m.IsMultipart() {
+		return nil
+	}
+
+	multiparts := m.Multiparts()
+
+	headerIdxList := make([]map[string][]string, len(multiparts))
+	for i, v := range multiparts {
+		headerIdxList[i] = v.Headers()
+	}
+
+	foundIndices := searchByHeaderCommon(headerIdxList, re)
+
+	results := make([]*ReceivedPart, 0, len(foundIndices))
+	for _, idx := range foundIndices {
+		results = append(results, multiparts[idx])
+	}
+
+	return results
 }
 
 // NewReceivedPart parses a MIME multipart part into a ReceivedPart struct.

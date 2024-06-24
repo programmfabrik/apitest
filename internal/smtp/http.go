@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -90,9 +91,19 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement search function
+	var receivedMessages []*ReceivedMessage
 
-	receivedMessages := h.server.ReceivedMessages()
+	headerSearchRgx, err := extractSearchRegex(w, r.URL.Query(), "header")
+	if err != nil {
+		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
+		return
+	}
+	if headerSearchRgx == nil {
+		receivedMessages = h.server.ReceivedMessages()
+	} else {
+		// FIXME: This does not preserve the correct indexes!
+		receivedMessages = h.server.SearchByHeader(headerSearchRgx)
+	}
 
 	messagesOut := make([]any, 0)
 
@@ -141,7 +152,6 @@ func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, idx int) {
-	// TODO: Implement search function
 	msg := h.retrieveMessage(w, idx)
 	if msg == nil {
 		return
@@ -150,7 +160,18 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	multiparts := msg.Multiparts()
+	var multiparts []*ReceivedPart
+	headerSearchRgx, err := extractSearchRegex(w, r.URL.Query(), "header")
+	if err != nil {
+		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
+		return
+	}
+	if headerSearchRgx == nil {
+		multiparts = msg.Multiparts()
+	} else {
+		// FIXME: This does not preserve the correct indexes!
+		multiparts = msg.SearchPartsByHeader(headerSearchRgx)
+	}
 
 	multipartsOut := make([]any, 0)
 
@@ -270,4 +291,31 @@ func ensureIsMultipart(w http.ResponseWriter, msg *ReceivedMessage) bool {
 	))
 
 	return false
+}
+
+// extractSearchRegex tries to extract a regular expression from the referenced
+// query parameter. If no query parameter is given and otherwise no error has
+// occurred, this function returns (nil, nil).
+func extractSearchRegex(
+	w http.ResponseWriter, queryParams map[string][]string, paramName string,
+) (*regexp.Regexp, error) {
+	searchParam, ok := queryParams[paramName]
+	if ok {
+		if len(searchParam) != 1 {
+			return nil, fmt.Errorf(
+				"Encountered multiple %q params", paramName,
+			)
+		}
+
+		re, err := regexp.Compile(searchParam[0])
+		if err != nil {
+			return nil, fmt.Errorf(
+				"could not compile %q regex: %w", paramName, err,
+			)
+		}
+
+		return re, nil
+	}
+
+	return nil, nil
 }
