@@ -72,7 +72,7 @@ func NewReceivedMessage(
 
 	rawContentType := msg.headers.Get("Content-Type")
 	if rawContentType != "" {
-		msg.contentType, msg.contentTypeParams, err = mime.ParseMediaType(msg.contentType)
+		msg.contentType, msg.contentTypeParams, err = mime.ParseMediaType(rawContentType)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse Content-Type: %w", err)
 		}
