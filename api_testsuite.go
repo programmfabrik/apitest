@@ -36,7 +36,8 @@ type Suite struct {
 		Proxy    httpproxy.ProxyConfig `json:"proxy"`
 	} `json:"http_server,omitempty"`
 	SmtpServer *struct {
-		Addr string `json:"addr"`
+		Addr           string `json:"addr"`
+		MaxMessageSize int64  `json:"max_message_size"`
 	} `json:"smtp_server,omitempty"`
 	Tests []any          `json:"tests"`
 	Store map[string]any `json:"store"`

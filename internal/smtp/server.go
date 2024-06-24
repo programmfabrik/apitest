@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const DefaultMaxMessageSize = 30 * 1024 * 1024 // 30MiB
+
 // Server contains a basic SMTP server for testing purposes.
 //
 // It will accept incoming messages and save them to an internal list of
@@ -20,6 +22,8 @@ import (
 type Server struct {
 	server           *smtp.Server
 	receivedMessages []*ReceivedMessage
+
+	maxMessageSize int64
 
 	mutex sync.RWMutex
 }
@@ -32,8 +36,21 @@ type session struct {
 	rcptTo []string
 }
 
-func NewServer(addr string) *Server {
-	server := new(Server)
+// NewServer creates a new testing SMTP server.
+//
+// The new server will listen at the provided address.
+//
+// Incoming messages are truncated after the given maximum message size.
+// If a maxMessageSize of 0 is given, Server will default to using
+// DefaultMaxMessageSize.
+func NewServer(addr string, maxMessageSize int64) *Server {
+	if maxMessageSize == 0 {
+		maxMessageSize = DefaultMaxMessageSize
+	}
+
+	server := &Server{
+		maxMessageSize: maxMessageSize,
+	}
 
 	backend := smtp.BackendFunc(func(c *smtp.Conn) (smtp.Session, error) {
 		return newSession(server, c)
@@ -109,8 +126,7 @@ func newSession(server *Server, c *smtp.Conn) (smtp.Session, error) {
 
 // Implements smtp.Session's Data method.
 func (s *session) Data(r io.Reader) error {
-	// TODO: Limit length?
-	rawData, err := io.ReadAll(r)
+	rawData, err := io.ReadAll(io.LimitReader(r, s.server.maxMessageSize))
 	if err != nil {
 		return fmt.Errorf("could not read mail data from SMTP: %w", err)
 	}
@@ -121,7 +137,7 @@ func (s *session) Data(r io.Reader) error {
 	now := time.Now()
 
 	logrus.Infof("SMTP: Received message from %s to %v at %v", s.from, s.rcptTo, now)
-	msg, err := NewReceivedMessage(s.from, s.rcptTo, rawData, now)
+	msg, err := NewReceivedMessage(s.from, s.rcptTo, rawData, now, s.server.maxMessageSize)
 	if err != nil {
 		return fmt.Errorf("error constructing ReceivedMessage in SMTP server: %w", err)
 	}
