@@ -136,11 +136,14 @@ func (s *session) Data(r io.Reader) error {
 
 	now := time.Now()
 
-	logrus.Infof("SMTP: Received message from %s to %v at %v", s.from, s.rcptTo, now)
+	logrus.Infof("SMTP: Receiving message from %s to %v at %v", s.from, s.rcptTo, now)
 	msg, err := NewReceivedMessage(s.from, s.rcptTo, rawData, now, s.server.maxMessageSize)
 	if err != nil {
-		return fmt.Errorf("error constructing ReceivedMessage in SMTP server: %w", err)
+		errWrapped := fmt.Errorf("error constructing ReceivedMessage in SMTP server: %w", err)
+		logrus.Error("SMTP:", errWrapped) // this is logged in our server
+		return errWrapped                 // this is returned via SMTP
 	}
+	logrus.Infof("SMTP: Reception successful")
 
 	s.server.receivedMessages = append(s.server.receivedMessages, msg)
 
