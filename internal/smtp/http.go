@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/internal/handlerutil"
 )
 
 type smtpHTTPHandler struct {
@@ -23,8 +23,8 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux, prefix string, skipLogs bool
 		prefix: path.Join(prefix, "smtp"),
 	}
 
-	mux.Handle(handler.prefix, httpproxy.LogH(skipLogs, handler))
-	mux.Handle(handler.prefix+"/", httpproxy.LogH(skipLogs, handler))
+	mux.Handle(handler.prefix, handlerutil.LogH(skipLogs, handler))
+	mux.Handle(handler.prefix+"/", handlerutil.LogH(skipLogs, handler))
 }
 
 func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +44,7 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// was already handled above.
 	idx, err := strconv.Atoi(pathParts[0])
 	if err != nil {
-		httpproxy.RespondWithErr(
+		handlerutil.RespondWithErr(
 			w, http.StatusBadRequest,
 			fmt.Errorf("could not parse message index: %w", err),
 		)
@@ -68,7 +68,7 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if pathParts[1] == "multipart" {
 			partIdx, err := strconv.Atoi(pathParts[2])
 			if err != nil {
-				httpproxy.RespondWithErr(
+				handlerutil.RespondWithErr(
 					w, http.StatusBadRequest,
 					fmt.Errorf("could not parse multipart index: %w", err),
 				)
@@ -107,7 +107,7 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	out["count"] = len(receivedMessages)
 	out["messages"] = messagesOut
 
-	httpproxy.RespondWithJSON(w, http.StatusOK, out)
+	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
 func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, idx int) {
@@ -142,7 +142,7 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 	out["count"] = len(multiparts)
 	out["multiparts"] = multipartsOut
 
-	httpproxy.RespondWithJSON(w, http.StatusOK, out)
+	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
 func (h *smtpHTTPHandler) handleMultipartMeta(
@@ -181,7 +181,7 @@ func (h *smtpHTTPHandler) handleMultipartBody(
 func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, idx int) *ReceivedMessage {
 	msg, err := h.server.ReceivedMessage(idx)
 	if err != nil {
-		httpproxy.RespondWithErr(w, http.StatusNotFound, err)
+		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
 		return nil
 	}
 
@@ -208,7 +208,7 @@ func ensureIsMultipart(w http.ResponseWriter, msg *ReceivedMessage) bool {
 		return true
 	}
 
-	httpproxy.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
+	handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
 		"multipart information was requested for non-multipart message",
 	))
 
