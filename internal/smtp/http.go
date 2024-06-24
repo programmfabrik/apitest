@@ -125,8 +125,17 @@ func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Request, idx int) {
-	// TODO: Implement
-	fmt.Println("=== MESSAGE BODY ===", idx)
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+
+	contentType, ok := msg.Headers()["Content-Type"]
+	if ok {
+		w.Header()["Content-Type"] = contentType
+	}
+
+	w.Write(msg.Body())
 }
 
 func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, idx int) {
@@ -182,9 +191,17 @@ func (h *smtpHTTPHandler) handleMultipartBody(
 	if !ensureIsMultipart(w, msg) {
 		return
 	}
+	part := retrievePart(w, msg, partIdx)
+	if part == nil {
+		return
+	}
 
-	// TODO: Implement
-	fmt.Println("=== MULTIPART BODY ===", idx, partIdx)
+	contentType, ok := part.Headers()["Content-Type"]
+	if ok {
+		w.Header()["Content-Type"] = contentType
+	}
+
+	w.Write(part.Body())
 }
 
 // retrieveMessage tries to retrieve the ReceivedMessage with the given index.
