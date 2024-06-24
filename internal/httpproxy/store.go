@@ -134,12 +134,17 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// RespondWithErr helper
 // TODO: Move to utility package?
 func RespondWithErr(w http.ResponseWriter, status int, err error) {
+	RespondWithJSON(w, status, errorResponse{err.Error()})
+}
+
+// TODO: Move to utility package?
+func RespondWithJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
-	err2 := json.NewEncoder(w).Encode(errorResponse{err.Error()})
-	if err2 != nil {
-		logrus.Errorf("Could not encode the error (%s) response itself: %s", err, err2)
+
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		logrus.Errorf("Could not encode JSON response: %s (%v)", err, v)
 	}
 }

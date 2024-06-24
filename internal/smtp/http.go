@@ -90,8 +90,24 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement
-	fmt.Println("=== MESSAGE INDEX ===")
+	// TODO: Implement search function
+
+	receivedMessages := h.server.ReceivedMessages()
+
+	messagesOut := make([]any, 0)
+
+	for i, msg := range receivedMessages {
+		messagesOut = append(messagesOut, map[string]any{
+			"idx":        i,
+			"receivedAt": msg.ReceivedAt(),
+		})
+	}
+
+	out := make(map[string]any)
+	out["count"] = len(receivedMessages)
+	out["messages"] = messagesOut
+
+	httpproxy.RespondWithJSON(w, http.StatusOK, out)
 }
 
 func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, idx int) {
@@ -105,13 +121,41 @@ func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, idx int) {
-	// TODO: Implement
-	fmt.Println("=== MULTIPART INDEX ===", idx)
+	// TODO: Implement search function
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+	if !ensureIsMultipart(w, msg) {
+		return
+	}
+
+	multiparts := msg.Multiparts()
+
+	multipartsOut := make([]any, 0)
+
+	for i, part := range multiparts {
+		multipartsOut = append(multipartsOut, buildMultipartMeta(part, i))
+	}
+
+	out := make(map[string]any)
+	out["count"] = len(multiparts)
+	out["multiparts"] = multipartsOut
+
+	httpproxy.RespondWithJSON(w, http.StatusOK, out)
 }
 
 func (h *smtpHTTPHandler) handleMultipartMeta(
 	w http.ResponseWriter, r *http.Request, idx, partIdx int,
 ) {
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+	if !ensureIsMultipart(w, msg) {
+		return
+	}
+
 	// TODO: Implement
 	fmt.Println("=== MULTIPART META ===", idx, partIdx)
 }
@@ -119,6 +163,54 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 func (h *smtpHTTPHandler) handleMultipartBody(
 	w http.ResponseWriter, r *http.Request, idx, partIdx int,
 ) {
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+	if !ensureIsMultipart(w, msg) {
+		return
+	}
+
 	// TODO: Implement
 	fmt.Println("=== MULTIPART BODY ===", idx, partIdx)
+}
+
+// retrieveMessage tries to retrieve the ReceivedMessage with the given index.
+// If found, returns the message. If not found, responds with Status 404
+// and returns nil.
+func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, idx int) *ReceivedMessage {
+	msg, err := h.server.ReceivedMessage(idx)
+	if err != nil {
+		httpproxy.RespondWithErr(w, http.StatusNotFound, err)
+		return nil
+	}
+
+	return msg
+}
+
+func buildMultipartMeta(part *ReceivedPart, partIdx int) map[string]any {
+	out := map[string]any{
+		"idx": partIdx,
+	}
+
+	for k, v := range part.Headers() {
+		out[k] = v
+	}
+
+	return out
+}
+
+// ensureIsMultipart checks whether the referenced message is a multipart
+// message, returns true and does nothing further if so, returns false after
+// replying with Status 404 if not.
+func ensureIsMultipart(w http.ResponseWriter, msg *ReceivedMessage) bool {
+	if msg.IsMultipart() {
+		return true
+	}
+
+	httpproxy.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
+		"multipart information was requested for non-multipart message",
+	))
+
+	return false
 }
