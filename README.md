@@ -2711,6 +2711,9 @@ for the message with the corresponding index.
 If the message was sent with a `Content-Transfer-Encoding` of either `base64`
 or `quoted-printable`, the endpoint returns the decoded body.
 
+If the message was sent with a `Content-Type` header, it will be passed through
+to the HTTP response.
+
 #### /smtp/$idx/multipart
 For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g.
 `/smtp/1/multipart`) will contain an index of that messages multiparts in the
@@ -2767,3 +2770,6 @@ is made available.
 
 If the multipart was sent with a `Content-Transfer-Encoding` of either `base64`
 or `quoted-printable`, the endpoint returns the decoded body.
+
+If the message was sent with a `Content-Type` header, it will be passed through
+to the HTTP response.
