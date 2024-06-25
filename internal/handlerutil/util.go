@@ -30,6 +30,7 @@ func RespondWithErr(w http.ResponseWriter, status int, err error) {
 
 // RespondWithJSON responds with a JSON-serialized value.
 func RespondWithJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
 	err := json.NewEncoder(w).Encode(v)
