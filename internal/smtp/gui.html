@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>apitest mock SMTP server GUI</title>
+<style>
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; font-family: monospace; }
+body { padding: 20px; box-sizing: border-box; }
+noscript { color: red; font-weight: bold; }
+.container { display: flex; flex-direction: row; gap: 20px; max-width: 1600px; margin: auto; }
+.container nav { flex: 2; }
+.container main { flex: 1; }
+table, th, td { border: 2px solid grey; border-collapse: collapse; }
+th, td { padding: 10px; }
+.subject-hdr { width: 100%; }
+pre { background-color: #eee; padding: 10px; box-sizing: border-box; max-width: 400px; overflow-x: auto; }
+main > p:first-of-type { padding-top: 0; margin-top: 0; }
+</style>
+
+</head>
+
+<body>
+<noscript>This GUI needs JavaScript to function properly.</noscript>
+
+<div class="container">
+    <nav>
+        <table>
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Received</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th class="subject-hdr">Subject</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="indexrows"></tbody>
+        </table>
+    </nav>
+
+    <main>
+        <p>
+            <strong>Message Metadata:</strong>
+            <pre id="msgmeta"></pre>
+        </p>
+
+	<p>
+            <strong>Body:</strong><br>
+            <a id="bodylink" href="javascript:void(0)" target="_blank">Show</a>
+	</p>
+
+        <p>
+            <strong>Multipart Metadata:</strong>
+            <pre id="multimeta"></pre>
+        </p>
+
+	<p>
+            <strong>Multiparts:</strong><br>
+            <ul id="partlist"></ul>
+        </p>
+    </main>
+</div>
+
+<script>
+const prefix = "{{ .prefix }}"
+
+const bodylink = document.getElementById("bodylink")
+const indexrows = document.getElementById("indexrows")
+const msgmeta = document.getElementById("msgmeta")
+const multimeta = document.getElementById("multimeta")
+const partlist = document.getElementById("partlist")
+
+let n_received = 0
+let index = {"count": 0, "messages": []}
+
+async function updateIndex() {
+    response = await fetch(prefix + "/")
+    index = await response.json()
+
+    for (; n_received < index["count"]; n_received++) {
+        const msg = index["messages"][n_received]
+
+        let row = indexrows.insertRow()
+        let cell = row.insertCell()
+        cell.textContent = msg["idx"]
+        cell = row.insertCell()
+        cell.textContent = msg["receivedAt"]
+        cell = row.insertCell()
+        cell.textContent = msg["from"]
+        cell = row.insertCell()
+        cell.textContent = msg["to"]
+        cell = row.insertCell()
+        cell.textContent = msg["subject"]
+        cell = row.insertCell()
+        cell.innerHTML = `<button onclick="javascript:showDetails(${n_received})">Show</button>`
+    }
+}
+
+async function showDetails(idx) {
+    response = await fetch(`${prefix}/${idx}`)
+    metadata = await response.json()
+    msgmeta.textContent = JSON.stringify(metadata, null, 2)
+
+    bodylink.href = `${prefix}/${idx}/body`
+
+    partlist.innerHTML=""
+
+    if (metadata["isMultipart"]) {
+        response = await fetch(`${prefix}/${idx}/multipart`)
+        multipart_meta = await response.json()
+        multimeta.textContent = JSON.stringify(multipart_meta, null, 2)
+
+        for (let i=0; i < multipart_meta["count"]; i++) {
+            let li = document.createElement("li")
+            li.innerHTML = `<a href="${prefix}/${idx}/multipart/${i}/body" target="_blank">Show Body of Part ${i}</a>`
+            partlist.append(li)
+        }
+    } else {
+        multimeta.textContent = "Not a multipart message"
+    }
+}
+
+updateIndex()
+setInterval(updateIndex, 1000)
+</script>
+
+</body>
+</html>

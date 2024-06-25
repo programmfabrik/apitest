@@ -2897,6 +2897,10 @@ the messages received by the SMTP server can be reproduced in JSON format.
 When both the SMTP server and the HTTP server are enabled, the following
 additional endpoints are made available on the HTTP server:
 
+#### /smtp/gui
+A very basic HTML/JavaScript GUI that displays and auto-refreshes the received
+messages is made available on the `/smtp/gui` endpoint.
+
 #### /smtp
 On the `/smtp` endpoint, an index of all received messages will be made
 available as JSON in the following schema:
