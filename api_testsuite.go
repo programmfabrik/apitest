@@ -53,7 +53,7 @@ type Suite struct {
 	reporterRoot    *report.ReportElement
 	index           int
 	serverURL       *url.URL
-	httpServer      http.Server
+	httpServer      *http.Server
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
@@ -185,12 +185,11 @@ func (ats *Suite) Run() bool {
 	defer ats.StopSmtpServer()
 
 	ats.StartHttpServer()
-	// FIXME: Defer stop
+	defer ats.StopHttpServer()
 
 	err := os.Chdir(ats.manifestDir)
 	if err != nil {
-		// FIXME: This should be a fatal error - also check other occurrences of Error/Errorf
-		logrus.Errorf("Unable to switch working directory to %q", ats.manifestDir)
+		logrus.Fatalf("Unable to switch working directory to %q", ats.manifestDir)
 	}
 
 	start := time.Now()
@@ -230,8 +229,6 @@ func (ats *Suite) Run() bool {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 		}
 	}
-
-	ats.StopHttpServer()
 
 	return success
 }

@@ -47,4 +47,6 @@ func (ats *Suite) StopSmtpServer() {
 	} else if !ats.Config.LogShort {
 		logrus.Info("SMTP Server stopped")
 	}
+
+	ats.smtpServer = nil
 }

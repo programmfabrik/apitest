@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
@@ -19,12 +20,11 @@ import (
 // StartHttpServer start a simple http server that can server local test resources during the testsuite is running
 func (ats *Suite) StartHttpServer() {
 
-	// FIXME: This doesn't check if the http server is already initialized
-	if ats.HttpServer == nil {
+	if ats.HttpServer == nil || ats.httpServer != nil {
 		return
 	}
 
-	// TODO: Find out what idleConnsClosed does and if SMTP server needs it too
+	// TODO: Can we remove idleConnsClosed, because it does not seem to do anything?
 	ats.idleConnsClosed = make(chan struct{})
 	mux := http.NewServeMux()
 
@@ -55,7 +55,7 @@ func (ats *Suite) StartHttpServer() {
 		ats.smtpServer.RegisterRoutes(mux, "/", ats.Config.LogShort)
 	}
 
-	ats.httpServer = http.Server{
+	ats.httpServer = &http.Server{
 		Addr:    ats.HttpServer.Addr,
 		Handler: mux,
 	}
@@ -66,11 +66,9 @@ func (ats *Suite) StartHttpServer() {
 		}
 
 		err := ats.httpServer.ListenAndServe()
-		if err != http.ErrServerClosed { // FIXME: Use errors.Is
+		if !errors.Is(err, http.ErrServerClosed) {
 			// Error starting or closing listener:
-			// FIXME: Use logrus.Fatal
-			logrus.Errorf("HTTP server ListenAndServe: %v", err)
-			return // FIXME: This is redundant
+			logrus.Fatal("HTTP server ListenAndServe:", err)
 		}
 	}
 
@@ -102,11 +100,9 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 // StopHttpServer stop the http server that was started for this test suite
 func (ats *Suite) StopHttpServer() {
 
-	if ats.HttpServer == nil {
+	if ats.HttpServer == nil || ats.httpServer == nil {
 		return
 	}
-
-	// FIXME: There is no nil check for ats.httpServer; no protection against calling twice
 
 	err := ats.httpServer.Shutdown(context.Background())
 	if err != nil {
@@ -117,7 +113,8 @@ func (ats *Suite) StopHttpServer() {
 	} else if !ats.Config.LogShort {
 		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
 	}
-	return // FIXME: This is redundant
+
+	ats.httpServer = nil
 }
 
 type ErrorResponse struct {
