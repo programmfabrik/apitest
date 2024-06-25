@@ -2906,17 +2906,36 @@ available as JSON in the following schema:
   "count": 3,
   "messages": [
     {
+      "from": [
+        "testsender@programmfabrik.de"
+      ],
       "idx": 0,
-      "receivedAt": "2024-06-25T11:24:53.107711137+02:00"
+      "receivedAt": "2024-06-25T14:40:11.711406798+02:00",
+      "to": [
+        "testreceiver@programmfabrik.de"
+      ]
     },
     {
+      "from": [
+        "testsender2@programmfabrik.de"
+      ],
       "idx": 1,
-      "receivedAt": "2024-06-25T11:24:53.108169724+02:00"
+      "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
+      "subject": "Example Message",
+      "to": [
+        "testreceiver2@programmfabrik.de"
+      ]
     },
     {
+      "from": [
+        "testsender3@programmfabrik.de"
+      ],
       "idx": 2,
-      "receivedAt": "2024-06-25T11:24:53.10842649+02:00"
-    }
+      "receivedAt": "2024-06-25T14:40:11.711931701+02:00",
+      "to": [
+        "testreceiver3@programmfabrik.de"
+      ]
+    },
   ]
 }
 ```
@@ -2928,6 +2947,9 @@ the corresponding index is made available as JSON:
 ```json
 {
   "body_size": 306,
+  "from": [
+    "testsender2@programmfabrik.de"
+  ],
   "headers": {
     "Content-Type": [
       "multipart/mixed; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
@@ -2949,7 +2971,11 @@ the corresponding index is made available as JSON:
     ]
   },
   "idx": 1,
-  "receivedAt": "2024-06-25T11:24:53.108169724+02:00"
+  "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
+  "subject": "Example Message",
+  "to": [
+    "testreceiver2@programmfabrik.de"
+  ]
 }
 ```
 
