@@ -66,6 +66,8 @@ func NewReceivedMessage(
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
+	preprocessHeaders(parsedMsg.Header)
+
 	body, err := io.ReadAll(wrapBodyReader(parsedMsg.Body, parsedMsg.Header, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message body: %w", err)
@@ -165,6 +167,8 @@ func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*Recei
 		maxMessageSize = DefaultMaxMessageSize
 	}
 
+	preprocessHeaders(p.Header)
+
 	body, err := io.ReadAll(wrapBodyReader(p, p.Header, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message part body: %w", err)
@@ -177,6 +181,23 @@ func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*Recei
 	}
 
 	return part, nil
+}
+
+// preprocessHeaders modifies the given headers in-place by decoding
+// header values that were encoded according to RFC2047.
+func preprocessHeaders(headers map[string][]string) {
+	var decoder mime.WordDecoder
+
+	for _, vs := range headers {
+		for i := range vs {
+			dec, err := decoder.DecodeHeader(vs[i])
+			if err != nil {
+				logrus.Warn("could not decode Q-Encoding in header:", err)
+			} else {
+				vs[i] = dec
+			}
+		}
+	}
 }
 
 // wrapBodyReader wraps the reader for a message / part body with size

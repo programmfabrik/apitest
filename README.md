@@ -2940,6 +2940,8 @@ available as JSON in the following schema:
 }
 ```
 
+Headers that were encoded according to RFC2047 are decoded first.
+
 #### /smtp/$idx
 On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with
 the corresponding index is made available as JSON:
@@ -2978,6 +2980,8 @@ the corresponding index is made available as JSON:
   ]
 }
 ```
+
+Headers that were encoded according to RFC2047 are decoded first.
 
 #### /smtp/$idx/body
 On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the message body
@@ -3033,6 +3037,8 @@ metadata about the multipart with the corresponding index is made available:
   "idx": 0
 }
 ```
+
+Headers that were encoded according to RFC2047 are decoded first.
 
 #### /smtp/$idx/multipart/$partIdx/body
 On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
