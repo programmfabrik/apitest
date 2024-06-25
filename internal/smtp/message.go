@@ -2,16 +2,20 @@ package smtp
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
+	"mime/quotedprintable"
 	"net/mail"
 	"net/textproto"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // ReceivedMessage contains a single email message as received via SMTP.
@@ -62,7 +66,7 @@ func NewReceivedMessage(
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(parsedMsg.Body, maxMessageSize))
+	body, err := io.ReadAll(wrapBodyReader(parsedMsg.Body, parsedMsg.Header, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message body: %w", err)
 	}
@@ -99,7 +103,7 @@ func NewReceivedMessage(
 		r := multipart.NewReader(bytes.NewReader(msg.body), boundary)
 
 		for i := 0; ; i++ {
-			rawPart, err := r.NextPart()
+			rawPart, err := r.NextRawPart()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					break
@@ -161,7 +165,7 @@ func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*Recei
 		maxMessageSize = DefaultMaxMessageSize
 	}
 
-	body, err := io.ReadAll(io.LimitReader(p, maxMessageSize))
+	body, err := io.ReadAll(wrapBodyReader(p, p.Header, maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not read message part body: %w", err)
 	}
@@ -173,6 +177,31 @@ func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*Recei
 	}
 
 	return part, nil
+}
+
+// wrapBodyReader wraps the reader for a message / part body with size
+// limitation and quoted-printable/base64 decoding (the latter based on
+// the Content-Transfer-Encoding header, if any is set).
+func wrapBodyReader(r io.Reader, headers map[string][]string, maxMessageSize int64) io.Reader {
+	r = io.LimitReader(r, maxMessageSize)
+
+	enc, ok := headers["Content-Transfer-Encoding"]
+	if ok {
+		if len(enc) != 1 {
+			logrus.Error("Content-Transfer-Encoding must have exactly one value")
+		}
+
+		switch enc[0] {
+		case "base64":
+			r = base64.NewDecoder(base64.StdEncoding, r)
+		case "quoted-printable":
+			r = quotedprintable.NewReader(r)
+		default:
+			logrus.Errorf("encountered unknown Content-Transfer-Encoding %q", enc)
+		}
+	}
+
+	return r
 }
 
 // =======
