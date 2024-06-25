@@ -181,6 +181,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "testmode": false
     },
 
+    // Optional temporary SMTP Server (see below)
+    "smtp_server": {
+        "addr": ":9025",
+        "max_message_size": 1000000,
+    },
+
     // Specify a unique log behavior only for this single test.
     "log_network": true,
     "log_verbose": false,
@@ -2857,4 +2863,149 @@ The expected response:
 ```
 
 ## SMTP Server
-TODO: Add section about SMTP Server
+### Summary and Configuration
+The apitest tool can run a mock SMTP server intended to catch locally sent
+emails for testing purposes.
+
+To add the SMTP Server to your test, put the following in your manifest:
+
+```yaml
+{
+    "smtp_server": {
+        "addr":             ":9025", // address to listen on
+        "max_message_size": 1000000  // maximum accepted message size in bytes
+                                     // (defaults to 30MiB)
+    }
+}
+```
+
+The server will then listen on the specified address for incoming emails.
+Incoming messages are stored in memory and can be accessed using the HTTP
+endpoints described further below. No authentication is performed when
+receiving messages.
+
+If the test mode is enabled on the HTTP server and an SMTP server is also
+configured, both the HTTP and the SMTP server will be available during
+interactive testing.
+
+### HTTP Endpoints
+On its own, the SMTP server has only limited use, e.g. as an email sink for
+applications that require such an email sink to function. But when combined
+with the HTTP server (see above in section [HTTP Server](#http-server)),
+the messages received by the SMTP server can be reproduced in JSON format.
+
+When both the SMTP server and the HTTP server are enabled, the following
+additional endpoints are made available on the HTTP server:
+
+#### /smtp
+On the `/smtp` endpoint, an index of all received messages will be made
+available as JSON in the following schema:
+
+```json
+{
+  "count": 3,
+  "messages": [
+    {
+      "idx": 0,
+      "receivedAt": "2024-06-25T11:24:53.107711137+02:00"
+    },
+    {
+      "idx": 1,
+      "receivedAt": "2024-06-25T11:24:53.108169724+02:00"
+    },
+    {
+      "idx": 2,
+      "receivedAt": "2024-06-25T11:24:53.10842649+02:00"
+    }
+  ]
+}
+```
+
+#### /smtp/$idx
+On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with
+the corresponding index is made available as JSON:
+
+```json
+{
+  "body_size": 306,
+  "headers": {
+    "Content-Type": [
+      "multipart/mixed; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
+    ],
+    "Date": [
+      "Tue, 25 Jun 2024 11:15:57 +0200"
+    ],
+    "From": [
+      "testsender2@programmfabrik.de"
+    ],
+    "Mime-Version": [
+      "1.0"
+    ],
+    "Subject": [
+      "Example Message"
+    ],
+    "To": [
+      "testreceiver2@programmfabrik.de"
+    ]
+  },
+  "idx": 1,
+  "receivedAt": "2024-06-25T11:24:53.108169724+02:00"
+}
+```
+
+#### /smtp/$idx/body
+On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the raw message body
+(excluding message headers, including multipart part headers) is made availabe
+for the message with the corresponding index.
+
+#### /smtp/$idx/multipart
+For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g.
+`/smtp/1/multipart`) will contain an index of that messages multiparts in the
+following schema:
+
+```json
+{
+  "count": 2,
+  "multiparts": [
+    {
+      "body_size": 15,
+      "headers": {
+        "Content-Type": [
+          "text/plain; charset=utf-8"
+        ]
+      },
+      "idx": 0
+    },
+    {
+      "body_size": 39,
+      "headers": {
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ]
+      },
+      "idx": 1
+    }
+  ]
+}
+```
+
+#### /smtp/$idx/multipart/$partIdx
+On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`),
+metadata about the multipart with the corresponding index is made available:
+
+```json
+{
+  "body_size": 15,
+  "headers": {
+    "Content-Type": [
+      "text/plain; charset=utf-8"
+    ]
+  },
+  "idx": 0
+}
+```
+
+#### /smtp/$idx/multipart/$partIdx/body
+On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
+`/smtp/1/multipart/0/body`), the raw body of the multipart (excluding headers)
+is made available.
