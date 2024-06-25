@@ -2910,6 +2910,7 @@ available as JSON in the following schema:
         "testsender@programmfabrik.de"
       ],
       "idx": 0,
+      "isMultipart": false,
       "receivedAt": "2024-06-25T14:40:11.711406798+02:00",
       "to": [
         "testreceiver@programmfabrik.de"
@@ -2920,6 +2921,7 @@ available as JSON in the following schema:
         "testsender2@programmfabrik.de"
       ],
       "idx": 1,
+      "isMultipart": true,
       "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
       "subject": "Example Message",
       "to": [
@@ -2931,6 +2933,7 @@ available as JSON in the following schema:
         "testsender3@programmfabrik.de"
       ],
       "idx": 2,
+      "isMultipart": false,
       "receivedAt": "2024-06-25T14:40:11.711931701+02:00",
       "to": [
         "testreceiver3@programmfabrik.de"
@@ -2973,6 +2976,7 @@ the corresponding index is made available as JSON:
     ]
   },
   "idx": 1,
+  "isMultipart": true,
   "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
   "subject": "Example Message",
   "to": [
