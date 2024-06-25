@@ -1,7 +1,9 @@
 package smtp
 
 import (
+	_ "embed"
 	"fmt"
+	"html/template"
 	"net/http"
 	"path"
 	"regexp"
@@ -9,7 +11,12 @@ import (
 	"strings"
 
 	"github.com/programmfabrik/apitest/internal/handlerutil"
+	"github.com/sirupsen/logrus"
 )
+
+//go:embed gui.html
+var guiTemplateSrc string
+var guiTemplate = template.Must(template.New("gui").Parse(guiTemplateSrc))
 
 type smtpHTTPHandler struct {
 	server *Server
@@ -41,8 +48,14 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(path, "/")
 	fmt.Println(pathParts)
 
-	// We know that pathParts must have at least length 1, since empty path
+	// We now know that pathParts must have at least length 1, since empty path
 	// was already handled above.
+
+	if pathParts[0] == "gui" {
+		h.handleGUI(w, r)
+		return
+	}
+
 	idx, err := strconv.Atoi(pathParts[0])
 	if err != nil {
 		handlerutil.RespondWithErr(
@@ -88,6 +101,15 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If routing failed, return status 404.
 	w.WriteHeader(http.StatusNotFound)
+}
+
+func (h *smtpHTTPHandler) handleGUI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
+	err := guiTemplate.Execute(w, map[string]any{"prefix": h.prefix})
+	if err != nil {
+		logrus.Error("error rendering GUI:", err)
+	}
 }
 
 func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Request) {
