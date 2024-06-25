@@ -256,8 +256,9 @@ func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *Rec
 
 func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	out := map[string]any{
-		"idx":        msg.Index(),
-		"receivedAt": msg.ReceivedAt(),
+		"idx":         msg.Index(),
+		"isMultipart": msg.IsMultipart(),
+		"receivedAt":  msg.ReceivedAt(),
 	}
 
 	from, ok := msg.Headers()["From"]
