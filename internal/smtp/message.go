@@ -16,6 +16,8 @@ import (
 
 // ReceivedMessage contains a single email message as received via SMTP.
 type ReceivedMessage struct {
+	index int
+
 	smtpFrom       string
 	smtpRcptTo     []string
 	rawMessageData []byte
@@ -34,6 +36,8 @@ type ReceivedMessage struct {
 // ReceivedPart contains a single part of a multipart message as received
 // via SMTP.
 type ReceivedPart struct {
+	index int
+
 	headers textproto.MIMEHeader
 	body    []byte
 }
@@ -45,6 +49,7 @@ type ReceivedPart struct {
 // If a maxMessageSize of 0 is given, this function will default to using
 // DefaultMaxMessageSize.
 func NewReceivedMessage(
+	index int,
 	from string, rcptTo []string, rawMessageData []byte, receivedAt time.Time,
 	maxMessageSize int64,
 ) (*ReceivedMessage, error) {
@@ -63,6 +68,7 @@ func NewReceivedMessage(
 	}
 
 	msg := &ReceivedMessage{
+		index:          index,
 		smtpFrom:       from,
 		smtpRcptTo:     rcptTo,
 		rawMessageData: rawMessageData,
@@ -92,7 +98,7 @@ func NewReceivedMessage(
 
 		r := multipart.NewReader(bytes.NewReader(msg.body), boundary)
 
-		for {
+		for i := 0; ; i++ {
 			rawPart, err := r.NextPart()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
@@ -102,7 +108,7 @@ func NewReceivedMessage(
 				}
 			}
 
-			part, err := NewReceivedPart(rawPart, maxMessageSize)
+			part, err := NewReceivedPart(i, rawPart, maxMessageSize)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse message part: %w", err)
 			}
@@ -150,7 +156,7 @@ func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart
 // Incoming data is truncated after the given maximum message size.
 // If a maxMessageSize of 0 is given, this function will default to using
 // DefaultMaxMessageSize.
-func NewReceivedPart(p *multipart.Part, maxMessageSize int64) (*ReceivedPart, error) {
+func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*ReceivedPart, error) {
 	if maxMessageSize == 0 {
 		maxMessageSize = DefaultMaxMessageSize
 	}
@@ -161,6 +167,7 @@ func NewReceivedPart(p *multipart.Part, maxMessageSize int64) (*ReceivedPart, er
 	}
 
 	part := &ReceivedPart{
+		index:   index,
 		headers: p.Header,
 		body:    body,
 	}
@@ -182,6 +189,10 @@ func (m *ReceivedMessage) Body() []byte {
 
 func (m *ReceivedMessage) Headers() mail.Header {
 	return m.headers
+}
+
+func (m *ReceivedMessage) Index() int {
+	return m.index
 }
 
 func (m *ReceivedMessage) IsMultipart() bool {
@@ -214,4 +225,8 @@ func (p *ReceivedPart) Body() []byte {
 
 func (p *ReceivedPart) Headers() textproto.MIMEHeader {
 	return p.headers
+}
+
+func (p *ReceivedPart) Index() int {
+	return p.index
 }

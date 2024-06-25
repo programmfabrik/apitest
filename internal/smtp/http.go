@@ -101,14 +101,13 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	if headerSearchRgx == nil {
 		receivedMessages = h.server.ReceivedMessages()
 	} else {
-		// FIXME: This does not preserve the correct indexes!
 		receivedMessages = h.server.SearchByHeader(headerSearchRgx)
 	}
 
 	messagesOut := make([]any, 0)
 
-	for i, msg := range receivedMessages {
-		messagesOut = append(messagesOut, buildMessageBasicMeta(msg, i))
+	for _, msg := range receivedMessages {
+		messagesOut = append(messagesOut, buildMessageBasicMeta(msg))
 	}
 
 	out := make(map[string]any)
@@ -124,7 +123,7 @@ func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	out := buildMessageBasicMeta(msg, idx)
+	out := buildMessageBasicMeta(msg)
 
 	out["body_size"] = len(msg.Body())
 
@@ -169,14 +168,13 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 	if headerSearchRgx == nil {
 		multiparts = msg.Multiparts()
 	} else {
-		// FIXME: This does not preserve the correct indexes!
 		multiparts = msg.SearchPartsByHeader(headerSearchRgx)
 	}
 
 	multipartsOut := make([]any, 0)
 
-	for i, part := range multiparts {
-		multipartsOut = append(multipartsOut, buildMultipartMeta(part, i))
+	for _, part := range multiparts {
+		multipartsOut = append(multipartsOut, buildMultipartMeta(part))
 	}
 
 	out := make(map[string]any)
@@ -201,7 +199,7 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 		return
 	}
 
-	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part, partIdx))
+	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
 }
 
 func (h *smtpHTTPHandler) handleMultipartBody(
@@ -256,16 +254,16 @@ func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *Rec
 	return msg.Multiparts()[partIdx]
 }
 
-func buildMessageBasicMeta(msg *ReceivedMessage, idx int) map[string]any {
+func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	return map[string]any{
-		"idx":        idx,
+		"idx":        msg.Index(),
 		"receivedAt": msg.ReceivedAt(),
 	}
 }
 
-func buildMultipartMeta(part *ReceivedPart, partIdx int) map[string]any {
+func buildMultipartMeta(part *ReceivedPart) map[string]any {
 	out := map[string]any{
-		"idx":       partIdx,
+		"idx":       part.Index(),
 		"body_size": len(part.Body()),
 	}
 
