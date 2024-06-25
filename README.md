@@ -2954,9 +2954,12 @@ the corresponding index is made available as JSON:
 ```
 
 #### /smtp/$idx/body
-On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the raw message body
+On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the message body
 (excluding message headers, including multipart part headers) is made availabe
 for the message with the corresponding index.
+
+If the message was sent with a `Content-Transfer-Encoding` of either `base64`
+or `quoted-printable`, the endpoint returns the decoded body.
 
 #### /smtp/$idx/multipart
 For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g.
@@ -3007,5 +3010,8 @@ metadata about the multipart with the corresponding index is made available:
 
 #### /smtp/$idx/multipart/$partIdx/body
 On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
-`/smtp/1/multipart/0/body`), the raw body of the multipart (excluding headers)
+`/smtp/1/multipart/0/body`), the body of the multipart (excluding headers)
 is made available.
+
+If the multipart was sent with a `Content-Transfer-Encoding` of either `base64`
+or `quoted-printable`, the endpoint returns the decoded body.
