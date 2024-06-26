@@ -18,10 +18,12 @@ func searchByHeaderCommon(headerIdxList []map[string][]string, re *regexp.Regexp
 }
 
 func anyHeaderMatches(headers map[string][]string, re *regexp.Regexp) bool {
-	for k, v := range headers {
-		header := fmt.Sprintf("%s: %s", k, v)
-		if re.MatchString(header) {
-			return true
+	for k, vs := range headers {
+		for _, v := range vs {
+			header := fmt.Sprintf("%s: %s", k, v)
+			if re.MatchString(header) {
+				return true
+			}
 		}
 	}
 
