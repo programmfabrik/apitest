@@ -26,6 +26,8 @@ type Server struct {
 	maxMessageSize int64
 
 	mutex sync.RWMutex
+
+	clock func() time.Time // making clock mockable for unit testing
 }
 
 type session struct {
@@ -50,6 +52,7 @@ func NewServer(addr string, maxMessageSize int64) *Server {
 
 	server := &Server{
 		maxMessageSize: maxMessageSize,
+		clock:          time.Now,
 	}
 
 	backend := smtp.BackendFunc(func(c *smtp.Conn) (smtp.Session, error) {
@@ -154,7 +157,7 @@ func (s *session) Data(r io.Reader) error {
 	defer s.server.mutex.Unlock()
 
 	idx := len(s.server.receivedMessages)
-	now := time.Now()
+	now := s.server.clock()
 
 	logrus.Infof("SMTP: Receiving message from %s to %v at %v", s.from, s.rcptTo, now)
 	msg, err := NewReceivedMessage(
