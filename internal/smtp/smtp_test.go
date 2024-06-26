@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"net"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -29,11 +30,144 @@ func TestMessageParsing(t *testing.T) {
 }
 
 func TestMessageSearch(t *testing.T) {
-	t.Fatal("not implemented")
+	testCases := []struct {
+		queries         []string
+		expectedIndices []int
+	}{
+		{
+			queries:         []string{``},
+			expectedIndices: []int{0, 1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		{
+			queries: []string{
+				`Content`,
+				`Content-Type`,
+				`^Content`,
+				`^Content-Type`,
+				`Content-Type:.*`,
+				`^Content-Type:.*$`,
+			},
+			expectedIndices: []int{1, 2, 3, 4, 5, 8},
+		},
+		{
+			queries: []string{
+				`^Transfer`,
+				`X-Funky-Header`,
+			},
+			expectedIndices: []int{},
+		},
+		{
+			queries: []string{
+				`Transfer`,
+				`Content-Transfer-Encoding`,
+				`^Content-Transfer`,
+				`Content-Transfer-Encoding:.*`,
+				`^Content-Transfer-Encoding:.*$`,
+			},
+			expectedIndices: []int{3, 4},
+		},
+		{
+			queries: []string{
+				`base64`,
+				`Content-Transfer-Encoding: base64`,
+				`^Content-Transfer-Encoding: base64$`,
+			},
+			expectedIndices: []int{3},
+		},
+		{
+			queries: []string{
+				`Subject: .*[äöüÄÖÜ]`,
+				`^Subject: .*[äöüÄÖÜ]`,
+				`Tästmail`,
+			},
+			expectedIndices: []int{6, 7},
+		},
+	}
+
+	for i := range testCases {
+		testCase := testCases[i]
+
+		for j := range testCase.queries {
+			query := testCase.queries[j]
+			t.Run(query, func(t *testing.T) {
+				re := regexp.MustCompile(query)
+				actual := server.SearchByHeader(re)
+
+				actualIndices := make([]int, len(actual))
+				for ai, av := range actual {
+					actualIndices[ai] = av.index
+				}
+				assert.ElementsMatch(t, testCase.expectedIndices, actualIndices)
+			})
+		}
+	}
 }
 
 func TestMultipartSearch(t *testing.T) {
-	t.Fatal("not implemented")
+	// This test uses message #8 for all of its tests.
+
+	testCases := []struct {
+		queries         []string
+		expectedIndices []int
+	}{
+		{
+			queries: []string{
+				"From",
+				"Testmail",
+			},
+			expectedIndices: []int{},
+		},
+		{
+			queries: []string{
+				"X-Funky-Header",
+				"Content-Transfer-Encoding",
+			},
+			expectedIndices: []int{0, 1},
+		},
+		{
+			queries: []string{
+				"X-Funky-Header: Käse",
+				"X-Funky-Header: K[äöü]se",
+				"^X-Funky-Header: Käse$",
+				"Content-Transfer-Encoding: quoted-printable",
+				"^Content-Transfer.* quoted",
+				"quoted-printable",
+			},
+			expectedIndices: []int{1},
+		},
+		{
+			queries: []string{
+				"X-Funky-Header: Tästmail mit Ümlauten im Header",
+				"X-Funky-Header: .*Ü",
+				"Content-Transfer-Encoding: base64",
+				"^Content-Transfer.* base64",
+				"base64",
+			},
+			expectedIndices: []int{0},
+		},
+	}
+
+	for i := range testCases {
+		testCase := testCases[i]
+
+		for j := range testCase.queries {
+			query := testCase.queries[j]
+			t.Run(query, func(t *testing.T) {
+				re := regexp.MustCompile(query)
+
+				msg, err := server.ReceivedMessage(8)
+				require.NoError(t, err)
+
+				actual := msg.SearchPartsByHeader(re)
+
+				actualIndices := make([]int, len(actual))
+				for ai, av := range actual {
+					actualIndices[ai] = av.index
+				}
+				assert.ElementsMatch(t, testCase.expectedIndices, actualIndices)
+			})
+		}
+	}
 }
 
 func assertHeadersEqual(t *testing.T, expected, actual map[string][]string) {
