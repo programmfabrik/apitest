@@ -232,6 +232,9 @@ func runTestSession() *Server {
 		panic(err)
 	}
 
+	// give the server some time to process
+	time.Sleep(time.Second)
+
 	return server
 }
 
