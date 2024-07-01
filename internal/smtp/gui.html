@@ -46,6 +46,11 @@ main > p:first-of-type { padding-top: 0; margin-top: 0; }
         </p>
 
 	<p>
+            <strong>Raw Message:</strong><br>
+            <a id="rawlink" href="javascript:void(0)" target="_blank">Download</a>
+	</p>
+
+	<p>
             <strong>Body:</strong><br>
             <a id="bodylink" href="javascript:void(0)" target="_blank">Show</a>
 	</p>
@@ -70,6 +75,7 @@ const indexrows = document.getElementById("indexrows")
 const msgmeta = document.getElementById("msgmeta")
 const multimeta = document.getElementById("multimeta")
 const partlist = document.getElementById("partlist")
+const rawlink = document.getElementById("rawlink")
 
 let n_received = 0
 let index = {"count": 0, "messages": []}
@@ -103,6 +109,7 @@ async function showDetails(idx) {
     msgmeta.textContent = JSON.stringify(metadata, null, 2)
 
     bodylink.href = `${prefix}/${idx}/body`
+    rawlink.href = `${prefix}/${idx}/raw`
 
     partlist.innerHTML=""
 
