@@ -195,7 +195,7 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if headerSearchRgx == nil {
-		multiparts = msg.Multiparts()
+		multiparts = msg.Content().Multiparts()
 	} else {
 		multiparts = msg.SearchPartsByHeader(headerSearchRgx)
 	}
@@ -286,7 +286,7 @@ func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, idx int) *Recei
 // If found, returns the part. If not found, responds with Status 404
 // and returns nil.
 func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *ReceivedPart {
-	multiparts := msg.Multiparts()
+	multiparts := msg.Content().Multiparts()
 
 	if partIdx >= len(multiparts) {
 		handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
@@ -295,7 +295,7 @@ func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *Rec
 		return nil
 	}
 
-	return msg.Multiparts()[partIdx]
+	return multiparts[partIdx]
 }
 
 func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {

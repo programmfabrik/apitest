@@ -188,12 +188,6 @@ func assertMessageEqual(t *testing.T, expected, actual *ReceivedMessage) {
 	assert.Equal(t, expected.receivedAt, actual.receivedAt)
 
 	assertContentEqual(t, expected.content, actual.content)
-
-	if assert.Equal(t, len(expected.multiparts), len(actual.multiparts)) {
-		for i, m := range expected.multiparts {
-			assertMultipartEqual(t, m, actual.multiparts[i])
-		}
-	}
 }
 
 func assertMultipartEqual(t *testing.T, expected, actual *ReceivedPart) {
@@ -208,6 +202,12 @@ func assertContentEqual(t *testing.T, expected, actual *ReceivedContent) {
 	assert.Equal(t, expected.isMultipart, actual.isMultipart)
 
 	assertHeadersEqual(t, expected.headers, actual.headers)
+
+	if assert.Equal(t, len(expected.multiparts), len(actual.multiparts)) {
+		for i, m := range expected.multiparts {
+			assertMultipartEqual(t, m, actual.multiparts[i])
+		}
+	}
 }
 
 // runTestSession starts a Server, runs a pre-recorded SMTP session,
@@ -315,31 +315,31 @@ Trailing text is ignored.`),
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-			},
-			multiparts: []*ReceivedPart{
-				{
-					index: 0,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type": {"text/plain; charset=utf-8"},
-						},
-						body:        []byte(`Some plain text`),
-						contentType: "text/plain",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+				multiparts: []*ReceivedPart{
+					{
+						index: 0,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type": {"text/plain; charset=utf-8"},
+							},
+							body:        []byte(`Some plain text`),
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
-				},
-				{
-					index: 1,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type": {"text/html; charset=utf-8"},
-						},
-						body:        []byte(`Some <b>text</b> <i>in</i> HTML format.`),
-						contentType: "text/html",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+					{
+						index: 1,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type": {"text/html; charset=utf-8"},
+							},
+							body:        []byte(`Some <b>text</b> <i>in</i> HTML format.`),
+							contentType: "text/html",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
 				},
@@ -473,34 +473,34 @@ d-printable.
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-			},
-			multiparts: []*ReceivedPart{
-				{
-					index: 0,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type":              {"text/plain; charset=utf-8"},
-							"Content-Transfer-Encoding": {"base64"},
-						},
-						body: []byte(`Eine base64-enkodierte Testmail mit nicht-ASCII-Zeichen: äöüß
+				multiparts: []*ReceivedPart{
+					{
+						index: 0,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":              {"text/plain; charset=utf-8"},
+								"Content-Transfer-Encoding": {"base64"},
+							},
+							body: []byte(`Eine base64-enkodierte Testmail mit nicht-ASCII-Zeichen: äöüß
 `),
-						contentType: "text/plain",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
-				},
-				{
-					index: 1,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type":              {"text/plain; charset=utf-8"},
-							"Content-Transfer-Encoding": {"quoted-printable"},
-						},
-						body:        []byte(`Noch eine Testmail mit äöüß, diesmal enkodiert in quoted-printable.`),
-						contentType: "text/plain",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+					{
+						index: 1,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":              {"text/plain; charset=utf-8"},
+								"Content-Transfer-Encoding": {"quoted-printable"},
+							},
+							body:        []byte(`Noch eine Testmail mit äöüß, diesmal enkodiert in quoted-printable.`),
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
 				},
@@ -604,36 +604,36 @@ d-printable.
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-			},
-			multiparts: []*ReceivedPart{
-				{
-					index: 0,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type":              {"text/plain; charset=utf-8"},
-							"Content-Transfer-Encoding": {"base64"},
-							"X-Funky-Header":            {"Tästmail mit Ümlauten im Header"},
-						},
-						body: []byte(`Eine base64-enkodierte Testmail mit nicht-ASCII-Zeichen: äöüß
+				multiparts: []*ReceivedPart{
+					{
+						index: 0,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":              {"text/plain; charset=utf-8"},
+								"Content-Transfer-Encoding": {"base64"},
+								"X-Funky-Header":            {"Tästmail mit Ümlauten im Header"},
+							},
+							body: []byte(`Eine base64-enkodierte Testmail mit nicht-ASCII-Zeichen: äöüß
 `),
-						contentType: "text/plain",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
-				},
-				{
-					index: 1,
-					content: &ReceivedContent{
-						headers: map[string][]string{
-							"Content-Type":              {"text/plain; charset=utf-8"},
-							"Content-Transfer-Encoding": {"quoted-printable"},
-							"X-Funky-Header":            {"Käse"},
-						},
-						body:        []byte(`Noch eine Testmail mit äöüß, diesmal enkodiert in quoted-printable.`),
-						contentType: "text/plain",
-						contentTypeParams: map[string]string{
-							"charset": "utf-8",
+					{
+						index: 1,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":              {"text/plain; charset=utf-8"},
+								"Content-Transfer-Encoding": {"quoted-printable"},
+								"X-Funky-Header":            {"Käse"},
+							},
+							body:        []byte(`Noch eine Testmail mit äöüß, diesmal enkodiert in quoted-printable.`),
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
 						},
 					},
 				},
@@ -641,13 +641,12 @@ d-printable.
 		},
 	}
 
-	appendCRLF := func(b []byte) []byte {
-		return []byte(string(b) + "\r\n")
-	}
-
-	formatRaw := func(b []byte) []byte {
-		return []byte(strings.ReplaceAll(string(b), "\n", "\r\n"))
-	}
+	// the following calls pre-format the test data defined above to match
+	// the actual output as produced when sending via SMTP and receiving again,
+	// with regards to things like line endings and trailing empty lines.
+	//
+	// Directly putting it into the testdata above would fail when checking into
+	// source control, if source control normalizes line endings.
 
 	for _, m := range messages {
 		m.rawMessageData = formatRaw(m.rawMessageData)
@@ -660,16 +659,34 @@ d-printable.
 			m.content.body = appendCRLF(m.content.body)
 		}
 
-		for _, p := range m.multiparts {
-			// Format multipart body only if not in base64 transfer encoding
-			cte, ok = p.content.headers["Content-Transfer-Encoding"]
-			if !ok || len(cte) != 1 || cte[0] != "base64" {
-				p.content.body = formatRaw(p.content.body)
-			}
-
-			// Multiparts do not add a trailing CRLF
-		}
+		formatMultipartContent(m.content.multiparts)
 	}
 
 	return messages
+}
+
+func appendCRLF(b []byte) []byte {
+	return []byte(string(b) + "\r\n")
+}
+
+func formatRaw(b []byte) []byte {
+	return []byte(strings.ReplaceAll(string(b), "\n", "\r\n"))
+}
+
+func formatMultipartContent[T ContentHaver](parts []T) {
+	for _, p := range parts {
+		content := p.Content()
+
+		// Format multipart body only if not in base64 transfer encoding
+		cte, ok := content.headers["Content-Transfer-Encoding"]
+		if !ok || len(cte) != 1 || cte[0] != "base64" {
+			content.body = formatRaw(content.body)
+		}
+
+		// Multiparts do not add a trailing CRLF
+
+		if len(content.multiparts) > 0 {
+			formatMultipartContent(content.multiparts)
+		}
+	}
 }
