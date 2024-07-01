@@ -148,12 +148,14 @@ func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	content := msg.Content()
+
 	out := buildMessageBasicMeta(msg)
 
-	out["body_size"] = len(msg.Body())
+	out["body_size"] = len(content.Body())
 
 	headers := make(map[string]any)
-	for k, v := range msg.Headers() {
+	for k, v := range content.Headers() {
 		headers[k] = v
 	}
 	out["headers"] = headers
@@ -167,12 +169,14 @@ func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	contentType, ok := msg.Headers()["Content-Type"]
+	content := msg.Content()
+
+	contentType, ok := content.Headers()["Content-Type"]
 	if ok {
 		w.Header()["Content-Type"] = contentType
 	}
 
-	w.Write(msg.Body())
+	w.Write(content.Body())
 }
 
 func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, idx int) {
@@ -234,20 +238,24 @@ func (h *smtpHTTPHandler) handleMultipartBody(
 	if msg == nil {
 		return
 	}
+
 	if !ensureIsMultipart(w, msg) {
 		return
 	}
+
 	part := retrievePart(w, msg, partIdx)
 	if part == nil {
 		return
 	}
 
-	contentType, ok := part.Headers()["Content-Type"]
+	content := part.Content()
+
+	contentType, ok := content.Headers()["Content-Type"]
 	if ok {
 		w.Header()["Content-Type"] = contentType
 	}
 
-	w.Write(part.Body())
+	w.Write(content.Body())
 }
 
 func (h *smtpHTTPHandler) handleRawMessageData(w http.ResponseWriter, r *http.Request, idx int) {
@@ -291,23 +299,25 @@ func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *Rec
 }
 
 func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
+	content := msg.Content()
+
 	out := map[string]any{
 		"idx":         msg.Index(),
-		"isMultipart": msg.IsMultipart(),
+		"isMultipart": content.IsMultipart(),
 		"receivedAt":  msg.ReceivedAt(),
 	}
 
-	from, ok := msg.Headers()["From"]
+	from, ok := content.Headers()["From"]
 	if ok {
 		out["from"] = from
 	}
 
-	to, ok := msg.Headers()["To"]
+	to, ok := content.Headers()["To"]
 	if ok {
 		out["to"] = to
 	}
 
-	subject, ok := msg.Headers()["Subject"]
+	subject, ok := content.Headers()["Subject"]
 	if ok && len(subject) == 1 {
 		out["subject"] = subject[0]
 	}
@@ -316,13 +326,15 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 }
 
 func buildMultipartMeta(part *ReceivedPart) map[string]any {
+	content := part.Content()
+
 	out := map[string]any{
 		"idx":       part.Index(),
-		"body_size": len(part.Body()),
+		"body_size": len(content.Body()),
 	}
 
 	headers := make(map[string]any)
-	for k, v := range part.Headers() {
+	for k, v := range content.Headers() {
 		headers[k] = v
 	}
 	out["headers"] = headers
@@ -334,7 +346,7 @@ func buildMultipartMeta(part *ReceivedPart) map[string]any {
 // message, returns true and does nothing further if so, returns false after
 // replying with Status 404 if not.
 func ensureIsMultipart(w http.ResponseWriter, msg *ReceivedMessage) bool {
-	if msg.IsMultipart() {
+	if msg.Content().IsMultipart() {
 		return true
 	}
 
