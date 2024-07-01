@@ -91,7 +91,7 @@ func TestMessageSearch(t *testing.T) {
 			query := testCase.queries[j]
 			t.Run(query, func(t *testing.T) {
 				re := regexp.MustCompile(query)
-				actual := server.SearchByHeader(re)
+				actual := SearchByHeader(server.ReceivedMessages(), re)
 
 				actualIndices := make([]int, len(actual))
 				for ai, av := range actual {
@@ -158,7 +158,7 @@ func TestMultipartSearch(t *testing.T) {
 				msg, err := server.ReceivedMessage(8)
 				require.NoError(t, err)
 
-				actual := msg.SearchPartsByHeader(re)
+				actual := SearchByHeader(msg.Content().Multiparts(), re)
 
 				actualIndices := make([]int, len(actual))
 				for ai, av := range actual {
