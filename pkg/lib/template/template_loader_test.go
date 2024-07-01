@@ -216,19 +216,18 @@ int64,string,"stringer,array","int64,array"`, ``, true},
 			res, err := loader.Render(root, "", nil)
 
 			if err == nil {
+				if testCase.expectErr {
+					t.Errorf("Error expected")
+				}
 				if string(res) != testCase.expected {
 					dmp := diffmatchpatch.New()
 
 					diffs := dmp.DiffMain(string(res), testCase.expected, false)
 
 					t.Errorf("Result differs: %s", dmp.DiffPrettyText(diffs))
-
 				}
 			} else {
-				if testCase.expectErr && err == nil {
-					t.Errorf("Error expected")
-				}
-				if !testCase.expectErr && err != nil {
+				if !testCase.expectErr {
 					t.Errorf("No error expected %q", err)
 				}
 			}

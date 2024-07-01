@@ -137,9 +137,9 @@ func (loader *Loader) Render(
 		// 	}
 		// 	return data, err
 		// },
-		"file":        loadFile(rootDir, loader),
+		"file":        loadFile(rootDir),
 		"file_render": loadFileAndRender(rootDir, loader),
-		"file_csv":    loadFileCSV(rootDir, loader),
+		"file_csv":    loadFileCSV(rootDir),
 		"file_sqlite": func(path, statement string) ([]map[string]any, error) {
 			sqliteFile := filepath.Join(rootDir, path)
 			database, err := sql.Open("sqlite3", sqliteFile)
