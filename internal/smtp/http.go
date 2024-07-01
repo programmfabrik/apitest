@@ -77,6 +77,9 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "multipart":
 			h.handleMultipartIndex(w, r, idx)
 			return
+		case "raw":
+			h.handleRawMessageData(w, r, idx)
+			return
 		}
 	case 3, 4:
 		if pathParts[1] == "multipart" {
@@ -245,6 +248,17 @@ func (h *smtpHTTPHandler) handleMultipartBody(
 	}
 
 	w.Write(part.Body())
+}
+
+func (h *smtpHTTPHandler) handleRawMessageData(w http.ResponseWriter, r *http.Request, idx int) {
+	msg := h.retrieveMessage(w, idx)
+	if msg == nil {
+		return
+	}
+
+	w.Header().Set("Content-Type", "message/rfc822")
+
+	w.Write(msg.RawMessageData())
 }
 
 // retrieveMessage tries to retrieve the ReceivedMessage with the given index.
