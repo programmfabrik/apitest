@@ -36,7 +36,7 @@ func TestMessageSearch(t *testing.T) {
 	}{
 		{
 			queries:         []string{``},
-			expectedIndices: []int{0, 1, 2, 3, 4, 5, 6, 7, 8},
+			expectedIndices: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 		},
 		{
 			queries: []string{
@@ -47,7 +47,7 @@ func TestMessageSearch(t *testing.T) {
 				`Content-Type:.*`,
 				`^Content-Type:.*$`,
 			},
-			expectedIndices: []int{1, 2, 3, 4, 5, 8},
+			expectedIndices: []int{1, 2, 3, 4, 5, 8, 9},
 		},
 		{
 			queries: []string{
@@ -633,6 +633,138 @@ d-printable.
 							contentType: "text/plain",
 							contentTypeParams: map[string]string{
 								"charset": "utf-8",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			index:      9,
+			smtpFrom:   "testsender10@programmfabrik.de",
+			smtpRcptTo: []string{"testreceiver10@programmfabrik.de"},
+			rawMessageData: []byte(`MIME-Version: 1.0
+From: testsender10@programmfabrik.de
+To: testreceiver10@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Nested Message
+Content-type: multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+
+Some plain text for clients that don't support multipart.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
+
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/plain; charset=ascii
+
+This is the first subpart.
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/html; charset=utf-8
+
+This is the <i>second</i> subpart.
+--710d3e95c17247d4bb35d621f25e094e--
+--d36c3118be4745f9a1cb4556d11fe92d--`),
+			receivedAt: testTime,
+			content: &ReceivedContent{
+				headers: map[string][]string{
+					"Mime-Version": {"1.0"},
+					"From":         {"testsender10@programmfabrik.de"},
+					"To":           {"testreceiver10@programmfabrik.de"},
+					"Date":         {"Tue, 25 Jun 2024 11:15:57 +0200"},
+					"Subject":      {"Example Nested Message"},
+					"Content-Type": {`multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"`},
+				},
+				body: []byte(`--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+
+Some plain text for clients that don't support multipart.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
+
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/plain; charset=ascii
+
+This is the first subpart.
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/html; charset=utf-8
+
+This is the <i>second</i> subpart.
+--710d3e95c17247d4bb35d621f25e094e--
+--d36c3118be4745f9a1cb4556d11fe92d--`),
+				contentType: "multipart/alternative",
+				contentTypeParams: map[string]string{
+					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
+				},
+				isMultipart: true,
+				multiparts: []*ReceivedPart{
+					{
+						index: 0,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type": {"text/plain; charset=utf-8"},
+							},
+							body: []byte(`Some plain text for clients that don't support multipart.`),
+
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
+						},
+					},
+					{
+						index: 1,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type": {`multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"`},
+							},
+							body: []byte(`--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/plain; charset=ascii
+
+This is the first subpart.
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/html; charset=utf-8
+
+This is the <i>second</i> subpart.
+--710d3e95c17247d4bb35d621f25e094e--`),
+
+							contentType: "multipart/mixed",
+							contentTypeParams: map[string]string{
+								"boundary": "710d3e95c17247d4bb35d621f25e094e",
+							},
+
+							isMultipart: true,
+							multiparts: []*ReceivedPart{
+								{
+									index: 0,
+									content: &ReceivedContent{
+										headers: map[string][]string{
+											"Content-Type": {"text/plain; charset=ascii"},
+										},
+										body: []byte(`This is the first subpart.`),
+
+										contentType: "text/plain",
+										contentTypeParams: map[string]string{
+											"charset": "ascii",
+										},
+									},
+								},
+								{
+									index: 1,
+									content: &ReceivedContent{
+										headers: map[string][]string{
+											"Content-Type": {"text/html; charset=utf-8"},
+										},
+										body: []byte(`This is the <i>second</i> subpart.`),
+
+										contentType: "text/html",
+										contentTypeParams: map[string]string{
+											"charset": "utf-8",
+										},
+									},
+								},
 							},
 						},
 					},

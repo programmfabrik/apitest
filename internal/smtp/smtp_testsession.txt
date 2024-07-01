@@ -133,5 +133,33 @@ Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.
 --d36c3118be4745f9a1cb4556d11fe92d--
 .
+MAIL FROM: testsender10@programmfabrik.de
+RCPT TO: testreceiver10@programmfabrik.de
+DATA
+MIME-Version: 1.0
+From: testsender10@programmfabrik.de
+To: testreceiver10@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Nested Message
+Content-type: multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+
+Some plain text for clients that don't support multipart.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
+
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/plain; charset=ascii
+
+This is the first subpart.
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/html; charset=utf-8
+
+This is the <i>second</i> subpart.
+--710d3e95c17247d4bb35d621f25e094e--
+--d36c3118be4745f9a1cb4556d11fe92d--
+.
 QUIT
 

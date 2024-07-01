@@ -2955,7 +2955,7 @@ the corresponding index is made available as JSON:
 
 ```json
 {
-  "body_size": 306,
+  "bodySize": 306,
   "from": [
     "testsender2@programmfabrik.de"
   ],
@@ -3012,46 +3012,50 @@ following schema:
   "count": 2,
   "multiparts": [
     {
-      "body_size": 15,
+      "bodySize": 15,
       "headers": {
         "Content-Type": [
           "text/plain; charset=utf-8"
         ]
       },
-      "idx": 0
+      "isMultipart": false
     },
     {
-      "body_size": 39,
+      "bodySize": 39,
       "headers": {
         "Content-Type": [
           "text/html; charset=utf-8"
         ]
       },
-      "idx": 1
+      "isMultipart": false
     }
   ]
 }
 ```
 
-#### /smtp/$idx/multipart/$partIdx
+#### /smtp/$idx[/multipart/$partIdx]+
 On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`),
 metadata about the multipart with the corresponding index is made available:
 
 ```json
 {
-  "body_size": 15,
+  "bodySize": 15,
   "headers": {
     "Content-Type": [
       "text/plain; charset=utf-8"
     ]
   },
-  "idx": 0
+  "idx": 0,
+  "isMultipart": false
 }
 ```
 
 Headers that were encoded according to RFC2047 are decoded first.
 
-#### /smtp/$idx/multipart/$partIdx/body
+The endpoint can be called recursively for nested multipart messages, e.g.
+`/smtp/1/multipart/0/multipart/1`.
+
+#### /smtp/$idx[/multipart/$partIdx]+/body
 On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
 `/smtp/1/multipart/0/body`), the body of the multipart (excluding headers)
 is made available.
@@ -3061,3 +3065,6 @@ or `quoted-printable`, the endpoint returns the decoded body.
 
 If the message was sent with a `Content-Type` header, it will be passed through
 to the HTTP response.
+
+The endpoint can be called recursively for nested multipart messages, e.g.
+`/smtp/1/multipart/0/multipart/1/body`.
