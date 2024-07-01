@@ -27,8 +27,6 @@ type ReceivedMessage struct {
 	receivedAt     time.Time
 
 	content *ReceivedContent
-
-	multiparts []*ReceivedPart
 }
 
 // ReceivedPart contains a single part of a multipart message as received
@@ -48,7 +46,13 @@ type ReceivedContent struct {
 	contentTypeParams map[string]string
 	isMultipart       bool
 
-	// TODO: Move multiparts here from ReceivedMessage in the next step
+	multiparts []*ReceivedPart
+}
+
+// ContentHaver makes it easier to write algorithms over types that have an
+// email message and/or multipart content.
+type ContentHaver interface {
+	Content() *ReceivedContent
 }
 
 // NewReceivedMessage parses a raw message as received via SMTP into a
@@ -85,33 +89,6 @@ func NewReceivedMessage(
 		content:        content,
 	}
 
-	if content.IsMultipart() {
-		boundary, ok := content.ContentTypeParams()["boundary"]
-		if !ok {
-			return nil, fmt.Errorf("encountered multipart message without defined boundary")
-		}
-
-		r := multipart.NewReader(bytes.NewReader(content.body), boundary)
-
-		for i := 0; ; i++ {
-			rawPart, err := r.NextRawPart()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					break
-				} else {
-					return nil, fmt.Errorf("could not read multipart: %w", err)
-				}
-			}
-
-			part, err := NewReceivedPart(i, rawPart, maxMessageSize)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse message part: %w", err)
-			}
-
-			msg.multiparts = append(msg.multiparts, part)
-		}
-	}
-
 	return msg, nil
 }
 
@@ -131,7 +108,7 @@ func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart
 		return nil
 	}
 
-	multiparts := m.Multiparts()
+	multiparts := m.content.Multiparts()
 
 	headerIdxList := make([]map[string][]string, len(multiparts))
 	for i, v := range multiparts {
@@ -200,6 +177,33 @@ func NewReceivedContent(
 		// since mime.ParseMediaType is documented to return the media type
 		// in lower case.
 		content.isMultipart = strings.HasPrefix(content.contentType, "multipart/")
+	}
+
+	if content.IsMultipart() {
+		boundary, ok := content.contentTypeParams["boundary"]
+		if !ok {
+			return nil, fmt.Errorf("encountered multipart message without defined boundary")
+		}
+
+		r := multipart.NewReader(bytes.NewReader(content.body), boundary)
+
+		for i := 0; ; i++ {
+			rawPart, err := r.NextRawPart()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				} else {
+					return nil, fmt.Errorf("could not read multipart: %w", err)
+				}
+			}
+
+			part, err := NewReceivedPart(i, rawPart, maxMessageSize)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse message part: %w", err)
+			}
+
+			content.multiparts = append(content.multiparts, part)
+		}
 	}
 
 	return content, nil
@@ -276,16 +280,16 @@ func (c *ReceivedContent) IsMultipart() bool {
 	return c.isMultipart
 }
 
+func (c *ReceivedContent) Multiparts() []*ReceivedPart {
+	return c.multiparts
+}
+
 func (m *ReceivedMessage) Content() *ReceivedContent {
 	return m.content
 }
 
 func (m *ReceivedMessage) Index() int {
 	return m.index
-}
-
-func (m *ReceivedMessage) Multiparts() []*ReceivedPart {
-	return m.multiparts
 }
 
 func (m *ReceivedMessage) RawMessageData() []byte {
