@@ -119,6 +119,8 @@ func (s *Server) ReceivedMessages() []*ReceivedMessage {
 // being encoded as if for transport (e.g. quoted-printable),
 // but concatenated as-is.
 func (s *Server) SearchByHeader(re *regexp.Regexp) []*ReceivedMessage {
+	// TODO: Somehow unify with ReceivedMessage.SearchPartsByHeader based on ReceivedContent
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -126,7 +128,7 @@ func (s *Server) SearchByHeader(re *regexp.Regexp) []*ReceivedMessage {
 
 	headerIdxList := make([]map[string][]string, len(receivedMessages))
 	for i, v := range receivedMessages {
-		headerIdxList[i] = v.Headers()
+		headerIdxList[i] = v.Content().Headers()
 	}
 
 	foundIndices := searchByHeaderCommon(headerIdxList, re)

@@ -10,7 +10,6 @@ import (
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
-	"net/textproto"
 	"regexp"
 	"strings"
 	"time"
@@ -27,14 +26,9 @@ type ReceivedMessage struct {
 	rawMessageData []byte
 	receivedAt     time.Time
 
-	headers mail.Header
-	body    []byte
+	content *ReceivedContent
 
-	contentType       string
-	contentTypeParams map[string]string
-
-	isMultipart bool
-	multiparts  []*ReceivedPart
+	multiparts []*ReceivedPart
 }
 
 // ReceivedPart contains a single part of a multipart message as received
@@ -42,8 +36,19 @@ type ReceivedMessage struct {
 type ReceivedPart struct {
 	index int
 
-	headers textproto.MIMEHeader
+	content *ReceivedContent
+}
+
+// ReceivedContent contains the contents of an email message or multipart part.
+type ReceivedContent struct {
+	headers map[string][]string
 	body    []byte
+
+	contentType       string
+	contentTypeParams map[string]string
+	isMultipart       bool
+
+	// TODO: Move multiparts here from ReceivedMessage in the next step
 }
 
 // NewReceivedMessage parses a raw message as received via SMTP into a
@@ -61,16 +66,14 @@ func NewReceivedMessage(
 		maxMessageSize = DefaultMaxMessageSize
 	}
 
-	parsedMsg, err := mail.ReadMessage(bytes.NewReader(rawMessageData))
+	parsedMsg, err := mail.ReadMessage(io.LimitReader(bytes.NewReader(rawMessageData), maxMessageSize))
 	if err != nil {
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
-	preprocessHeaders(parsedMsg.Header)
-
-	body, err := io.ReadAll(wrapBodyReader(parsedMsg.Body, parsedMsg.Header, maxMessageSize))
+	content, err := NewReceivedContent(parsedMsg.Header, parsedMsg.Body, maxMessageSize)
 	if err != nil {
-		return nil, fmt.Errorf("could not read message body: %w", err)
+		return nil, fmt.Errorf("could not parse content: %w", err)
 	}
 
 	msg := &ReceivedMessage{
@@ -79,30 +82,16 @@ func NewReceivedMessage(
 		smtpRcptTo:     rcptTo,
 		rawMessageData: rawMessageData,
 		receivedAt:     receivedAt,
-		headers:        parsedMsg.Header,
-		body:           body,
+		content:        content,
 	}
 
-	rawContentType := msg.headers.Get("Content-Type")
-	if rawContentType != "" {
-		msg.contentType, msg.contentTypeParams, err = mime.ParseMediaType(rawContentType)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse Content-Type: %w", err)
-		}
-
-		// case-sensitive comparison of the content type is permitted here,
-		// since mime.ParseMediaType is documented to return the media type
-		// in lower case.
-		msg.isMultipart = strings.HasPrefix(msg.contentType, "multipart/")
-	}
-
-	if msg.isMultipart {
-		boundary, ok := msg.contentTypeParams["boundary"]
+	if content.IsMultipart() {
+		boundary, ok := content.ContentTypeParams()["boundary"]
 		if !ok {
 			return nil, fmt.Errorf("encountered multipart message without defined boundary")
 		}
 
-		r := multipart.NewReader(bytes.NewReader(msg.body), boundary)
+		r := multipart.NewReader(bytes.NewReader(content.body), boundary)
 
 		for i := 0; ; i++ {
 			rawPart, err := r.NextRawPart()
@@ -136,7 +125,9 @@ func NewReceivedMessage(
 // If no matching multiparts are found, this may return nil or an empty
 // list.
 func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart {
-	if !m.IsMultipart() {
+	// TODO: Somehow unify with Server.SearchByHeader based on ReceivedContent
+
+	if !m.content.IsMultipart() {
 		return nil
 	}
 
@@ -144,7 +135,7 @@ func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart
 
 	headerIdxList := make([]map[string][]string, len(multiparts))
 	for i, v := range multiparts {
-		headerIdxList[i] = v.Headers()
+		headerIdxList[i] = v.Content().Headers()
 	}
 
 	foundIndices := searchByHeaderCommon(headerIdxList, re)
@@ -159,45 +150,81 @@ func (m *ReceivedMessage) SearchPartsByHeader(re *regexp.Regexp) []*ReceivedPart
 
 // NewReceivedPart parses a MIME multipart part into a ReceivedPart struct.
 //
-// Incoming data is truncated after the given maximum message size.
-// If a maxMessageSize of 0 is given, this function will default to using
-// DefaultMaxMessageSize.
+// maxMessageSize is passed through to NewReceivedContent (see its documentation for details).
 func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (*ReceivedPart, error) {
-	if maxMessageSize == 0 {
-		maxMessageSize = DefaultMaxMessageSize
-	}
-
-	preprocessHeaders(p.Header)
-
-	body, err := io.ReadAll(wrapBodyReader(p, p.Header, maxMessageSize))
+	content, err := NewReceivedContent(p.Header, p, maxMessageSize)
 	if err != nil {
-		return nil, fmt.Errorf("could not read message part body: %w", err)
+		return nil, fmt.Errorf("could not parse content: %w", err)
 	}
 
 	part := &ReceivedPart{
 		index:   index,
-		headers: p.Header,
-		body:    body,
+		content: content,
 	}
 
 	return part, nil
 }
 
-// preprocessHeaders modifies the given headers in-place by decoding
-// header values that were encoded according to RFC2047.
-func preprocessHeaders(headers map[string][]string) {
+// NewReceivedContent parses a message or part headers and body into a ReceivedContent struct.
+//
+// Incoming data is truncated after the given maximum message size.
+// If a maxMessageSize of 0 is given, this function will default to using
+// DefaultMaxMessageSize.
+func NewReceivedContent(
+	headers map[string][]string, bodyReader io.Reader, maxMessageSize int64,
+) (*ReceivedContent, error) {
+	if maxMessageSize == 0 {
+		maxMessageSize = DefaultMaxMessageSize
+	}
+
+	headers = preprocessHeaders(headers)
+
+	body, err := io.ReadAll(wrapBodyReader(bodyReader, headers, maxMessageSize))
+	if err != nil {
+		return nil, fmt.Errorf("could not read body: %w", err)
+	}
+
+	content := &ReceivedContent{
+		headers: headers,
+		body:    body,
+	}
+
+	rawContentType, ok := headers["Content-Type"]
+	if ok && rawContentType[0] != "" && len(rawContentType) > 0 {
+		content.contentType, content.contentTypeParams, err = mime.ParseMediaType(rawContentType[0])
+		if err != nil {
+			return nil, fmt.Errorf("could not parse Content-Type: %w", err)
+		}
+
+		// case-sensitive comparison of the content type is permitted here,
+		// since mime.ParseMediaType is documented to return the media type
+		// in lower case.
+		content.isMultipart = strings.HasPrefix(content.contentType, "multipart/")
+	}
+
+	return content, nil
+}
+
+// preprocessHeaders decodes header values that were encoded according to RFC2047.
+func preprocessHeaders(headers map[string][]string) map[string][]string {
 	var decoder mime.WordDecoder
 
-	for _, vs := range headers {
+	out := make(map[string][]string)
+
+	for k, vs := range headers {
+		out[k] = make([]string, len(vs))
+
 		for i := range vs {
 			dec, err := decoder.DecodeHeader(vs[i])
 			if err != nil {
 				logrus.Warn("could not decode Q-Encoding in header:", err)
 			} else {
-				vs[i] = dec
+				out[k][i] = dec
 			}
 		}
 	}
+
+	return out
 }
 
 // wrapBodyReader wraps the reader for a message / part body with size
@@ -229,24 +256,32 @@ func wrapBodyReader(r io.Reader, headers map[string][]string, maxMessageSize int
 // Getters
 // =======
 
-func (m *ReceivedMessage) ContentType() string {
-	return m.contentType
+func (c *ReceivedContent) ContentType() string {
+	return c.contentType
 }
 
-func (m *ReceivedMessage) Body() []byte {
-	return m.body
+func (c *ReceivedContent) ContentTypeParams() map[string]string {
+	return c.contentTypeParams
 }
 
-func (m *ReceivedMessage) Headers() mail.Header {
-	return m.headers
+func (c *ReceivedContent) Body() []byte {
+	return c.body
+}
+
+func (c *ReceivedContent) Headers() map[string][]string {
+	return c.headers
+}
+
+func (c *ReceivedContent) IsMultipart() bool {
+	return c.isMultipart
+}
+
+func (m *ReceivedMessage) Content() *ReceivedContent {
+	return m.content
 }
 
 func (m *ReceivedMessage) Index() int {
 	return m.index
-}
-
-func (m *ReceivedMessage) IsMultipart() bool {
-	return m.isMultipart
 }
 
 func (m *ReceivedMessage) Multiparts() []*ReceivedPart {
@@ -269,12 +304,8 @@ func (m *ReceivedMessage) SmtpRcptTo() []string {
 	return m.smtpRcptTo
 }
 
-func (p *ReceivedPart) Body() []byte {
-	return p.body
-}
-
-func (p *ReceivedPart) Headers() textproto.MIMEHeader {
-	return p.headers
+func (p *ReceivedPart) Content() *ReceivedContent {
+	return p.content
 }
 
 func (p *ReceivedPart) Index() int {
