@@ -116,17 +116,15 @@ func (h *smtpHTTPHandler) handleGUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Request) {
-	var receivedMessages []*ReceivedMessage
-
 	headerSearchRgx, err := extractSearchRegex(w, r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
 		return
 	}
-	if headerSearchRgx == nil {
-		receivedMessages = h.server.ReceivedMessages()
-	} else {
-		receivedMessages = h.server.SearchByHeader(headerSearchRgx)
+
+	receivedMessages := h.server.ReceivedMessages()
+	if headerSearchRgx != nil {
+		receivedMessages = SearchByHeader(receivedMessages, headerSearchRgx)
 	}
 
 	messagesOut := make([]any, 0)
@@ -188,16 +186,15 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var multiparts []*ReceivedPart
 	headerSearchRgx, err := extractSearchRegex(w, r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
 		return
 	}
-	if headerSearchRgx == nil {
-		multiparts = msg.Content().Multiparts()
-	} else {
-		multiparts = msg.SearchPartsByHeader(headerSearchRgx)
+
+	multiparts := msg.Content().Multiparts()
+	if headerSearchRgx != nil {
+		multiparts = SearchByHeader(multiparts, headerSearchRgx)
 	}
 
 	multipartsOut := make([]any, 0)

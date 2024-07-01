@@ -5,16 +5,24 @@ import (
 	"regexp"
 )
 
-func searchByHeaderCommon(headerIdxList []map[string][]string, re *regexp.Regexp) []int {
-	result := make([]int, 0, len(headerIdxList))
+// SearchByHeader returns the list of all given ContentHavers that
+// have at least one header matching the given regular expression.
+//
+// Note that the regex is performed for each header value individually,
+// including for multi-value headers. The header value is first serialized
+// by concatenating it after the header name, colon and space. It is not
+// being encoded as if for transport (e.g. quoted-printable),
+// but concatenated as-is.
+func SearchByHeader[T ContentHaver](haystack []T, re *regexp.Regexp) []T {
+	out := make([]T, 0, len(haystack))
 
-	for idx, headers := range headerIdxList {
-		if anyHeaderMatches(headers, re) {
-			result = append(result, idx)
+	for _, c := range haystack {
+		if anyHeaderMatches(c.Content().Headers(), re) {
+			out = append(out, c)
 		}
 	}
 
-	return result
+	return out
 }
 
 func anyHeaderMatches(headers map[string][]string, re *regexp.Regexp) bool {
