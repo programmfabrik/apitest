@@ -51,7 +51,7 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// We now know that pathParts must have at least length 1, since empty path
 	// was already handled above.
 
-	if pathParts[0] == "gui" {
+	if pathParts[0] == "gui" && len(pathParts) == 1 {
 		h.handleGUI(w, r)
 		return
 	}
@@ -65,45 +65,99 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch len(pathParts) {
-	case 1:
-		h.handleMessageMeta(w, r, idx)
+	msg, err := h.server.ReceivedMessage(idx)
+	if err != nil {
+		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
 		return
-	case 2:
-		switch pathParts[1] {
+	}
+
+	if len(pathParts) == 1 {
+		h.handleMessageMeta(w, r, msg)
+		return
+	}
+	if len(pathParts) == 2 && pathParts[1] == "raw" {
+		h.handleMessageRaw(w, r, msg)
+		return
+	}
+
+	h.routeContentEndpoint(w, r, msg.Content(), pathParts[1:])
+}
+
+// routeContentEndpoint recursively finds a route for the remaining path parts
+// based on the given ReceivedContent.
+func (h *smtpHTTPHandler) routeContentEndpoint(
+	w http.ResponseWriter, r *http.Request, c *ReceivedContent, remainingPathParts []string,
+) {
+	ensureIsMultipart := func() bool {
+		if !c.IsMultipart() {
+			handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
+				"multipart endpoint was requested for non-multipart content",
+			))
+			return false
+		}
+
+		return true
+	}
+
+	if len(remainingPathParts) == 1 {
+		switch remainingPathParts[0] {
 		case "body":
-			h.handleMessageBody(w, r, idx)
+			h.handleContentBody(w, r, c)
 			return
 		case "multipart":
-			h.handleMultipartIndex(w, r, idx)
-			return
-		case "raw":
-			h.handleRawMessageData(w, r, idx)
-			return
-		}
-	case 3, 4:
-		if pathParts[1] == "multipart" {
-			partIdx, err := strconv.Atoi(pathParts[2])
-			if err != nil {
-				handlerutil.RespondWithErr(
-					w, http.StatusBadRequest,
-					fmt.Errorf("could not parse multipart index: %w", err),
-				)
+			if !ensureIsMultipart() {
 				return
 			}
 
-			if len(pathParts) == 3 {
-				h.handleMultipartMeta(w, r, idx, partIdx)
-				return
-			} else if pathParts[3] == "body" {
-				h.handleMultipartBody(w, r, idx, partIdx)
-				return
-			}
+			h.handleMultipartIndex(w, r, c)
+			return
 		}
+	}
+
+	if len(remainingPathParts) > 1 && remainingPathParts[0] == "multipart" {
+		if !ensureIsMultipart() {
+			return
+		}
+
+		multiparts := c.Multiparts()
+
+		partIdx, err := strconv.Atoi(remainingPathParts[1])
+		if err != nil {
+			handlerutil.RespondWithErr(
+				w, http.StatusBadRequest,
+				fmt.Errorf("could not parse multipart index: %w", err),
+			)
+			return
+		}
+
+		if partIdx >= len(multiparts) {
+			handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
+				"ReceivedContent does not contain multipart with index %d", partIdx,
+			))
+			return
+		}
+
+		part := multiparts[partIdx]
+
+		if len(remainingPathParts) == 2 {
+			h.handleMultipartMeta(w, r, part)
+			return
+		}
+
+		h.routeContentEndpoint(w, r, part.Content(), remainingPathParts[2:])
 	}
 
 	// If routing failed, return status 404.
 	w.WriteHeader(http.StatusNotFound)
+}
+
+func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, r *http.Request, c *ReceivedContent) {
+	contentType, ok := c.Headers()["Content-Type"]
+	if ok {
+		w.Header()["Content-Type"] = contentType
+	}
+
+	w.Write(c.Body())
 }
 
 func (h *smtpHTTPHandler) handleGUI(w http.ResponseWriter, r *http.Request) {
@@ -140,59 +194,30 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
-func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, idx int) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
-	}
-
-	content := msg.Content()
-
+func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
 	out := buildMessageBasicMeta(msg)
+	contentMeta := buildContentMeta(msg.Content())
 
-	out["body_size"] = len(content.Body())
-
-	headers := make(map[string]any)
-	for k, v := range content.Headers() {
-		headers[k] = v
+	for k, v := range contentMeta {
+		out[k] = v
 	}
-	out["headers"] = headers
 
 	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
-func (h *smtpHTTPHandler) handleMessageBody(w http.ResponseWriter, r *http.Request, idx int) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
-	}
-
-	content := msg.Content()
-
-	contentType, ok := content.Headers()["Content-Type"]
-	if ok {
-		w.Header()["Content-Type"] = contentType
-	}
-
-	w.Write(content.Body())
+func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
+	w.Header().Set("Content-Type", "message/rfc822")
+	w.Write(msg.RawMessageData())
 }
 
-func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, idx int) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
-	}
-	if !ensureIsMultipart(w, msg) {
-		return
-	}
-
+func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, c *ReceivedContent) {
 	headerSearchRgx, err := extractSearchRegex(w, r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
 		return
 	}
 
-	multiparts := msg.Content().Multiparts()
+	multiparts := c.Multiparts()
 	if headerSearchRgx != nil {
 		multiparts = SearchByHeader(multiparts, headerSearchRgx)
 	}
@@ -200,7 +225,7 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 	multipartsOut := make([]any, 0)
 
 	for _, part := range multiparts {
-		multipartsOut = append(multipartsOut, buildMultipartMeta(part))
+		multipartsOut = append(multipartsOut, buildContentMeta(part.Content()))
 	}
 
 	out := make(map[string]any)
@@ -211,88 +236,34 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 }
 
 func (h *smtpHTTPHandler) handleMultipartMeta(
-	w http.ResponseWriter, r *http.Request, idx, partIdx int,
+	w http.ResponseWriter, r *http.Request, part *ReceivedPart,
 ) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
-	}
-	if !ensureIsMultipart(w, msg) {
-		return
-	}
-	part := retrievePart(w, msg, partIdx)
-	if part == nil {
-		return
+	out := map[string]any{
+		"idx": part.Index(),
 	}
 
-	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
+	contentMeta := buildContentMeta(part.Content())
+
+	for k, v := range contentMeta {
+		out[k] = v
+	}
+
+	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
-func (h *smtpHTTPHandler) handleMultipartBody(
-	w http.ResponseWriter, r *http.Request, idx, partIdx int,
-) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
+func buildContentMeta(c *ReceivedContent) map[string]any {
+	out := map[string]any{
+		"bodySize":    len(c.Body()),
+		"isMultipart": c.IsMultipart(),
 	}
 
-	if !ensureIsMultipart(w, msg) {
-		return
+	headers := make(map[string]any)
+	for k, v := range c.Headers() {
+		headers[k] = v
 	}
+	out["headers"] = headers
 
-	part := retrievePart(w, msg, partIdx)
-	if part == nil {
-		return
-	}
-
-	content := part.Content()
-
-	contentType, ok := content.Headers()["Content-Type"]
-	if ok {
-		w.Header()["Content-Type"] = contentType
-	}
-
-	w.Write(content.Body())
-}
-
-func (h *smtpHTTPHandler) handleRawMessageData(w http.ResponseWriter, r *http.Request, idx int) {
-	msg := h.retrieveMessage(w, idx)
-	if msg == nil {
-		return
-	}
-
-	w.Header().Set("Content-Type", "message/rfc822")
-
-	w.Write(msg.RawMessageData())
-}
-
-// retrieveMessage tries to retrieve the ReceivedMessage with the given index.
-// If found, returns the message. If not found, responds with Status 404
-// and returns nil.
-func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, idx int) *ReceivedMessage {
-	msg, err := h.server.ReceivedMessage(idx)
-	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
-		return nil
-	}
-
-	return msg
-}
-
-// retrievePart tries to retrieve the ReceivedPart with the given index.
-// If found, returns the part. If not found, responds with Status 404
-// and returns nil.
-func retrievePart(w http.ResponseWriter, msg *ReceivedMessage, partIdx int) *ReceivedPart {
-	multiparts := msg.Content().Multiparts()
-
-	if partIdx >= len(multiparts) {
-		handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
-			"ReceivedMessage does not contain multipart with index %d", partIdx,
-		))
-		return nil
-	}
-
-	return multiparts[partIdx]
+	return out
 }
 
 func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
@@ -320,38 +291,6 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	}
 
 	return out
-}
-
-func buildMultipartMeta(part *ReceivedPart) map[string]any {
-	content := part.Content()
-
-	out := map[string]any{
-		"idx":       part.Index(),
-		"body_size": len(content.Body()),
-	}
-
-	headers := make(map[string]any)
-	for k, v := range content.Headers() {
-		headers[k] = v
-	}
-	out["headers"] = headers
-
-	return out
-}
-
-// ensureIsMultipart checks whether the referenced message is a multipart
-// message, returns true and does nothing further if so, returns false after
-// replying with Status 404 if not.
-func ensureIsMultipart(w http.ResponseWriter, msg *ReceivedMessage) bool {
-	if msg.Content().IsMultipart() {
-		return true
-	}
-
-	handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
-		"multipart information was requested for non-multipart message",
-	))
-
-	return false
 }
 
 // extractSearchRegex tries to extract a regular expression from the referenced
