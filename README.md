@@ -755,7 +755,7 @@ To set data in custom store, you can use 4 methods:
 * Use `store`on the **test** level, the data is set before **request** and **response** are evaluated
 * Use `store_response_qjson`on the test level, the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with qjson. Just prepend the qjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json)
 
-All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]`and Array is created if the key does not yet exists, or the value is appended to the Array if it does exist.
+All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]` and Array is created if the key does not yet exist, or the value is appended to the Array if it does exist.
 
 The method `store_response_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
 
@@ -942,14 +942,14 @@ Check if a certain value does exist in the reponse (no matter what its content i
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
-E.g. the following response would **fail**  as `"iShouldExists"` is  **not** in the actual response
+E.g. the following response would **fail** as `"iShouldExist"` is **not** in the actual response
 
 #### expected response defined with must_exist
 
 ```yaml
 {
     "body": {
-        "iShouldExists:control": {
+        "iShouldExist:control": {
             "must_exist": true
         }
     }
@@ -1042,14 +1042,14 @@ Check if a certain value does not exist in the reponse
 
 This control can be used without a "real" key. So only the `:control` key is present.
 
-E.g. the following response would **fail**  as `"iShouldNotExists"` is in the actual response
+E.g. the following response would **fail** as `"iShouldNotExist"` is in the actual response
 
 #### expected response defined with must_exist
 
 ```yaml
 {
     "body": {
-        "iShouldNotExists:control": {
+        "iShouldNotExist:control": {
             "must_not_exist": true
         }
     }
@@ -1061,7 +1061,7 @@ E.g. the following response would **fail**  as `"iShouldNotExists"` is in the ac
 ```yaml
 {
     "body": {
-        "iShouldNotExists": "i exist, hahahah"
+        "iShouldNotExist": "i exist, hahahah"
     }
 }
 ```
@@ -1091,6 +1091,12 @@ Check if a string value matches a given [regular expression](https://gobyexample
     }
 }
 ```
+
+### `not_match`
+
+Check if a string value does not match a given regular expression.
+
+This is the opposite check function of [match](#match).
 
 ### `starts_with`
 
@@ -1148,7 +1154,7 @@ Check if a string value ends with a given string suffix
 
 With `is_string`, `is_bool`, `is_object`, `is_array` and `is_number` you can check if your field has a certain type
 
-The type checkers are available for all types. It implicit also checks `must_exist` for the value as there is no sense in
+The type checkers are available for all types. It implicitly also checks `must_exist` for the value as there is no sense in
 type checking a value that does not exist.
 
 This control can be used without a "real" key. So only the `:control` key is present.
@@ -1207,8 +1213,37 @@ E.g. the following response would **fail**  as `"beGreater"` is smaller than exp
 }
 ```
 
+### `not_equal`
 
+Check if a field is not equal to a specific value.
 
+This check is available for the types `string`, `number` and `bool`. It implicitly also checks `must_exist` for the value.
+
+This control can be used without a "real" key. So only the `:control` key is present.
+
+E.g. the following response would **fail** as `"testNumber"` has the value `5`
+
+#### expected response defined with `not_equal`
+
+```yaml
+{
+    "body": {
+        "testNumber:control": {
+            "not_equal": 5
+        }
+    }
+}
+```
+
+#### actual response
+
+```yaml
+{
+    "body": {
+        "testNumber": 5
+    }
+}
+```
 
 # Use external file
 
@@ -1641,7 +1676,7 @@ Helper function to query the datastore; used most of the time in conjunction wit
 
 The `key`can be an int, or int64 accessing the store of previous responses. The responses are accessed in the order received. Using a negative value access the store from the back, so a value of **-2** would access the second to last response struct.
 
-This function returns a string, if the `key`does not exists, an empty string is returned.
+This function returns a string, if the `key`does not exist, an empty string is returned.
 
 If the `key` is a string, the datastore is accessed directly, allowing access to custom set values using `store` or `store_response_qjson`parameters.
 
