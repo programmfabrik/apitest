@@ -2635,7 +2635,11 @@ available as JSON in the following schema:
       ],
       "idx": 0,
       "isMultipart": false,
-      "receivedAt": "2024-06-25T14:40:11.711406798+02:00",
+      "receivedAt": "2024-07-02T11:23:31.212023129+02:00",
+      "smtpFrom": "testsender@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver@programmfabrik.de"
+      ],
       "to": [
         "testreceiver@programmfabrik.de"
       ]
@@ -2646,7 +2650,11 @@ available as JSON in the following schema:
       ],
       "idx": 1,
       "isMultipart": true,
-      "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
+      "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
+      "smtpFrom": "testsender2@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver2@programmfabrik.de"
+      ],
       "subject": "Example Message",
       "to": [
         "testreceiver2@programmfabrik.de"
@@ -2658,7 +2666,11 @@ available as JSON in the following schema:
       ],
       "idx": 2,
       "isMultipart": false,
-      "receivedAt": "2024-06-25T14:40:11.711931701+02:00",
+      "receivedAt": "2024-07-02T11:23:31.212773829+02:00",
+      "smtpFrom": "testsender3@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver3@programmfabrik.de"
+      ],
       "to": [
         "testreceiver3@programmfabrik.de"
       ]
@@ -2701,7 +2713,11 @@ the corresponding index is made available as JSON:
   },
   "idx": 1,
   "isMultipart": true,
-  "receivedAt": "2024-06-25T14:40:11.711764465+02:00",
+  "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
+  "smtpFrom": "testsender2@programmfabrik.de",
+  "smtpRcptTo": [
+    "testreceiver2@programmfabrik.de"
+  ],
   "subject": "Example Message",
   "to": [
     "testreceiver2@programmfabrik.de"

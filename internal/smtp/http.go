@@ -273,6 +273,8 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 		"idx":         msg.Index(),
 		"isMultipart": content.IsMultipart(),
 		"receivedAt":  msg.ReceivedAt(),
+		"smtpFrom":    msg.SmtpFrom(),
+		"smtpRcptTo":  msg.SmtpRcptTo(),
 	}
 
 	from, ok := content.Headers()["From"]
