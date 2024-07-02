@@ -233,9 +233,18 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 }
 
 func buildContentMeta(c *ReceivedContent) map[string]any {
+	contentTypeParams := c.ContentTypeParams()
+	if contentTypeParams == nil {
+		// Returning an empty map instead of null more closely resembles the semantics
+		// of contentTypeParams.
+		contentTypeParams = make(map[string]string)
+	}
+
 	out := map[string]any{
-		"bodySize":    len(c.Body()),
-		"isMultipart": c.IsMultipart(),
+		"bodySize":          len(c.Body()),
+		"isMultipart":       c.IsMultipart(),
+		"contentType":       c.ContentType(),
+		"contentTypeParams": contentTypeParams,
 	}
 
 	headers := make(map[string]any)
