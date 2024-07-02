@@ -145,6 +145,7 @@ func (h *smtpHTTPHandler) routeContentEndpoint(
 		}
 
 		h.routeContentEndpoint(w, r, part.Content(), remainingPathParts[2:])
+		return
 	}
 
 	// If routing failed, return status 404.
