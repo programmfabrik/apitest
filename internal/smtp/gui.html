@@ -14,7 +14,7 @@ table, th, td { border: 2px solid grey; border-collapse: collapse; }
 th, td { padding: 10px; }
 .subject-hdr { width: 100%; }
 pre { background-color: #eee; padding: 10px; box-sizing: border-box; width: 100%; overflow-x: auto; }
-main > p:first-of-type { padding-top: 0; margin-top: 0; }
+main > h4:first-of-type { padding-top: 0; margin-top: 0; }
 </style>
 
 </head>
@@ -105,33 +105,27 @@ async function showDetails(idx) {
 
     detailpanel.innerHTML=""
 
-    let raw_p = document.createElement("p")
-    detailpanel.append(raw_p)
     let raw_heading = document.createElement("h4")
-    raw_p.append(raw_heading)
+    detailpanel.append(raw_heading)
     raw_heading.textContent = "Raw Message:"
     let raw_a = document.createElement("a")
-    raw_p.append(raw_a)
+    detailpanel.append(raw_a)
     raw_a.href = `${prefix}/${idx}/raw`
     raw_a.target = "_blank"
     raw_a.textContent = "Download"
 
-    let body_p = document.createElement("p")
-    detailpanel.append(body_p)
     let body_heading = document.createElement("h4")
-    body_p.append(body_heading)
+    detailpanel.append(body_heading)
     body_heading.textContent = "Body / Multiparts:"
     let body_ul = document.createElement("ul")
-    body_p.append(body_ul)
+    detailpanel.append(body_ul)
     addContentLinks(body_ul, metadata, `${prefix}/${idx}`, 0)
 
-    let metadata_p = document.createElement("p")
-    detailpanel.append(metadata_p)
     let metadata_heading = document.createElement("h4")
-    metadata_p.append(metadata_heading)
+    detailpanel.append(metadata_heading)
     metadata_heading.textContent = "Message Metadata:"
     let metadata_pre = document.createElement("pre")
-    metadata_p.append(metadata_pre)
+    detailpanel.append(metadata_pre)
     metadata_pre.textContent = JSON.stringify(metadata, null, 2)
 }
 
