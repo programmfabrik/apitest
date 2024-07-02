@@ -66,7 +66,7 @@ func (ats *Suite) StartHttpServer() {
 		}
 
 		err := ats.httpServer.ListenAndServe()
-		if !errors.Is(err, http.ErrServerClosed) {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// Error starting or closing listener:
 			logrus.Fatal("HTTP server ListenAndServe:", err)
 		}
