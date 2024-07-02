@@ -2954,7 +2954,7 @@ available as JSON in the following schema:
       "to": [
         "testreceiver3@programmfabrik.de"
       ]
-    },
+    }
   ]
 }
 ```
@@ -2968,6 +2968,10 @@ the corresponding index is made available as JSON:
 ```json
 {
   "bodySize": 306,
+  "contentType": "multipart/mixed",
+  "contentTypeParams": {
+    "boundary": "d36c3118be4745f9a1cb4556d11fe92d"
+  },
   "from": [
     "testsender2@programmfabrik.de"
   ],
@@ -2996,6 +3000,10 @@ the corresponding index is made available as JSON:
   "multiparts": [
     {
       "bodySize": 15,
+      "contentType": "text/plain",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
       "headers": {
         "Content-Type": [
           "text/plain; charset=utf-8"
@@ -3006,6 +3014,10 @@ the corresponding index is made available as JSON:
     },
     {
       "bodySize": 39,
+      "contentType": "text/html",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
       "headers": {
         "Content-Type": [
           "text/html; charset=utf-8"
@@ -3016,7 +3028,7 @@ the corresponding index is made available as JSON:
     }
   ],
   "multipartsCount": 2,
-  "receivedAt": "2024-07-02T11:44:32.767921301+02:00",
+  "receivedAt": "2024-07-02T12:54:44.443488367+02:00",
   "smtpFrom": "testsender2@programmfabrik.de",
   "smtpRcptTo": [
     "testreceiver2@programmfabrik.de"
@@ -3051,6 +3063,10 @@ following schema:
   "multiparts": [
     {
       "bodySize": 15,
+      "contentType": "text/plain",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
       "headers": {
         "Content-Type": [
           "text/plain; charset=utf-8"
@@ -3061,6 +3077,10 @@ following schema:
     },
     {
       "bodySize": 39,
+      "contentType": "text/html",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
       "headers": {
         "Content-Type": [
           "text/html; charset=utf-8"
@@ -3081,6 +3101,10 @@ metadata about the multipart with the corresponding index is made available:
 ```json
 {
   "bodySize": 15,
+  "contentType": "text/plain",
+  "contentTypeParams": {
+    "charset": "utf-8"
+  },
   "headers": {
     "Content-Type": [
       "text/plain; charset=utf-8"
