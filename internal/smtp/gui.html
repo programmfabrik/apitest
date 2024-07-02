@@ -7,13 +7,13 @@
 html, body { width: 100%; height: 100%; margin: 0; padding: 0; font-family: monospace; }
 body { padding: 20px; box-sizing: border-box; }
 noscript { color: red; font-weight: bold; }
-.container { display: flex; flex-direction: row; gap: 20px; max-width: 1600px; margin: auto; }
+.container { display: flex; flex-direction: row; gap: 20px; }
 .container nav { flex: 2; }
 .container main { flex: 1; }
 table, th, td { border: 2px solid grey; border-collapse: collapse; }
 th, td { padding: 10px; }
 .subject-hdr { width: 100%; }
-pre { background-color: #eee; padding: 10px; box-sizing: border-box; max-width: 400px; overflow-x: auto; }
+pre { background-color: #eee; padding: 10px; box-sizing: border-box; width: 100%; overflow-x: auto; }
 main > p:first-of-type { padding-top: 0; margin-top: 0; }
 </style>
 
@@ -39,43 +39,14 @@ main > p:first-of-type { padding-top: 0; margin-top: 0; }
         </table>
     </nav>
 
-    <main>
-        <p>
-            <strong>Message Metadata:</strong>
-            <pre id="msgmeta"></pre>
-        </p>
-
-	<p>
-            <strong>Raw Message:</strong><br>
-            <a id="rawlink" href="javascript:void(0)" target="_blank">Download</a>
-	</p>
-
-	<p>
-            <strong>Body:</strong><br>
-            <a id="bodylink" href="javascript:void(0)" target="_blank">Show</a>
-	</p>
-
-        <p>
-            <strong>Multipart Metadata:</strong>
-            <pre id="multimeta"></pre>
-        </p>
-
-	<p>
-            <strong>Multiparts:</strong><br>
-            <ul id="partlist"></ul>
-        </p>
-    </main>
+    <main id="detailpanel"></main>
 </div>
 
 <script>
 const prefix = "{{ .prefix }}"
 
-const bodylink = document.getElementById("bodylink")
+const detailpanel = document.getElementById("detailpanel")
 const indexrows = document.getElementById("indexrows")
-const msgmeta = document.getElementById("msgmeta")
-const multimeta = document.getElementById("multimeta")
-const partlist = document.getElementById("partlist")
-const rawlink = document.getElementById("rawlink")
 
 let n_received = 0
 let index = {"count": 0, "messages": []}
@@ -103,29 +74,65 @@ async function updateIndex() {
     }
 }
 
+async function addContentLinks(parentElement, metadata, linkPrefix, idx) {
+    let contentType = metadata["contentType"]
+    if (contentType === "") {
+        contentType = "unspecified"
+    }
+
+    let li = document.createElement("li")
+    parentElement.append(li)
+
+    let a = document.createElement("a")
+    li.append(a)
+    a.href = `${linkPrefix}/body`
+    a.textContent = `${idx}: Content-Type ${contentType}`
+    a.target = "_blank"
+
+    if (metadata["isMultipart"] === true) {
+        let ul = document.createElement("ul")
+        li.append(ul)
+
+        for (let i=0; i < metadata["multipartsCount"]; i++) {
+            addContentLinks(ul, metadata["multiparts"][i], `${linkPrefix}/multipart/${i}`, i)
+        }
+    }
+}
+
 async function showDetails(idx) {
     response = await fetch(`${prefix}/${idx}`)
     metadata = await response.json()
-    msgmeta.textContent = JSON.stringify(metadata, null, 2)
 
-    bodylink.href = `${prefix}/${idx}/body`
-    rawlink.href = `${prefix}/${idx}/raw`
+    detailpanel.innerHTML=""
 
-    partlist.innerHTML=""
+    let raw_p = document.createElement("p")
+    detailpanel.append(raw_p)
+    let raw_heading = document.createElement("h4")
+    raw_p.append(raw_heading)
+    raw_heading.textContent = "Raw Message:"
+    let raw_a = document.createElement("a")
+    raw_p.append(raw_a)
+    raw_a.href = `${prefix}/${idx}/raw`
+    raw_a.target = "_blank"
+    raw_a.textContent = "Download"
 
-    if (metadata["isMultipart"]) {
-        response = await fetch(`${prefix}/${idx}/multipart`)
-        multipart_meta = await response.json()
-        multimeta.textContent = JSON.stringify(multipart_meta, null, 2)
+    let body_p = document.createElement("p")
+    detailpanel.append(body_p)
+    let body_heading = document.createElement("h4")
+    body_p.append(body_heading)
+    body_heading.textContent = "Body / Multiparts:"
+    let body_ul = document.createElement("ul")
+    body_p.append(body_ul)
+    addContentLinks(body_ul, metadata, `${prefix}/${idx}`, 0)
 
-        for (let i=0; i < multipart_meta["count"]; i++) {
-            let li = document.createElement("li")
-            li.innerHTML = `<a href="${prefix}/${idx}/multipart/${i}/body" target="_blank">Show Body of Part ${i}</a>`
-            partlist.append(li)
-        }
-    } else {
-        multimeta.textContent = "Not a multipart message"
-    }
+    let metadata_p = document.createElement("p")
+    detailpanel.append(metadata_p)
+    let metadata_heading = document.createElement("h4")
+    metadata_p.append(metadata_heading)
+    metadata_heading.textContent = "Message Metadata:"
+    let metadata_pre = document.createElement("pre")
+    metadata_p.append(metadata_pre)
+    metadata_pre.textContent = JSON.stringify(metadata, null, 2)
 }
 
 updateIndex()
