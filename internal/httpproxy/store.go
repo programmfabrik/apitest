@@ -9,7 +9,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+
+	"github.com/programmfabrik/apitest/internal/handlerutil"
 )
 
 // Mode definition
@@ -19,11 +20,6 @@ const (
 	// ModePassthrough mode
 	ModePassthrough Mode = "passthru"
 )
-
-// errorResponse definition
-type errorResponse struct {
-	Error string `json:"error"`
-}
 
 // request definition
 type request struct {
@@ -69,7 +65,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 	if r.Body != nil {
 		reqData.Body, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
+			handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
 			return
 		}
 	}
@@ -80,7 +76,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 		Offset int `json:"offset"`
 	}{offset})
 	if err != nil {
-		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }
 
@@ -98,14 +94,14 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			respondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
+			handlerutil.RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
 			return
 		}
 	}
 
 	count := len(st.Data)
 	if offset >= count {
-		respondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
+		handlerutil.RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
 		return
 	}
 
@@ -130,15 +126,6 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(req.Body)
 	if err != nil {
-		respondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
-	}
-}
-
-// respondWithErr helper
-func respondWithErr(w http.ResponseWriter, status int, err error) {
-	w.WriteHeader(status)
-	err2 := json.NewEncoder(w).Encode(errorResponse{err.Error()})
-	if err2 != nil {
-		logrus.Errorf("Could not encode the error (%s) response itself: %s", err, err2)
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
 	}
 }

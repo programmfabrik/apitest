@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/internal/smtp"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
@@ -34,6 +35,10 @@ type Suite struct {
 		Testmode bool                  `json:"testmode"`
 		Proxy    httpproxy.ProxyConfig `json:"proxy"`
 	} `json:"http_server,omitempty"`
+	SmtpServer *struct {
+		Addr           string `json:"addr"`
+		MaxMessageSize int64  `json:"max_message_size"`
+	} `json:"smtp_server,omitempty"`
 	Tests []any          `json:"tests"`
 	Store map[string]any `json:"store"`
 
@@ -48,12 +53,13 @@ type Suite struct {
 	reporterRoot    *report.ReportElement
 	index           int
 	serverURL       *url.URL
-	httpServer      http.Server
+	httpServer      *http.Server
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
 	loader          template.Loader
+	smtpServer      *smtp.Server
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -175,11 +181,15 @@ func (ats *Suite) Run() bool {
 		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 	}
 
+	ats.StartSmtpServer()
+	defer ats.StopSmtpServer()
+
 	ats.StartHttpServer()
+	defer ats.StopHttpServer()
 
 	err := os.Chdir(ats.manifestDir)
 	if err != nil {
-		logrus.Errorf("Unable to switch working directory to %q", ats.manifestDir)
+		logrus.Fatalf("Unable to switch working directory to %q", ats.manifestDir)
 	}
 
 	start := time.Now()
@@ -219,8 +229,6 @@ func (ats *Suite) Run() bool {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 		}
 	}
-
-	ats.StopHttpServer()
 
 	return success
 }
