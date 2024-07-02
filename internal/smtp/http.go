@@ -223,33 +223,13 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 		multiparts = SearchByHeader(multiparts, headerSearchRgx)
 	}
 
-	multipartsOut := make([]any, 0)
-
-	for _, part := range multiparts {
-		multipartsOut = append(multipartsOut, buildContentMeta(part.Content()))
-	}
-
-	out := make(map[string]any)
-	out["count"] = len(multiparts)
-	out["multiparts"] = multipartsOut
-
-	handlerutil.RespondWithJSON(w, http.StatusOK, out)
+	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartIndex(multiparts))
 }
 
 func (h *smtpHTTPHandler) handleMultipartMeta(
 	w http.ResponseWriter, r *http.Request, part *ReceivedPart,
 ) {
-	out := map[string]any{
-		"idx": part.Index(),
-	}
-
-	contentMeta := buildContentMeta(part.Content())
-
-	for k, v := range contentMeta {
-		out[k] = v
-	}
-
-	handlerutil.RespondWithJSON(w, http.StatusOK, out)
+	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
 }
 
 func buildContentMeta(c *ReceivedContent) map[string]any {
@@ -263,6 +243,13 @@ func buildContentMeta(c *ReceivedContent) map[string]any {
 		headers[k] = v
 	}
 	out["headers"] = headers
+
+	if c.IsMultipart() {
+		multipartIndex := buildMultipartIndex(c.Multiparts())
+		for k, v := range multipartIndex {
+			out[k] = v
+		}
+	}
 
 	return out
 }
@@ -291,6 +278,34 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	subject, ok := content.Headers()["Subject"]
 	if ok && len(subject) == 1 {
 		out["subject"] = subject[0]
+	}
+
+	return out
+}
+
+func buildMultipartIndex(parts []*ReceivedPart) map[string]any {
+	multipartsOut := make([]any, len(parts))
+
+	for i, part := range parts {
+		multipartsOut[i] = buildMultipartMeta(part)
+	}
+
+	out := make(map[string]any)
+	out["multipartsCount"] = len(parts)
+	out["multiparts"] = multipartsOut
+
+	return out
+}
+
+func buildMultipartMeta(part *ReceivedPart) map[string]any {
+	out := map[string]any{
+		"idx": part.Index(),
+	}
+
+	contentMeta := buildContentMeta(part.Content())
+
+	for k, v := range contentMeta {
+		out[k] = v
 	}
 
 	return out

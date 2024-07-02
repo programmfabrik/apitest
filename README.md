@@ -2993,7 +2993,30 @@ the corresponding index is made available as JSON:
   },
   "idx": 1,
   "isMultipart": true,
-  "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
+  "multiparts": [
+    {
+      "bodySize": 15,
+      "headers": {
+        "Content-Type": [
+          "text/plain; charset=utf-8"
+        ]
+      },
+      "idx": 0,
+      "isMultipart": false
+    },
+    {
+      "bodySize": 39,
+      "headers": {
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ]
+      },
+      "idx": 1,
+      "isMultipart": false
+    }
+  ],
+  "multipartsCount": 2,
+  "receivedAt": "2024-07-02T11:44:32.767921301+02:00",
   "smtpFrom": "testsender2@programmfabrik.de",
   "smtpRcptTo": [
     "testreceiver2@programmfabrik.de"
@@ -3025,7 +3048,6 @@ following schema:
 
 ```json
 {
-  "count": 2,
   "multiparts": [
     {
       "bodySize": 15,
@@ -3034,6 +3056,7 @@ following schema:
           "text/plain; charset=utf-8"
         ]
       },
+      "idx": 0,
       "isMultipart": false
     },
     {
@@ -3043,9 +3066,11 @@ following schema:
           "text/html; charset=utf-8"
         ]
       },
+      "idx": 1,
       "isMultipart": false
     }
-  ]
+  ],
+  "multipartsCount": 2
 }
 ```
 
