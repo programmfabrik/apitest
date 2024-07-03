@@ -54,40 +54,50 @@ This starts the command with the following default settings:
 
 ### Configure which tests should be run
 
-- `--directory testDirectory` or `-d testDirectory`: Defines which directory should be used for running the tests in it. The tool walks recursively trough all subdirectories and runs alls tests that have a "manifest.json" file in alphabetical order of the folder names. (Depth-First-Search)
-- `--single path/to/a/single/manifest.json` or `-s path/to/a/single/manifest.json`: Run only a single test. The path needs to point directly to the manifest file. (Not the directory containing it)
+| Parameter                   |                    | Description                                                                                                                                                                                                                                   |
+| ---                         | ---                | ---                                                                                                                                                                                                                                           |
+| `--directory testDirectory` | `-d testDirectory` | Defines which directory should be used for running the tests in it. The tool walks recursively trough all subdirectories and runs alls tests that have a `manifest.json` file in alphabetical order of the folder names. (Depth-First-Search) |
+| `--single manifest.json`    | `-s manifest.json` | Run only a single test. The path needs to point directly to the manifest file. (Not the directory containing it)                                                                                                                              |
 
 ### Stop on fail
 
-- `stop-on-fail`: Stop execution of later test suites if a test suite fails
+| Parameter      | Description                                               |
+| ---            | ---                                                       |
+| `stop-on-fail` | Stop execution of later test suites if a test suite fails |
 
 ### Configure logging
 
 Per default request and response of a request will be logged on test failure. If you want to see more information you
 can configure the tool with additional log flags
 
-- `--log-network` / `-n`: Log all network traffic
-- `--log-datastore`: Logs datastore operations into datastore
-- `--log-verbose` / `v`: `--log-network`, `--log-datastore` and a few additional trace informations
-- `--log-short`: Show minimal logs, useful for CI chains
-- `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
-- `--curl-bash`: Log the request as curl command
-- `--limit-request`: Limit the lines of request log output. Configure limit in `apitest.yml`
-- `--limit-response`: Limit the lines of response log output. Configure limit in `apitest.yml`
+| Parameter          |      | Description                                                                |
+| ---                | ---  | ---                                                                        |
+| `--log-network`    | `-n` | Log all network traffic                                                    |
+| `--log-datastore`  |      | Logs datastore operations into datastore                                   |
+| `--log-verbose`    | `-v` | `--log-network`, `--log-datastore` and a few additional trace informations |
+| `--log-short`      |      | Show minimal logs, useful for CI chains                                    |
+| `--log-timestamp`  | `-t` | Log the timestamp of the log message into the console                      |
+| `--curl-bash`      |      | Log the request as curl command                                            |
+| `--limit-request`  |      | Limit the lines of request log output. Configure limit in `apitest.yml`    |
+| `--limit-response` |      | Limit the lines of response log output. Configure limit in `apitest.yml`   |
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.
 
 ### Overwrite config parameters
 
-- `--config subfolder/newConfigFile` or `-c subfolder/newConfigFile`: Overwrites the path of the config file (default "./apitest.yml") with "subfolder/newConfigFile"
-- `--server URL`: Overwrites base url to the api
-- `--report-file newReportFile`: Overwrites the report file name from the apitest.yml config with "newReportFile"
-- `--report-format junit`: Overwrites the report format from the apitest.yml config with "junit"
-- `--replace-host [host][:port]`: Overwrites built-in server host in template function "replace_host"
+| Parameter                      |                    | Description                                                                           |
+| ---                            | ---                | ---                                                                                   |
+| `--config newConfigFile`       | `-c newConfigFile` | Overwrites the path of the config file (default `./apitest.yml`) with `newConfigFile` |
+| `--server URL`                 |                    | Overwrites base url to the api                                                        |
+| `--report-file newReportFile`  |                    | Overwrites the report file name from the `apitest.yml` config with `newReportFile`    |
+| `--report-format junit`        |                    | Overwrites the report format from the `apitest.yml` config with `junit`               |
+| `--replace-host [host][:port]` |                    | Overwrites built-in server host in template function `replace_host`                   |
 
 ### Additional parameters
 
-- `--report-format-stats-group 3`: Sets the number of groups for manifests distrubution when using report format `stats`
+| Parameter                       | Description                                                                           |
+| ---                             | ---                                                                                   |
+| `--report-format-stats-group 3` | Sets the number of groups for manifests distrubution when using report format `stats` |
 
 ### Examples
 
@@ -97,7 +107,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 ./apitest --directory apitests --verbosity 2 --report-format junit
 ```
 
-- Only run a single test **apitests/test1/manifest.json** with **no console output** and save the maschine report to the standard file defined in the apitest.yml
+- Only run a single test **apitests/test1/manifest.json** with **no console output** and save the maschine report to the standard file defined in the `apitest.yml`
 
 ```bash
 ./apitest --single apitests/test1/manifest.json --log-console-enable false
@@ -741,7 +751,7 @@ To set data in custom store, you can use 4 methods:
 
 |                                                                 |                                                                                                                                                                                                                                                                                                                           |
 | ---                                                             | ---                                                                                                                                                                                                                                                                                                                       |
-| `store` on the **manifest.json** top level                      | the data is set before the session authentication (if any)                                                                                                                                                                                                                                                                |
+| `store` on the `manifest.json` top level                        | the data is set before the session authentication (if any)                                                                                                                                                                                                                                                                |
 | `store_response_qjson` in `authentication.store_response_qjson` |                                                                                                                                                                                                                                                                                                                           |
 | `store` on the **test** level                                   | the data is set before **request** and **response** are evaluated                                                                                                                                                                                                                                                         |
 | `store_response_qjson` on the test level                        | the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with qjson. Just prepend the qjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json) |
@@ -1478,7 +1488,7 @@ A single test could look as simple as following:
 }
 ```
 
-> Important: The paths to the external files start with a '@' and are relative to the location of the manifest.json or can be web urls e.g. https://programmfabrik.de/testfile.json
+> Important: The paths to the external files start with a `@` and are relative to the location of the `manifest.json` or can be web urls e.g. https://programmfabrik.de/testfile.json
 
 The content of the request and response file are execatly the same as if you would place the json code inline:
 
@@ -1538,12 +1548,12 @@ Template Functions are invoked using the tags `{{ }}` and upon returning substit
 
 For a reference see [https://golang.org/pkg/text/template](https://golang.org/pkg/text/template)
 
-|                                  |                                               |
-| ---                              | ---                                           |
-| `manifest.json` -> external file | load external file                            |
-| external file -> another file    | render template with file parameter `"hello"` |
-| another file -> external file    | return rendered template `"hello world"`      |
-| external file -> `manifest.json` | return rendered template                      |
+|                                    |                                               |
+| ---                                | ---                                           |
+| `manifest.json` -> external file   | load external file                            |
+| external file   -> another file    | render template with file parameter `"hello"` |
+| another file    -> external file   | return rendered template `"hello world"`      |
+| external file   -> `manifest.json` | return rendered template                      |
 
 ### Example
 
@@ -1927,10 +1937,13 @@ The key `-` has a special meaning, it returns the entire custom datastore (not t
 
 ## `qjson [path] [json]`
 
-Helper function to extract fields from the 'json'.
-- `@path`: string; a description of the location of the field to extract. For array access use integers; for object access use keys. Example: 'body.1.field'; see below for more details
-- `@json_string`: string; a valid json blob to be queried; can supplied via pipes from 'datastore idx'
-- `@result`: the content of the json blob at the specified path
+Helper function to extract fields from the `json`
+
+| Parameter      | Type     | Description                                                                                                                                                           |
+| ---            | ---      | ---                                                                                                                                                                   |
+| `@path`        | `string` | a description of the location of the field to extract. For array access use integers; for object access use keys. Example: `body.1.field`; see below for more details |
+| `@json_string` | `string` | a valid json blob to be queried; can be supplied via pipes from `datastore idx`                                                                                       |
+| `@result`      |          | the content of the json blob at the specified path                                                                                                                    |
 
 ### Example
 
@@ -1940,7 +1953,7 @@ The call
 {{ qjson "foo.1.bar" "{\"foo": [{\"bar\": \"baz\"}, 42]}" }}
 ```
 
- would return `baz`.
+would return `baz`.
 
 As an example with pipes, the call
 
@@ -1954,10 +1967,13 @@ See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
 ## `file_csv [path] [delimiter]`
 
-Helper function to load a csv file.
-- `@path`: string; a path to the csv file that should be loaded. The path is either relative to the manifest or a weburl
-- `@delimiter`: rune; The delimiter that is used in the given csv e.g. ',' Defaults to ','
-- `@result`: the content of the csv as json array so we can work on this data with qjson
+Helper function to load a csv file
+
+| Parameter    | Type     | Description                                                                                           |
+| ---          | ---      | ---                                                                                                   |
+| `@path`      | `string` | A path to the csv file that should be loaded. The path is either relative to the manifest or a weburl |
+| `@delimiter` | `rune`   | The delimiter that is used in the given csv e.g. `,` Defaults to `,`                                  |
+| `@result`    |          | The content of the csv as json array so we can work on this data with qjson                           |
 
 The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error
 
