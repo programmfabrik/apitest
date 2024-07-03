@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>apitest mock SMTP server GUI</title>
+<style>
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; font-family: monospace; }
+body { padding: 20px; box-sizing: border-box; }
+noscript { color: red; font-weight: bold; }
+.container { display: flex; flex-direction: row; gap: 20px; }
+.container nav, main { flex: 1; }
+table, th, td { border: 2px solid grey; border-collapse: collapse; }
+th, td { padding: 10px; }
+.subject-hdr { width: 100%; }
+pre { background-color: #eee; padding: 10px; box-sizing: border-box; width: 100%; overflow-x: auto; }
+#previewsection { display: none; }
+#previewframe { width: 100%; height: 800px; }
+main > div > h4:first-of-type { padding-top: 0; margin-top: 0; }
+
+@media screen and (max-width: 1900px) {
+    .container { flex-direction: column; }
+}
+</style>
+
+</head>
+
+<body>
+<noscript>This GUI needs JavaScript to function properly.</noscript>
+
+<div class="container">
+    <nav>
+        <table>
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Received</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th class="subject-hdr">Subject</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ .metadata.idx }}</td>
+		    <td>{{ .metadata.receivedAt }}</td>
+		    <td>{{ .metadata.from }}</td>
+		    <td>{{ .metadata.to }}</td>
+		    <td>{{ .metadata.subject }}</td>
+                </tr>
+	    </tbody>
+        </table>
+
+        <p>
+            <h4>Raw Message</h4>
+            <a href="{{ .prefix }}/{{ .metadata.idx }}/raw" target="_blank">Download</a>
+        </p>
+        <p>
+            <h4>Message Metadata</h4>
+            <a href="javascript:showMetadata()">Show</a>
+        </p>
+        <p>
+            <h4>Body / Multiparts:</h4>
+            {{ define "contentLinks" }}
+                {{ $contentType := .metadata.contentType }}
+                {{ if not $contentType }}
+                    {{ $contentType = "text/plain" }}
+                {{ end }}
+
+                <li>
+                    {{ .metadata.idx }}: {{ $contentType }}<br>
+                    <a href='javascript:previewContent("{{ .linkPrefix }}/body")'>Preview</a>
+                    &bull;
+                    <a href="{{ .linkPrefix }}/body" target="_blank">Download / Open in new Tab</a>
+                </li>
+
+                {{ if .metadata.isMultipart }}
+                    <ul>
+                        {{ $linkPrefix := .linkPrefix }}
+                        {{ range .metadata.multiparts }}
+                            {{ $linkPrefix := list $linkPrefix "multipart" .idx | join "/" }}
+                            {{ template "contentLinks" dict "metadata" . "linkPrefix" $linkPrefix }}
+                        {{ end }}
+                    </ul>
+                {{ end }}
+            {{ end }}
+
+	    <ul>
+                {{ $linkPrefix := list .prefix .metadata.idx | join "/" }}
+                {{ template "contentLinks" dict "metadata" .metadata "linkPrefix" $linkPrefix }}
+            </ul>
+	</p>
+    </nav>
+
+    <main>
+        <div id="metadatasection">
+            <h4>Message Metadata:</h4>
+	    <pre>{{ .metadataJson }}</pre>
+        </div>
+        <div id="previewsection">
+            <h4>Content Preview:</h4>
+            <iframe id="previewframe"></iframe>
+        </div>
+    </main>
+</div>
+
+<script>
+const metadatasection = document.getElementById("metadatasection")
+const previewsection = document.getElementById("previewsection")
+
+function previewContent(url) {
+    metadatasection.style.display = "none"
+    previewsection.style.display = "block"
+    previewframe.src=url
+}
+
+function showMetadata() {
+    metadatasection.style.display = "block"
+    previewsection.style.display = "none"
+}
+</script>
+
+</body>
+</html>

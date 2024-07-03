@@ -2,21 +2,32 @@ package smtp
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/internal/handlerutil"
 	"github.com/sirupsen/logrus"
 )
 
-//go:embed gui.html
-var guiTemplateSrc string
-var guiTemplate = template.Must(template.New("gui").Parse(guiTemplateSrc))
+//go:embed gui_index.html
+var guiIndexTemplateSrc string
+var guiIndexTemplate = template.Must(template.New("gui_index").Parse(guiIndexTemplateSrc))
+
+//go:embed gui_message.html
+var guiMessageTemplateSrc string
+var guiMessageTemplate = template.Must(template.
+	New("gui_message").
+	Funcs(sprig.TxtFuncMap()).
+	Parse(guiMessageTemplateSrc),
+)
 
 type smtpHTTPHandler struct {
 	server *Server
@@ -51,23 +62,54 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// We now know that pathParts must have at least length 1, since empty path
 	// was already handled above.
 
-	if pathParts[0] == "gui" && len(pathParts) == 1 {
-		h.handleGUI(w, r)
-		return
+	if pathParts[0] == "gui" {
+		h.routeGUIEndpoint(w, r, pathParts)
+	} else {
+		h.routeMessageEndpoint(w, r, pathParts)
 	}
+}
 
-	idx, err := strconv.Atoi(pathParts[0])
-	if err != nil {
+func (h *smtpHTTPHandler) routeGUIEndpoint(w http.ResponseWriter, r *http.Request, pathParts []string) {
+	if len(pathParts) == 0 {
 		handlerutil.RespondWithErr(
-			w, http.StatusBadRequest,
-			fmt.Errorf("could not parse message index: %w", err),
+			w, http.StatusInternalServerError,
+			fmt.Errorf("routeGUIEndpoint was called with empty pathParts"),
 		)
 		return
 	}
 
-	msg, err := h.server.ReceivedMessage(idx)
-	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
+	if len(pathParts) == 1 {
+		h.handleGUIIndex(w, r)
+		return
+	}
+
+	// We know at this point that len(pathParts) must be >= 2
+
+	msg, ok := h.retrieveMessage(w, pathParts[1])
+	if !ok {
+		return
+	}
+
+	if len(pathParts) == 2 {
+		h.handleGUIMessage(w, r, msg)
+		return
+	}
+
+	// If routing failed, return status 404.
+	w.WriteHeader(http.StatusNotFound)
+}
+
+func (h *smtpHTTPHandler) routeMessageEndpoint(w http.ResponseWriter, r *http.Request, pathParts []string) {
+	if len(pathParts) == 0 {
+		handlerutil.RespondWithErr(
+			w, http.StatusInternalServerError,
+			fmt.Errorf("routeMessageEndpoint was called with empty pathParts"),
+		)
+		return
+	}
+
+	msg, ok := h.retrieveMessage(w, pathParts[0])
+	if !ok {
 		return
 	}
 
@@ -80,12 +122,12 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.routeContentEndpoint(w, r, msg.Content(), pathParts[1:])
+	h.subrouteContentEndpoint(w, r, msg.Content(), pathParts[1:])
 }
 
-// routeContentEndpoint recursively finds a route for the remaining path parts
+// subrouteContentEndpoint recursively finds a route for the remaining path parts
 // based on the given ReceivedContent.
-func (h *smtpHTTPHandler) routeContentEndpoint(
+func (h *smtpHTTPHandler) subrouteContentEndpoint(
 	w http.ResponseWriter, r *http.Request, c *ReceivedContent, remainingPathParts []string,
 ) {
 	ensureIsMultipart := func() bool {
@@ -144,7 +186,7 @@ func (h *smtpHTTPHandler) routeContentEndpoint(
 			return
 		}
 
-		h.routeContentEndpoint(w, r, part.Content(), remainingPathParts[2:])
+		h.subrouteContentEndpoint(w, r, part.Content(), remainingPathParts[2:])
 		return
 	}
 
@@ -161,12 +203,48 @@ func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, r *http.Reque
 	w.Write(c.Body())
 }
 
-func (h *smtpHTTPHandler) handleGUI(w http.ResponseWriter, r *http.Request) {
+func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
-	err := guiTemplate.Execute(w, map[string]any{"prefix": h.prefix})
+	err := guiIndexTemplate.Execute(w, map[string]any{"prefix": h.prefix})
 	if err != nil {
-		logrus.Error("error rendering GUI:", err)
+		logrus.Error("error rendering GUI Index:", err)
+	}
+}
+
+func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
+	w.Header().Set("Content-Type", "text/html")
+
+	metadata := buildMessageFullMeta(msg)
+	metadataJson, err := json.MarshalIndent(metadata, "", "  ")
+	if err != nil {
+		handlerutil.RespondWithErr(
+			w, http.StatusInternalServerError,
+			fmt.Errorf("could not build metadata JSON: %w", err),
+		)
+		return
+	}
+
+	// TODO: For local testing only - remove before commit
+
+	src, err := os.ReadFile("/home/work/Repositories/apitest/internal/smtp/gui_message.html")
+	if err != nil {
+		panic(err)
+	}
+
+	guiMessageTemplate = template.Must(template.
+		New("gui_message").
+		Funcs(sprig.TxtFuncMap()).
+		Parse(string(src)),
+	)
+
+	err = guiMessageTemplate.Execute(w, map[string]any{
+		"prefix":       h.prefix,
+		"metadata":     metadata,
+		"metadataJson": string(metadataJson),
+	})
+	if err != nil {
+		logrus.Error("error rendering GUI Message:", err)
 	}
 }
 
@@ -196,14 +274,7 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
-	out := buildMessageBasicMeta(msg)
-	contentMeta := buildContentMeta(msg.Content())
-
-	for k, v := range contentMeta {
-		out[k] = v
-	}
-
-	handlerutil.RespondWithJSON(w, http.StatusOK, out)
+	handlerutil.RespondWithJSON(w, http.StatusOK, buildMessageFullMeta(msg))
 }
 
 func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
@@ -230,6 +301,28 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 	w http.ResponseWriter, r *http.Request, part *ReceivedPart,
 ) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
+}
+
+// retrieveMessage attempts to retrieve the message referenced by the given index (still in string
+// form at this point). If the index could not be read or the message could not be retrieved,
+// an according error message will be returned via HTTP.
+func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, sIdx string) (*ReceivedMessage, bool) {
+	idx, err := strconv.Atoi(sIdx)
+	if err != nil {
+		handlerutil.RespondWithErr(
+			w, http.StatusBadRequest,
+			fmt.Errorf("could not parse message index: %w", err),
+		)
+		return nil, false
+	}
+
+	msg, err := h.server.ReceivedMessage(idx)
+	if err != nil {
+		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
+		return nil, false
+	}
+
+	return msg, true
 }
 
 func buildContentMeta(c *ReceivedContent) map[string]any {
@@ -287,6 +380,17 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	subject, ok := content.Headers()["Subject"]
 	if ok && len(subject) == 1 {
 		out["subject"] = subject[0]
+	}
+
+	return out
+}
+
+func buildMessageFullMeta(msg *ReceivedMessage) map[string]any {
+	out := buildMessageBasicMeta(msg)
+	contentMeta := buildContentMeta(msg.Content())
+
+	for k, v := range contentMeta {
+		out[k] = v
 	}
 
 	return out
