@@ -49,7 +49,7 @@ This starts the command with the following default settings:
 
 - Runs all tests that are in the current directory, or in any of its subdirectories
 - Logs to console
-- Writes the machine log, to the given file in the apitest.yml
+- Writes the machine log, to the given file in the `apitest.yml`
 - Logs only the request & responses if a test fails
 
 ### Configure which tests should be run
@@ -66,33 +66,16 @@ This starts the command with the following default settings:
 Per default request and response of a request will be logged on test failure. If you want to see more information you
 can configure the tool with additional log flags
 
-- `--log-network`: Log all network traffic
+- `--log-network` / `-n`: Log all network traffic
 - `--log-datastore`: Logs datastore operations into datastore
-- `--log-verbose`: `--log-network`, `--log-datastore` and a few additional trace informations
+- `--log-verbose` / `v`: `--log-network`, `--log-datastore` and a few additional trace informations
 - `--log-short`: Show minimal logs, useful for CI chains
 - `--log-timestamp` / `-t`: Log the timestamp of the log message into the console
 - `--curl-bash`: Log the request as curl command
-- `-l`: Limit the lines of request log output. Configure limit in apitest.yml
+- `--limit-request`: Limit the lines of request log output. Configure limit in `apitest.yml`
+- `--limit-response`: Limit the lines of response log output. Configure limit in `apitest.yml`
 
 You can also set the log verbosity per single testcase. The greater verbosity wins.
-
-
-#### Console logging
-
-- `--log-console-enable false`: If you want to see a log in the console this parameter needs to be "true" (what is also the default)
-- `--log-console-level debug`: Sets the loglevel which controls what kind of output should be displayed in the console
-  - `--log-console-level info` (default): Shows only critical information
-  - `--log-console-level warn`: Shows more verbose log output
-  - `--log-console-level debug`: Shows all possible log output
-
-#### SQLite logging
-
-- `--log-sqlite-enable false`: If you want to save the into a sqlite databasethis parameter needs to be "true"
-- `--log-sqlite-file newLog.db`: Defines the filename in which the sqlite log should be saved
-- `--log-sqlite-level debug`: Sets the loglevel which controls what kind of output should be saved into the sqlite database
-  - `--log-sqlite-level info` (default): Saves only critical information
-  - `--log-sqlite-level warn`: Saves more verbose log output
-  - `--log-sqlite-level debug`: Saves all possible log output
 
 ### Overwrite config parameters
 
