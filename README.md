@@ -65,6 +65,11 @@ This starts the command with the following default settings:
 | ---            | ---                                                       |
 | `stop-on-fail` | Stop execution of later test suites if a test suite fails |
 
+### Keep running
+
+- `keep-running`: Wait for a keyboard interrupt after each test suite invocation.
+  This can be useful for keeping the HTTP / SMTP server for manual inspection.
+
 ### Configure logging
 
 Per default request and response of a request will be logged on test failure. If you want to see more information you

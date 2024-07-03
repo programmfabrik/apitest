@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -228,6 +229,22 @@ func (ats *Suite) Run() bool {
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 		}
+	}
+
+	if keepRunning { // flag defined in main.go
+		logrus.Info("Waiting until a keyboard interrupt (usually CTRL+C) is received...")
+
+		if ats.HttpServer != nil {
+			logrus.Info("HTTP Server URL:", ats.HttpServer.Addr)
+		}
+		if ats.SmtpServer != nil {
+			logrus.Info("SMTP Server URL:", ats.SmtpServer.Addr)
+		}
+
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt)
+
+		<-sigChan
 	}
 
 	return success
