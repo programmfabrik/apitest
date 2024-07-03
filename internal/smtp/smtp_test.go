@@ -22,7 +22,7 @@ var server *Server = runTestSession()
 func TestMessageParsing(t *testing.T) {
 	expectedMessages := buildExpectedMessages()
 
-	require.Equal(t, len(server.receivedMessages), len(expectedMessages), "number of received messages")
+	require.Equal(t, len(expectedMessages), len(server.receivedMessages), "number of received messages")
 
 	for i := range expectedMessages {
 		assertMessageEqual(t, expectedMessages[i], server.receivedMessages[i])
