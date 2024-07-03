@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -224,19 +223,6 @@ func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Reques
 		)
 		return
 	}
-
-	// TODO: For local testing only - remove before commit
-
-	src, err := os.ReadFile("/home/work/Repositories/apitest/internal/smtp/gui_message.html")
-	if err != nil {
-		panic(err)
-	}
-
-	guiMessageTemplate = template.Must(template.
-		New("gui_message").
-		Funcs(sprig.TxtFuncMap()).
-		Parse(string(src)),
-	)
 
 	err = guiMessageTemplate.Execute(w, map[string]any{
 		"prefix":       h.prefix,
