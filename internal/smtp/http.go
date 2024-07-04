@@ -1,15 +1,19 @@
 package smtp
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"net/mail"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/internal/handlerutil"
@@ -61,9 +65,12 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// We now know that pathParts must have at least length 1, since empty path
 	// was already handled above.
 
-	if pathParts[0] == "gui" {
+	switch pathParts[0] {
+	case "gui":
 		h.routeGUIEndpoint(w, r, pathParts)
-	} else {
+	case "postmessage":
+		h.handlePostMessage(w, r)
+	default:
 		h.routeMessageEndpoint(w, r, pathParts)
 	}
 }
@@ -287,6 +294,64 @@ func (h *smtpHTTPHandler) handleMultipartMeta(
 	w http.ResponseWriter, r *http.Request, part *ReceivedPart,
 ) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
+}
+
+func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Request) {
+	maxMessageSize := h.server.maxMessageSize
+	if maxMessageSize == 0 {
+		maxMessageSize = DefaultMaxMessageSize
+	}
+
+	if r.Method != http.MethodPost {
+		handlerutil.RespondWithErr(
+			w, http.StatusMethodNotAllowed,
+			fmt.Errorf("postmessage only accepts POST requests"),
+		)
+		return
+	}
+
+	rawMessageData, err := io.ReadAll(io.LimitReader(r.Body, maxMessageSize))
+	if err != nil {
+		handlerutil.RespondWithErr(
+			w, http.StatusBadRequest,
+			fmt.Errorf("error reading body: %w", err),
+		)
+		return
+	}
+
+	// Ensure line endings are CRLF
+	rawMessageData = bytes.ReplaceAll(rawMessageData, []byte("\r\n"), []byte("\n"))
+	rawMessageData = bytes.ReplaceAll(rawMessageData, []byte("\n"), []byte("\r\n"))
+
+	parsedRfcMsg, err := mail.ReadMessage(bytes.NewReader(rawMessageData))
+	if err != nil {
+		handlerutil.RespondWithErr(
+			w, http.StatusBadRequest,
+			fmt.Errorf("postmessage could not parse message: %w", err),
+		)
+		return
+	}
+
+	from := parsedRfcMsg.Header.Get("From")
+	rcptTo := parsedRfcMsg.Header["To"]
+	receivedAt := time.Now()
+
+	msg, err := NewReceivedMessageFromParsed(
+		0, // the index will be overriden by Server.AppendMessage below
+		from, rcptTo, rawMessageData, receivedAt, maxMessageSize,
+		parsedRfcMsg,
+	)
+	if err != nil {
+		handlerutil.RespondWithErr(
+			w, http.StatusBadRequest,
+			fmt.Errorf("postmessage could not build ReceivedMessage: %w", err),
+		)
+		return
+	}
+
+	h.server.AppendMessage(msg)
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // retrieveMessage attempts to retrieve the message referenced by the given index (still in string

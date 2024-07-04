@@ -74,6 +74,19 @@ func NewReceivedMessage(
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
+	return NewReceivedMessageFromParsed(
+		index, from, rcptTo, rawMessageData, receivedAt, maxMessageSize, parsedMsg,
+	)
+}
+
+// NewReceivedMessageFromParsed creates a ReceivedMessage from an already parsed email.
+//
+// See the documentation of NewReceivedMessage for more details.
+func NewReceivedMessageFromParsed(
+	index int,
+	from string, rcptTo []string, rawMessageData []byte, receivedAt time.Time,
+	maxMessageSize int64, parsedMsg *mail.Message,
+) (*ReceivedMessage, error) {
 	content, err := NewReceivedContent(parsedMsg.Header, parsedMsg.Body, maxMessageSize)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse content: %w", err)

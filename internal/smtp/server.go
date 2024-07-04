@@ -68,6 +68,18 @@ func NewServer(addr string, maxMessageSize int64) *Server {
 	return server
 }
 
+// AppendMessage adds a custom message to the Server's storage.
+//
+// The index of the provided message will be updated to the index at which
+// it was actually inserted into the Server's storage.
+func (s *Server) AppendMessage(msg *ReceivedMessage) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	msg.index = len(s.receivedMessages)
+	s.receivedMessages = append(s.receivedMessages, msg)
+}
+
 // ListenAndServe runs the SMTP server. It will not return until the server is
 // shut down or otherwise aborts.
 func (s *Server) ListenAndServe() error {
