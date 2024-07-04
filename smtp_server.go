@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/smtp"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
 // StartSmtpServer starts the testing SMTP server, if configured.
@@ -29,6 +30,8 @@ func (ats *Suite) StartSmtpServer() {
 			logrus.Fatal("SMTP server ListenAndServe:", err)
 		}
 	}()
+
+	util.WaitForTCP(ats.SmtpServer.Addr)
 }
 
 // StopSmtpServer stops the SMTP server that was started using StartSMTPServer.

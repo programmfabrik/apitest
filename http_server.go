@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
@@ -78,6 +79,8 @@ func (ats *Suite) StartHttpServer() {
 		run()
 	} else {
 		go run()
+
+		util.WaitForTCP(ats.HttpServer.Addr)
 	}
 }
 
