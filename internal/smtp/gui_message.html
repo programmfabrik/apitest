@@ -60,6 +60,12 @@ main > div > h4:first-of-type { padding-top: 0; margin-top: 0; }
         </p>
         <p>
             <h4>Body / Multiparts:</h4>
+            {{ define "humanSize" -}}
+                {{- if lt . 1000 }}{{ . }} B
+                {{- else if lt . 1000000 }}{{ div . 1000 }} KB
+                {{- else }}{{ div . 1000000 }} MB{{ end -}}
+            {{- end }}
+
             {{ define "contentLinks" }}
                 {{ $contentType := .metadata.contentType }}
                 {{ if not $contentType }}
@@ -67,7 +73,7 @@ main > div > h4:first-of-type { padding-top: 0; margin-top: 0; }
                 {{ end }}
 
                 <li>
-                    {{ .metadata.idx }}: {{ $contentType }}<br>
+                    {{ .metadata.idx }}: {{ $contentType }} ({{ template "humanSize" .metadata.bodySize }})<br>
                     <a href='javascript:previewContent("{{ .linkPrefix }}/body")'>Preview</a>
                     &bull;
                     <a href="{{ .linkPrefix }}/body" target="_blank">Download / Open in new Tab</a>
