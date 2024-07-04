@@ -433,14 +433,12 @@ Using `"0@file.json"` will not run that specific test.
 
 ```yaml
 {
-    "name": "Binary Comparison",
-    "request": {
-        "endpoint": "suggest",
-        "method": "GET"
-    },
-
-    // Path to binary file with N@
-    "response": "123@simple.bin"
+    "name": "Example Manifest",
+    "tests": [
+        "@setup.json",
+        "123@foo.json",
+        "@cleanup.json"
+    ]
 }
 ```
 
