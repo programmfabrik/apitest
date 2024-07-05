@@ -210,7 +210,7 @@ func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	err := guiIndexTemplate.Execute(w, map[string]any{"prefix": h.prefix})
 	if err != nil {
@@ -219,8 +219,6 @@ func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
-	w.Header().Set("Content-Type", "text/html")
-
 	metadata := buildMessageFullMeta(msg)
 	metadataJson, err := json.MarshalIndent(metadata, "", "  ")
 	if err != nil {
@@ -230,6 +228,8 @@ func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Reques
 		)
 		return
 	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	err = guiMessageTemplate.Execute(w, map[string]any{
 		"prefix":       h.prefix,
