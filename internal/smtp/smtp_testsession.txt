@@ -37,6 +37,7 @@ RCPT TO: testreceiver3@programmfabrik.de
 DATA
 From: testsender3@programmfabrik.de
 To: testreceiver3@programmfabrik.de
+Subject: Example Message
 Content-Type: text/plain; charset=utf-8
 
 Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß
@@ -57,6 +58,7 @@ RCPT TO: testreceiver5@programmfabrik.de
 DATA
 From: testsender5@programmfabrik.de
 To: testreceiver5@programmfabrik.de
+Subject: Example Message
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
@@ -131,6 +133,16 @@ X-Funky-Header: Käse
 
 Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/html; charset=utf-8
+X-Funky-Header: Nase
+
+<i>Foo</i>
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+X-Funky-Header: Phase
+
+Foobar.
 --d36c3118be4745f9a1cb4556d11fe92d--
 .
 MAIL FROM: testsender10@programmfabrik.de
@@ -146,7 +158,7 @@ Content-type: multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"
 --d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: text/plain; charset=utf-8
 
-Some plain text for clients that don't support multipart.
+Some plain text for clients that don't support nested multipart.
 --d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
 

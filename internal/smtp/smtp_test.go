@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -103,6 +104,54 @@ func TestMessageSearch(t *testing.T) {
 	}
 }
 
+func TestMessageSearchAND(t *testing.T) {
+	testCases := []struct {
+		queries         []string
+		expectedIndices []int
+	}{
+		{
+			queries: []string{
+				"Subject: Example Message",
+				"To: testreceiver6\\@.*",
+			},
+			expectedIndices: []int{5},
+		},
+		{
+			queries: []string{
+				"From: testsender5\\@.*",
+				"Content-Transfer-Encoding: .*",
+			},
+			expectedIndices: []int{4},
+		},
+		{
+			queries: []string{
+				"Subject: Example Message",
+				"Content-Type: text/plain",
+			},
+			expectedIndices: []int{2, 4},
+		},
+	}
+
+	for i := range testCases {
+		testCase := testCases[i]
+
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			rxs := make([]*regexp.Regexp, len(testCase.queries))
+			for j, query := range testCase.queries {
+				rxs[j] = regexp.MustCompile(query)
+			}
+
+			actual := SearchByHeader(server.ReceivedMessages(), rxs...)
+
+			actualIndices := make([]int, len(actual))
+			for ai, av := range actual {
+				actualIndices[ai] = av.index
+			}
+			assert.ElementsMatch(t, testCase.expectedIndices, actualIndices)
+		})
+	}
+}
+
 func TestMultipartSearch(t *testing.T) {
 	// This test uses message #8 for all of its tests.
 
@@ -119,10 +168,15 @@ func TestMultipartSearch(t *testing.T) {
 		},
 		{
 			queries: []string{
-				"X-Funky-Header",
 				"Content-Transfer-Encoding",
 			},
 			expectedIndices: []int{0, 1},
+		},
+		{
+			queries: []string{
+				"X-Funky-Header",
+			},
+			expectedIndices: []int{0, 1, 2, 3},
 		},
 		{
 			queries: []string{
@@ -167,6 +221,52 @@ func TestMultipartSearch(t *testing.T) {
 				assert.ElementsMatch(t, testCase.expectedIndices, actualIndices)
 			})
 		}
+	}
+}
+
+func TestMultipartSearchAND(t *testing.T) {
+	// This test uses message #8 for all of its tests.
+
+	testCases := []struct {
+		queries         []string
+		expectedIndices []int
+	}{
+		{
+			queries: []string{
+				"X-Funky-Header: .*se$",
+				"Content-Type: text/plain",
+			},
+			expectedIndices: []int{1, 3},
+		},
+		{
+			queries: []string{
+				"X-Funky-Header: ..se$",
+				"Content-Type: text/plain",
+			},
+			expectedIndices: []int{1},
+		},
+	}
+
+	for i := range testCases {
+		testCase := testCases[i]
+
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			rxs := make([]*regexp.Regexp, len(testCase.queries))
+			for j, query := range testCase.queries {
+				rxs[j] = regexp.MustCompile(query)
+			}
+
+			msg, err := server.ReceivedMessage(8)
+			require.NoError(t, err)
+
+			actual := SearchByHeader(msg.Content().Multiparts(), rxs...)
+
+			actualIndices := make([]int, len(actual))
+			for ai, av := range actual {
+				actualIndices[ai] = av.index
+			}
+			assert.ElementsMatch(t, testCase.expectedIndices, actualIndices)
+		})
 	}
 }
 
@@ -351,6 +451,7 @@ Trailing text is ignored.`),
 			smtpRcptTo: []string{"testreceiver3@programmfabrik.de"},
 			rawMessageData: []byte(`From: testsender3@programmfabrik.de
 To: testreceiver3@programmfabrik.de
+Subject: Example Message
 Content-Type: text/plain; charset=utf-8
 
 Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß`),
@@ -359,6 +460,7 @@ Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß`),
 				headers: map[string][]string{
 					"From":         {"testsender3@programmfabrik.de"},
 					"To":           {"testreceiver3@programmfabrik.de"},
+					"Subject":      {"Example Message"},
 					"Content-Type": {"text/plain; charset=utf-8"},
 				},
 				body:        []byte(`Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß`),
@@ -401,6 +503,7 @@ w6TDtsO8w58K`),
 			smtpRcptTo: []string{"testreceiver5@programmfabrik.de"},
 			rawMessageData: []byte(`From: testsender5@programmfabrik.de
 To: testreceiver5@programmfabrik.de
+Subject: Example Message
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
@@ -411,6 +514,7 @@ d-printable.`),
 				headers: map[string][]string{
 					"From":                      {"testsender5@programmfabrik.de"},
 					"To":                        {"testreceiver5@programmfabrik.de"},
+					"Subject":                   {"Example Message"},
 					"Content-Type":              {"text/plain; charset=utf-8"},
 					"Content-Transfer-Encoding": {"quoted-printable"},
 				},
@@ -573,6 +677,16 @@ X-Funky-Header: Käse
 
 Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/html; charset=utf-8
+X-Funky-Header: Nase
+
+<i>Foo</i>
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+X-Funky-Header: Phase
+
+Foobar.
 --d36c3118be4745f9a1cb4556d11fe92d--`),
 			receivedAt: testTime,
 			content: &ReceivedContent{
@@ -598,6 +712,16 @@ X-Funky-Header: Käse
 
 Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/html; charset=utf-8
+X-Funky-Header: Nase
+
+<i>Foo</i>
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+X-Funky-Header: Phase
+
+Foobar.
 --d36c3118be4745f9a1cb4556d11fe92d--`),
 				contentType: "multipart/mixed",
 				contentTypeParams: map[string]string{
@@ -636,6 +760,34 @@ d-printable.
 							},
 						},
 					},
+					{
+						index: 2,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":   {"text/html; charset=utf-8"},
+								"X-Funky-Header": {"Nase"},
+							},
+							body:        []byte(`<i>Foo</i>`),
+							contentType: "text/html",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
+						},
+					},
+					{
+						index: 3,
+						content: &ReceivedContent{
+							headers: map[string][]string{
+								"Content-Type":   {"text/plain; charset=utf-8"},
+								"X-Funky-Header": {"Phase"},
+							},
+							body:        []byte(`Foobar.`),
+							contentType: "text/plain",
+							contentTypeParams: map[string]string{
+								"charset": "utf-8",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -653,7 +805,7 @@ Content-type: multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"
 --d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: text/plain; charset=utf-8
 
-Some plain text for clients that don't support multipart.
+Some plain text for clients that don't support nested multipart.
 --d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
 
@@ -680,7 +832,7 @@ This is the <i>second</i> subpart.
 				body: []byte(`--d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: text/plain; charset=utf-8
 
-Some plain text for clients that don't support multipart.
+Some plain text for clients that don't support nested multipart.
 --d36c3118be4745f9a1cb4556d11fe92d
 Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
 
@@ -706,7 +858,7 @@ This is the <i>second</i> subpart.
 							headers: map[string][]string{
 								"Content-Type": {"text/plain; charset=utf-8"},
 							},
-							body: []byte(`Some plain text for clients that don't support multipart.`),
+							body: []byte(`Some plain text for clients that don't support nested multipart.`),
 
 							contentType: "text/plain",
 							contentTypeParams: map[string]string{
