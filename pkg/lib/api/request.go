@@ -175,8 +175,6 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	}
 
 	for key, val := range request.QueryParams {
-		q.Del(key)
-
 		err = addToQuery(key, val)
 		if err != nil {
 			return req, err
