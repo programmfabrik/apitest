@@ -10,7 +10,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
-	"reflect"
 	"strings"
 	"time"
 
@@ -117,34 +116,17 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 
 	q := req.URL.Query()
 
-	addToQuery := func(key string, val any) error {
-		var vs []any
-
-		refval := reflect.ValueOf(val)
-
-		switch refval.Kind() {
-		case reflect.Array, reflect.Slice:
-			l := refval.Len()
-			vs = make([]any, l)
-			for i := 0; i < l; i++ {
-				vs[i] = refval.Index(i).Interface()
-			}
-		default:
-			vs = []any{val}
+	addToQuery := func(key string, v any) error {
+		stringVal, err := util.GetStringFromInterface(v)
+		if err != nil {
+			return fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
 
-		for _, v := range vs {
-			stringVal, err := util.GetStringFromInterface(v)
-			if err != nil {
-				return fmt.Errorf("error GetStringFromInterface: %s", err)
-			}
-
-			if stringVal == "" {
-				return nil
-			}
-
-			q.Add(key, stringVal)
+		if stringVal == "" {
+			return nil
 		}
+
+		q.Add(key, stringVal)
 
 		return nil
 	}
