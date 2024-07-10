@@ -116,21 +116,6 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 
 	q := req.URL.Query()
 
-	addToQuery := func(key string, v any) error {
-		stringVal, err := util.GetStringFromInterface(v)
-		if err != nil {
-			return fmt.Errorf("error GetStringFromInterface: %s", err)
-		}
-
-		if stringVal == "" {
-			return nil
-		}
-
-		q.Add(key, stringVal)
-
-		return nil
-	}
-
 	for queryName, datastoreKey := range request.QueryParamsFromStore {
 		skipOnError := false
 		if len(datastoreKey) > 0 && datastoreKey[0] == '?' {
@@ -150,17 +135,23 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
 		}
 
-		err = addToQuery(queryName, queryParamInterface)
+		stringVal, err := util.GetStringFromInterface(queryParamInterface)
 		if err != nil {
-			return req, err
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
+
+		if stringVal == "" {
+			continue
+		}
+		q.Add(queryName, stringVal)
 	}
 
 	for key, val := range request.QueryParams {
-		err = addToQuery(key, val)
+		stringVal, err := util.GetStringFromInterface(val)
 		if err != nil {
-			return req, err
+			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
 		}
+		q.Set(key, stringVal)
 	}
 
 	req.URL.RawQuery = q.Encode()
