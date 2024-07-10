@@ -481,8 +481,21 @@ func buildMultipartMeta(part *ReceivedPart) map[string]any {
 func extractSearchRegexes(
 	w http.ResponseWriter, queryParams map[string][]string, paramName string,
 ) ([]*regexp.Regexp, error) {
-	searchParams, ok := queryParams[paramName]
+	filteredParams, ok := queryParams[paramName]
 	if ok {
+		if len(filteredParams) != 1 {
+			return nil, fmt.Errorf(
+				"expected 1 %q query parameter, got %d (use JSON array for multiple queries)",
+				paramName, len(filteredParams),
+			)
+		}
+
+		var searchParams []string
+		err := json.Unmarshal([]byte(filteredParams[0]), &searchParams)
+		if err != nil {
+			searchParams = []string{filteredParams[0]}
+		}
+
 		out := make([]*regexp.Regexp, len(searchParams))
 
 		for i, p := range searchParams {
