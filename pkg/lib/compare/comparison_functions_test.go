@@ -892,6 +892,19 @@ func TestComparison(t *testing.T) {
 			eFailures: nil,
 		},
 		{
+			name: "check control not_equal (different types number, array)",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": util.JsonArray([]any{"right"}),
+				},
+			},
+			right: util.JsonObject{
+				"v": 123.456,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
 			name: "check control not_equal (different types string, number)",
 			left: util.JsonObject{
 				"v:control": util.JsonObject{
@@ -975,6 +988,32 @@ func TestComparison(t *testing.T) {
 			eFailures: nil,
 		},
 		{
+			name: "Check not_equal with null and array",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": nil,
+				},
+			},
+			right: util.JsonObject{
+				"v": util.JsonArray([]any{"not null"}),
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal with array and null",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": util.JsonArray([]any{"not null"}),
+				},
+			},
+			right: util.JsonObject{
+				"v": nil,
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
 			name: "Check not_equal: string with different value",
 			left: util.JsonObject{
 				"v:control": util.JsonObject{
@@ -1002,6 +1041,37 @@ func TestComparison(t *testing.T) {
 				{
 					Key:     "v",
 					Message: "is equal to String 'left', should not be equal",
+				},
+			},
+		},
+		{
+			name: "Check not_equal: array with different value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": util.JsonArray([]any{"left", "right"}),
+				},
+			},
+			right: util.JsonObject{
+				"v": util.JsonArray([]any{"right", "left"}),
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "Check not_equal: array with same value",
+			left: util.JsonObject{
+				"v:control": util.JsonObject{
+					"not_equal": util.JsonArray([]any{"left", "right"}),
+				},
+			},
+			right: util.JsonObject{
+				"v": util.JsonArray([]any{"left", "right"}),
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "v",
+					Message: `is equal to Array ["left","right"], should not be equal`,
 				},
 			},
 		},

@@ -127,6 +127,27 @@
         }
     },
     {
+        "name": "check control not_equal (different types array, string)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "array": ["foo"]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "array:control": {
+                        "not_equal": "foo"
+                    }
+                }
+            }
+        }
+    },
+    {
         "name": "check control not_equal (invalid type object, must fail)",
         "request": {
             "server_url": "http://localhost:9999",
@@ -144,32 +165,6 @@
                         "not_equal": {
                             "invalid": true
                         }
-                    }
-                }
-            }
-        },
-        "reverse_test_result":true
-    },
-    {
-        "name": "check control not_equal (invalid type array, must fail)",
-        "request": {
-            "server_url": "http://localhost:9999",
-            "endpoint": "bounce-json",
-            "method": "POST",
-            "body": {
-                "str": "left"
-            }
-        },
-        "response": {
-            "statuscode": 200,
-            "body": {
-                "body": {
-                    "str:control": {
-                        "not_equal": [
-                            {
-                                "invalid": true
-                            }
-                        ]
                     }
                 }
             }
@@ -215,6 +210,27 @@
             "body": {
                 "body": {
                     "str:control": {
+                        "not_equal": null
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (different types array, null)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "array": "left"
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "array:control": {
                         "not_equal": null
                     }
                 }
@@ -285,6 +301,50 @@
         }
     },
 
+    // not_equal, compare with array
+    {
+        "name": "check control not_equal (same type array)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "array": ["right", "left"]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "array:control": {
+                        "not_equal": ["left", "right"]
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "check control not_equal (same type array) (equal value, should fail)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "array": ["left", "right"]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "array:control": {
+                        "not_equal": ["left", "right"]
+                    }
+                }
+            }
+        },
+        "reverse_test_result": true
+    },
     // not_equal, compare with string
     {
         "name": "check control not_equal (same type string)",
