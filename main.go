@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	reportFormat, reportFile, serverURL, httpServerReplaceHost                        string
-	logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
-	rootDirectorys, singleTests                                                       []string
-	limitRequest, limitResponse, reportStatsGroups                                    uint
+	reportFormat, reportFile, serverURL, httpServerReplaceHost                                     string
+	keepRunning, logNetwork, logDatastore, logVerbose, logTimeStamp, logShort, logCurl, stopOnFail bool
+	rootDirectorys, singleTests                                                                    []string
+	limitRequest, limitResponse, reportStatsGroups                                                 uint
 	// set via -ldflags during build
 	buildCommit, buildTime, buildVersion string
 )
@@ -84,6 +84,10 @@ func init() {
 	testCMD.PersistentFlags().BoolVar(
 		&logCurl, "curl-bash", false,
 		"Log network output as bash curl command")
+
+	testCMD.PersistentFlags().BoolVar(
+		&keepRunning, "keep-running", false,
+		"Before returning from each test suite, prompt for a keyboard interrupt")
 
 	testCMD.PersistentFlags().BoolVar(
 		&stopOnFail, "stop-on-fail", false,

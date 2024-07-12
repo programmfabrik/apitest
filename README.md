@@ -65,6 +65,11 @@ This starts the command with the following default settings:
 | ---            | ---                                                       |
 | `stop-on-fail` | Stop execution of later test suites if a test suite fails |
 
+### Keep running
+
+- `keep-running`: Wait for a keyboard interrupt after each test suite invocation.
+  This can be useful for keeping the HTTP / SMTP server for manual inspection.
+
 ### Configure logging
 
 Per default request and response of a request will be logged on test failure. If you want to see more information you
@@ -179,6 +184,12 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "addr": ":1234",
         "dir": ".",
         "testmode": false
+    },
+
+    // Optional temporary SMTP Server (see below)
+    "smtp_server": {
+        "addr": ":9025",
+        "max_message_size": 1000000,
     },
 
     // Specify a unique log behavior only for this single test.
@@ -2855,3 +2866,275 @@ The expected response:
     }
 }
 ```
+
+## SMTP Server
+### Summary and Configuration
+The apitest tool can run a mock SMTP server intended to catch locally sent
+emails for testing purposes.
+
+To add the SMTP Server to your test, put the following in your manifest:
+
+```yaml
+{
+    "smtp_server": {
+        "addr":             ":9025", // address to listen on
+        "max_message_size": 1000000  // maximum accepted message size in bytes
+                                     // (defaults to 30MiB)
+    }
+}
+```
+
+The server will then listen on the specified address for incoming emails.
+Incoming messages are stored in memory and can be accessed using the HTTP
+endpoints described further below. No authentication is performed when
+receiving messages.
+
+If the test mode is enabled on the HTTP server and an SMTP server is also
+configured, both the HTTP and the SMTP server will be available during
+interactive testing.
+
+### HTTP Endpoints
+On its own, the SMTP server has only limited use, e.g. as an email sink for
+applications that require such an email sink to function. But when combined
+with the HTTP server (see above in section [HTTP Server](#http-server)),
+the messages received by the SMTP server can be reproduced in JSON format.
+
+When both the SMTP server and the HTTP server are enabled, the following
+additional endpoints are made available on the HTTP server:
+
+#### /smtp/gui
+A very basic HTML/JavaScript GUI that displays and auto-refreshes the received
+messages is made available on the `/smtp/gui` endpoint.
+
+#### /smtp
+On the `/smtp` endpoint, an index of all received messages will be made
+available as JSON in the following schema:
+
+```json
+{
+  "count": 3,
+  "messages": [
+    {
+      "from": [
+        "testsender@programmfabrik.de"
+      ],
+      "idx": 0,
+      "isMultipart": false,
+      "receivedAt": "2024-07-02T11:23:31.212023129+02:00",
+      "smtpFrom": "testsender@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver@programmfabrik.de"
+      ],
+      "to": [
+        "testreceiver@programmfabrik.de"
+      ]
+    },
+    {
+      "from": [
+        "testsender2@programmfabrik.de"
+      ],
+      "idx": 1,
+      "isMultipart": true,
+      "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
+      "smtpFrom": "testsender2@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver2@programmfabrik.de"
+      ],
+      "subject": "Example Message",
+      "to": [
+        "testreceiver2@programmfabrik.de"
+      ]
+    },
+    {
+      "from": [
+        "testsender3@programmfabrik.de"
+      ],
+      "idx": 2,
+      "isMultipart": false,
+      "receivedAt": "2024-07-02T11:23:31.212773829+02:00",
+      "smtpFrom": "testsender3@programmfabrik.de",
+      "smtpRcptTo": [
+        "testreceiver3@programmfabrik.de"
+      ],
+      "to": [
+        "testreceiver3@programmfabrik.de"
+      ]
+    }
+  ]
+}
+```
+
+Headers that were encoded according to RFC2047 are decoded first.
+
+#### /smtp/$idx
+On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with
+the corresponding index is made available as JSON:
+
+```json
+{
+  "bodySize": 306,
+  "contentType": "multipart/mixed",
+  "contentTypeParams": {
+    "boundary": "d36c3118be4745f9a1cb4556d11fe92d"
+  },
+  "from": [
+    "testsender2@programmfabrik.de"
+  ],
+  "headers": {
+    "Content-Type": [
+      "multipart/mixed; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
+    ],
+    "Date": [
+      "Tue, 25 Jun 2024 11:15:57 +0200"
+    ],
+    "From": [
+      "testsender2@programmfabrik.de"
+    ],
+    "Mime-Version": [
+      "1.0"
+    ],
+    "Subject": [
+      "Example Message"
+    ],
+    "To": [
+      "testreceiver2@programmfabrik.de"
+    ]
+  },
+  "idx": 1,
+  "isMultipart": true,
+  "multiparts": [
+    {
+      "bodySize": 15,
+      "contentType": "text/plain",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
+      "headers": {
+        "Content-Type": [
+          "text/plain; charset=utf-8"
+        ]
+      },
+      "idx": 0,
+      "isMultipart": false
+    },
+    {
+      "bodySize": 39,
+      "contentType": "text/html",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
+      "headers": {
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ]
+      },
+      "idx": 1,
+      "isMultipart": false
+    }
+  ],
+  "multipartsCount": 2,
+  "receivedAt": "2024-07-02T12:54:44.443488367+02:00",
+  "smtpFrom": "testsender2@programmfabrik.de",
+  "smtpRcptTo": [
+    "testreceiver2@programmfabrik.de"
+  ],
+  "subject": "Example Message",
+  "to": [
+    "testreceiver2@programmfabrik.de"
+  ]
+}
+```
+
+Headers that were encoded according to RFC2047 are decoded first.
+
+#### /smtp/$idx/body
+On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the message body
+(excluding message headers, including multipart part headers) is made availabe
+for the message with the corresponding index.
+
+If the message was sent with a `Content-Transfer-Encoding` of either `base64`
+or `quoted-printable`, the endpoint returns the decoded body.
+
+If the message was sent with a `Content-Type` header, it will be passed through
+to the HTTP response.
+
+#### /smtp/$idx/multipart
+For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g.
+`/smtp/1/multipart`) will contain an index of that messages multiparts in the
+following schema:
+
+```json
+{
+  "multiparts": [
+    {
+      "bodySize": 15,
+      "contentType": "text/plain",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
+      "headers": {
+        "Content-Type": [
+          "text/plain; charset=utf-8"
+        ]
+      },
+      "idx": 0,
+      "isMultipart": false
+    },
+    {
+      "bodySize": 39,
+      "contentType": "text/html",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
+      "headers": {
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ]
+      },
+      "idx": 1,
+      "isMultipart": false
+    }
+  ],
+  "multipartsCount": 2
+}
+```
+
+#### /smtp/$idx[/multipart/$partIdx]+
+On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`),
+metadata about the multipart with the corresponding index is made available:
+
+```json
+{
+  "bodySize": 15,
+  "contentType": "text/plain",
+  "contentTypeParams": {
+    "charset": "utf-8"
+  },
+  "headers": {
+    "Content-Type": [
+      "text/plain; charset=utf-8"
+    ]
+  },
+  "idx": 0,
+  "isMultipart": false
+}
+```
+
+Headers that were encoded according to RFC2047 are decoded first.
+
+The endpoint can be called recursively for nested multipart messages, e.g.
+`/smtp/1/multipart/0/multipart/1`.
+
+#### /smtp/$idx[/multipart/$partIdx]+/body
+On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
+`/smtp/1/multipart/0/body`), the body of the multipart (excluding headers)
+is made available.
+
+If the multipart was sent with a `Content-Transfer-Encoding` of either `base64`
+or `quoted-printable`, the endpoint returns the decoded body.
+
+If the message was sent with a `Content-Type` header, it will be passed through
+to the HTTP response.
+
+The endpoint can be called recursively for nested multipart messages, e.g.
+`/smtp/1/multipart/0/multipart/1/body`.

@@ -1,0 +1,177 @@
+EHLO test.programmfabrik.de
+MAIL FROM: testsender@programmfabrik.de
+RCPT TO: testreceiver@programmfabrik.de
+DATA
+From: testsender@programmfabrik.de
+To: testreceiver@programmfabrik.de
+
+Hello World!
+A simple plain text test mail.
+.
+MAIL FROM: testsender2@programmfabrik.de
+RCPT TO: testreceiver2@programmfabrik.de
+DATA
+MIME-Version: 1.0
+From: testsender2@programmfabrik.de
+To: testreceiver2@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Message
+Content-type: multipart/mixed; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+Preamble is ignored.
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-type: text/plain; charset=utf-8
+
+Some plain text
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-type: text/html; charset=utf-8
+
+Some <b>text</b> <i>in</i> HTML format.
+--d36c3118be4745f9a1cb4556d11fe92d--
+
+Trailing text is ignored.
+.
+MAIL FROM: testsender3@programmfabrik.de
+RCPT TO: testreceiver3@programmfabrik.de
+DATA
+From: testsender3@programmfabrik.de
+To: testreceiver3@programmfabrik.de
+Subject: Example Message
+Content-Type: text/plain; charset=utf-8
+
+Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß
+.
+MAIL FROM: testsender4@programmfabrik.de
+RCPT TO: testreceiver4@programmfabrik.de
+DATA
+From: testsender4@programmfabrik.de
+To: testreceiver4@programmfabrik.de
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+RWluZSBiYXNlNjQtZW5rb2RpZXJ0ZSBUZXN0bWFpbCBtaXQgbmljaHQtQVNDSUktWmVpY2hlbjog
+w6TDtsO8w58K
+.
+MAIL FROM: testsender5@programmfabrik.de
+RCPT TO: testreceiver5@programmfabrik.de
+DATA
+From: testsender5@programmfabrik.de
+To: testreceiver5@programmfabrik.de
+Subject: Example Message
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
+d-printable.
+.
+MAIL FROM: testsender6@programmfabrik.de
+RCPT TO: testreceiver6@programmfabrik.de
+DATA
+MIME-Version: 1.0
+From: testsender6@programmfabrik.de
+To: testreceiver6@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Message
+Content-type: multipart/mixed; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+RWluZSBiYXNlNjQtZW5rb2RpZXJ0ZSBUZXN0bWFpbCBtaXQgbmljaHQtQVNDSUktWmVpY2hlbjog
+w6TDtsO8w58K
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
+d-printable.
+--d36c3118be4745f9a1cb4556d11fe92d--
+.
+MAIL FROM: tästsender7@programmfabrik.de
+RCPT TO: testreceiver7@programmfabrik.de
+DATA
+From: tästsender7@programmfabrik.de
+To: testreceiver7@programmfabrik.de
+Subject: Tästmail mit Ümlauten im Header
+
+Hello World!
+A simple plain text test mail.
+.
+MAIL FROM: testsender8@programmfabrik.de
+RCPT TO: testreceiver8@programmfabrik.de
+DATA
+From: =?utf-8?q?t=C3=A4stsender8=40programmfabrik=2Ede?=
+To: testreceiver8@programmfabrik.de
+Subject: =?utf-8?q?T=C3=A4stmail_mit_=C3=9Cmlauten_im_Header?=
+
+Hello World!
+A simple plain text test mail.
+.
+MAIL FROM: testsender9@programmfabrik.de
+RCPT TO: testreceiver9@programmfabrik.de
+DATA
+MIME-Version: 1.0
+From: testsender9@programmfabrik.de
+To: testreceiver9@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Message
+Content-type: multipart/mixed; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+X-Funky-Header: =?utf-8?q?T=C3=A4stmail_mit_=C3=9Cmlauten_im_Header?=
+
+RWluZSBiYXNlNjQtZW5rb2RpZXJ0ZSBUZXN0bWFpbCBtaXQgbmljaHQtQVNDSUktWmVpY2hlbjog
+w6TDtsO8w58K
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+X-Funky-Header: Käse
+
+Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
+d-printable.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/html; charset=utf-8
+X-Funky-Header: Nase
+
+<i>Foo</i>
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+X-Funky-Header: Phase
+
+Foobar.
+--d36c3118be4745f9a1cb4556d11fe92d--
+.
+MAIL FROM: testsender10@programmfabrik.de
+RCPT TO: testreceiver10@programmfabrik.de
+DATA
+MIME-Version: 1.0
+From: testsender10@programmfabrik.de
+To: testreceiver10@programmfabrik.de
+Date: Tue, 25 Jun 2024 11:15:57 +0200
+Subject: Example Nested Message
+Content-type: multipart/alternative; boundary="d36c3118be4745f9a1cb4556d11fe92d"
+
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: text/plain; charset=utf-8
+
+Some plain text for clients that don't support nested multipart.
+--d36c3118be4745f9a1cb4556d11fe92d
+Content-Type: multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"
+
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/plain; charset=ascii
+
+This is the first subpart.
+--710d3e95c17247d4bb35d621f25e094e
+Content-Type: text/html; charset=utf-8
+
+This is the <i>second</i> subpart.
+--710d3e95c17247d4bb35d621f25e094e--
+--d36c3118be4745f9a1cb4556d11fe92d--
+.
+QUIT
+

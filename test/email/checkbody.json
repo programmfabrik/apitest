@@ -1,0 +1,104 @@
+[
+    {
+        "name": "raw message data is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/raw",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "0965d04dceb3003d88a9ea38f337e97a"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    },
+    {
+        "name": "top-level body is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/body",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "c182b42fda0cd2e929272dd328f0c45d"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    },
+    {
+        "name": "part 0 body is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/0/body",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "7883ef0e6c2f3da210febb5ca2b42ace"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    },
+    {
+        "name": "part 1 body is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1/body",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "effe7461f030f3a58f85e4b736bd5c10"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    },
+    {
+        "name": "part 1/0 body is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1/multipart/0/body",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "81c8d7e43a1c88daf9031518e8db3136"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    },
+    {
+        "name": "part 1/1 body is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1/multipart/1/body",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "md5sum": "47ebf0f785a0788262472bf73a4801bb"
+            },
+            "format": {
+                "type": "binary"
+            }
+        }
+    }
+]

@@ -1,0 +1,75 @@
+{{ $decodedMetadata := file "expected_metadata.json" | unmarshal }}
+[
+    {
+        "name": "top-level index is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ file "expected_index.json" }}
+        }
+    },
+    {
+        "name": "top-level metadata is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ marshal $decodedMetadata }}
+        }
+    },
+    {
+        "name": "part 0 metadata is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/0",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ index $decodedMetadata "multiparts" 0 | marshal }}
+        }
+    },
+    {
+        "name": "part 1 metadata is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ index $decodedMetadata "multiparts" 1 | marshal }}
+        }
+    },
+    {
+        "name": "part 1/0 metadata is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1/multipart/0",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ index $decodedMetadata "multiparts" 1 "multiparts" 0 | marshal }}
+        }
+    },
+    {
+        "name": "part 1/1 metadata is returned as expected",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "smtp/0/multipart/1/multipart/1",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {{ index $decodedMetadata "multiparts" 1 "multiparts" 1 | marshal }}
+        }
+    }
+]

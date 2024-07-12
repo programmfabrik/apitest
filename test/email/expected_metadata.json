@@ -1,0 +1,102 @@
+{
+  "bodySize": 549,
+  "contentType": "multipart/alternative",
+  "contentTypeParams": {
+    "boundary": "d36c3118be4745f9a1cb4556d11fe92d"
+  },
+  "from": [
+    "testsender123@programmfabrik.de"
+  ],
+  "headers": {
+    "Content-Type": [
+      "multipart/alternative; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
+    ],
+    "Date": [
+      "Tue, 25 Jun 2024 11:15:57 +0200"
+    ],
+    "From": [
+      "testsender123@programmfabrik.de"
+    ],
+    "Subject": [
+      "Example Nested Message"
+    ],
+    "To": [
+      "testreceiver123@programmfabrik.de"
+    ]
+  },
+  "idx": 0,
+  "isMultipart": true,
+  "multiparts": [
+    {
+      "bodySize": 57,
+      "contentType": "text/plain",
+      "contentTypeParams": {
+        "charset": "utf-8"
+      },
+      "headers": {
+        "Content-Type": [
+          "text/plain; charset=utf-8"
+        ]
+      },
+      "idx": 0,
+      "isMultipart": false
+    },
+    {
+      "bodySize": 257,
+      "contentType": "multipart/mixed",
+      "contentTypeParams": {
+        "boundary": "710d3e95c17247d4bb35d621f25e094e"
+      },
+      "headers": {
+        "Content-Type": [
+          "multipart/mixed; boundary=\"710d3e95c17247d4bb35d621f25e094e\""
+        ]
+      },
+      "idx": 1,
+      "isMultipart": true,
+      "multiparts": [
+        {
+          "bodySize": 26,
+          "contentType": "text/plain",
+          "contentTypeParams": {
+            "charset": "ascii"
+          },
+          "headers": {
+            "Content-Type": [
+              "text/plain; charset=ascii"
+            ]
+          },
+          "idx": 0,
+          "isMultipart": false
+        },
+        {
+          "bodySize": 34,
+          "contentType": "text/html",
+          "contentTypeParams": {
+            "charset": "utf-8"
+          },
+          "headers": {
+            "Content-Type": [
+              "text/html; charset=utf-8"
+            ]
+          },
+          "idx": 1,
+          "isMultipart": false
+        }
+      ],
+      "multipartsCount": 2
+    }
+  ],
+  "multipartsCount": 2,
+  "receivedAt:control": {
+    "match": "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]+(((\\+|\\-)[0-9]{2}:[0-9]{2})|Z)"
+  },
+  "smtpFrom": "testsender123@programmfabrik.de",
+  "smtpRcptTo": [
+    "testreceiver123@programmfabrik.de"
+  ],
+  "subject": "Example Nested Message",
+  "to": [
+    "testreceiver123@programmfabrik.de"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "name": "post message",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "smtp/postmessage",
+        "method": "POST",
+        "body_type": "file",
+        "body_file": "testmessage.eml"
+    },
+    "response": {
+        "statuscode": 200
+    }
+}

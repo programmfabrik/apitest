@@ -1,0 +1,14 @@
+{
+    "http_server": {
+        "addr": ":9999"
+    },
+    "smtp_server": {
+        "addr": ":9925"
+    },
+    "name": "testing HTTP endpoints for mock SMTP server",
+    "tests": [
+        "@postmessage.json",
+        "@checkmetadata.json",
+	"@checkbody.json"
+    ]
+}

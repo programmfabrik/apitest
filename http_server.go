@@ -11,7 +11,9 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
@@ -19,10 +21,11 @@ import (
 // StartHttpServer start a simple http server that can server local test resources during the testsuite is running
 func (ats *Suite) StartHttpServer() {
 
-	if ats.HttpServer == nil {
+	if ats.HttpServer == nil || ats.httpServer != nil {
 		return
 	}
 
+	// TODO: Can we remove idleConnsClosed, because it does not seem to do anything?
 	ats.idleConnsClosed = make(chan struct{})
 	mux := http.NewServeMux()
 
@@ -48,7 +51,12 @@ func (ats *Suite) StartHttpServer() {
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
 	ats.httpServerProxy.RegisterRoutes(mux, "/", ats.Config.LogShort)
 
-	ats.httpServer = http.Server{
+	// Register SMTP server query routes
+	if ats.smtpServer != nil {
+		ats.smtpServer.RegisterRoutes(mux, "/", ats.Config.LogShort)
+	}
+
+	ats.httpServer = &http.Server{
 		Addr:    ats.HttpServer.Addr,
 		Handler: mux,
 	}
@@ -59,10 +67,9 @@ func (ats *Suite) StartHttpServer() {
 		}
 
 		err := ats.httpServer.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// Error starting or closing listener:
-			logrus.Errorf("HTTP server ListenAndServe: %v", err)
-			return
+			logrus.Fatal("HTTP server ListenAndServe:", err)
 		}
 	}
 
@@ -72,6 +79,8 @@ func (ats *Suite) StartHttpServer() {
 		run()
 	} else {
 		go run()
+
+		util.WaitForTCP(ats.HttpServer.Addr)
 	}
 }
 
@@ -94,7 +103,7 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 // StopHttpServer stop the http server that was started for this test suite
 func (ats *Suite) StopHttpServer() {
 
-	if ats.HttpServer == nil {
+	if ats.HttpServer == nil || ats.httpServer == nil {
 		return
 	}
 
@@ -107,7 +116,8 @@ func (ats *Suite) StopHttpServer() {
 	} else if !ats.Config.LogShort {
 		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
 	}
-	return
+
+	ats.httpServer = nil
 }
 
 type ErrorResponse struct {
