@@ -1072,7 +1072,7 @@ E.g. the following response would **fail** as `"iShouldNotExist"` is in the actu
 
 Check if a field is not equal to a specific value.
 
-This check is available for the types `string`, `number` and `bool`. It implicitly also checks `must_exist` for the value.
+This check is available for the types `string`, `number`, `array` and `bool`.
 
 This control can be used without the actual key. So only the `:control` key is present.
 

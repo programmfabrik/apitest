@@ -213,7 +213,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			} else {
 				// only allow the not_equal for types string, number, bool
 				switch getJsonType(v) {
-				case "String", "Number", "Bool":
+				case "String", "Number", "Bool", "Array":
 					out.notEqual = &v
 				default:
 					err = fmt.Errorf("not_equal has invalid type %s", getJsonType(v))
@@ -633,10 +633,22 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 	if control.notEqual != nil {
 		controlJsonType := getJsonType(*control.notEqual)
 		jsonType := getJsonType(right)
-		// only compare value if type is equal and a low level json type (string, number, bool)
+		// only compare value if type is equal and a low level json type (string, number, bool) or array
 		// different type is always not_equal
 		if jsonType == controlJsonType {
 			switch jsonType {
+			case "Array":
+				leftMar, err := json.Marshal((*control.notEqual).(util.JsonArray))
+				if err != nil {
+					return fmt.Errorf("could not marshal left: %w", err)
+				}
+				rightMar, err := json.Marshal(right.(util.JsonArray))
+				if err != nil {
+					return fmt.Errorf("could not marshal right: %w", err)
+				}
+				if string(leftMar) == string(rightMar) {
+					return fmt.Errorf("is equal to %s %s, should not be equal", jsonType, string(leftMar))
+				}
 			case "String":
 				if (*control.notEqual).(util.JsonString) == right.(util.JsonString) {
 					return fmt.Errorf("is equal to %s '%s', should not be equal", jsonType, (*control.notEqual).(util.JsonString))
