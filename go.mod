@@ -11,7 +11,7 @@ require (
 	github.com/moul/http2curl v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/programmfabrik/go-test-utils v0.0.0-20191114143449-b8e16b04adb1
-	github.com/programmfabrik/golib v0.0.0-20240226091422-733aede66819
+	github.com/programmfabrik/golib v0.0.0-20240701125551-843bc5e3be55
 	github.com/sergi/go-diff v1.3.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.9.5

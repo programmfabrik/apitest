@@ -234,7 +234,7 @@ func logH(skipLog bool, next http.Handler) http.Handler {
 		return next
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logrus.Debugf("http-server: %s: %q", r.Method, r.URL)
+		// logrus.Debugf("http-server: %s: %q", r.Method, r.URL)
 		next.ServeHTTP(w, r)
 	})
 }

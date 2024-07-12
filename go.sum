@@ -219,6 +219,8 @@ github.com/programmfabrik/go-test-utils v0.0.0-20191114143449-b8e16b04adb1 h1:Nb
 github.com/programmfabrik/go-test-utils v0.0.0-20191114143449-b8e16b04adb1/go.mod h1:6Tg7G+t9KYiFa0sU8PpISt9RUgIpgrEI+tXvWz3tSIU=
 github.com/programmfabrik/golib v0.0.0-20240226091422-733aede66819 h1:lJ+a0MLo4Dn2UTF0Q/nh9msLqP8MaNEL/RbJLop022g=
 github.com/programmfabrik/golib v0.0.0-20240226091422-733aede66819/go.mod h1:qb4pSUhPsZ/UfvM/MBNwKHb6W7xL85uSi4od9emNHHw=
+github.com/programmfabrik/golib v0.0.0-20240701125551-843bc5e3be55 h1:VBYGpSvjwHSa5ARrs6uPlUOJF1+n6rFWn49+++h20IU=
+github.com/programmfabrik/golib v0.0.0-20240701125551-843bc5e3be55/go.mod h1:qb4pSUhPsZ/UfvM/MBNwKHb6W7xL85uSi4od9emNHHw=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=

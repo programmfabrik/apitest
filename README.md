@@ -2964,6 +2964,8 @@ available as JSON in the following schema:
 }
 ```
 
+> You can filter messages by passing one of more query parameters `header`. `header` can either be a JSON array of strings, or just a string. The filter checks that all headers (regexp format) match headers of the filtered email.
+
 Headers that were encoded according to RFC2047 are decoded first.
 
 #### /smtp/$idx

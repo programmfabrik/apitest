@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"path"
 	"regexp"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/internal/handlerutil"
+	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
 
@@ -220,21 +222,14 @@ func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request)
 
 func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
 	metadata := buildMessageFullMeta(msg)
-	metadataJson, err := json.MarshalIndent(metadata, "", "  ")
-	if err != nil {
-		handlerutil.RespondWithErr(
-			w, http.StatusInternalServerError,
-			fmt.Errorf("could not build metadata JSON: %w", err),
-		)
-		return
-	}
+	metadataJson := golib.JsonStringIndent(metadata, "", "  ")
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	err = guiMessageTemplate.Execute(w, map[string]any{
+	err := guiMessageTemplate.Execute(w, map[string]any{
 		"prefix":       h.prefix,
 		"metadata":     metadata,
-		"metadataJson": string(metadataJson),
+		"metadataJson": metadataJson,
 	})
 	if err != nil {
 		logrus.Error("error rendering GUI Message:", err)
@@ -242,7 +237,7 @@ func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Request) {
-	headerSearchRxs, err := extractSearchRegexes(w, r.URL.Query(), "header")
+	headerSearchRxs, err := extractSearchRegexes(r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
 		return
@@ -276,7 +271,7 @@ func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, c *ReceivedContent) {
-	headerSearchRxs, err := extractSearchRegexes(w, r.URL.Query(), "header")
+	headerSearchRxs, err := extractSearchRegexes(r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
 		return
@@ -478,39 +473,35 @@ func buildMultipartMeta(part *ReceivedPart) map[string]any {
 // extractSearchRegexes tries to extract the regular expression(s) from the
 // referenced query parameter. If no query parameter is given and otherwise
 // no error has occurred, this function returns no error.
-func extractSearchRegexes(
-	w http.ResponseWriter, queryParams map[string][]string, paramName string,
-) ([]*regexp.Regexp, error) {
-	filteredParams, ok := queryParams[paramName]
-	if ok {
-		if len(filteredParams) != 1 {
-			return nil, fmt.Errorf(
-				"expected 1 %q query parameter, got %d (use JSON array for multiple queries)",
-				paramName, len(filteredParams),
-			)
+func extractSearchRegexes(qp url.Values, paramName string) (rgs []*regexp.Regexp, err error) {
+	if !qp.Has(paramName) {
+		return nil, nil
+	}
+	defer func() {
+		if err == nil {
+			println(fmt.Sprintf("%v", rgs))
 		}
+	}()
 
+	sp := []string{}
+	for _, v := range qp[paramName] {
 		var searchParams []string
-		err := json.Unmarshal([]byte(filteredParams[0]), &searchParams)
-		if err != nil {
-			searchParams = []string{filteredParams[0]}
+		err := json.Unmarshal([]byte(v), &searchParams)
+		if err == nil {
+			sp = append(sp, searchParams...)
+		} else {
+			// this is not a JSON string array, assume string
+			sp = append(sp, v)
 		}
-
-		out := make([]*regexp.Regexp, len(searchParams))
-
-		for i, p := range searchParams {
-			re, err := regexp.Compile(p)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"could not compile %q regex %q: %w", paramName, p, err,
-				)
-			}
-
-			out[i] = re
-		}
-
-		return out, nil
 	}
 
-	return nil, nil
+	for _, p := range sp {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, fmt.Errorf("could not compile %q regex %q: %w", paramName, p, err)
+		}
+		rgs = append(rgs, re)
+	}
+
+	return rgs, nil
 }

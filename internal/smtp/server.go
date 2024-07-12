@@ -141,7 +141,6 @@ func (s *session) Data(r io.Reader) error {
 	idx := len(s.server.receivedMessages)
 	now := s.server.clock()
 
-	logrus.Infof("SMTP: Receiving message from %s to %v at %v", s.from, s.rcptTo, now)
 	msg, err := NewReceivedMessage(
 		idx, s.from, s.rcptTo, rawData, now, s.server.maxMessageSize,
 	)
@@ -150,7 +149,7 @@ func (s *session) Data(r io.Reader) error {
 		logrus.Error("SMTP:", errWrapped) // this is logged in our server
 		return errWrapped                 // this is returned via SMTP
 	}
-	logrus.Infof("SMTP: Reception successful")
+	logrus.Debugf("SMTP: Message from %s to %v at %v", s.from, s.rcptTo, now.Format(time.DateTime))
 
 	s.server.receivedMessages = append(s.server.receivedMessages, msg)
 
