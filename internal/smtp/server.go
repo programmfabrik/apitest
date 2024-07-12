@@ -149,7 +149,7 @@ func (s *session) Data(r io.Reader) error {
 		logrus.Error("SMTP:", errWrapped) // this is logged in our server
 		return errWrapped                 // this is returned via SMTP
 	}
-	logrus.Debugf("SMTP: Message from %s to %v at %v", s.from, s.rcptTo, now.Format(time.DateTime))
+	logrus.Infof("smtp: From: %q To: %v", s.from, s.rcptTo)
 
 	s.server.receivedMessages = append(s.server.receivedMessages, msg)
 
