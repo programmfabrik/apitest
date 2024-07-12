@@ -96,7 +96,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 | `--server URL`                 |                    | Overwrites base url to the api                                                        |
 | `--report-file newReportFile`  |                    | Overwrites the report file name from the `apitest.yml` config with `newReportFile`    |
 | `--report-format junit`        |                    | Overwrites the report format from the `apitest.yml` config with `junit`               |
-| `--replace-host [host][:port]` |                    | Overwrites built-in server host in template function `replace_host`                   |
+| `--replace-host host`          |                    | Overwrites built-in server host in template function `replace_host`                   |
 
 ### Additional parameters
 
@@ -120,7 +120,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 - Run all tests in the directory **apitests** with **http server host replacement** for those templates using **replace_host** template function
 ```bash
-./apitest -d apitests --replace-host my.fancy.host:8989
+./apitest -d apitests --replace-host my.fancy.host
 ```
 
 # Manifest
@@ -2455,7 +2455,7 @@ Example how to range over 100 objects
 
 ## `replace_host [url]`
 
-**replace_host** replaces the host and port in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
+**replace_host** replaces the host in the given `url` with the actual address of the built-in HTTP server (see below). This address, taken from the `manifest.json` can be overwritten with the command line parameter `--replace-host`.
 
 As an example, the URL `http://localhost/myimage.jpg` would be changed into `http://localhost:8788/myimage.jpg` following the example below.
 

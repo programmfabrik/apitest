@@ -349,13 +349,7 @@ func (loader *Loader) Render(
 			if loader.HTTPServerHost == "" {
 				return srcURL, nil
 			}
-			// Parse source URL or fail
-			parsedURL, err := url.Parse(srcURL)
-			if err != nil {
-				return "", err
-			}
-			parsedURL.Host = loader.HTTPServerHost
-			return parsedURL.String(), nil
+			return replaceHost(srcURL, loader.HTTPServerHost)
 		},
 		"server_url": func() *url.URL {
 			u := new(url.URL)
@@ -521,4 +515,22 @@ func getRowsFromInput(rowsInput any) []map[string]any {
 		}
 	}
 	return rows
+}
+
+// replaceHost uses host of serverHost and replaces it in srcURL
+func replaceHost(srcURL, serverHost string) (string, error) {
+	if strings.Contains(serverHost, ":") {
+		return "", fmt.Errorf("replaceHost: host must not include scheme or port")
+	}
+	// Parse source URL or fail
+	parsedURL, err := url.Parse(srcURL)
+	if err != nil {
+		return "", err
+	}
+	if parsedURL.Host == "" && parsedURL.Scheme != "" {
+		parsedURL.Scheme = serverHost
+	} else {
+		parsedURL.Host = serverHost
+	}
+	return parsedURL.String(), nil
 }

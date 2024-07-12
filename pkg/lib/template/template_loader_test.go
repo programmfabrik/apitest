@@ -7,6 +7,7 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
@@ -455,6 +456,34 @@ func Test_DataStore_QJson(t *testing.T) {
 			go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
 			test_utils.AssertJsonStringEquals(t, string(res), testCase.expected)
 		})
+	}
+}
+
+func TestReplaceHost(t *testing.T) {
+	var (
+		h   string
+		err error
+	)
+
+	h, err = replaceHost("localhost:9925", "192.168.122.56:8978")
+	if !assert.Error(t, err) {
+		return
+	}
+
+	h, err = replaceHost("localhost:9925", "192.168.122.56")
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, "192.168.122.56:9925", h) {
+		return
+	}
+
+	h, err = replaceHost("http://localhost:8978", "192.168.122.56")
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, "http://192.168.122.56", h) {
+		return
 	}
 
 }
