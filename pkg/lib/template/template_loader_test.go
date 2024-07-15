@@ -478,11 +478,19 @@ func TestReplaceHost(t *testing.T) {
 		return
 	}
 
+	h, err = replaceHost("http://localhost:8978/images", "martins.mac")
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, "http://martins.mac:8978/images", h) {
+		return
+	}
+
 	h, err = replaceHost("http://localhost:8978", "192.168.122.56")
 	if !assert.NoError(t, err) {
 		return
 	}
-	if !assert.Equal(t, "http://192.168.122.56", h) {
+	if !assert.Equal(t, "http://192.168.122.56:8978", h) {
 		return
 	}
 

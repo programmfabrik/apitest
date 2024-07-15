@@ -17,6 +17,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
@@ -518,9 +519,12 @@ func getRowsFromInput(rowsInput any) []map[string]any {
 }
 
 // replaceHost uses host of serverHost and replaces it in srcURL
-func replaceHost(srcURL, serverHost string) (string, error) {
+func replaceHost(srcURL, serverHost string) (s string, err error) {
+	defer func() {
+		golib.Pln("replace %q -> %q = %q", srcURL, serverHost, s)
+	}()
 	if strings.Contains(serverHost, ":") {
-		return "", fmt.Errorf("replaceHost: host must not include scheme or port")
+		return "", fmt.Errorf("replaceHost: host %q must not include scheme or port", serverHost)
 	}
 	// Parse source URL or fail
 	parsedURL, err := url.Parse(srcURL)
@@ -529,6 +533,8 @@ func replaceHost(srcURL, serverHost string) (string, error) {
 	}
 	if parsedURL.Host == "" && parsedURL.Scheme != "" {
 		parsedURL.Scheme = serverHost
+	} else if parsedURL.Port() != "" {
+		parsedURL.Host = serverHost + ":" + parsedURL.Port()
 	} else {
 		parsedURL.Host = serverHost
 	}

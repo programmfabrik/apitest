@@ -101,10 +101,8 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	}
 
 	// Add external http server url here, as only after this point the http_server.addr may be available
-	hsru := new(url.URL)
-	shsu := new(url.URL)
 	if httpServerReplaceHost != "" {
-		hsru, err = url.Parse("//" + httpServerReplaceHost)
+		_, err = url.Parse("//" + httpServerReplaceHost)
 		if err != nil {
 			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
 		}
@@ -115,27 +113,12 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 			preloadHTTPAddrStr = ":80"
 		}
 		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
-		shsu, err = url.Parse("//" + preloadHTTPAddrStr)
+		_, err = url.Parse("//" + preloadHTTPAddrStr)
 		if err != nil {
 			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
 		}
 	}
-	suitePreload.HTTPServerHost = ""
-	if hsru.Hostname() != "" {
-		suitePreload.HTTPServerHost = hsru.Hostname()
-	} else if shsu.Hostname() != "" {
-		suitePreload.HTTPServerHost = shsu.Hostname()
-	} else {
-		suitePreload.HTTPServerHost = "localhost"
-	}
-	if suite.HTTPServerHost == "0.0.0.0" {
-		suitePreload.HTTPServerHost = "localhost"
-	}
-	if hsru.Port() != "" {
-		suitePreload.HTTPServerHost += ":" + hsru.Port()
-	} else if shsu.Port() != "" {
-		suitePreload.HTTPServerHost += ":" + shsu.Port()
-	}
+	suitePreload.HTTPServerHost = httpServerReplaceHost
 
 	// Here we load the usable manifest, now that we can do all potential replacements
 	manifest, err = suitePreload.loadManifest()
