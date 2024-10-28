@@ -3,7 +3,7 @@ package httpproxy
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -63,7 +63,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 	offset := len(st.Data)
 
 	if r.Body != nil {
-		reqData.Body, err = ioutil.ReadAll(r.Body)
+		reqData.Body, err = io.ReadAll(r.Body)
 		if err != nil {
 			handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
 			return

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -293,7 +292,7 @@ func (request Request) ToString(curl bool) (res string) {
 			// return r.Replace(curl.String())
 		}
 
-		_, _ = io.Copy(ioutil.Discard, httpRequest.Body)
+		_, _ = io.Copy(io.Discard, httpRequest.Body)
 		_ = httpRequest.Body.Close()
 
 		curl, _ := http2curl.GetCurlCommand(httpRequest)

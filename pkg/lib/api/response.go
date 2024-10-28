@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -102,7 +101,7 @@ func NewResponse(statusCode int,
 	}
 	if body != nil {
 		start := time.Now()
-		res.Body, err = ioutil.ReadAll(body)
+		res.Body, err = io.ReadAll(body)
 		if err != nil {
 			return res, err
 		}

@@ -128,7 +128,7 @@ func (loader *Loader) Render(
 		// 	if err != nil {
 		// 		return nil, err
 		// 	}
-		// 	fileBytes, err := ioutil.ReadAll(file)
+		// 	fileBytes, err := io.ReadAll(file)
 		// 	if err != nil {
 		// 		return nil, err
 		// 	}

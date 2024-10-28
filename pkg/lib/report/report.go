@@ -2,7 +2,7 @@ package report
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
@@ -196,7 +196,7 @@ func (r *Report) WriteToFile(reportFile, reportFormat string) error {
 		parsingFunction = ParseJSONResult
 	}
 
-	err := ioutil.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
+	err := os.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 	if err != nil {
 		logrus.Errorf("Could not save report into file: %s", err)
 		return err

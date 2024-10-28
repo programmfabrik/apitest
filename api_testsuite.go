@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -442,7 +442,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	}
 	defer manifestFile.Close()
 
-	manifestTmpl, err := ioutil.ReadAll(manifestFile)
+	manifestTmpl, err := io.ReadAll(manifestFile)
 	if err != nil {
 		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
 	}
