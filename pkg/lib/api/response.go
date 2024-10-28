@@ -12,8 +12,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pkg/errors"
-
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
@@ -158,7 +156,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if responseFormat.PreProcess != nil {
 		resp, err = responseFormat.PreProcess.RunPreProcess(response)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not pre process response")
+			return res, fmt.Errorf("Could not pre process response: %w", err)
 		}
 	} else {
 		resp = response
@@ -168,17 +166,17 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	case "xml", "xml2":
 		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not marshal xml to json")
+			return res, fmt.Errorf("Could not marshal xml to json: %w", err)
 		}
 	case "html":
 		bodyData, err = util.Html2Json(resp.Body)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not marshal html to json")
+			return res, fmt.Errorf("Could not marshal html to json: %w", err)
 		}
 	case "xhtml":
 		bodyData, err = util.Xhtml2Json(resp.Body)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not marshal xhtml to json")
+			return res, fmt.Errorf("Could not marshal xhtml to json: %w", err)
 		}
 	case "csv":
 		runeComma := ','
@@ -188,12 +186,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 
 		csvData, err := csv.GenericCSVToMap(resp.Body, runeComma)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not parse csv")
+			return res, fmt.Errorf("Could not parse csv: %w", err)
 		}
 
 		bodyData, err = json.Marshal(csvData)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not marshal csv to json")
+			return res, fmt.Errorf("Could not marshal csv to json: %w", err)
 		}
 	case "binary":
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
@@ -204,7 +202,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		}
 		bodyData, err = json.Marshal(JsonObject)
 		if err != nil {
-			return res, errors.Wrap(err, "Could not marshal body with md5sum to json")
+			return res, fmt.Errorf("Could not marshal body with md5sum to json: %w", err)
 		}
 	case "":
 		// no specific format, we assume a json, and thereby try to unmarshal it into our body

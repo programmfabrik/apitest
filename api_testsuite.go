@@ -14,7 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
@@ -105,7 +104,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	if httpServerReplaceHost != "" {
 		_, err = url.Parse("//" + httpServerReplaceHost)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
+			return nil, fmt.Errorf("set http_server_host failed (command argument): %w", err)
 		}
 	}
 	if suitePreload.HttpServer != nil {
@@ -116,7 +115,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
 		_, err = url.Parse("//" + preloadHTTPAddrStr)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
+			return nil, fmt.Errorf("set http_server_host failed (manifesr addr): %w", err)
 		}
 	}
 	suitePreload.HTTPServerHost = httpServerReplaceHost

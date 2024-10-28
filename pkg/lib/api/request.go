@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/moul/http2curl"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -84,7 +82,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 
 	reqUrl, err := url.Parse(requestUrl)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to buildHttpRequest with URL %q", requestUrl)
+		return nil, fmt.Errorf("Unable to buildHttpRequest with URL %q: %w", requestUrl, err)
 	}
 
 	// Note that buildPolicy may return a file handle that needs to be

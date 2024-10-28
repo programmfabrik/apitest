@@ -15,7 +15,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
@@ -192,7 +191,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Xml2Json(fileBytes, "xml2")
 			if err != nil {
-				return "", errors.Wrap(err, "Could not marshal xml to json")
+				return "", fmt.Errorf("Could not marshal xml to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -205,7 +204,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Xhtml2Json(fileBytes)
 			if err != nil {
-				return "", errors.Wrap(err, "Could not marshal xhtml to json")
+				return "", fmt.Errorf("Could not marshal xhtml to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -218,7 +217,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Html2Json(fileBytes)
 			if err != nil {
-				return "", errors.Wrap(err, "Could not marshal html to json")
+				return "", fmt.Errorf("Could not marshal html to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -373,7 +372,7 @@ func (loader *Loader) Render(
 			// println("client", client, login, password)
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %q not configured", client)
+				return nil, fmt.Errorf("OAuth client %q not configured", client)
 			}
 
 			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
@@ -382,7 +381,7 @@ func (loader *Loader) Render(
 		"oauth2_client_token": func(client string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %q not configured", client)
+				return nil, fmt.Errorf("OAuth client %q not configured", client)
 			}
 
 			return oAuthClient.GetClientCredentialsAuthToken()
@@ -390,7 +389,7 @@ func (loader *Loader) Render(
 		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %q not configured", client)
+				return nil, fmt.Errorf("OAuth client %q not configured", client)
 			}
 
 			return oAuthClient.GetCodeAuthToken(params...)
@@ -398,7 +397,7 @@ func (loader *Loader) Render(
 		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %q not configured", client)
+				return nil, fmt.Errorf("OAuth client %q not configured", client)
 			}
 
 			return oAuthClient.GetAuthToken(params...)
@@ -406,7 +405,7 @@ func (loader *Loader) Render(
 		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return nil, errors.Errorf("OAuth client %s not configured", client)
+				return nil, fmt.Errorf("OAuth client %s not configured", client)
 			}
 
 			return &oAuthClient, nil
@@ -414,7 +413,7 @@ func (loader *Loader) Render(
 		"oauth2_basic_auth": func(client string) (string, error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
-				return "", errors.Errorf("OAuth client %s not configured", client)
+				return "", fmt.Errorf("OAuth client %s not configured", client)
 			}
 
 			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
@@ -449,10 +448,10 @@ func (loader *Loader) Render(
 				w = "v0.0.0"
 			}
 			if !semver.IsValid(v) {
-				return 0, errors.Errorf("version string %s is invalid", v)
+				return 0, fmt.Errorf("version string %s is invalid", v)
 			}
 			if !semver.IsValid(w) {
-				return 0, errors.Errorf("version string %s is invalid", w)
+				return 0, fmt.Errorf("version string %s is invalid", w)
 			}
 			return semver.Compare(v, w), nil
 		},
