@@ -73,7 +73,7 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 }
 
 func TestResponse_NewResponse(t *testing.T) {
-	response, err := NewResponse(200, nil, nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
+	response, err := NewResponse(200, nil, nil, nil, strings.NewReader("foo"), ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "unexpected error")
 	go_test_utils.AssertIntEquals(t, response.StatusCode, 200)
 }
@@ -86,7 +86,7 @@ func TestResponse_String(t *testing.T) {
 		}
 	}`
 
-	response, err := NewResponse(200, nil, nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})
+	response, err := NewResponse(200, nil, nil, nil, strings.NewReader(requestString), ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, "error constructing response")
 
 	assertString := "200\n\n\n" + requestString
@@ -119,7 +119,7 @@ func TestResponse_Cookies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	response, err := NewResponse(res.StatusCode, header, nil, res.Cookies(), res.Body, nil, ResponseFormat{})
+	response, err := NewResponse(res.StatusCode, header, nil, res.Cookies(), res.Body, ResponseFormat{})
 	if err != nil {
 		t.Fatal(err)
 	}

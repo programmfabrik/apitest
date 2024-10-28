@@ -18,11 +18,7 @@
                     {"some": "data"},
                     {"some": ["more", "data"]},
                     {"some": "data"}
-                ],
-                "body:control": {
-                    "order_matters": true,
-                    "no_extra": true
-                }
+                ]
             }
         }
     }

@@ -44,6 +44,7 @@ type Suite struct {
 	Store map[string]any `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
+	HeaderFlat              map[string]*string `yaml:"header_flat" json:"header_flat"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
 
 	Config          TestToolConfig
@@ -399,6 +400,7 @@ func (ats *Suite) runLiteralTest(
 	test.index = index
 	test.dataStore = ats.datastore
 	test.standardHeader = ats.StandardHeader
+	test.headerFlat = ats.HeaderFlat
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 	if test.LogNetwork == nil {
 		test.LogNetwork = &ats.Config.LogNetwork

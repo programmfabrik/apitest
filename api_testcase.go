@@ -50,6 +50,7 @@ type Case struct {
 	dataStore   *datastore.Datastore
 
 	standardHeader          map[string]*string
+	headerFlat              map[string]*string
 	standardHeaderFromStore map[string]string
 
 	ServerURL         string `json:"server_url"`
@@ -471,7 +472,7 @@ func (testCase Case) loadRequest() (api.Request, error) {
 func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, nil, res.Format)
+		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -489,7 +490,7 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
 	}
-	if len(expected.Body) == 0 && len(expected.BodyControl) == 0 {
+	if len(expected.Body) == 0 {
 		expected.Format.IgnoreBody = true
 	} else {
 		expected.Format.IgnoreBody = false
