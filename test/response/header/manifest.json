@@ -4,81 +4,13 @@
         "dir": "../_res",
         "testmode": false
     },
-    "name": "response header: format header_flat",
+    "name": "response header: format header",
     "tests": [
-        {
-            "name": "test response header_flat",
-            "request": {
-                "server_url": "http://localhost:9999",
-                "endpoint": "bounce-json",
-                "method": "POST"
-            },
-            "response": {
-                "statuscode": 200,
-                "header": {
-                    "Content-Type": [
-                        "text/plain; charset=utf-8"
-                    ]
-                },
-                "header_flat": {
-                    "Content-Type": "text/plain; charset=utf-8"
-                }
-            }
-        },
-        {
-            "name": "test response header_flat (check for a failing test with a reverse result)",
-            "reverse_test_result": true,
-            "request": {
-                "server_url": "http://localhost:9999",
-                "endpoint": "bounce-json",
-                "method": "POST"
-            },
-            "response": {
-                "statuscode": 200,
-                "header_flat": {
-                    "Content-Length": "foo",
-                    "Content-Type": "bar"
-                }
-            }
-        },
-        {
-            "name": "test response header_flat: control for header values",
-            "request": {
-                "server_url": "http://localhost:9999",
-                "endpoint": "bounce-json",
-                "method": "POST"
-            },
-            "response": {
-                "statuscode": 200,
-                "header_flat": {
-                    "Content-Length:control": {
-                        "match": "^\\d+$"
-                    },
-                    "Content-Type:control": {
-                        "match": "^text/plain;.*"
-                    }
-                }
-            }
-        },
-        {
-            "name": "test response header_flat: control for header values (check for a failing test with a reverse result)",
-            "reverse_test_result": true,
-            "request": {
-                "server_url": "http://localhost:9999",
-                "endpoint": "bounce-json",
-                "method": "POST"
-            },
-            "response": {
-                "statuscode": 200,
-                "header_flat": {
-                    "Content-Length:control": {
-                        "match": "foo"
-                    },
-                    "Content-Type:control": {
-                        "match": "bar"
-                    }
-                }
-            }
-        }
+        "@header1.json"
+        ,"@header2.json"
+        ,"@header3.json"
+        ,"@header4.json"
+        ,"@header5.json"
+        ,"@header6.json"
     ]
 }

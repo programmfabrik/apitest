@@ -46,7 +46,7 @@ type Request struct {
 	NoRedirect           bool                      `yaml:"no_redirect" json:"no_redirect"`
 	QueryParams          map[string]any            `yaml:"query_params" json:"query_params"`
 	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
-	Headers              map[string]*string        `yaml:"header" json:"header"`
+	Headers              map[string]any            `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
 	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
@@ -202,12 +202,25 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	}
 
 	for key, val := range request.Headers {
-		if *val == "" {
-			//Unset header explicit
-			req.Header.Del(key)
-		} else {
-			//ADD header
-			req.Header.Set(key, *val)
+		switch v := val.(type) {
+		case string:
+			if v == "" {
+				req.Header.Del(key)
+			} else {
+				req.Header.Set(key, v)
+			}
+		case []any:
+			vArr := []string{}
+			for _, vOne := range v {
+				vOneS, isString := vOne.(string)
+				if !isString {
+					return nil, fmt.Errorf("unsupported header %q value %T: %v", key, vOne, vOne)
+				}
+				vArr = append(vArr, vOneS)
+			}
+			req.Header[key] = vArr
+		default:
+			return nil, fmt.Errorf("unsupported header value %T: %v", val, val)
 		}
 	}
 
@@ -344,9 +357,9 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, err
 	}
-	response, err = NewResponse(httpResponse.StatusCode, header, nil, httpResponse.Cookies(), httpResponse.Body, ResponseFormat{})
+	response, err = NewResponse(httpResponse.StatusCode, header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
-		return response, fmt.Errorf("error constructing response from http response")
+		return response, fmt.Errorf("error constructing response from http response: %w", err)
 	}
 	response.ReqDur = elapsedTime
 	return response, err

@@ -1,0 +1,20 @@
+{
+    "name": "test response header:control for header values (check for a failing test with a reverse result)",
+    "reverse_test_result": true,
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST"
+    },
+    "response": {
+        "statuscode": 200,
+        "header": {
+            "Content-Length:control": {
+                "match": "foo"
+            },
+            "Content-Type:control": {
+                "match": "bar"
+            }
+        }
+    }
+}

@@ -49,8 +49,7 @@ type Case struct {
 	index       int
 	dataStore   *datastore.Datastore
 
-	standardHeader          map[string]*string
-	headerFlat              map[string]*string
+	standardHeader          map[string]any // can be string or []string
 	standardHeaderFromStore map[string]string
 
 	ServerURL         string `json:"server_url"`
@@ -490,7 +489,7 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
 	}
-	if len(expected.Body) == 0 {
+	if len(expected.Body) == 0 && len(expected.BodyControl) == 0 {
 		expected.Format.IgnoreBody = true
 	} else {
 		expected.Format.IgnoreBody = false
@@ -524,10 +523,10 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.ServerURL = testCase.ServerURL
 	}
 	if len(spec.Headers) == 0 {
-		spec.Headers = make(map[string]*string)
+		spec.Headers = make(map[string]any)
 	}
 	for k, v := range testCase.standardHeader {
-		if spec.Headers[k] == nil {
+		if _, exist := spec.Headers[k]; !exist {
 			spec.Headers[k] = v
 		}
 	}
@@ -536,7 +535,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.HeaderFromStore = make(map[string]string)
 	}
 	for k, v := range testCase.standardHeaderFromStore {
-		if spec.HeaderFromStore[k] == "" {
+		if _, exist := spec.HeaderFromStore[k]; !exist {
 			spec.HeaderFromStore[k] = v
 		}
 	}

@@ -18,30 +18,16 @@ import (
 )
 
 type Response struct {
-	StatusCode int
-	Headers    map[string]any
-	HeaderFlat map[string]any
-	Cookies    []*http.Cookie
-	Body       []byte
-	Format     ResponseFormat
+	StatusCode  int
+	Headers     map[string]any
+	HeaderFlat  map[string]any // ":control" is an object, so we must use "any" here
+	Cookies     []*http.Cookie
+	Body        []byte
+	BodyControl util.JsonObject
+	Format      ResponseFormat
 
 	ReqDur      time.Duration
 	BodyLoadDur time.Duration
-}
-
-func (res Response) SerializeHeaderFlat() (headers map[string]any, err error) {
-	headers = map[string]any{}
-	for k, h := range res.Headers {
-		switch v := h.(type) {
-		case string:
-			headers[k] = h
-		case nil:
-			headers[k] = ""
-		case []string:
-			headers[k] = strings.Join(v, "; ")
-		}
-	}
-	return headers, nil
 }
 
 func HttpHeaderToMap(header http.Header) (headers map[string]any, err error) {
@@ -66,12 +52,17 @@ type Cookie struct {
 }
 
 type ResponseSerialization struct {
-	StatusCode int               `yaml:"statuscode" json:"statuscode"`
-	Headers    map[string]any    `yaml:"header" json:"header,omitempty"`
-	HeaderFlat map[string]any    `yaml:"header_flat" json:"header_flat,omitempty"`
-	Cookies    map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
-	Body       any               `yaml:"body" json:"body,omitempty"`
-	Format     ResponseFormat    `yaml:"format" json:"format,omitempty"`
+	StatusCode  int               `yaml:"statuscode" json:"statuscode"`
+	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Body        any               `yaml:"body" json:"body,omitempty"`
+	BodyControl util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
+}
+
+type responseSerializationInternal struct {
+	ResponseSerialization
+	HeaderFlat map[string]any `json:"header_flat,omitemty"`
 }
 
 type ResponseFormat struct {
@@ -84,18 +75,55 @@ type ResponseFormat struct {
 }
 
 func NewResponse(statusCode int,
-	headers map[string]any,
-	headerFlat map[string]any,
+	headersAny map[string]any,
 	cookies []*http.Cookie,
 	body io.Reader,
+	bodyControl util.JsonObject,
 	bodyFormat ResponseFormat,
 ) (res Response, err error) {
+
+	headerFlat := map[string]any{}
+	headers := map[string]any{}
+
+	// parse headers and set HeaderFlat if the values are string
+	for key, value := range headersAny {
+		switch v := value.(type) {
+		case string:
+			headerFlat[key] = v
+			continue
+		case []any:
+			headerS := []string{}
+			for _, item := range v {
+				switch v2 := item.(type) {
+				case string:
+					headerS = append(headerS, v2)
+					continue
+				default:
+					return res, fmt.Errorf("unknown type %T in header %q", v2, key)
+				}
+			}
+			headers[key] = v
+			continue
+		case []string:
+			headers[key] = v
+			continue
+		case map[string]any: // check if that is a control
+			if strings.HasSuffix(key, ":control") {
+				headerFlat[key] = v
+				continue
+			}
+		}
+		// all valid cases continue above
+		return res, fmt.Errorf("unknown type %T in header %q", value, key)
+	}
+
 	res = Response{
-		StatusCode: statusCode,
-		Headers:    headers,
-		HeaderFlat: headerFlat,
-		Cookies:    cookies,
-		Format:     bodyFormat,
+		StatusCode:  statusCode,
+		Headers:     headers,
+		BodyControl: bodyControl,
+		HeaderFlat:  headerFlat,
+		Cookies:     cookies,
+		Format:      bodyFormat,
 	}
 	if body != nil {
 		start := time.Now()
@@ -141,7 +169,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 		}
 	}
 
-	return NewResponse(spec.StatusCode, spec.Headers, spec.HeaderFlat, cookies, body, spec.Format)
+	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
@@ -211,15 +239,19 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
-	headerFlat, err := resp.SerializeHeaderFlat()
-	if err != nil {
-		return res, err
+	headerFlat := map[string]any{}
+	headersAny := map[string]any{}
+	for key, value := range resp.Headers {
+		headersAny[key] = value
+		values := value.([]string) // this must be []string, if not this panics
+		headerFlat[key] = strings.Join(values, ";")
 	}
-	responseJSON := ResponseSerialization{
-		StatusCode: resp.StatusCode,
-		Headers:    resp.Headers,
-		HeaderFlat: headerFlat,
-	}
+
+	responseJSON := responseSerializationInternal{}
+	responseJSON.StatusCode = resp.StatusCode
+	responseJSON.Headers = headersAny
+	responseJSON.HeaderFlat = headerFlat
+
 	// Build cookies map from standard bag
 	if len(resp.Cookies) > 0 {
 		responseJSON.Cookies = make(map[string]Cookie)
@@ -282,11 +314,12 @@ func (response Response) ToGenericJSON() (any, error) {
 		}
 	}
 
-	responseJSON := ResponseSerialization{
-		StatusCode: response.StatusCode,
-		Headers:    response.Headers,
-		HeaderFlat: response.HeaderFlat,
-	}
+	responseJSON := responseSerializationInternal{}
+
+	responseJSON.StatusCode = response.StatusCode
+	responseJSON.Headers = response.Headers
+	responseJSON.HeaderFlat = response.HeaderFlat
+	responseJSON.BodyControl = response.BodyControl
 
 	// Build cookies map from standard bag
 	if len(response.Cookies) > 0 {

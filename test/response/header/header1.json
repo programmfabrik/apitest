@@ -1,0 +1,54 @@
+{
+	"name": "test header",
+	"request": {
+		"server_url": "http://localhost:9999",
+		"endpoint": "bounce-json",
+		"method": "POST",
+		"header": {
+			"x-key": "value",
+			"x-key-array": [
+				"value1",
+				"value2"
+			]
+		},
+		"body": {
+			"test": "torsten"
+		}
+	},
+	"response": {
+		"statuscode": 200,
+		"header": {
+			"Content-Type": "text/plain; charset=utf-8"
+		},
+		"body": {
+			"header:control": {
+				"no_extra": true
+			},
+			"header": {
+				"Connection": [
+					"close"
+				],
+				"Content-Length": [
+					"18"
+				],
+				"Content-Type": [
+					"application/json"
+				],
+				"X-Key": [
+					"value"
+				],
+				"X-Key-Array": [
+				  "value1",
+				  "value2"
+				]
+			},
+			"query_params": {},
+			"body:control": {
+				"no_extra": true
+			},
+			"body": {
+				"test": "torsten"
+			}
+		}
+	}
+}

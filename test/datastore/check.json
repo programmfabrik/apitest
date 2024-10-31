@@ -5,6 +5,9 @@
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",
             "method": "POST",
+            "header": {
+                "x-henk": "denk"
+            },
             "body": [
                 {{ datastore -3 | qjson "body" }},
                 {{ datastore -2 | qjson "body" }},
@@ -13,12 +16,19 @@
         },
         "response": {
             "statuscode": 200,
+            "header": {
+                "Content-Length": "367"
+            },
             "body": {
                 "body": [
                     {"some": "data"},
                     {"some": ["more", "data"]},
                     {"some": "data"}
-                ]
+                ],
+                "body:control": {
+                    "order_matters": true,
+                    "no_extra": true
+                }
             }
         }
     }

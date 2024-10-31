@@ -224,14 +224,14 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "query_params_from_store": {
             "format": "formatFromDatastore",
             // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
-            // do not set the query param. If the key "a" is not found it datastore, the queryparameter test will not be set
+            // do not set the query param. If the key "a" is not found it datastore, the query parameter test will not be set
             "test": "?a"
         },
 
         // Additional headers that should be added to the request
         "header": {
             "header1": "value",
-            "header2": "value"
+            "header2": ["value1", "value2"]
         },
 
         // Cookies can be added to the request
@@ -270,7 +270,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
             }
         ],
 
-        // With header_from_you set a header to the value of the dat astore field
+        // With header_from_store you set a header to the value of the datastore field
         // In this example we set the "Content-Type" header to the value "application/json"
         // As "application/json" is stored as string in the datastore on index "contentType"
         "header_from_store": {
@@ -298,13 +298,22 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         // Expected http status code. See api documentation vor the right ones
         "statuscode": 200,
 
-        // If you expect certain response headers, you can define them here. A single key can have mulitble headers (as defined in rfc2616)
+        // If you expect certain response headers, you can define them here. A single key can have multiple headers (as defined in rfc2616)
         "header": {
             "key1": [
                 "val1",
                 "val2",
                 "val3"
             ],
+
+            // Headers sharing the same key are concatenated using ";", if the comparison value is a simple string,
+            // thus "key1" can also be checked like this:
+            "key1": "val1;val2;val3"
+
+            // :control in header is always applied to the flat format
+            "key1:control": {
+                // see below, this is not applied against the array
+            },
             "x-easydb-token": [
                 "csdklmwerf8ßwji02kopwfjko2"
             ]
@@ -1931,10 +1940,7 @@ The datastore stores all responses in a list. We can retrieve the response (as a
 {
     "statuscode": 200,
     "header": {
-        "foo": [
-            "bar",
-            "baz"
-        ]
+        "foo": "bar;baz"
     },
     "body": "..."
 }
@@ -2658,7 +2664,7 @@ The endpoint `bounce` returns the binary of the request body, as well as the req
             "param1": "abc"
         },
         "header": {
-            "header1": 123
+            "header1": "123"
         },
         "body": {
             "file": "@path/to/file.jpg"
