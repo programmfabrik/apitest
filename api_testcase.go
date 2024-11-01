@@ -29,7 +29,7 @@ type Case struct {
 	ResponseData      any               `json:"response"`
 	ContinueOnFailure bool              `json:"continue_on_failure"`
 	Store             map[string]any    `json:"store"`                // init datastore before testrun
-	StoreResponse     map[string]string `json:"store_response_qjson"` // store qjson parsed response in datastore
+	StoreResponse     map[string]string `json:"store_response_gjson"` // store gjson parsed response in datastore
 
 	Timeout         int   `json:"timeout_ms"`
 	WaitBefore      *int  `json:"wait_before_ms"`
@@ -284,10 +284,10 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	}
 
 	// Store in custom store
-	err = testCase.dataStore.SetWithQjson(apiRespJsonString, testCase.StoreResponse)
+	err = testCase.dataStore.SetWithGjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
 		testCase.LogReq(req)
-		err = fmt.Errorf("error store response with qjson: %s", err)
+		err = fmt.Errorf("error store response with gjson: %s", err)
 		return responsesMatch, req, apiResp, err
 	}
 

@@ -85,7 +85,7 @@ func TestBigIntRender(t *testing.T) {
 	resp, _ := api.NewResponse(200, nil, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil, api.ResponseFormat{})
 
 	respJson, _ := resp.ServerResponseToJsonString(false)
-	store.SetWithQjson(respJson, map[string]string{"testINT": "body.bigINT"})
+	store.SetWithGjson(respJson, map[string]string{"testINT": "body.bigINT"})
 
 	res, err := loader.Render([]byte(`{{ datastore "testINT" }}`), "", nil)
 	if err != nil {
@@ -113,8 +113,8 @@ func TestRowsToMapTemplate(t *testing.T) {
 	})
 }
 
-func TestRender_LoadFile_QJson_Params(t *testing.T) {
-	root := []byte(`{{ file_render "somefile.json" "foo" "bar" | qjson "key.1" }}`)
+func TestRender_LoadFile_GJson_Params(t *testing.T) {
+	root := []byte(`{{ file_render "somefile.json" "foo" "bar" | gjson "key.1" }}`)
 	target := []byte(`{ "key": ["{{ .Param1 }}", "{{ .Param2 }}"]}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
@@ -274,10 +274,10 @@ int64,string,"string,array","int64,array"
 	}
 }
 
-func TestRender_LoadFile_CSVQjson(t *testing.T) {
+func TestRender_LoadFile_CSV_Gjson(t *testing.T) {
 	testCases := []struct {
 		csv         string
-		qjson       string
+		gjson       string
 		expected    string
 		expectedErr error
 	}{
@@ -291,7 +291,7 @@ int64,string,"string,array","int64,array"
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal | qjson "%s" }}`, testCase.qjson))
+			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal | gjson "%s" }}`, testCase.gjson))
 
 			target := []byte(testCase.csv)
 
@@ -313,7 +313,7 @@ int64,string,"string,array","int64,array"
 	}
 }
 
-func TestRender_LoadFile_QJson(t *testing.T) {
+func TestRender_LoadFile_GJson(t *testing.T) {
 	testCases := []struct {
 		path        string
 		json        string
@@ -381,7 +381,7 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file "somefile.json" | qjson "%s" }}`, testCase.path))
+			root := []byte(fmt.Sprintf(`{{ file "somefile.json" | gjson "%s" }}`, testCase.path))
 			target := []byte(testCase.json)
 
 			filesystem.Fs = afero.NewMemMapFs()
@@ -403,7 +403,7 @@ func TestRender_LoadFile_QJson(t *testing.T) {
 	}
 }
 
-func Test_DataStore_QJson(t *testing.T) {
+func Test_DataStore_GJson(t *testing.T) {
 	response, _ := api.NewResponse(
 		200,
 		map[string]any{"x-header": []string{"foo", "bar"}},
@@ -449,7 +449,7 @@ func Test_DataStore_QJson(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ datastore 0 | qjson "%s" }}`, testCase.path))
+			root := []byte(fmt.Sprintf(`{{ datastore 0 | gjson "%s" }}`, testCase.path))
 			res, err := loader.Render(root, "some/path", nil)
 
 			go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))

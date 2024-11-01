@@ -5,41 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_QJson_String(t *testing.T) {
-	json := `{
-		"foo": "bar"
-	}`
-	go_test_utils.AssertStringEquals(t, qjson("foo", json), `"bar"`)
-}
-
-func Test_QJson_Array(t *testing.T) {
-	json := `{
-		"foo": [
-			"bar",
-			1
-		]
-	}`
-	test_utils.AssertJsonStringEquals(t, qjson("foo", json), `[
-		"bar",
-		1
-	]`)
-}
-
-func Test_QJson_Object(t *testing.T) {
-	json := `{
-		"foo": {
-			"bar": 1
-		}
-	}`
-	test_utils.AssertJsonStringEquals(t, qjson("foo", json), `{
-		"bar": 1
-	}`)
-}
 
 func TestRowsToMap(t *testing.T) {
 	tests := []struct {

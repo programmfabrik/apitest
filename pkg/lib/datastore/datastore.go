@@ -52,8 +52,8 @@ func (data DatastoreIndexError) Error() string {
 	return data.error
 }
 
-// SetWithQjson stores the given response driven by a map key => qjson
-func (ds *Datastore) SetWithQjson(jsonResponse string, storeResponse map[string]string) error {
+// SetWithGjson stores the given response driven by a map key => gjson
+func (ds *Datastore) SetWithGjson(jsonResponse string, storeResponse map[string]string) error {
 	for k, qv := range storeResponse {
 		setEmpty := false
 		if len(qv) > 0 && qv[0] == '!' {

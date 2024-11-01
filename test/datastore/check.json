@@ -9,9 +9,9 @@
                 "x-henk": "denk"
             },
             "body": [
-                {{ datastore -3 | qjson "body" }},
-                {{ datastore -2 | qjson "body" }},
-                {{ datastore -1 | qjson "body" }}
+                {{ datastore -3 | gjson "body" }},
+                {{ datastore -2 | gjson "body" }},
+                {{ datastore -1 | gjson "body" }}
             ]
         },
         "response": {

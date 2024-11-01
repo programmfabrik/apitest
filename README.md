@@ -355,7 +355,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     },
 
     // Store parts of the response into the datastore
-    "store_response_qjson": {
+    "store_response_gjson": {
         "eas_id": "body.0.eas._id",
 
         // Cookies are stored in `cookie` map
@@ -770,13 +770,13 @@ To set data in custom store, you can use 4 methods:
 |                                                                 |                                                                                                                                                                                                                                                                                                                           |
 | ---                                                             | ---                                                                                                                                                                                                                                                                                                                       |
 | `store` on the `manifest.json` top level                        | the data is set before the session authentication (if any)                                                                                                                                                                                                                                                                |
-| `store_response_qjson` in `authentication.store_response_qjson` |                                                                                                                                                                                                                                                                                                                           |
+| `store_response_gjson` in `authentication.store_response_gjson` |                                                                                                                                                                                                                                                                                                                           |
 | `store` on the **test** level                                   | the data is set before **request** and **response** are evaluated                                                                                                                                                                                                                                                         |
-| `store_response_qjson` on the test level                        | the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with qjson. Just prepend the qjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json) |
+| `store_response_gjson` on the test level                        | the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with gjson. Just prepend the gjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json) |
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]` and Array is created if the key does not yet exist, or the value is appended to the Array if it does exist.
 
-The method `store_response_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
+The method `store_response_gjson` takes only **string** as value. This gjson-string is used to parse the current response using the **gjson** feature. The return value from the gjson call is then stored in the datastore.
 
 ## Get Data from Custom Store
 
@@ -790,7 +790,7 @@ If you access an invalid index for datastore `map[index]` or `slice[]` you get a
 
 To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
-The sequential store stores the body and header of all responses. Use `qjson` to access values in the responses. See template functions [`datastore`](#datastore-key) and [`qjson`](#qjson-path-json).
+The sequential store stores the body and header of all responses. Use `gjson` to access values in the responses. See template functions [`datastore`](#datastore-key) and [`gjson`](#gjson-path-json).
 
 When using relative indices (negative indices), use the same index to get values from the datastore to use in the request and response definition. Especially, for evaluating the current response, it has not yet been stored. So, `datastore "-1"` will still return the last response in the datastore. The current response will be appended after it was evaluated, and then will be returned with `datastore "-1"`.
 
@@ -1929,13 +1929,13 @@ For `rows_to_map "column_a" "column_c" `:
 
 ## `datastore [key]`
 
-Helper function to query the datastore; used most of the time in conjunction with `qjson`.
+Helper function to query the datastore; used most of the time in conjunction with `gjson`.
 
 The `key`can be an int, or int64 accessing the store of previous responses. The responses are accessed in the order received. Using a negative value access the store from the back, so a value of **-2** would access the second to last response struct.
 
 This function returns a string, if the `key`does not exist, an empty string is returned.
 
-If the `key` is a string, the datastore is accessed directly, allowing access to custom set values using `store` or `store_response_qjson`parameters.
+If the `key` is a string, the datastore is accessed directly, allowing access to custom set values using `store` or `store_response_gjson`parameters.
 
 The datastore stores all responses in a list. We can retrieve the response (as a json string) by using this template function. `{{ datastore 0  }}` will render to
 
@@ -1949,11 +1949,11 @@ The datastore stores all responses in a list. We can retrieve the response (as a
 }
 ```
 
-This function is intended to be used with the `qjson` template function.
+This function is intended to be used with the `gjson` template function.
 
 The key `-` has a special meaning, it returns the entire custom datastore (not the sequentially stored responses)
 
-## `qjson [path] [json]`
+## `gjson [path] [json]`
 
 Helper function to extract fields from the `json`
 
@@ -1968,7 +1968,7 @@ Helper function to extract fields from the `json`
 The call
 
 ```django
-{{ qjson "foo.1.bar" "{\"foo": [{\"bar\": \"baz\"}, 42]}" }}
+{{ gjson "foo.1.bar" "{\"foo": [{\"bar\": \"baz\"}, 42]}" }}
 ```
 
 would return `baz`.
@@ -1976,7 +1976,7 @@ would return `baz`.
 As an example with pipes, the call
 
 ```django
-{{ datastore idx | qjson "header.foo.1" }}
+{{ datastore idx | gjson "header.foo.1" }}
 ```
 
  would return`bar` given the response above.
@@ -1991,7 +1991,7 @@ Helper function to load a csv file
 | ---          | ---      | ---                                                                                                   |
 | `@path`      | `string` | A path to the csv file that should be loaded. The path is either relative to the manifest or a weburl |
 | `@delimiter` | `rune`   | The delimiter that is used in the given csv e.g. `,` Defaults to `,`                                  |
-| `@result`    |          | The content of the csv as json array so we can work on this data with qjson                           |
+| `@result`    |          | The content of the csv as json array so we can work on this data with gjson                           |
 
 The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error
 
@@ -2037,7 +2037,7 @@ would result in
 As an example with pipes, the call
 
 ```django
-{{ file_csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
+{{ file_csv "some/path/example.csv" ',' | marshal | gjson "1.name" }}
 ```
 
 would result in `martin` given the response above.
@@ -2319,7 +2319,7 @@ would result in
 Helper function to return the result of an SQL statement from a sqlite3 file.
 - `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
 - `@statement`: string; a SQL statement that returns data (`SELECT`)
-- `@result`: the result of the statement as a json array so we can work on this data with qjson
+- `@result`: the result of the statement as a json array so we can work on this data with gjson
 
 ### Example
 
@@ -2491,7 +2491,7 @@ Example:
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2505,7 +2505,7 @@ Example:
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_client_token "my_client" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_client_token "my_client" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2521,7 +2521,7 @@ Example:
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2531,7 +2531,7 @@ Or:
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2547,7 +2547,7 @@ Example:
 ```django
 {
     "store": {
-        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | gjson "access_token" }}
     }
 }
 ```

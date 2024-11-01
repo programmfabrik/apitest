@@ -43,7 +43,7 @@
                 "offset": {{ datastore "max_entries" }}
             }
         },
-        "store_response_qjson": {
+        "store_response_gjson": {
             "test_image_offset": "body.offset"
         }
     }

@@ -38,7 +38,7 @@ func TestDataStore_GetSlice(t *testing.T) {
 func TestStoreTypeInt(t *testing.T) {
 	store := NewStore(false)
 	store.Set("ownInt", 1.0)
-	store.SetWithQjson(`{"id",1.000000}`, map[string]string{"jsonInt": "id"})
+	store.SetWithGjson(`{"id",1.000000}`, map[string]string{"jsonInt": "id"})
 
 	oVal, _ := store.Get("ownInt")
 	jVal, _ := store.Get("jsonInt")
@@ -48,7 +48,7 @@ func TestStoreTypeInt(t *testing.T) {
 	}
 
 	store.Set("ownInt", 1.1)
-	store.SetWithQjson(`{"id",1.100000}`, map[string]string{"jsonInt": "id"})
+	store.SetWithGjson(`{"id",1.100000}`, map[string]string{"jsonInt": "id"})
 
 	oVal, _ = store.Get("ownInt")
 	jVal, _ = store.Get("jsonInt")

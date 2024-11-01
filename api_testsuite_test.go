@@ -12,7 +12,7 @@ func TestLoadManifest(t *testing.T) {
 
 	afero.WriteFile(filesystem.Fs, "externalFile", []byte(`{"load":{"me":"loaded"}}`), 644)
 
-	afero.WriteFile(filesystem.Fs, "testManifest.json", []byte(`{"testload": {{ file "externalFile" | qjson "load.me"}}}`), 644)
+	afero.WriteFile(filesystem.Fs, "testManifest.json", []byte(`{"testload": {{ file "externalFile" | gjson "load.me"}}}`), 644)
 
 	s := Suite{manifestPath: "testManifest.json"}
 
@@ -33,7 +33,7 @@ func TestLoadManifestCustomDelimiters(t *testing.T) {
 
 	afero.WriteFile(filesystem.Fs, "testManifest.json", []byte(`// template-delims: ## ##
 	// template-remove-tokens: "<placeholder>" "...."
-	{"testload": ## file "externalFile" | qjson "load.me" ##}"...."`), 0644)
+	{"testload": ## file "externalFile" | gjson "load.me" ##}"...."`), 0644)
 
 	s := Suite{manifestPath: "testManifest.json"}
 	res, err := s.loadManifest()
