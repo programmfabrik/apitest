@@ -1,0 +1,16 @@
+{
+	"name": "test response header",
+	"request": {
+		"server_url": "http://localhost:9999",
+		"endpoint": "bounce-json",
+		"method": "POST"
+	},
+	"response": {
+		"statuscode": 200,
+		"header": {
+		    "Content-Type": [
+		        "text/plain; charset=utf-8"
+		    ]
+		}
+	}
+}

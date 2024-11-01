@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,7 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
@@ -43,8 +42,8 @@ type Suite struct {
 	Tests []any          `json:"tests"`
 	Store map[string]any `json:"store"`
 
-	StandardHeader          map[string]*string `yaml:"header" json:"header"`
-	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
+	StandardHeader          map[string]any    `yaml:"header" json:"header"`
+	StandardHeaderFromStore map[string]string `yaml:"header_from_store" json:"header_from_store"`
 
 	Config          TestToolConfig
 	datastore       *datastore.Datastore
@@ -104,7 +103,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	if httpServerReplaceHost != "" {
 		_, err = url.Parse("//" + httpServerReplaceHost)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_host failed (command argument)")
+			return nil, fmt.Errorf("set http_server_host failed (command argument): %w", err)
 		}
 	}
 	if suitePreload.HttpServer != nil {
@@ -115,7 +114,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		// We need to append it as the golang URL parser is not smart enough to differenciate between hostname and protocol
 		_, err = url.Parse("//" + preloadHTTPAddrStr)
 		if err != nil {
-			return nil, errors.Wrap(err, "set http_server_host failed (manifesr addr)")
+			return nil, fmt.Errorf("set http_server_host failed (manifesr addr): %w", err)
 		}
 	}
 	suitePreload.HTTPServerHost = httpServerReplaceHost
@@ -440,7 +439,7 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	}
 	defer manifestFile.Close()
 
-	manifestTmpl, err := ioutil.ReadAll(manifestFile)
+	manifestTmpl, err := io.ReadAll(manifestFile)
 	if err != nil {
 		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
 	}

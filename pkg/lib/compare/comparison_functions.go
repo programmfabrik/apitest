@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 )
@@ -361,11 +360,11 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 
 		leftJson, err := golib.JsonBytesIndent(left, "", "  ")
 		if err != nil {
-			return CompareResult{}, errors.Wrap(err, "Could not marshal expected array")
+			return CompareResult{}, fmt.Errorf("Could not marshal expected array: %w", err)
 		}
 		rightJson, err := golib.JsonBytesIndent(right, "", "  ")
 		if err != nil {
-			return CompareResult{}, errors.Wrap(err, "Could not marshal actual array")
+			return CompareResult{}, fmt.Errorf("Could not marshal actual array: %w", err)
 		}
 
 		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})

@@ -10,7 +10,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
-	"github.com/pkg/errors"
 	"github.com/programmfabrik/golib"
 	"golang.org/x/net/html"
 )
@@ -67,16 +66,16 @@ func Xml2Json(rawXml []byte, format string) ([]byte, error) {
 	case "xml2":
 		mv, err = mxj.NewMapXml(replacedXML)
 	default:
-		return []byte{}, errors.Errorf("Unknown format %s", format)
+		return []byte{}, fmt.Errorf("Unknown format %s", format)
 	}
 
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not parse xml")
+		return []byte{}, fmt.Errorf("Could not parse xml: %w", err)
 	}
 
 	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not convert to json")
+		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
 	}
 	return jsonStr, nil
 }
@@ -90,12 +89,12 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 
 	mv, err = mxj.NewMapXml(rawXhtml)
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not parse xhtml")
+		return []byte{}, fmt.Errorf("Could not parse xhtml: %w", err)
 	}
 
 	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not convert to json")
+		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
 	}
 	return jsonStr, nil
 }
@@ -109,7 +108,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 
 	htmlDoc, err = goquery.NewDocumentFromReader(bytes.NewReader(rawHtml))
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not parse html")
+		return []byte{}, fmt.Errorf("Could not parse html: %w", err)
 	}
 
 	htmlData := map[string]any{}
@@ -125,7 +124,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 
 	jsonStr, err := golib.JsonBytesIndent(htmlData, "", " ")
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "Could not convert html to json")
+		return []byte{}, fmt.Errorf("Could not convert html to json: %w", err)
 	}
 
 	return jsonStr, nil

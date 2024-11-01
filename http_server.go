@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -155,7 +154,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		bodyJSON, errorBody any
 	)
 
-	bodyBytes, err = ioutil.ReadAll(r.Body)
+	bodyBytes, err = io.ReadAll(r.Body)
 
 	if utf8.Valid(bodyBytes) {
 		if len(bodyBytes) > 0 {

@@ -1,0 +1,43 @@
+{
+    "name": "check HTTP header using control, use reverse_test_result",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": [
+            "henk 1",
+            "henk 2",
+            "henk 3"
+        ]
+    },
+    "response": {
+        "statuscode": 200,
+        "header": {
+            // test the string format
+            "Content-Length": "237",
+            "Content-Type": "text/plain; charset=utf-8"
+        },
+        "body:control": {
+            "no_extra": true
+        },
+        "body": {
+            "header": {
+              "Connection": [
+                "close"
+              ],
+              "Content-Length": [
+                "28"
+              ],
+              "Content-Type": [
+                "application/json"
+              ]
+            },
+            "query_params": {},
+            "body": [
+              "henk 1",
+              "henk 2",
+              "henk 3"
+            ]
+          }          
+    }
+}

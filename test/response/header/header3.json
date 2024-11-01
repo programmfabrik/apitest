@@ -1,0 +1,19 @@
+{
+    "name": "test response header:control for header values",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST"
+    },
+    "response": {
+        "statuscode": 200,
+        "header": {
+            "Content-Length:control": {
+                "match": "^\\d+$"
+            },
+            "Content-Type:control": {
+                "match": "^text/plain;.*"
+            }
+        }
+    }
+}

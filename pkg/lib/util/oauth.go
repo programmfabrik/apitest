@@ -2,13 +2,13 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
 	"log"
 
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -122,7 +122,7 @@ func (c OAuthClientConfig) getRedirectURL(params ...string) (*url.URL, error) {
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("No proper status after redirect returned: %s (%d)", res.Status, res.StatusCode)
+		return nil, fmt.Errorf("No proper status after redirect returned: %s (%d)", res.Status, res.StatusCode)
 	}
 	return res.Request.URL, nil
 }

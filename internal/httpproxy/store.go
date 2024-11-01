@@ -3,12 +3,10 @@ package httpproxy
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/pkg/errors"
 
 	"github.com/programmfabrik/apitest/internal/handlerutil"
 )
@@ -63,9 +61,9 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 	offset := len(st.Data)
 
 	if r.Body != nil {
-		reqData.Body, err = ioutil.ReadAll(r.Body)
+		reqData.Body, err = io.ReadAll(r.Body)
 		if err != nil {
-			handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not read request body: %s", err))
+			handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not read request body: %w", err))
 			return
 		}
 	}
@@ -76,7 +74,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 		Offset int `json:"offset"`
 	}{offset})
 	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not encode response: %w", err))
 	}
 }
 
@@ -94,14 +92,14 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			handlerutil.RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Invalid offset %s", offsetStr))
+			handlerutil.RespondWithErr(w, http.StatusBadRequest, fmt.Errorf("Invalid offset %s", offsetStr))
 			return
 		}
 	}
 
 	count := len(st.Data)
 	if offset >= count {
-		handlerutil.RespondWithErr(w, http.StatusBadRequest, errors.Errorf("Offset (%d) is higher than count (%d)", offset, count))
+		handlerutil.RespondWithErr(w, http.StatusBadRequest, fmt.Errorf("Offset (%d) is higher than count (%d)", offset, count))
 		return
 	}
 
@@ -126,6 +124,6 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(req.Body)
 	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusInternalServerError, errors.Errorf("Could not encode response: %s", err))
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not encode response: %w", err))
 	}
 }

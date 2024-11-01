@@ -20,9 +20,6 @@
             "response": {
                 // check actual HTTP headers
                 "header": {
-                    "Content-Type:control": {
-                        "element_count": 1
-                    },
                     "xxx:control": {
                         "must_not_exist": true
                     }
@@ -42,21 +39,6 @@
                     }
                 }
             }
-        },
-        {
-            "name": "check HTTP header using control, use reverse_test_result",
-            "request": {
-                "server_url": "http://localhost:9999",
-                "endpoint": "bounce-json",
-                "method": "POST"
-            },
-            "response": {
-                // check number of HTTP headers, should always be > 0
-                "header:control": {
-                    "element_count": 0
-                }
-            },
-            "reverse_test_result": true
         },
         {
             "name": "check value in HTTP header using control, use reverse_test_result",

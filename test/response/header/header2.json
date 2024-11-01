@@ -1,0 +1,16 @@
+{
+    "name": "test response header (check for a failing test with a reverse result)",
+    "reverse_test_result": true,
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST"
+    },
+    "response": {
+        "statuscode": 200,
+        "header": {
+            "Content-Length": "foo",
+            "Content-Type": "bar"
+        }
+    }
+}

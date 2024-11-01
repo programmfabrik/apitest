@@ -49,7 +49,7 @@ type Case struct {
 	index       int
 	dataStore   *datastore.Datastore
 
-	standardHeader          map[string]*string
+	standardHeader          map[string]any // can be string or []string
 	standardHeaderFromStore map[string]string
 
 	ServerURL         string `json:"server_url"`
@@ -471,7 +471,7 @@ func (testCase Case) loadRequest() (api.Request, error) {
 func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, nil, res.Format)
+		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -523,10 +523,10 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.ServerURL = testCase.ServerURL
 	}
 	if len(spec.Headers) == 0 {
-		spec.Headers = make(map[string]*string)
+		spec.Headers = make(map[string]any)
 	}
 	for k, v := range testCase.standardHeader {
-		if spec.Headers[k] == nil {
+		if _, exist := spec.Headers[k]; !exist {
 			spec.Headers[k] = v
 		}
 	}
@@ -535,7 +535,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 		spec.HeaderFromStore = make(map[string]string)
 	}
 	for k, v := range testCase.standardHeaderFromStore {
-		if spec.HeaderFromStore[k] == "" {
+		if _, exist := spec.HeaderFromStore[k]; !exist {
 			spec.HeaderFromStore[k] = v
 		}
 	}

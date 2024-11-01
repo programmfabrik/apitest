@@ -1,0 +1,16 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "response header: format header",
+    "tests": [
+        "@header1.json"
+        ,"@header2.json"
+        ,"@header3.json"
+        ,"@header4.json"
+        ,"@header5.json"
+        ,"@header6.json"
+    ]
+}

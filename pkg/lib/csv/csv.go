@@ -8,8 +8,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Get information
@@ -25,7 +23,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 
 	records, err := renderCSV(bytes.NewReader(inputCSV), comma)
 	if err != nil {
-		return nil, errors.Wrap(err, "CSVToMap.renderCSV")
+		return nil, fmt.Errorf("CSVToMap.renderCSV: %w", err)
 	}
 
 	records = removeEmptyRowsAndComments(records)

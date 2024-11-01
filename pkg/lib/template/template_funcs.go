@@ -86,7 +86,7 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 		case "string", "int64", "float64", "number", "json":
 			// supported
 		default:
-			return nil, errors.Errorf("type %q not supported", sheetType)
+			return nil, fmt.Errorf("type %q not supported", sheetType)
 		}
 
 		for kI, vI := range row {
@@ -325,13 +325,13 @@ func divide(b, a any) (any, error) {
 func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
 	file, err := util.OpenFileOrUrl(pathOrURL, rootDir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
+		return nil, fmt.Errorf("fileReadInternal: %q: %w", pathOrURL, err)
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fileReadInternal: %q", pathOrURL)
+		return nil, fmt.Errorf("fileReadInternal: %q: %w", pathOrURL, err)
 	}
 	return data, nil
 }
@@ -350,7 +350,7 @@ func loadFileAndRender(rootDir string, loader *Loader) any {
 		}
 		data, err = loader.Render(data, filepath.Dir(filepath.Join(rootDir, path)), tmplParams)
 		if err != nil {
-			return "", errors.Wrapf(err, "Render error in file %q", path)
+			return "", fmt.Errorf("Render error in file %q: %w", path, err)
 		}
 		return string(data), nil
 	}
@@ -387,7 +387,7 @@ func loadFileCSV(rootDir string) any {
 		}
 		data, err := csv.CSVToMap(fileBytes, delimiter)
 		if err != nil {
-			return data, errors.Wrapf(err, "CSV map error in file %q", path)
+			return data, fmt.Errorf("CSV map error in file %q: %w", path, err)
 		}
 		return data, err
 	}
