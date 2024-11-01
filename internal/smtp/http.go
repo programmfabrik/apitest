@@ -69,7 +69,7 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch pathParts[0] {
 	case "gui":
-		h.routeGUIEndpoint(w, r, pathParts)
+		h.routeGUIEndpoint(w, pathParts)
 	case "postmessage":
 		h.handlePostMessage(w, r)
 	default:
@@ -77,7 +77,7 @@ func (h *smtpHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *smtpHTTPHandler) routeGUIEndpoint(w http.ResponseWriter, r *http.Request, pathParts []string) {
+func (h *smtpHTTPHandler) routeGUIEndpoint(w http.ResponseWriter, pathParts []string) {
 	if len(pathParts) == 0 {
 		handlerutil.RespondWithErr(
 			w, http.StatusInternalServerError,
@@ -87,7 +87,7 @@ func (h *smtpHTTPHandler) routeGUIEndpoint(w http.ResponseWriter, r *http.Reques
 	}
 
 	if len(pathParts) == 1 {
-		h.handleGUIIndex(w, r)
+		h.handleGUIIndex(w)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (h *smtpHTTPHandler) routeGUIEndpoint(w http.ResponseWriter, r *http.Reques
 	}
 
 	if len(pathParts) == 2 {
-		h.handleGUIMessage(w, r, msg)
+		h.handleGUIMessage(w, msg)
 		return
 	}
 
@@ -122,11 +122,11 @@ func (h *smtpHTTPHandler) routeMessageEndpoint(w http.ResponseWriter, r *http.Re
 	}
 
 	if len(pathParts) == 1 {
-		h.handleMessageMeta(w, r, msg)
+		h.handleMessageMeta(w, msg)
 		return
 	}
 	if len(pathParts) == 2 && pathParts[1] == "raw" {
-		h.handleMessageRaw(w, r, msg)
+		h.handleMessageRaw(w, msg)
 		return
 	}
 
@@ -135,9 +135,7 @@ func (h *smtpHTTPHandler) routeMessageEndpoint(w http.ResponseWriter, r *http.Re
 
 // subrouteContentEndpoint recursively finds a route for the remaining path parts
 // based on the given ReceivedContent.
-func (h *smtpHTTPHandler) subrouteContentEndpoint(
-	w http.ResponseWriter, r *http.Request, c *ReceivedContent, remainingPathParts []string,
-) {
+func (h *smtpHTTPHandler) subrouteContentEndpoint(w http.ResponseWriter, r *http.Request, c *ReceivedContent, remainingPathParts []string) {
 	ensureIsMultipart := func() bool {
 		if !c.IsMultipart() {
 			handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
@@ -152,7 +150,7 @@ func (h *smtpHTTPHandler) subrouteContentEndpoint(
 	if len(remainingPathParts) == 1 {
 		switch remainingPathParts[0] {
 		case "body":
-			h.handleContentBody(w, r, c)
+			h.handleContentBody(w, c)
 			return
 		case "multipart":
 			if !ensureIsMultipart() {
@@ -190,7 +188,7 @@ func (h *smtpHTTPHandler) subrouteContentEndpoint(
 		part := multiparts[partIdx]
 
 		if len(remainingPathParts) == 2 {
-			h.handleMultipartMeta(w, r, part)
+			h.handleMultipartMeta(w, part)
 			return
 		}
 
@@ -202,7 +200,7 @@ func (h *smtpHTTPHandler) subrouteContentEndpoint(
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, r *http.Request, c *ReceivedContent) {
+func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, c *ReceivedContent) {
 	contentType, ok := c.Headers()["Content-Type"]
 	if ok {
 		w.Header()["Content-Type"] = contentType
@@ -211,7 +209,7 @@ func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, r *http.Reque
 	w.Write(c.Body())
 }
 
-func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request) {
+func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	err := guiIndexTemplate.Execute(w, map[string]any{"prefix": h.prefix})
@@ -220,7 +218,7 @@ func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, msg *ReceivedMessage) {
 	metadata := buildMessageFullMeta(msg)
 	metadataJson := golib.JsonStringIndent(metadata, "", "  ")
 
@@ -261,11 +259,11 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
-func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, msg *ReceivedMessage) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMessageFullMeta(msg))
 }
 
-func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, r *http.Request, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, msg *ReceivedMessage) {
 	w.Header().Set("Content-Type", "message/rfc822")
 	w.Write(msg.RawMessageData())
 }
@@ -285,9 +283,7 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartIndex(multiparts))
 }
 
-func (h *smtpHTTPHandler) handleMultipartMeta(
-	w http.ResponseWriter, r *http.Request, part *ReceivedPart,
-) {
+func (h *smtpHTTPHandler) handleMultipartMeta(w http.ResponseWriter, part *ReceivedPart) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
 }
 
