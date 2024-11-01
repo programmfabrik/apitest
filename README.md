@@ -817,6 +817,9 @@ In the example we use the jsonObject `test` and define some control structures o
 }
 ```
 
+### `body:control`
+
+All controls, which are defined below, can also be applied to the complete response body itself by setting `body:control`. The control check functions work the same as on any other key. This can be combined with other controls inside the body.
 
 ## Available controls
 
