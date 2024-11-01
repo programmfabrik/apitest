@@ -27,17 +27,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: execute unit tests
+      - name: execute unit tests, build & apitest
         shell: bash
-        run: make test
-
-      - name: build executable for test suite
-        shell: bash
-        run: make build
-
-      - name: execute apitest
-        shell: bash
-        run: make apitest
+        run: make all
 
       - name: Notify slack channel about a failure
         if: ${{ failure() }}

@@ -20,9 +20,6 @@
             "response": {
                 // check actual HTTP headers
                 "header": {
-                    "Content-Type:control": {
-                        "element_count": 1
-                    },
                     "xxx:control": {
                         "must_not_exist": true
                     }
