@@ -97,7 +97,7 @@ func (loader *Loader) Render(
 	}
 
 	funcMap := template.FuncMap{
-		"qjson": func(path string, json string) (result string, err error) {
+		"gjson": func(path string, json string) (result string, err error) {
 			if json == "" {
 				err = fmt.Errorf("The given json was empty")
 				return
@@ -105,7 +105,7 @@ func (loader *Loader) Render(
 
 			result = gjson.Get(json, path).Raw
 			if len(result) == 0 {
-				err = fmt.Errorf("'%s' was not found or was empty string. Qjson Input: %s", path, json)
+				err = fmt.Errorf("'%s' was not found or was empty string. Gjson Input: %s", path, json)
 			}
 			return
 		},

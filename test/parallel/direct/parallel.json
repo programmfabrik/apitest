@@ -17,7 +17,7 @@
                 }
             }
         },
-        "store_response_qjson": {
+        "store_response_gjson": {
             "responses[]": "body.body.n"
         }
     }

@@ -11,13 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-	"github.com/tidwall/gjson"
 )
-
-func qjson(path string, json string) string {
-	result := gjson.Get(json, path)
-	return result.Raw
-}
 
 // N returns a slice of n 0-sized elements, suitable for ranging over. (github.com/bradfitz)
 func N(n any) ([]struct{}, error) {

@@ -127,7 +127,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 Manifest is loaded as **template**, so you can use variables, Go **range** and **if** and others.
 
-```yaml
+```js
 {
     // General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
     "description": "search api tests for filename",
@@ -165,7 +165,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ### manifest.json
 
-```yaml
+```js
 {
     // Define if the test suite should continue even if this test fails. (default: false)
     "continue_on_failure": true,
@@ -355,7 +355,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
     },
 
     // Store parts of the response into the datastore
-    "store_response_qjson": {
+    "store_response_gjson": {
         "eas_id": "body.0.eas._id",
 
         // Cookies are stored in `cookie` map
@@ -408,7 +408,7 @@ Examples:
 /* template-delims: {* *} */
 ```
 
-> All external tests/requests/responses inherit those delimiters if not overriden in their template.
+All external tests/requests/responses inherit those delimiters if not overriden in their template.
 
 ## Remove template 'placeholders'
 
@@ -437,7 +437,7 @@ This would be an actual proper JSONC as per the `"delete_me"` string. However th
 }
 ```
 
-> Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
+Unlike with delimiters, external tests/requests/responses don't inherit those removals, and need to be specified per file.
 
 ## Run tests in parallel
 
@@ -451,7 +451,7 @@ Only tests directly included by a manifest are allowed to run in parallel.
 
 Using `"0@file.json"` will not run that specific test.
 
-```yaml
+```js
 {
     "name": "Example Manifest",
     "tests": [
@@ -468,7 +468,7 @@ The tool is able to do a comparison with a binary file. Here we take a MD5 hash 
 
 For comparing a binary file, simply point the response to the binary file:
 
-```yaml
+```js
 {
     "name": "Binary Comparison",
     "request": {
@@ -487,7 +487,7 @@ For comparing a binary file, simply point the response to the binary file:
 }
 ```
 
-> The format must be specified as `"type": "binary"`
+The format must be specified as `"type": "binary"`
 
 ## XML Data comparison
 
@@ -521,7 +521,7 @@ If the response format is specified as `"type": "csv"`, we internally marshal th
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
-```yaml
+```js
 {
     "name": "CSV comparison",
     "request": {
@@ -548,7 +548,7 @@ The response body is piped to the `stdin` of the tool and the result is read fro
 
 To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
 
-```yaml
+```js
 {
     "response": {
         "format": {
@@ -564,11 +564,11 @@ To define a preprocessing for a response, add a `format` object that defines the
 }
 ```
 
-|                                 |                                                                                                                               |
-| ---                             | ---                                                                                                                           |
-| `format.pre_process.cmd.name`   | (string, mandatory) name of the command line tool                                                                             |
-| `format.pre_process.cmd.args`   | (string array, optional) list of command line parameters                                                                      |
-| `format.pre_process.cmd.output` | (string, optional) what command output to use as result response, it can be one of `exitcode`, `stderr` or `stdout` (default) |
+|                                 |                          |                                                                                                            |
+| ---                             | ---                      | ---                                                                                                        |
+| `format.pre_process.cmd.name`   | (string, mandatory)      | name of the command line tool                                                                              |
+| `format.pre_process.cmd.args`   | (string array, optional) | list of command line parameters                                                                            |
+| `format.pre_process.cmd.output` | (string, optional)       | what command output to use as result response, it can be one of `exitcode`, `stderr` or `stdout` (default) |
 
 ### Examples
 
@@ -576,7 +576,7 @@ To define a preprocessing for a response, add a `format` object that defines the
 
 This basic example shows how to use the `pre_process` feature. The response is piped through `cat` which returns the input without any changes. This command takes no arguments.
 
-```yaml
+```js
 {
     "response": {
         "format": {
@@ -594,7 +594,7 @@ This basic example shows how to use the `pre_process` feature. The response is p
 
 This example shows how to use the `pre_process` feature with `stderr` output. The response is the metric result of running `imagemagick compare` which returns the absolute error between 2 images given a threshold (0 if identical, number of different pixels otherwise). The arguments are the piped binary from the response and the image to compare against (local file using `file_path` template function) .
 
-```yaml
+```js
 {
     "response": {
         "format": {
@@ -634,7 +634,7 @@ To check the file metadata of a file that is directly downloaded as a binary fil
 
 If there is a file with the asset ID `1`, and the apitest needs to check that the MIME type is `image/jpeg`, create the following test case:
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "eas/download/1/original",
@@ -675,7 +675,7 @@ If there is a file with the asset ID `1`, and the apitest needs to check that th
 
 This example shows the combination of `pre_process` and `type`. Instead of calling `exiftool` with JSON output, it can also be used with XML output, which then will be formatted to JSON by the apitest tool.
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "eas/download/1/original",
@@ -717,7 +717,7 @@ This example shows the combination of `pre_process` and `type`. Instead of calli
 
 If there is any error during the call of the command line tool, the error is formatted as a JSON object and returned instead of the expected response:
 
-```yaml
+```js
 {
     "command": "cat --INVALID",
     "error": "exit status 1",
@@ -750,7 +750,7 @@ The custom store uses a **string** as index and can store any type of data.
 
 **Map**: If an key ends in `[key]`, the value is assumed to be an map, and writes the data into the map at that key. If no map exists, an map is created.
 
-```yaml
+```js
 {
     "store": {
         "eas_ids[]": 15,
@@ -770,13 +770,13 @@ To set data in custom store, you can use 4 methods:
 |                                                                 |                                                                                                                                                                                                                                                                                                                           |
 | ---                                                             | ---                                                                                                                                                                                                                                                                                                                       |
 | `store` on the `manifest.json` top level                        | the data is set before the session authentication (if any)                                                                                                                                                                                                                                                                |
-| `store_response_qjson` in `authentication.store_response_qjson` |                                                                                                                                                                                                                                                                                                                           |
+| `store_response_gjson` in `authentication.store_response_gjson` |                                                                                                                                                                                                                                                                                                                           |
 | `store` on the **test** level                                   | the data is set before **request** and **response** are evaluated                                                                                                                                                                                                                                                         |
-| `store_response_qjson` on the test level                        | the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with qjson. Just prepend the qjson key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json) |
+| `store_response_gjson` on the test level                        | the data is set after each **response** (If you want the datestore to delete the current entry if no new one could be found with `gjson`. Just prepend the `gjson` key with a `!`. E.g. `"eventId":"!body.0._id"` will delete the `eventId` entry from the datastore if `body.0._id` could not be found in the response json) |
 
 All methods use a Map as value, the keys of the map are **string**, the values can be anything. If the key (or **index**) ends in `[]` and Array is created if the key does not yet exist, or the value is appended to the Array if it does exist.
 
-The method `store_response_qjson` takes only **string** as value. This qjson-string is used to parse the current response using the **qjson** feature. The return value from the qjson call is then stored in the datastore.
+The method `store_response_gjson` takes only **string** as value. This `gjson`-string is used to parse the current response using the [`gjson`](#gjson-path-json) feature. The return value from the `gjson` call is then stored in the datastore.
 
 ## Get Data from Custom Store
 
@@ -790,7 +790,7 @@ If you access an invalid index for datastore `map[index]` or `slice[]` you get a
 
 To get the data from the sequential store an integer number has to be given to the datastore function as **string**. So `datastore "0"` would be a valid request. This would return the response from first test of the current manifest. `datastore "-1"` returns the last response from the current manifest. `datastore "-2"` returns second to last from the current manifest. If the index is wrong the function returns an error.
 
-The sequential store stores the body and header of all responses. Use `qjson` to access values in the responses. See template functions [`datastore`](#datastore-key) and [`qjson`](#qjson-path-json).
+The sequential store stores the body and header of all responses. Use `gjson` to access values in the responses. See template functions [`datastore`](#datastore-key) and [`gjson`](#gjson-path-json).
 
 When using relative indices (negative indices), use the same index to get values from the datastore to use in the request and response definition. Especially, for evaluating the current response, it has not yet been stored. So, `datastore "-1"` will still return the last response in the datastore. The current response will be appended after it was evaluated, and then will be returned with `datastore "-1"`.
 
@@ -804,7 +804,7 @@ Some of them also need a value and some don't. For those which don't need a valu
 
 In the example we use the jsonObject `test` and define some control structures on it. A control structure uses the key it is attached to plus `:control`. So for our case it would be `test:control`. The tool gets that this two keys `test` and `test:control` are in relationship with each other.
 
-```yaml
+```js
 {
     "test": {
         "hallo": 2,
@@ -837,7 +837,7 @@ The following response would **fail** as there are to many fields in the actual 
 
 #### expected response defined with `no_extra`
 
-```yaml
+```js
 {
     "body": {
         "testObject": {
@@ -853,7 +853,7 @@ The following response would **fail** as there are to many fields in the actual 
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testObject": {
@@ -875,7 +875,7 @@ E.g. the following response would **fail** as the order in the actual response i
 
 #### expected response defined with `order_matters`
 
-```yaml
+```js
 {
     "body": {
         "testArray": [
@@ -892,7 +892,7 @@ E.g. the following response would **fail** as the order in the actual response i
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testArray": [
@@ -923,7 +923,7 @@ The following response would **fail** as there are too many entries in the actua
 
 #### expected response defined with `no_extra` and `depth`
 
-```yaml
+```js
 {
     "body": {
         "testArray": [
@@ -940,7 +940,7 @@ The following response would **fail** as there are too many entries in the actua
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testArray": [
@@ -963,7 +963,7 @@ E.g. the following response would **fail** as `"iShouldExist"` is not in the act
 
 #### expected response defined with `must_exist`
 
-```yaml
+```js
 {
     "body": {
         "iShouldExist:control": {
@@ -975,7 +975,7 @@ E.g. the following response would **fail** as `"iShouldExist"` is not in the act
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {}
 }
@@ -993,7 +993,7 @@ E.g. the following response would **fail** as `"count"` has the wrong length:
 
 #### expected response defined with `element_count`
 
-```yaml
+```js
 {
     "body": {
         "count:control": {
@@ -1005,7 +1005,7 @@ E.g. the following response would **fail** as `"count"` has the wrong length:
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "count": [
@@ -1029,7 +1029,7 @@ E.g. the following response would **fail** as `"extra"` has an extra element:
 
 #### expected response defined with `element_no_extra`
 
-```yaml
+```js
 {
     "body": {
         "count": [
@@ -1046,7 +1046,7 @@ E.g. the following response would **fail** as `"extra"` has an extra element:
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "count": [
@@ -1071,7 +1071,7 @@ E.g. the following response would **fail** as `"iShouldNotExist"` is in the actu
 
 #### expected response defined with `must_not_exist`
 
-```yaml
+```js
 {
     "body": {
         "iShouldNotExist:control": {
@@ -1083,7 +1083,7 @@ E.g. the following response would **fail** as `"iShouldNotExist"` is in the actu
 
 ##### actual response
 
-```yaml
+```js
 {
     "body": {
         "iShouldNotExist": "i exist, hahahah"
@@ -1103,7 +1103,7 @@ E.g. the following response would **fail** as `"testNumber"` has the value `5`:
 
 #### expected response defined with `not_equal`
 
-```yaml
+```js
 {
     "body": {
         "testNumber:control": {
@@ -1115,7 +1115,7 @@ E.g. the following response would **fail** as `"testNumber"` has the value `5`:
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testNumber": 5
@@ -1131,7 +1131,7 @@ E.g. the following response would **fail** as `"text"` does not match the regula
 
 #### expected string response checked with a regex:
 
-```yaml
+```js
 {
     "body": {
         "text:control": {
@@ -1143,7 +1143,7 @@ E.g. the following response would **fail** as `"text"` does not match the regula
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "text": "valid_string-123"
@@ -1165,7 +1165,7 @@ E.g. the following response would **fail** as `"text"` does not have the prefix:
 
 #### expected string response checked with a prefix
 
-```yaml
+```js
 {
     "body": {
         "text:control": {
@@ -1177,7 +1177,7 @@ E.g. the following response would **fail** as `"text"` does not have the prefix:
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "text": "abc-123"
@@ -1193,7 +1193,7 @@ E.g. the following response would **fail** as `"text"` does not have the suffix:
 
 #### expected string response checked with a suffix
 
-```yaml
+```js
 {
     "body": {
         "text:control": {
@@ -1205,7 +1205,7 @@ E.g. the following response would **fail** as `"text"` does not have the suffix:
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "text": "abc-123"
@@ -1225,7 +1225,7 @@ E.g. the following response would **fail** as `"testString"` is not a string in 
 
 #### expected response defined with `is_string`
 
-```yaml
+```js
 {
     "body": {
         "testString:control": {
@@ -1237,7 +1237,7 @@ E.g. the following response would **fail** as `"testString"` is not a string in 
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testString": 555
@@ -1257,7 +1257,7 @@ E.g. the following response would **fail** as `"testBool"` is no boolean value i
 
 #### expected response defined with `is_bool`
 
-```yaml
+```js
 {
     "body": {
         "testBool:control": {
@@ -1269,7 +1269,7 @@ E.g. the following response would **fail** as `"testBool"` is no boolean value i
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testBool": "not a boolean"
@@ -1289,7 +1289,7 @@ E.g. the following response would **fail** as `"testNumber"` is no numeric value
 
 #### expected response defined with `is_number`
 
-```yaml
+```js
 {
     "body": {
         "testNumber:control": {
@@ -1301,7 +1301,7 @@ E.g. the following response would **fail** as `"testNumber"` is no numeric value
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testNumber": "not a number"
@@ -1321,7 +1321,7 @@ E.g. the following response would **fail** as `"testObj"` is not an object in th
 
 #### expected response defined with `is_object`
 
-```yaml
+```js
 {
     "body": {
         "testObj:control": {
@@ -1333,7 +1333,7 @@ E.g. the following response would **fail** as `"testObj"` is not an object in th
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testObj": "not an object"
@@ -1353,7 +1353,7 @@ E.g. the following response would **fail** as `"testArr"` is not an array in the
 
 #### expected response defined with `is_array`
 
-```yaml
+```js
 {
     "body": {
         "testArr:control": {
@@ -1365,7 +1365,7 @@ E.g. the following response would **fail** as `"testArr"` is not an array in the
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "testArr": "not an array"
@@ -1383,7 +1383,7 @@ E.g. the following response would **fail** as `"beGreater"` is equal to the expe
 
 #### expected response defined with `number_gt`
 
-```yaml
+```js
 {
     "body": {
         "beGreater:control": {
@@ -1395,7 +1395,7 @@ E.g. the following response would **fail** as `"beGreater"` is equal to the expe
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "beGreater": 5
@@ -1413,7 +1413,7 @@ E.g. the following response would **fail** as `"beGreaterOrEqual"` is less than 
 
 #### expected response defined with `number_ge`
 
-```yaml
+```js
 {
     "body": {
         "beGreaterOrEqual:control": {
@@ -1425,7 +1425,7 @@ E.g. the following response would **fail** as `"beGreaterOrEqual"` is less than 
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "beGreaterOrEqual": 3
@@ -1443,7 +1443,7 @@ E.g. the following response would **fail** as `"beLess"` is equal to the expecte
 
 #### expected response defined with `number_lt`
 
-```yaml
+```js
 {
     "body": {
         "beLess:control": {
@@ -1455,7 +1455,7 @@ E.g. the following response would **fail** as `"beLess"` is equal to the expecte
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "beLess": 5
@@ -1473,7 +1473,7 @@ E.g. the following response would **fail** as `"beLessOrEqual"` is greater than 
 
 #### expected response defined with `number_le`
 
-```yaml
+```js
 {
     "body": {
         "beLessOrEqual:control": {
@@ -1485,7 +1485,7 @@ E.g. the following response would **fail** as `"beLessOrEqual"` is greater than 
 
 #### actual response
 
-```yaml
+```js
 {
     "body": {
         "beLessOrEqual": 7
@@ -1501,7 +1501,7 @@ This is exspecially helpfull for keeping the manifest file simpler/smaller and k
 
 A single test could look as simple as following:
 
-```yaml
+```js
 {
     "name": "Test loading request & response from external file",
     "request": "@path/to/requestFile.json",
@@ -1509,13 +1509,13 @@ A single test could look as simple as following:
 }
 ```
 
-> Important: The paths to the external files start with a `@` and are relative to the location of the `manifest.json` or can be web urls e.g. https://programmfabrik.de/testfile.json
+Important: The paths to the external files start with a `@` and are relative to the location of the `manifest.json` or can be web urls e.g. https://programmfabrik.de/testfile.json
 
 The content of the request and response file are execatly the same as if you would place the json code inline:
 
 ## Request:
 
-```yaml
+```js
 {
     "body": {
         "animal": "dog",
@@ -1537,7 +1537,7 @@ The content of the request and response file are execatly the same as if you wou
 
 ## Response:
 
-```yaml
+```js
 {
     "body": {
         "objecttypes": [
@@ -1561,7 +1561,7 @@ The content of the request and response file are execatly the same as if you wou
 
 # Template functions
 
-> **apitest** supports the [Sprig template](http://masterminds.github.io/sprig/) function library in v3. Internally provided functions like `add` overwrite the `Sprig` function.
+**apitest** supports the [Sprig template](http://masterminds.github.io/sprig/) function library in v3. Internally provided functions like `add` overwrite the `Sprig` function.
 
 As described before, if you use an external file you can make use of so called template functions. What they are and how they work for the apitesting tool is described in the following part.
 
@@ -1596,14 +1596,14 @@ Loads the file with the relative path ( to the file this template function is in
 
 Content of file at `some/path/example.tmpl`:
 
-```yaml
+```js
 {{ load_file "../target.tmpl" "hello" }}
 ```
 
 Content of file at `some/target.tmpl`:
 
-```yaml
-{{ .Param1 }} world`
+```js
+{{ .Param1 }} world
 ```
 
 Rendering `example.tmpl` will result in `hello world`
@@ -1615,7 +1615,7 @@ Returns the relative path (to the file this template function is invoked in) "re
 ### Example
 
 Absolute path of file at `some/path/myfile.cpp`:
-```yaml
+```js
 {{ file_path "../myfile.tmpl" }}
 ```
 
@@ -1647,7 +1647,7 @@ pivot_rows("key","type",(file_csv "file.csv" ','))
 
 returns
 
-```json
+```js
 [
     {
         "filename": "bicyle",
@@ -1673,7 +1673,7 @@ Assume you have the following structure in your sheet:
 
 If you parse this now to CSV and then load it via `file_csv` you get the following JSON structure:
 
-```yaml
+```js
 [
     {
         "column_a": "row1a",
@@ -1690,7 +1690,7 @@ If you parse this now to CSV and then load it via `file_csv` you get the followi
 
 For mapping now certain values to a map you can use ` rows_to_map "column_a" "column_c" `  and the output will be a map with the following content:
 
-```yaml
+```js
 {
     "row1a": "row1c",
     "row2a": 22
@@ -1722,7 +1722,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```yaml
+```js
 [
     [
         {
@@ -1775,7 +1775,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```yaml
+```js
 {
     "one": [
         {
@@ -1813,12 +1813,12 @@ With the parameters `keyColumn` and `valueColumn` you can select the two columns
 The `keyColumn`  **must** be of the type string, as it functions as map index (which is of type string)
 
 
-```django
+```js
 {{ unmarshal "[{\"column_a\": \"row1a\",\"column_b\": \"row1b\",\"column_c\": \"row1c\"},{\"column_a\": \"row2a\",\"column_b\": \"row2b\",\"column_c\": \"row2c\"}]" | rows_to_map "column_a" "column_c"  | marshal  }}
 ```
 
 Rendering that will give you :
-```yaml
+```js
 {
     "row1a": "row1c",
     "row2a": "row2c"
@@ -1843,14 +1843,14 @@ The complete row gets mapped
 
 For `rows_to_map "column_a"`:
 
-```go
+```js
 {
-    "row1a":{
+    "row1a": {
         column_a: "row1a",
         column_b: "row1b",
         column_c: "row1c",
     },
-    "row2a":{
+    "row2a": {
         column_a: "row2a",
         column_b: "row2b",
         column_c: "row2c",
@@ -1864,7 +1864,7 @@ The row does get skipped
 
 **Input:**
 
-```go
+```js
 [
     {
         column_a: "row1a",
@@ -1885,7 +1885,7 @@ The row does get skipped
 
 For `rows_to_map "column_a" "column_c" `:
 
-```go
+```js
 {
     row1a: "row1c",
     row3a: "row3c",
@@ -1898,7 +1898,7 @@ The value will be set to `""` (empty string)
 
 **Input:**
 
-```go
+```js
 [
     {
         column_a: "row1a",
@@ -1919,7 +1919,7 @@ The value will be set to `""` (empty string)
 
 For `rows_to_map "column_a" "column_c" `:
 
-```yaml
+```js
 {
     "row1a": "row1c",
     "row2a": "",
@@ -1929,17 +1929,17 @@ For `rows_to_map "column_a" "column_c" `:
 
 ## `datastore [key]`
 
-Helper function to query the datastore; used most of the time in conjunction with `qjson`.
+Helper function to query the datastore; used most of the time in conjunction with [`gjson`](#gjson-path-json).
 
 The `key`can be an int, or int64 accessing the store of previous responses. The responses are accessed in the order received. Using a negative value access the store from the back, so a value of **-2** would access the second to last response struct.
 
 This function returns a string, if the `key`does not exist, an empty string is returned.
 
-If the `key` is a string, the datastore is accessed directly, allowing access to custom set values using `store` or `store_response_qjson`parameters.
+If the `key` is a string, the datastore is accessed directly, allowing access to custom set values using `store` or `store_response_gjson`parameters.
 
 The datastore stores all responses in a list. We can retrieve the response (as a json string) by using this template function. `{{ datastore 0  }}` will render to
 
-```yaml
+```js
 {
     "statuscode": 200,
     "header": {
@@ -1949,13 +1949,13 @@ The datastore stores all responses in a list. We can retrieve the response (as a
 }
 ```
 
-This function is intended to be used with the `qjson` template function.
+This function is intended to be used with the [`gjson`](#gjson-path-json) template function.
 
 The key `-` has a special meaning, it returns the entire custom datastore (not the sequentially stored responses)
 
-## `qjson [path] [json]`
+## `gjson [path] [json]`
 
-Helper function to extract fields from the `json`
+Helper function to extract fields from the `json`. It uses `gjson` syntax. For more information, see the [external documentation](https://github.com/tidwall/gjson/blob/master/SYNTAX.md).
 
 | Parameter      | Type     | Description                                                                                                                                                           |
 | ---            | ---      | ---                                                                                                                                                                   |
@@ -1967,21 +1967,20 @@ Helper function to extract fields from the `json`
 
 The call
 
-```django
-{{ qjson "foo.1.bar" "{\"foo": [{\"bar\": \"baz\"}, 42]}" }}
+```js
+{{ gjson "foo.1.bar" "{\"foo": [{\"bar\": \"baz\"}, 42]}" }}
 ```
 
 would return `baz`.
 
 As an example with pipes, the call
 
-```django
-{{ datastore idx | qjson "header.foo.1" }}
+```js
+{{ datastore idx | gjson "header.foo.1" }}
 ```
 
- would return`bar` given the response above.
+would return`bar` given the response above.
 
-See [gjson](https://github.com/tidwall/gjson/blob/master/README.md)
 
 ## `file_csv [path] [delimiter]`
 
@@ -1991,7 +1990,7 @@ Helper function to load a csv file
 | ---          | ---      | ---                                                                                                   |
 | `@path`      | `string` | A path to the csv file that should be loaded. The path is either relative to the manifest or a weburl |
 | `@delimiter` | `rune`   | The delimiter that is used in the given csv e.g. `,` Defaults to `,`                                  |
-| `@result`    |          | The content of the csv as json array so we can work on this data with qjson                           |
+| `@result`    |          | The content of the csv as json array so we can work on this data with `gjson`                         |
 
 The CSV **must** have a certain structur. If the structure of the given CSV differs, the apitest tool will fail with a error
 
@@ -2024,7 +2023,7 @@ int64,string
 
 The call
 
-```django
+```js
 {{ file_csv "some/path/example.csv" ','}}
 ```
 
@@ -2036,8 +2035,8 @@ would result in
 
 As an example with pipes, the call
 
-```django
-{{ file_csv "some/path/example.csv" ',' | marshal | qjson "1.name" }}
+```js
+{{ file_csv "some/path/example.csv" ',' | marshal | gjson "1.name" }}
 ```
 
 would result in `martin` given the response above.
@@ -2138,13 +2137,13 @@ Content of XML file `some/path/example.xml`:
 
 The call
 
-```django
+```js
 {{ file_xml2json "some/path/example.xml" }}
 ```
 
 would result in
 
-```json
+```js
 {
     "objects": {
         "-xmlns": "https://schema.easydb.de/EASYDB/1.0/objects/",
@@ -2208,13 +2207,13 @@ Content of HTML file `some/path/example.html`:
 
 The call
 
-```django
+```js
 {{ file_html2json "some/path/example.html" }}
 ```
 
 would result in
 
-```json
+```js
 {
     "html": {
         "-lang": "en",
@@ -2286,13 +2285,13 @@ Content of XHTML file `some/path/example.xhtml`:
 
 The call
 
-```django
+```js
 {{ file_xhtml2json "some/path/example.xhtml" }}
 ```
 
 would result in
 
-```json
+```js
 {
     "html": {
         "-xmlns": "http://www.w3.org/1999/xhtml",
@@ -2316,10 +2315,13 @@ would result in
 
 ## `file_sqlite [path] [statement]`
 
-Helper function to return the result of an SQL statement from a sqlite3 file.
-- `@path`: string; a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl
-- `@statement`: string; a SQL statement that returns data (`SELECT`)
-- `@result`: the result of the statement as a json array so we can work on this data with qjson
+Helper function to return the result of an SQL statement from a sqlite3 file
+
+| Parameter    | Type   | Description                                                                                              |
+| ---          | ---    | ---                                                                                                      |
+| `@path`      | string | a path to the sqlite file that should be loaded. The path is either relative to the manifest or a weburl |
+| `@statement` | string | a SQL statement that returns data (`SELECT`)                                                             |
+| `@result`    |        | the result of the statement as a json array so we can work on this data with `gjson`                     |
 
 ### Example
 
@@ -2337,7 +2339,7 @@ Table `names`:
 
 The call
 
-```django
+```js
 {{ file_sqlite "some/path/example.sqlite" `
     SELECT id, name FROM names
     WHERE name IS NOT NULL
@@ -2357,7 +2359,7 @@ would result in
 
 The call
 
-```django
+```js
 {{ file_sqlite "some/path/example.sqlite" `
     SELECT id, name FROM names
     ORDER BY id ASC
@@ -2372,7 +2374,7 @@ would result in
 
 The `NULL` value in `name` can be checked with
 
-```django
+```js
 {{ if ne $row.name nil }}
     // use name, else skip
 {{ end }}
@@ -2452,7 +2454,7 @@ Returns a slice of n 0-sized elements, suitable for ranging over.
 
 Example how to range over 100 objects
 
-```django
+```js
 {
     "body":  [
         {{ range $idx, $v := N 100 }}
@@ -2472,7 +2474,7 @@ As an example, the URL `http://localhost/myimage.jpg` would be changed into `htt
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
 
-## server_url_no_user
+## `server_url_no_user`
 
 **server_url_no_user** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. Any information about the user authentification is removed. This is a `*url.URL`.
 
@@ -2488,10 +2490,10 @@ If the **server_url** is in the form of `http://user:password@localhost`, **serv
 
 Example:
 
-```django
+```js
 {
     "store": {
-        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_password_token "my_client" "john" "pass" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2502,10 +2504,10 @@ Example:
 
 Example:
 
-```django
+```js
 {
     "store": {
-        "access_token": {{ oauth2_client_token "my_client" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_client_token "my_client" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2518,20 +2520,20 @@ Behind the scenes the function will do a GET request to the `auth URL`, adding s
 
 Example:
 
-```django
+```js
 {
     "store": {
-        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_code_token "my_client" "username" "myuser" "password" "mypass" | marshal | gjson "access_token" }}
     }
 }
 ```
 
 Or:
 
-```django
+```js
 {
     "store": {
-        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_code_token "my_client" "guess_access" "true" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2544,10 +2546,10 @@ Behind the scenes the function will do a GET request to the `auth URL`, adding s
 
 Example:
 
-```django
+```js
 {
     "store": {
-        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_password_token "my_client" "myuser" "mypass" | marshal | gjson "access_token" }}
     }
 }
 ```
@@ -2558,7 +2560,7 @@ Example:
 
 Example:
 
-```django
+```js
 {
     "store": {
         "oauth2_client_config": {{ oauth2_client "my_client" | marshal }}
@@ -2568,7 +2570,7 @@ Example:
 
 ## `oauth2_basic_auth [client]`
 
-** oauth2_basic_auth** returns the authentication header for basic authentication for the given oauth client.
+**oauth2_basic_auth** returns the authentication header for basic authentication for the given oauth client.
 
 ## `semver_compare [version 1] [version 2]`
 
@@ -2600,14 +2602,14 @@ Different stores can be configured within the proxy.
 
 To configure a HTTP Server, the manifest need to include these lines:
 
-```yaml
+```js
 {
     "http_server": {
-        "addr": ":8788", // address to listen on
-        "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false, // boolean flag to switch test mode on / off
-        "proxy": { // proxy configuration
-            "test": { // proxy store configuration
+        "addr": ":8788",           // address to listen on
+        "dir": "",                 // directory to server, relative to the manifest.json, defaults to "."
+        "testmode": false,         // boolean flag to switch test mode on / off
+        "proxy": {                 // proxy configuration
+            "test": {              // proxy store configuration
                 "mode": "passthru" // proxy store mode
             }
         }
@@ -2628,7 +2630,7 @@ The server provides endpoints to serve local files and return responses based on
 
 To access any static file, use the path relative to the server directory (`dir`) as the endpoint:
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "path/to/file.jpg",
@@ -2645,7 +2647,7 @@ For some tests, you may not want the Content-Length header to be sent alongside 
 
 In this case, add `no-content-length=1` to the query string of the asset url:
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "path/to/file.jpg?no-content-length=1",
@@ -2658,7 +2660,7 @@ In this case, add `no-content-length=1` to the query string of the asset url:
 
 The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "bounce",
@@ -2681,7 +2683,7 @@ The file that is specified is relative to the apitest file, not relative to the 
 
 Request headers are included in the response header with the prefix `X-Req-Header-`, request query parameters are included in the response header with the prefix `X-Req-Query-`:
 
-```yaml
+```js
 {
     "response": {
         "header": {
@@ -2700,7 +2702,7 @@ Request headers are included in the response header with the prefix `X-Req-Heade
 
 The endpoint `bounce-json` returns the a response that includes `header`, `query_params` and `body` in the body.
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "bounce-json",
@@ -2723,7 +2725,7 @@ The endpoint `bounce-json` returns the a response that includes `header`, `query
 
 will return this response:
 
-```yaml
+```js
 {
     "response": {
         "body": {
@@ -2754,7 +2756,7 @@ The endpoint `bounce-query` returns the a response that includes in its `body` t
 
 This is useful in endpoints where a body cannot be configured, like oAuth urls, so we can simulate responses in the request for testing.
 
-```yaml
+```js
 {
     "request": {
         "endpoint": "bounce-query?here=is&all=stuff",
@@ -2766,7 +2768,7 @@ This is useful in endpoints where a body cannot be configured, like oAuth urls, 
 
 will return this response:
 
-```yaml
+```js
 {
     "response": {
         "body": "here=is&all=stuff"
@@ -2780,9 +2782,9 @@ The proxy different stores can be used to both store and read their stored reque
 
 The configuration, as already defined in [HTTP Server](#http-server), is as follows:
 
-```
-"proxy": { // proxy configuration
-    "<store_name>": { // proxy store configuration
+```js
+"proxy": {                 // proxy configuration
+    "<store_name>": {      // proxy store configuration
         "mode": "passthru" // proxy store mode
     }
 }
@@ -2791,7 +2793,7 @@ The configuration, as already defined in [HTTP Server](#http-server), is as foll
 | Key            | Value Type     | Value description                                                        |
 |----------------|----------------|--------------------------------------------------------------------------|
 | `proxy`        | JSON Object    | An object with the store names as keys and their configuration as values |
-| <store_name>   | JSON Object    | An object with the store configuration                                   |
+| `<store_name>` | JSON Object    | An object with the store configuration                                   |
 | `mode`         | string         | The mode the store runs on (see below)                                   |
 
 Store modes:
@@ -2808,7 +2810,7 @@ The expected response will have either `200` status code and the used offset as 
 
 Given this request:
 
-```yaml
+```js
 {
     "endpoint": "/proxywrite/test",
     "method": "POST",
@@ -2820,7 +2822,10 @@ Given this request:
     },
     "body": {
         "post": {
-            "my": ["body", "here"]
+            "my": [
+                "body",
+                "here"
+            ]
         }
     }
 }
@@ -2828,7 +2833,7 @@ Given this request:
 
 The expected response:
 
-```yaml
+```js
 {
     "statuscode": 200,
     "body": {
@@ -2847,7 +2852,7 @@ Where:
 
 Given this request:
 
-```yaml
+```js
 {
     "endpoint": "/proxyread/test",
     "method": "GET",
@@ -2859,31 +2864,56 @@ Given this request:
 
 The expected response:
 
-```yaml
+```js
 {
-    "header": { // Merged headers. original request headers prefixed with 'X-Request`
-        "X-Apitest-Proxy-Request-Method": ["POST"], // The method of the request to the proxy store
-        "X-Apitest-Proxy-Request-Path": ["/proxywrite/test"], // The url path requested (including query string)
-        "X-Apitest-Proxy-Request-Query": ["is=here&my=data&some=value"], // The request query string only
-        "X-My-Header": ["blah"], // Original request custom header
-        "X-Apitest-Proxy-Store-Count": ["7"], // The number of requests stored
-        "X-Apitest-Proxy-Store-Next-Offset": ["1"] // The next offset in the store
+    // Merged headers. original request headers prefixed with 'X-Request`
+    "header": {
+        // The method of the request to the proxy store
+        "X-Apitest-Proxy-Request-Method": [
+            "POST"
+        ],
+        // The url path requested (including query string)
+        "X-Apitest-Proxy-Request-Path": [
+            "/proxywrite/test"
+        ],
+        // The request query string only
+        "X-Apitest-Proxy-Request-Query": [
+            "is=here&my=data&some=value"
+        ],
+        // Original request custom header
+        "X-My-Header": [
+            "blah"
+        ],
+        // The number of requests stored
+        "X-Apitest-Proxy-Store-Count": [
+            "7"
+        ],
+        // The next offset in the store
+        "X-Apitest-Proxy-Store-Next-Offset": [
+            "1"
+        ]
         ... // All other standard headers sent with the original request (like Content-Type)
     },
-    "body": { // The body of this request to the proxy store, always in binary format
-        "whatever": ["is", "here"] // Content-Type header will reveal its format on client side, in this case, it's JSON, but it could be a byte stream of an image, etc.
+    // The body of this request to the proxy store, always in binary format
+    "body": {
+        // Content-Type header will reveal its format on client side, in this case, it's JSON, but it could be a byte stream of an image, etc.
+        "whatever": [
+            "is",
+            "here"
+        ]
     }
 }
 ```
 
 ## SMTP Server
+
 ### Summary and Configuration
-The apitest tool can run a mock SMTP server intended to catch locally sent
-emails for testing purposes.
+
+The apitest tool can run a mock SMTP server intended to catch locally sent emails for testing purposes.
 
 To add the SMTP Server to your test, put the following in your manifest:
 
-```yaml
+```js
 {
     "smtp_server": {
         "addr":             ":9025", // address to listen on
@@ -2903,6 +2933,7 @@ configured, both the HTTP and the SMTP server will be available during
 interactive testing.
 
 ### HTTP Endpoints
+
 On its own, the SMTP server has only limited use, e.g. as an email sink for
 applications that require such an email sink to function. But when combined
 with the HTTP server (see above in section [HTTP Server](#http-server)),
@@ -2911,241 +2942,234 @@ the messages received by the SMTP server can be reproduced in JSON format.
 When both the SMTP server and the HTTP server are enabled, the following
 additional endpoints are made available on the HTTP server:
 
-#### /smtp/gui
+#### `/smtp/gui`
+
 A very basic HTML/JavaScript GUI that displays and auto-refreshes the received
 messages is made available on the `/smtp/gui` endpoint.
 
-#### /smtp
+#### `/smtp`
+
 On the `/smtp` endpoint, an index of all received messages will be made
 available as JSON in the following schema:
 
-```json
+```js
 {
-  "count": 3,
-  "messages": [
-    {
-      "from": [
-        "testsender@programmfabrik.de"
-      ],
-      "idx": 0,
-      "isMultipart": false,
-      "receivedAt": "2024-07-02T11:23:31.212023129+02:00",
-      "smtpFrom": "testsender@programmfabrik.de",
-      "smtpRcptTo": [
-        "testreceiver@programmfabrik.de"
-      ],
-      "to": [
-        "testreceiver@programmfabrik.de"
-      ]
+    "count": 3,
+    "messages": [
+        {
+            "from": [
+                "testsender@programmfabrik.de"
+            ],
+            "idx": 0,
+            "isMultipart": false,
+            "receivedAt": "2024-07-02T11:23:31.212023129+02:00",
+            "smtpFrom": "testsender@programmfabrik.de",
+            "smtpRcptTo": [
+                "testreceiver@programmfabrik.de"
+            ],
+            "to": [
+                "testreceiver@programmfabrik.de"
+            ]
+        },
+        {
+            "from": [
+                "testsender2@programmfabrik.de"
+            ],
+            "idx": 1,
+            "isMultipart": true,
+            "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
+            "smtpFrom": "testsender2@programmfabrik.de",
+            "smtpRcptTo": [
+                "testreceiver2@programmfabrik.de"
+            ],
+            "subject": "Example Message",
+            "to": [
+                "testreceiver2@programmfabrik.de"
+            ]
+        },
+        {
+            "from": [
+                "testsender3@programmfabrik.de"
+            ],
+            "idx": 2,
+            "isMultipart": false,
+            "receivedAt": "2024-07-02T11:23:31.212773829+02:00",
+            "smtpFrom": "testsender3@programmfabrik.de",
+            "smtpRcptTo": [
+                "testreceiver3@programmfabrik.de"
+            ],
+            "to": [
+                "testreceiver3@programmfabrik.de"
+            ]
+        }
+    ]
+}
+```
+
+You can filter messages by passing one of more query parameters `header`. `header` can either be a JSON array of strings, or just a string. The filter checks that all headers (regexp format) match headers of the filtered email.
+
+Headers that were encoded according to RFC2047 are decoded first.
+
+#### `/smtp/$idx`
+
+On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with the corresponding index is made available as JSON:
+
+```js
+{
+    "bodySize": 306,
+    "contentType": "multipart/mixed",
+    "contentTypeParams": {
+        "boundary": "d36c3118be4745f9a1cb4556d11fe92d"
     },
-    {
-      "from": [
+    "from": [
         "testsender2@programmfabrik.de"
-      ],
-      "idx": 1,
-      "isMultipart": true,
-      "receivedAt": "2024-07-02T11:23:31.212523916+02:00",
-      "smtpFrom": "testsender2@programmfabrik.de",
-      "smtpRcptTo": [
+    ],
+    "headers": {
+        "Content-Type": [
+            "multipart/mixed; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
+        ],
+        "Date": [
+            "Tue, 25 Jun 2024 11:15:57 +0200"
+        ],
+        "From": [
+            "testsender2@programmfabrik.de"
+        ],
+        "Mime-Version": [
+            "1.0"
+        ],
+        "Subject": [
+            "Example Message"
+        ],
+        "To": [
+            "testreceiver2@programmfabrik.de"
+        ]
+    },
+    "idx": 1,
+    "isMultipart": true,
+    "multiparts": [
+        {
+            "bodySize": 15,
+            "contentType": "text/plain",
+            "contentTypeParams": {
+                "charset": "utf-8"
+            },
+            "headers": {
+                "Content-Type": [
+                    "text/plain; charset=utf-8"
+                ]
+            },
+            "idx": 0,
+            "isMultipart": false
+        },
+        {
+            "bodySize": 39,
+            "contentType": "text/html",
+            "contentTypeParams": {
+                "charset": "utf-8"
+            },
+            "headers": {
+                "Content-Type": [
+                    "text/html; charset=utf-8"
+                ]
+            },
+            "idx": 1,
+            "isMultipart": false
+        }
+    ],
+    "multipartsCount": 2,
+    "receivedAt": "2024-07-02T12:54:44.443488367+02:00",
+    "smtpFrom": "testsender2@programmfabrik.de",
+    "smtpRcptTo": [
         "testreceiver2@programmfabrik.de"
-      ],
-      "subject": "Example Message",
-      "to": [
+    ],
+    "subject": "Example Message",
+    "to": [
         "testreceiver2@programmfabrik.de"
-      ]
-    },
-    {
-      "from": [
-        "testsender3@programmfabrik.de"
-      ],
-      "idx": 2,
-      "isMultipart": false,
-      "receivedAt": "2024-07-02T11:23:31.212773829+02:00",
-      "smtpFrom": "testsender3@programmfabrik.de",
-      "smtpRcptTo": [
-        "testreceiver3@programmfabrik.de"
-      ],
-      "to": [
-        "testreceiver3@programmfabrik.de"
-      ]
-    }
-  ]
-}
-```
-
-> You can filter messages by passing one of more query parameters `header`. `header` can either be a JSON array of strings, or just a string. The filter checks that all headers (regexp format) match headers of the filtered email.
-
-Headers that were encoded according to RFC2047 are decoded first.
-
-#### /smtp/$idx
-On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with
-the corresponding index is made available as JSON:
-
-```json
-{
-  "bodySize": 306,
-  "contentType": "multipart/mixed",
-  "contentTypeParams": {
-    "boundary": "d36c3118be4745f9a1cb4556d11fe92d"
-  },
-  "from": [
-    "testsender2@programmfabrik.de"
-  ],
-  "headers": {
-    "Content-Type": [
-      "multipart/mixed; boundary=\"d36c3118be4745f9a1cb4556d11fe92d\""
-    ],
-    "Date": [
-      "Tue, 25 Jun 2024 11:15:57 +0200"
-    ],
-    "From": [
-      "testsender2@programmfabrik.de"
-    ],
-    "Mime-Version": [
-      "1.0"
-    ],
-    "Subject": [
-      "Example Message"
-    ],
-    "To": [
-      "testreceiver2@programmfabrik.de"
     ]
-  },
-  "idx": 1,
-  "isMultipart": true,
-  "multiparts": [
-    {
-      "bodySize": 15,
-      "contentType": "text/plain",
-      "contentTypeParams": {
-        "charset": "utf-8"
-      },
-      "headers": {
-        "Content-Type": [
-          "text/plain; charset=utf-8"
-        ]
-      },
-      "idx": 0,
-      "isMultipart": false
-    },
-    {
-      "bodySize": 39,
-      "contentType": "text/html",
-      "contentTypeParams": {
-        "charset": "utf-8"
-      },
-      "headers": {
-        "Content-Type": [
-          "text/html; charset=utf-8"
-        ]
-      },
-      "idx": 1,
-      "isMultipart": false
-    }
-  ],
-  "multipartsCount": 2,
-  "receivedAt": "2024-07-02T12:54:44.443488367+02:00",
-  "smtpFrom": "testsender2@programmfabrik.de",
-  "smtpRcptTo": [
-    "testreceiver2@programmfabrik.de"
-  ],
-  "subject": "Example Message",
-  "to": [
-    "testreceiver2@programmfabrik.de"
-  ]
 }
 ```
 
 Headers that were encoded according to RFC2047 are decoded first.
 
-#### /smtp/$idx/body
-On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the message body
-(excluding message headers, including multipart part headers) is made availabe
-for the message with the corresponding index.
+#### `/smtp/$idx/body`
 
-If the message was sent with a `Content-Transfer-Encoding` of either `base64`
-or `quoted-printable`, the endpoint returns the decoded body.
+On the `/smtp/$idx/body` endpoint (e.g. `/smtp/1/body`), the message body (excluding message headers, including multipart part headers) is made availabe for the message with the corresponding index.
 
-If the message was sent with a `Content-Type` header, it will be passed through
-to the HTTP response.
+If the message was sent with a `Content-Transfer-Encoding` of either `base64` or `quoted-printable`, the endpoint returns the decoded body.
 
-#### /smtp/$idx/multipart
-For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g.
-`/smtp/1/multipart`) will contain an index of that messages multiparts in the
-following schema:
+If the message was sent with a `Content-Type` header, it will be passed through to the HTTP response.
 
-```json
+#### `/smtp/$idx/multipart`
+
+For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g. `/smtp/1/multipart`) will contain an index of that messages multiparts in the following schema:
+
+```js
 {
-  "multiparts": [
-    {
-      "bodySize": 15,
-      "contentType": "text/plain",
-      "contentTypeParams": {
-        "charset": "utf-8"
-      },
-      "headers": {
-        "Content-Type": [
-          "text/plain; charset=utf-8"
-        ]
-      },
-      "idx": 0,
-      "isMultipart": false
-    },
-    {
-      "bodySize": 39,
-      "contentType": "text/html",
-      "contentTypeParams": {
-        "charset": "utf-8"
-      },
-      "headers": {
-        "Content-Type": [
-          "text/html; charset=utf-8"
-        ]
-      },
-      "idx": 1,
-      "isMultipart": false
-    }
-  ],
-  "multipartsCount": 2
+    "multiparts": [
+        {
+            "bodySize": 15,
+            "contentType": "text/plain",
+            "contentTypeParams": {
+                "charset": "utf-8"
+            },
+            "headers": {
+                "Content-Type": [
+                    "text/plain; charset=utf-8"
+                ]
+            },
+            "idx": 0,
+            "isMultipart": false
+        },
+        {
+            "bodySize": 39,
+            "contentType": "text/html",
+            "contentTypeParams": {
+                "charset": "utf-8"
+            },
+            "headers": {
+                "Content-Type": [
+                    "text/html; charset=utf-8"
+                ]
+            },
+            "idx": 1,
+            "isMultipart": false
+        }
+    ],
+    "multipartsCount": 2
 }
 ```
 
-#### /smtp/$idx[/multipart/$partIdx]+
-On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`),
-metadata about the multipart with the corresponding index is made available:
+#### `/smtp/$idx[/multipart/$partIdx]+`
 
-```json
+On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`), metadata about the multipart with the corresponding index is made available:
+
+```js
 {
-  "bodySize": 15,
-  "contentType": "text/plain",
-  "contentTypeParams": {
-    "charset": "utf-8"
-  },
-  "headers": {
-    "Content-Type": [
-      "text/plain; charset=utf-8"
-    ]
-  },
-  "idx": 0,
-  "isMultipart": false
+    "bodySize": 15,
+    "contentType": "text/plain",
+    "contentTypeParams": {
+        "charset": "utf-8"
+    },
+    "headers": {
+        "Content-Type": [
+            "text/plain; charset=utf-8"
+        ]
+    },
+    "idx": 0,
+    "isMultipart": false
 }
 ```
 
 Headers that were encoded according to RFC2047 are decoded first.
 
-The endpoint can be called recursively for nested multipart messages, e.g.
-`/smtp/1/multipart/0/multipart/1`.
+The endpoint can be called recursively for nested multipart messages, e.g. `/smtp/1/multipart/0/multipart/1`.
 
-#### /smtp/$idx[/multipart/$partIdx]+/body
-On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g.
-`/smtp/1/multipart/0/body`), the body of the multipart (excluding headers)
-is made available.
+#### `/smtp/$idx[/multipart/$partIdx]+/body`
 
-If the multipart was sent with a `Content-Transfer-Encoding` of either `base64`
-or `quoted-printable`, the endpoint returns the decoded body.
+On the `/smtp/$idx/multipart/$partIdx/body` endpoint (e.g. `/smtp/1/multipart/0/body`), the body of the multipart (excluding headers) is made available.
 
-If the message was sent with a `Content-Type` header, it will be passed through
-to the HTTP response.
+If the multipart was sent with a `Content-Transfer-Encoding` of either `base64` or `quoted-printable`, the endpoint returns the decoded body.
 
-The endpoint can be called recursively for nested multipart messages, e.g.
-`/smtp/1/multipart/0/multipart/1/body`.
+If the message was sent with a `Content-Type` header, it will be passed through to the HTTP response.
+
+The endpoint can be called recursively for nested multipart messages, e.g. `/smtp/1/multipart/0/multipart/1/body`.

@@ -58,7 +58,7 @@
                 },
                 "body": {}
             },
-			"store_response_qjson": {
+			"store_response_gjson": {
 				"sess_cookie": "cookie.sess"
 			}
         },

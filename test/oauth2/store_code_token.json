@@ -1,6 +1,6 @@
 {
     "name": "Store oauth2 code access token",
     "store": {
-        "access_token": {{ oauth2_code_token "my_client" "user" "password" | marshal | qjson "access_token" }}
+        "access_token": {{ oauth2_code_token "my_client" "user" "password" | marshal | gjson "access_token" }}
     }
 }
