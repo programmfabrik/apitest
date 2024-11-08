@@ -525,7 +525,7 @@ func (testCase Case) loadRequestSerialization() (api.Request, error) {
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling req: %s", err)
 	}
-	err = util.Unmarshal(specBytes, &spec)
+	err = util.UnmarshalWithNumber(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
 
@@ -565,7 +565,7 @@ func (testCase Case) loadResponseSerialization(genJSON any) (spec api.ResponseSe
 		return spec, fmt.Errorf("error marshaling res: %s", err)
 	}
 
-	err = util.Unmarshal(specBytes, &spec)
+	err = util.UnmarshalWithNumber(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("error unmarshaling res: %s", err)
 	}

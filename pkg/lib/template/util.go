@@ -28,8 +28,8 @@ func LoadManifestDataAsObject(data any, manifestDir string, loader Loader) (path
 		var jsonObject util.JsonObject
 		var jsonArray util.JsonArray
 
-		if err = util.Unmarshal(requestBytes, &jsonObject); err != nil {
-			if err = util.Unmarshal(requestBytes, &jsonArray); err == nil {
+		if err = util.UnmarshalWithNumber(requestBytes, &jsonObject); err != nil {
+			if err = util.UnmarshalWithNumber(requestBytes, &jsonArray); err == nil {
 
 				return pathSpec, jsonArray, nil
 			}
@@ -65,7 +65,7 @@ func LoadManifestDataAsRawJson(data any, manifestDir string) (pathSpec *util.Pat
 		if err != nil {
 			return nil, res, fmt.Errorf("error marshaling: %s", err)
 		}
-		if err = util.Unmarshal(jsonMar, &res); err != nil {
+		if err = util.UnmarshalWithNumber(jsonMar, &res); err != nil {
 			return nil, res, fmt.Errorf("error unmarshalling: %s", err)
 		}
 		return nil, res, nil

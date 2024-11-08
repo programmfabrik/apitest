@@ -97,7 +97,7 @@ welt:1
 
 	for _, v := range testCases {
 		var out JsonObject
-		oErr := Unmarshal([]byte(v.iJson), &out)
+		oErr := UnmarshalWithNumber([]byte(v.iJson), &out)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 	}
@@ -153,7 +153,7 @@ func TestRemoveComments(t *testing.T) {
 
 	for _, v := range testCases {
 		var out JsonObject
-		Unmarshal([]byte(v.iJson), &out)
+		UnmarshalWithNumber([]byte(v.iJson), &out)
 		for k, v := range v.eOut {
 			if out[k] != v {
 				t.Errorf("[%s] Have '%v' != '%f' want", k, out[k], v)
@@ -245,7 +245,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 
 	for _, v := range testCases {
 		oObject := JsonObject{}
-		oErr := Unmarshal([]byte(v.cjsonString), &oObject)
+		oErr := UnmarshalWithNumber([]byte(v.cjsonString), &oObject)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
@@ -270,7 +270,7 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 
 	var oObject expectedStructure
 
-	oErr := Unmarshal(
+	oErr := UnmarshalWithNumber(
 		[]byte(cjsonString),
 		&oObject,
 	)

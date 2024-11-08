@@ -24,7 +24,15 @@ func init() {
 	coloredError = true
 }
 
+func UnmarshalWithNumber(input []byte, output any) error {
+	return unmarshal(input, output, true)
+}
+
 func Unmarshal(input []byte, output any) error {
+	return unmarshal(input, output, false)
+}
+
+func unmarshal(input []byte, output any, withNumber bool) error {
 
 	// Remove # comments from template
 	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
@@ -33,7 +41,9 @@ func Unmarshal(input []byte, output any) error {
 	tmplBytes = jsonc.ToJSON(tmplBytes)
 
 	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
-	dec.UseNumber()
+	if withNumber {
+		dec.UseNumber()
+	}
 	dec.DisallowUnknownFields()
 
 	// unmarshal into object
