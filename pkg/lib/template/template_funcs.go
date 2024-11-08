@@ -22,6 +22,12 @@ func N(n any) ([]struct{}, error) {
 		return make([]struct{}, v), nil
 	case int:
 		return make([]struct{}, v), nil
+	case json.Number:
+		i, err := v.Int64()
+		if err != nil {
+			panic(err)
+		}
+		return make([]struct{}, i), nil
 	}
 	return nil, fmt.Errorf("N needs to receive a float64, int, int64. Got: %T", n)
 }
@@ -130,6 +136,9 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 
 // add returns the sum of a and b.
 func add(b, a any) (any, error) {
+	a = intOrFloatFromJsonNumber(a)
+	b = intOrFloatFromJsonNumber(b)
+
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -184,6 +193,9 @@ func add(b, a any) (any, error) {
 
 // subtract returns the difference of b from a.
 func subtract(b, a any) (any, error) {
+	a = intOrFloatFromJsonNumber(a)
+	b = intOrFloatFromJsonNumber(b)
+
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -222,12 +234,31 @@ func subtract(b, a any) (any, error) {
 			return nil, fmt.Errorf("subtract: unknown type for %q (%T)", bv, b)
 		}
 	default:
-		return nil, fmt.Errorf("subtract: unknown type for %q (%T)", av, a)
+		return nil, fmt.Errorf("subtract: unknown type for %q %q (%T)", av, av.Type(), a)
 	}
+}
+
+func intOrFloatFromJsonNumber(a any) any {
+	aN, ok := a.(json.Number)
+	if !ok {
+		return a
+	}
+	aInt, err := aN.Int64()
+	if err == nil {
+		return aInt
+	}
+	aFlt, err := aN.Float64()
+	if err == nil {
+		return aFlt
+	}
+	return aN
 }
 
 // multiply returns the product of a and b.
 func multiply(b, a any) (any, error) {
+	a = intOrFloatFromJsonNumber(a)
+	b = intOrFloatFromJsonNumber(b)
+
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
@@ -274,6 +305,9 @@ func multiply(b, a any) (any, error) {
 
 // divide returns the division of b from a.
 func divide(b, a any) (any, error) {
+	a = intOrFloatFromJsonNumber(a)
+	b = intOrFloatFromJsonNumber(b)
+
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 

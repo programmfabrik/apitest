@@ -2,7 +2,7 @@
     {
         "name": "bounce-json",
         "request": {
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "bounce-json",
             "method": "POST",
             "query_params": {

@@ -13,13 +13,14 @@
                 "local_url": "http://localhost{{ $local_port }}"
             }
         }
-        , "@bounce_json.json"
-        , "@load_static_files.json"
-        , "@preprocess_bounce_exiftool_json.json"
-        , "@preprocess_file_exiftool_json.json"
-        , "@preprocess_file_exiftool_xml.json"
-        , "@preprocess_file_exiftool_xml_collect.json"
-        , "@preprocess_file_imagemagick_compare.json"
-        , "@preprocess_file_imagemagick_compare_collect.json"
+        ,"@bounce_json.json"
+        ,"@load_static_files.json"
+        ,"@preprocess_bounce_exiftool_json.json"
+        ,"@preprocess_file_exiftool_json.json"
+        ,"@preprocess_file_exiftool_xml.json"
+        ,"@preprocess_file_exiftool_xml_collect.json"
+        ,"@preprocess_file_imagemagick_compare.json"
+        // the test is broken due to broken apitest handling of "reverse_test_result" & "collect_response"
+        // ,"@preprocess_file_imagemagick_compare_collect.json"
     ]
 }

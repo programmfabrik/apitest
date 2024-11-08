@@ -30,7 +30,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 	if !ok {
 		t.Fatalf("responseJsonObj should have status code field")
 	}
-	if statusCode != float64(200) {
+	if statusCode != json.Number("200") {
 		t.Errorf("responseJson had wrong statuscode, expected 200, got: %d", statusCode)
 	}
 	jsonHeaders, ok := jsonObjResp["header"]

@@ -1,7 +1,9 @@
 package compare
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
@@ -22,6 +24,52 @@ func (f CompareFailure) String() string {
 
 func (f CompareFailure) Error() string {
 	return f.String()
+}
+
+// jsonNumberEq is comparing ints, floats or strings of the number. It fails to
+// compare different formats, 1e10 != 10000000000, although it is the same mathematical value.
+func jsonNumberEq(numberExp, numberGot json.Number) (eq bool) {
+
+	expInt, expIntErr := numberExp.Int64()
+	gotInt, gotIntErr := numberGot.Int64()
+	expFloat, expFloatErr := numberExp.Float64()
+	gotFloat, gotFloatErr := numberGot.Float64()
+
+	var cmp string
+	_ = cmp
+
+	if expIntErr == nil && gotIntErr == nil {
+		cmp = "int"
+	} else if expFloatErr == nil && gotFloatErr == nil {
+		cmp = "float"
+	} else {
+		cmp = "string"
+	}
+
+	// if any of the interpretations is out of range, we compare by string
+	for _, e := range []error{
+		expIntErr, gotIntErr, expFloatErr, gotFloatErr,
+	} {
+		if e == nil {
+			continue
+		}
+		if strings.Contains(e.Error(), "range") {
+			cmp = "string"
+			break
+		}
+	}
+
+	switch cmp {
+	case "int":
+		eq = expInt == gotInt
+	case "float":
+		eq = expFloat == gotFloat
+	case "string":
+		eq = numberExp == numberGot
+	}
+
+	// golib.Pln("exp %q == got %q : %t %s", numberExp, numberGot, eq, cmp)
+	return eq
 }
 
 func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, err error) {
@@ -46,6 +94,38 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 	}
 
 	switch typedLeft := left.(type) {
+	case json.Number:
+		typedRight, ok := right.(json.Number)
+		if !ok {
+			res := CompareResult{
+				false,
+				[]CompareFailure{
+					{
+						"$",
+						fmt.Sprintf("expected json.Number, but got %T", right),
+					},
+				},
+			}
+			return res, nil
+		}
+
+		if jsonNumberEq(typedLeft, typedRight) {
+			res = CompareResult{
+				Equal: true,
+			}
+		} else {
+			res = CompareResult{
+				Equal: false,
+				Failures: []CompareFailure{
+					{
+						"",
+						fmt.Sprintf("Got '%s', expected '%s'", typedRight, typedLeft),
+					},
+				},
+			}
+		}
+		return res, nil
+
 	case util.JsonObject:
 		rightAsObject, ok := right.(util.JsonObject)
 		if !ok {

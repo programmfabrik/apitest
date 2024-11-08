@@ -3,7 +3,7 @@
         "name": "(collect) preprocess asset camera.jpg with imagemagick compare against itself (should pass)",
         "request": {
             // load static file
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "camera.jpg",
             "method": "GET",
             "header": {
@@ -22,7 +22,7 @@
                                 "-fuzz",
                                 "2%",
                                 "-",
-                                {{ file_path "../../_res/assets/camera.jpg" | marshal }},
+                                "{{ file_path `../../_res/assets/camera.jpg` }}",
                                 "/dev/null"
                             ],
                             "output": "stderr"
@@ -39,7 +39,7 @@
         "name": "(collect) preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
         "request": {
             // load static file
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "camera.jpg",
             "method": "GET"
         },
@@ -55,7 +55,7 @@
                                 "-fuzz",
                                 "2%",
                                 "-",
-                                {{ file_path "../../_res/assets/berlin.jpg" | marshal }},
+                                "{{ file_path `../../_res/assets/berlin.jpg` }}",
                                 "/dev/null"
                             ],
                             "output": "stderr"

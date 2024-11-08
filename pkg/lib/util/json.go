@@ -33,6 +33,7 @@ func Unmarshal(input []byte, output any) error {
 	tmplBytes = jsonc.ToJSON(tmplBytes)
 
 	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
+	dec.UseNumber()
 	dec.DisallowUnknownFields()
 
 	// unmarshal into object

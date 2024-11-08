@@ -1,0 +1,14 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../../_res/assets",
+        "testmode": false
+    },
+    "name": "check 2^63 int numbers",
+    "tests": [
+        // cmp  equal
+        "@number1.json",
+        // cmp not equal
+        "@number2.json"
+    ]
+}

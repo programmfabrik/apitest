@@ -434,7 +434,7 @@
         }
     },
     {
-        "name": "check control not_equal (same type number)",
+        "name": "check control not_equal (same type float)",
         "request": {
             "server_url": "http://localhost:9999",
             "endpoint": "bounce-json",

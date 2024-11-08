@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -176,7 +175,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		QueryParams: r.URL.Query(),
 	}
 	if len(bodyBytes) > 0 {
-		err = json.Unmarshal(bodyBytes, &bodyJSON)
+		err = golib.JsonUnmarshalWithNumber(bodyBytes, &bodyJSON)
 		if err != nil {
 			errorResponse(w, 500, err, errorBody)
 			return

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -113,7 +114,7 @@ func TestRemoveComments(t *testing.T) {
 "hallo":2
 }`,
 			JsonObject{
-				"hallo": float64(2),
+				"hallo": json.Number("2"),
 			},
 		},
 		{
@@ -121,7 +122,7 @@ func TestRemoveComments(t *testing.T) {
 "hallo":2
 }`,
 			JsonObject{
-				"hallo": float64(2),
+				"hallo": json.Number("2"),
 			},
 		},
 		{
@@ -132,7 +133,7 @@ func TestRemoveComments(t *testing.T) {
 #line2
 }`,
 			JsonObject{
-				"hallo": float64(2),
+				"hallo": json.Number("2"),
 			},
 		},
 		{
@@ -144,7 +145,7 @@ func TestRemoveComments(t *testing.T) {
 "hey":"ha"
 }`,
 			JsonObject{
-				"hallo": float64(2),
+				"hallo": json.Number("2"),
 				"hey":   "ha",
 			},
 		},
@@ -155,7 +156,7 @@ func TestRemoveComments(t *testing.T) {
 		Unmarshal([]byte(v.iJson), &out)
 		for k, v := range v.eOut {
 			if out[k] != v {
-				t.Errorf("[%s] Have '%f' != '%f' want", k, out[k], v)
+				t.Errorf("[%s] Have '%v' != '%f' want", k, out[k], v)
 			}
 		}
 	}
@@ -171,7 +172,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 		{
 			`{"hallo":3}`,
 			JsonObject{
-				"hallo": float64(3),
+				"hallo": json.Number("3"),
 			},
 			nil,
 		},

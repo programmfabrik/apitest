@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/stretchr/testify/assert"
 )
 
 var trivialComparerTestData = []struct {
@@ -389,5 +390,30 @@ func TestTrivialJsonComparer(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestJsonNumberEq(t *testing.T) {
+	if !assert.Equal(t, true, jsonNumberEq("200", "200")) {
+		return
+	}
+	if !assert.Equal(t, false, jsonNumberEq("-9223372036854775808", "-9223372036854775809")) {
+		return
+	}
+	if !assert.Equal(t, false, jsonNumberEq("-9223372036854775809", "-9223372036854775808")) {
+		return
+	}
+	if !assert.Equal(t, true, jsonNumberEq("1e10", "10000000000")) {
+		return
+	}
+	// Although this is the same value, we cannot say its equal
+	if !assert.Equal(t, true, jsonNumberEq("-9.223372036854775808e+18", "-9223372036854775808")) {
+		return
+	}
+	if !assert.Equal(t, true, jsonNumberEq("-9.223372036854775808e+18", "-9.223372036854775808e+18")) {
+		return
+	}
+	if !assert.Equal(t, false, jsonNumberEq("-9.223372036854775809e+18", "-9223372036854775809")) {
+		return
 	}
 }

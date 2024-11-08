@@ -174,7 +174,7 @@ func (testCase Case) breakResponseIsPresent(response api.Response) (bool, error)
 	return false, nil
 }
 
-// checkCollectResponse loops over all given collect responses and than
+// checkCollectResponse loops over all given collect responses and then
 // If this continue response is present it returns a true.
 // If no continue response is set, it also returns true to keep the testsuite running
 func (testCase *Case) checkCollectResponse(response api.Response) (int, error) {
@@ -218,8 +218,13 @@ func (testCase *Case) checkCollectResponse(response api.Response) (int, error) {
 			if err != nil {
 				return -1, fmt.Errorf("error matching check responses: %s", err)
 			}
+			// !eq && !reverse -> add
+			// !eq && reverse -> don't add
+			// eq && !reverse -> don't add
+			// eq && reverse -> add
 
-			if !responsesMatch.Equal {
+			if !responsesMatch.Equal && !testCase.ReverseTestResult ||
+				responsesMatch.Equal && testCase.ReverseTestResult {
 				leftResponses = append(leftResponses, v)
 			}
 		}
@@ -427,6 +432,11 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			for _, v := range responsesMatch.Failures {
 				logrus.Errorf("[%s] %s", v.Key, v.Message)
 				r.SaveToReportLog(fmt.Sprintf("[%s] %s", v.Key, v.Message))
+			}
+		} else {
+			for _, v := range responsesMatch.Failures {
+				logrus.Infof("Reverse Test Result of: [%s] %s", v.Key, v.Message)
+				r.SaveToReportLog(fmt.Sprintf("reverse test result: [%s] %s", v.Key, v.Message))
 			}
 		}
 
