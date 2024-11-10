@@ -15,7 +15,6 @@ import (
 	"github.com/moul/http2curl"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-	"github.com/programmfabrik/golib"
 )
 
 var httpClient *http.Client
@@ -240,7 +239,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 				if err != nil {
 					return nil, fmt.Errorf("could not marshal cookie '%s' from Datastore", storeKey)
 				}
-				err = golib.JsonUnmarshalWithNumber(ckBytes, &ck)
+				err = json.Unmarshal(ckBytes, &ck)
 				if err != nil {
 					return nil, fmt.Errorf("could not unmarshal cookie '%s' from Datastore: %s", storeKey, string(ckBytes))
 				}

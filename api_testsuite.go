@@ -319,11 +319,11 @@ func (ats *Suite) testGoroutine(
 
 	// Build list of test cases
 	var testCases []json.RawMessage
-	err = util.UnmarshalWithNumber(testRendered, &testCases)
+	err = util.Unmarshal(testRendered, &testCases)
 	if err != nil {
 		// Input could not be deserialized into list, try to deserialize into single object
 		var singleTest json.RawMessage
-		err = util.UnmarshalWithNumber(testRendered, &singleTest)
+		err = util.Unmarshal(testRendered, &singleTest)
 		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
@@ -342,7 +342,7 @@ func (ats *Suite) testGoroutine(
 		// If testCase can be unmarshalled as string, we may have a
 		// reference to another test using @ notation at hand
 		var testCaseStr string
-		err = util.UnmarshalWithNumber(testCase, &testCaseStr)
+		err = util.Unmarshal(testCase, &testCaseStr)
 		if err == nil && util.IsPathSpec(testCaseStr) {
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
@@ -382,7 +382,7 @@ func (ats *Suite) runLiteralTest(
 	r.SetName(testFilePath)
 
 	var test Case
-	jErr := util.UnmarshalWithNumber(tc.CaseByte, &test)
+	jErr := util.Unmarshal(tc.CaseByte, &test)
 	if jErr != nil {
 
 		r.SaveToReportLog(jErr.Error())

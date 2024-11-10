@@ -374,8 +374,8 @@ func TestTrivialJsonComparer(t *testing.T) {
 	var json1, json2 any
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
-			util.UnmarshalWithNumber([]byte(td.want), &json1)
-			util.UnmarshalWithNumber([]byte(td.have), &json2)
+			util.Unmarshal([]byte(td.want), &json1)
+			util.Unmarshal([]byte(td.have), &json2)
 			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
 			if err != nil {
 				t.Fatal("Error occurred: ", err)

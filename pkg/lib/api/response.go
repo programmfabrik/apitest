@@ -276,7 +276,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if !responseFormat.IgnoreBody {
 
 		if len(bodyData) > 0 {
-			err = golib.JsonUnmarshalWithNumber(bodyData, &bodyJSON)
+			err = json.Unmarshal(bodyData, &bodyJSON)
 			if err != nil {
 				return res, err
 			}
@@ -293,7 +293,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if err != nil {
 		return res, err
 	}
-	err = golib.JsonUnmarshalWithNumber(responseBytes, &res)
+	err = json.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}
@@ -311,7 +311,7 @@ func (response Response) ToGenericJSON() (any, error) {
 	// We have a json, and thereby try to unmarshal it into our body
 	resBody := response.Body
 	if len(resBody) > 0 {
-		err = golib.JsonUnmarshalWithNumber(resBody, &bodyJSON)
+		err = json.Unmarshal(resBody, &bodyJSON)
 		if err != nil {
 			return res, err
 		}
@@ -353,7 +353,7 @@ func (response Response) ToGenericJSON() (any, error) {
 	if err != nil {
 		return res, err
 	}
-	err = golib.JsonUnmarshalWithNumber(responseBytes, &res)
+	err = json.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}

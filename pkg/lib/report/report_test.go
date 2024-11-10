@@ -82,8 +82,8 @@ func TestReportGetJSONResult(t *testing.T) {
 
 	var expJ, realJ any
 
-	util.UnmarshalWithNumber(jsonResult, &realJ)
-	util.UnmarshalWithNumber(expResult, &expJ)
+	util.Unmarshal(jsonResult, &realJ)
+	util.Unmarshal(expResult, &expJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
@@ -138,8 +138,8 @@ func TestReportGetJUnitResult(t *testing.T) {
 
 	var expJ, realJ any
 
-	util.UnmarshalWithNumber(expJBytes, &expJ)
-	util.UnmarshalWithNumber(realJBytes, &realJ)
+	util.Unmarshal(expJBytes, &expJ)
+	util.Unmarshal(realJBytes, &realJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
@@ -220,7 +220,7 @@ func TestReportGetStatsResult(t *testing.T) {
 
 	jsonResult := r.GetTestResult(ParseJSONStatsResult)
 	var statsRep statsReport
-	util.UnmarshalWithNumber(jsonResult, &statsRep)
+	util.Unmarshal(jsonResult, &statsRep)
 
 	if statsRep.Version != r.Version {
 		t.Fatalf("Got version %s, expected %s", statsRep.Version, r.Version)

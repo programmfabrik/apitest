@@ -5,17 +5,17 @@
         "endpoint": "bounce-json",
         "method": "POST",
         "body": {
-            "number": -9223372036854775808 // minimum int -2^63
+            "number_min": -9007199254740991, // minimum int -2^53-1
+            "number_max": 9007199254740991   // maxium int -2^53-1
         }
     },
     "response": {
         "statuscode": 200,
         "body": {
             "body": {
-                "number": -9223372036854775809
+                "number_min": -9007199254740991, // minimum int -2^53-1
+                "number_max": 9007199254740991   // maxium int -2^53-1
             }
         }
-    },
-    "reverse_test_result": true
-
+    }
 }
