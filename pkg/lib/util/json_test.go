@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -97,7 +96,7 @@ welt:1
 
 	for _, v := range testCases {
 		var out JsonObject
-		oErr := UnmarshalWithNumber([]byte(v.iJson), &out)
+		oErr := Unmarshal([]byte(v.iJson), &out)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 	}
@@ -114,7 +113,7 @@ func TestRemoveComments(t *testing.T) {
 "hallo":2
 }`,
 			JsonObject{
-				"hallo": json.Number("2"),
+				"hallo": float64(2),
 			},
 		},
 		{
@@ -122,7 +121,7 @@ func TestRemoveComments(t *testing.T) {
 "hallo":2
 }`,
 			JsonObject{
-				"hallo": json.Number("2"),
+				"hallo": float64(2),
 			},
 		},
 		{
@@ -133,7 +132,7 @@ func TestRemoveComments(t *testing.T) {
 #line2
 }`,
 			JsonObject{
-				"hallo": json.Number("2"),
+				"hallo": float64(2),
 			},
 		},
 		{
@@ -145,7 +144,7 @@ func TestRemoveComments(t *testing.T) {
 "hey":"ha"
 }`,
 			JsonObject{
-				"hallo": json.Number("2"),
+				"hallo": float64(2),
 				"hey":   "ha",
 			},
 		},
@@ -153,10 +152,10 @@ func TestRemoveComments(t *testing.T) {
 
 	for _, v := range testCases {
 		var out JsonObject
-		UnmarshalWithNumber([]byte(v.iJson), &out)
+		Unmarshal([]byte(v.iJson), &out)
 		for k, v := range v.eOut {
 			if out[k] != v {
-				t.Errorf("[%s] Have '%v' != '%f' want", k, out[k], v)
+				t.Errorf("[%s] Have %T '%v' != '%f' want", k, k, out[k], v)
 			}
 		}
 	}
@@ -172,7 +171,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 		{
 			`{"hallo":3}`,
 			JsonObject{
-				"hallo": json.Number("3"),
+				"hallo": float64(3),
 			},
 			nil,
 		},
@@ -245,7 +244,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 
 	for _, v := range testCases {
 		oObject := JsonObject{}
-		oErr := UnmarshalWithNumber([]byte(v.cjsonString), &oObject)
+		oErr := Unmarshal([]byte(v.cjsonString), &oObject)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
@@ -270,7 +269,7 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 
 	var oObject expectedStructure
 
-	oErr := UnmarshalWithNumber(
+	oErr := Unmarshal(
 		[]byte(cjsonString),
 		&oObject,
 	)
