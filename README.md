@@ -544,7 +544,7 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
 Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML, CSV or binary output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
 
-The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked.
+The response body is piped to the `stdin` of the tool and the result is read from `stdout`. The result of the command is then used as the actual response and is checked. The response is formatted as JSON string if it is not parsable as JSON.
 
 To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
 

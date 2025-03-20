@@ -579,10 +579,10 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 		doesMatch, err := regexp.Match(*control.regexMatch, []byte(right.(util.JsonString)))
 		if err != nil {
-			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatch, err)
+			return fmt.Errorf("could not match regex %q: %w", *control.regexMatch, err)
 		}
 		if !doesMatch {
-			return fmt.Errorf("%q does not match regex '%s'", right, *control.regexMatch)
+			return fmt.Errorf("%T %q does not match regex %q", right, right.(util.JsonString), *control.regexMatch)
 		}
 	}
 
