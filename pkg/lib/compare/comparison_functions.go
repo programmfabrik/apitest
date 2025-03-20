@@ -583,7 +583,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatch, err)
 		}
 		if !doesMatch {
-			return fmt.Errorf("%T %q does not match regex %q", right, right.(util.JsonString), *control.regexMatch)
+			return fmt.Errorf("%T %q does not match regex %q", right, matchS, *control.regexMatch)
 		}
 	}
 
