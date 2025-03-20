@@ -186,6 +186,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		if err != nil {
 			return res, fmt.Errorf("Could not pre process response: %w", err)
 		}
+		switch responseFormat.Type {
+		case "":
+			// ensure the resp is json
+			resp.Body = ensureJson(resp.Body)
+		}
 	} else {
 		resp = response
 	}

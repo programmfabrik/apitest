@@ -74,7 +74,7 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 		case CmdOutputExitCode:
 			response.Body = []byte(strconv.Itoa(exitCode))
 		case CmdOutputStderr:
-			response.Body = ensureJson(stderrBytes)
+			response.Body = stderrBytes
 		case CmdOutputStdout:
 			response.Body, err2 = golib.JsonBytesIndent(preProcessError{
 				Command:  strings.Join(cmd.Args, " "),
@@ -91,9 +91,9 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 	case CmdOutputExitCode:
 		response.Body = []byte(strconv.Itoa(cmd.ProcessState.ExitCode()))
 	case CmdOutputStderr:
-		response.Body = ensureJson(stderr.Bytes())
+		response.Body = stderr.Bytes()
 	case CmdOutputStdout:
-		response.Body = ensureJson(stdout.Bytes())
+		response.Body = stdout.Bytes()
 	}
 
 	return response, nil

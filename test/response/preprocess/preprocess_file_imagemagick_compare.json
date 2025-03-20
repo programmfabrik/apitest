@@ -3,7 +3,7 @@
         "name": "preprocess asset camera.jpg with imagemagick compare against itself (should pass)",
         "request": {
             // load static file
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "camera.jpg",
             "method": "GET",
             "header": {
@@ -28,14 +28,17 @@
                     }
                 }
             },
-            "body": 0
+            "body:control": {
+                // compare returns "0" in older versions and "0 (0)" in a newer versions
+                "match": "^(0 |0$)"
+            }
         }
     },
     {
         "name": "preprocess asset camera.jpg with imagemagick compare against a different one (should fail)",
         "request": {
             // load static file
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "camera.jpg",
             "method": "GET"
         },
@@ -57,7 +60,10 @@
                     }
                 }
             },
-            "body": 0
+            "body:control": {
+                // compare returns "0" in older versions and "0 (0)" in a newer versions
+                "match": "^(0 |0$)"
+            }
         },
         "reverse_test_result": true
     }

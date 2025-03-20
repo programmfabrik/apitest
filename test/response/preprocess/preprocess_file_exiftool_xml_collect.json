@@ -3,7 +3,7 @@
         "name": "(collect) preprocess asset camera.jpg with exiftool in xml format",
         "request": {
             // load static file
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": "{{ datastore `local_url` }}",
             "endpoint": "camera.jpg",
             "method": "GET"
         },
