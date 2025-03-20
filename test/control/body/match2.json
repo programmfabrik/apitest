@@ -1,0 +1,17 @@
+{
+    "name": "check control match in array",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": 0
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body:control": {
+                "match": "^(0 |0$)"
+            }
+        }
+    }
+}

@@ -13,5 +13,7 @@
         ,"@order_matters.json"
         ,"@not_match.json"
         ,"@not_equal.json"
+        // match 0 in body
+        ,"@match2.json"
     ]
 }

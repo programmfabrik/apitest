@@ -100,7 +100,6 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			if !ok {
 				err = fmt.Errorf("match is no string")
 				return
-
 			}
 			out.regexMatch = &tV
 		case "not_match":
@@ -572,12 +571,14 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check if string matches regex
 	if control.regexMatch != nil {
+		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
-			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
+			matchS = fmt.Sprintf("%v", right)
+		} else {
+			matchS = right.(util.JsonString)
 		}
-
-		doesMatch, err := regexp.Match(*control.regexMatch, []byte(right.(util.JsonString)))
+		doesMatch, err := regexp.Match(*control.regexMatch, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatch, err)
 		}
@@ -588,12 +589,15 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check if string does not match regex
 	if control.regexMatchNot != nil {
+
+		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
-			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
+			matchS = fmt.Sprintf("%v", right)
+		} else {
+			matchS = right.(util.JsonString)
 		}
-
-		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(right.(util.JsonString)))
+		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatchNot, err)
 		}

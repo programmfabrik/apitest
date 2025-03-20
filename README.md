@@ -1125,7 +1125,7 @@ E.g. the following response would **fail** as `"testNumber"` has the value `5`:
 
 ### `match`
 
-Check if a string value matches a given [regular expression](https://gobyexample.com/regular-expressions)
+Check if a string value matches a given [regular expression](https://gobyexample.com/regular-expressions). If the input is not string, it is rendered as string using `fmt.Sprintf("%v", input)`.
 
 E.g. the following response would **fail** as `"text"` does not match the regular expression:
 
@@ -1153,7 +1153,7 @@ E.g. the following response would **fail** as `"text"` does not match the regula
 
 ### `not_match`
 
-Check if a string value does not match a given regular expression.
+Check if a string value does not match a given regular expression. If the input is not string, it is rendered as string using `fmt.Sprintf("%v", input)`.
 
 This is the opposite check function of [match](#match).
 
