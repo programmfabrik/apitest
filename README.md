@@ -18,21 +18,40 @@ The report parameters of this config can be overwritten via a command line flag.
 
 ```yaml
 apitest:
-  server: "http://5.simon.pf-berlin.de/api/v1" # The base url to the api you want to fire the apitests against. Important: don’t add a trailing ‘/’
+  # The base url to the api you want to fire the apitests against
+  # Important: don’t add a trailing ‘/’
+  server: "http://5.simon.pf-berlin.de/api/v1"
+
   log:
-    short: true # Configures minimal logs by default for all tests
-  report: # Configures the maschine report. For usage with jenkis or any other CI tool
-    file: "apitest_report.xml" # Filename of the report file. The file gets saved in the same directory of the apitest binary
-    format: "json.junit"       # Format of the report. (Supported formats: json, junit or stats)
-  store: # initial values for the datastore, parsed as map[string]interface{}
+    # Configures minimal logs by default for all tests
+    short: true
+
+  # Configures the maschine report
+  # For usage with jenkis or any other CI tool
+  report:
+    # Filename of the report file
+    # The file gets saved in the same directory of the apitest binary
+    file: "apitest_report.xml"
+    # Format of the report.
+    # Supported formats: json, junit or stats
+    format: "json.junit"
+
+  # initial values for the datastore, parsed as map[string]interface{}
+  store:
     email.server: smtp.google.com
-  oauth2_client: # Map of client-config for oAuth clients
-    my_client: # oauth Client ID
-      endpoint: # endpoints on the oauth server
+
+  # Map of client-config for oAuth clients
+  oauth2_client:
+    # oauth Client ID
+    my_client:
+      # endpoints on the oauth server
+      endpoint:
         auth_url: "http://auth.myserver.de/oauth/auth"
         token_url: "http://auth.myserver.de/oauth/token"
-      secret: "foobar" # oauth Client secret
-      redirect_url: "http://myfancyapp.de/auth/receive-fancy-token" # redirect, usually on client side
+      # oauth Client secret
+      secret: "foobar"
+      # redirect, usually on client side
+      redirect_url: "http://myfancyapp.de/auth/receive-fancy-token"
 ```
 
 The YAML config is optional. All config values can be overwritten/set by command line parameters: see [Overwrite config parameters](#overwrite-config-parameters)
@@ -129,32 +148,39 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ```js
 {
-    // General info about the testuite. Try to explain your problem indepth here. So that someone who works on the test years from now knows what is happening
-    "description": "search api tests for filename",
-    // Testname. Should be the ticket number if the test is based on a ticket
+    // Testname
+    // Should include the ticket number if the test is based on a ticket
     "name": "ticket_48565",
+
+    // General info about the testuite.
+    // Try to explain your problem indepth here.
+    // So that someone who works on the test years from now knows what is happening
+    "description": "search api tests for filename",
+
     // init store
     "store": {
         "custom": "data"
     },
-    // Testsuites your want to run upfront (e.g. a setup). Paths are relative to the current test manifest
+
+    // Testsuites your want to run upfront (e.g. a setup).
+    // Paths are relative to the current test manifest
     "require": [
         "setup_manifests/purge.yaml",
         "setup_manifests/config.yaml",
         "setup_manifests/upload_datamodel.yaml"
     ],
-    // Array of single testcases. Add es much as you want. They get executed in chronological order
+
+    // Array of single testcases. Add es much as you want.
+    // They get executed in chronological order
     "tests": [
-        // [SINGLE TESTCASE]: See below for more information
-        // [SINGLE TESTCASE]: See below for more information
-        // [SINGLE TESTCASE]: See below for more information
+        // [SINGLE TESTCASES]: See below for more information
+        // ...
 
         // We also support the external loading of a complete test:
         "@pathToTest.json",
 
         // By prefixing it with a number, the testtool runs that many instances of
         // the included test file in parallel to each other.
-        //
         // Only tests directly included by the manifest are allowed to run in parallel.
         "5@pathToTestsThatShouldRunInParallel.json"
     ]
@@ -163,230 +189,206 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 ## Testcase Definition
 
+| **Key**                            | **Description** |
+|------------------------------------|-----------------|
+| `name`                             | Name to identify this single test. Is important for the log. Try to give an explaning name |
+| `request`                          | [Request definition](#request) |
+| `response`                         | [Response definition](#response) |
+| `store`                            | Store custom values to the datastore |
+| `http_server`                      | Optional temporary [HTTP Server](#http-server) |
+| `smtp_server`                      | Optional temporary [SMTP Server](#smtp-server) |
+| `log_network`                      | Log network only for this single test |
+| `log_verbose`                      | Verbose logging only for this single test |
+| `log_short`                        | Show or disable minimal logs for this test |
+| `store_response_gjson`             | Store parts of the response into the datastore |
+| `store_response_gjson.sess_cookie` | Cookies are stored in `cookie` map |
+| `wait_before_ms`                   | Pauses right before sending the test request `<n>` milliseconds |
+| `wait_after_ms`                    | Pauses right after sending the test request `<n>` milliseconds |
+| `delay_ms`                         | Delay the request by `<n>` milliseconds |
+| `timeout_ms`                       | With this the testing tool will repeat the request to wait for certain events. The timeout is `<n>` milliseconds before the test fails |
+| `break_response`                   | If one of this responses occurs, the tool fails the test and tells it found a break response |
+| `collect_response`                 | The tool will check if all responses occur in the response (even in different poll runs) |
+| `reverse_test_result`              | If set to true, the test case will consider its failure as a success, and the other way around |
+| `continue_on_failure`              | Define if the test suite should continue even if this test fails. (default: false) |
+
+### Request
+
+Top level key: `request`
+
+| **Key**                    | **Description** |
+|----------------------------|-----------------|
+| `endpoint`                 | What endpoint we want to target. You find all possible endpoints in the api documentation |
+| `server_url`               | The server url to connect can be set directly for a request, overwriting the configured server url |
+| `method`                   | How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible |
+| `no_redirect`              | If set to `true`, don't follow redirects |
+| `query_params`             | Parameters that will be added to the url |
+| `query_params_from_store`  | With this set a query parameter to the value of the datastore field |
+| `header`                   | Additional headers that should be added to the request |
+| `cookies`                  | Cookies can be added to the request |
+| `header-x-test-set-cookie` | Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry). Used in the built-in `http_server` |
+| `header_from_store`        | With this you set a header to the value of the datastore field |
+| `body`                     | All the content you want to send in the http body. Is a JSON object or array |
+| `body_type`                | If the body should be marshaled in a special way, you can define this here. Possible: [`multipart`, `urlencoded`, `file`] |
+| `body_file`                | If `body_type` is `file`, `body_file` points to the file to be sent as binary body |
+
+### Response
+
+Top level key: `response`
+
+The response definition is optional, if it is not included in the test case, a status code of `200` and no specific body is expected.
+
+| **Key**      | **Description** |
+|--------------|-----------------|
+| `statuscode` | Expected http [status code](#statuscode). See api documentation vor the right ones |
+| `header`     | If you expect certain response headers, you can define them here. A single key can have multiple headers |
+| `cookie`     | Cookies will be under this key, in a map `name => cookie` |
+| `format`     | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison) |
+| `body`       | The body we want to assert on |
+
+#### Statuscode
+
+Expected http status code, if the response has another status code, the test case fails.
+
+- If the `statuscode` key is not set, the default value `200` is used
+- If `"statuscode": 0` is set, the status code is ignored and any status code from the response is accepted
+
 ### manifest.json
 
 ```js
 {
-    // Define if the test suite should continue even if this test fails. (default: false)
-    "continue_on_failure": true,
-
-    // Name to identify this single test. Is important for the log. Try to give an explaning name
-    "name": "Testname",
-
-    // Store custom values to the datastore
-    "store": {
-        "key1": "value1",
-        "key2": "value2"
-    },
-
-    // Optional temporary HTTP Server (see below)
     "http_server": {
         "addr": ":1234",
         "dir": ".",
         "testmode": false
     },
-
-    // Optional temporary SMTP Server (see below)
     "smtp_server": {
         "addr": ":9025",
-        "max_message_size": 1000000,
+        "max_message_size": 1000000
     },
-
-    // Specify a unique log behavior only for this single test.
-    "log_network": true,
-    "log_verbose": false,
-
-    // Show or disable minimal logs for this test
-    "log_short": false,
-
-    // Defines what gets send to the server
+    "store": {
+        "key1": "value1",
+        "key2": "value2"
+    },
+    "name": "Testname",
     "request": {
-
-        // What endpoint we want to target. You find all possible endpoints in the api documentation
-        "endpoint": "suggest",
-
-        // the server url to connect can be set directly for a request, overwriting the configured server url
-        "server_url": "",
-
-        // How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible.
-        "method": "GET",
-
-        // If set to true, don't follow redirects.
-        "no_redirect": false,
-
-        // Parameters that will be added to the url. e.g. http:// 5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
-        "query_params": {
-            "number": 2,
-            "token": "testtoken"
+        "body": {
+            "animal": "dog",
+            "flower": "rose"
         },
-
-        // With query_params_from_store set a query parameter to the value of the datastore field
-        "query_params_from_store": {
-            "format": "formatFromDatastore",
-            // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
-            // do not set the query param. If the key "a" is not found it datastore, the query parameter test will not be set
-            "test": "?a"
-        },
-
-        // Additional headers that should be added to the request
-        "header": {
-            "header1": "value",
-            "header2": ["value1", "value2"]
-        },
-
-        // Cookies can be added to the request
+        "body_type": "urlencoded",
         "cookies": {
-            // name of a cookie to be set
             "cookie1": {
-                // A cookie can be get parsed from store if it was saved before
-                // It will ignore the cookie if it is not set
-                "value_from_store": "sess_cookie",
-                // Or its values can be directly set, overriding the one from store, if defined
-                "value": "value"
+                "value": "value",
+                "value_from_store": "sess_cookie"
             },
             "cookie2": {
-                "value_from_store": "ads_cookie",
+                "value_from_store": "ads_cookie"
             }
         },
-
-        // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
-        // It is used in the builting `http_server` to automatically set those cookies on response
-        // So it is useful for mocking them for further testing
+        "endpoint": "suggest",
+        "header": {
+            "header1": "value",
+            "header2": [
+                "value1",
+                "value2"
+            ]
+        },
         "header-x-test-set-cookie": [
             {
                 "name": "sess",
                 "value": "myauthtoken"
             },
             {
-                "name": "jwtoken",
-                "value": "tokenized",
-                "path": "/auth",
                 "domain": "mydomain",
                 "expires": "2021-11-10T10:00:00Z",
-                "max_age": 86400,
-                "secure": false,
                 "http_only": true,
-                "same_site": 1
+                "max_age": 86400,
+                "name": "jwtoken",
+                "path": "/auth",
+                "same_site": 1,
+                "secure": false,
+                "value": "tokenized"
             }
         ],
-
-        // With header_from_store you set a header to the value of the datastore field
-        // In this example we set the "Content-Type" header to the value "application/json"
-        // As "application/json" is stored as string in the datastore on index "contentType"
         "header_from_store": {
             "Content-Type": "contentType",
-            // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
-            // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
             "Range": "?a"
         },
-
-        // All the content you want to send in the http body. Is a JSON Object
-        "body": {
-            "flower": "rose",
-            "animal": "dog"
+        "method": "GET",
+        "no_redirect": false,
+        "query_params": {
+            "number": 2,
+            "token": "testtoken"
         },
-
-        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded, file]
-        "body_type": "urlencoded"
-
-        // If body_type is file, "body_file" points to the file to be sent as binary body
-        "body_file": "<path|url>"
+        "query_params_from_store": {
+            "format": "formatFromDatastore",
+            "test": "?a"
+        },
+        "server_url": ""
     },
-    // Define how the response should look like. Testtool checks against this response
     "response": {
-
-        // Expected http status code. See api documentation vor the right ones
-        "statuscode": 200,
-
-        // If you expect certain response headers, you can define them here. A single key can have multiple headers (as defined in rfc2616)
+        "body": {
+            "objecttypes": [
+                "pictures"
+            ]
+        },
+        "cookie": {
+            "jwtoken": {
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "http_only": true,
+                "max_age": 86400,
+                "name": "jwtoken",
+                "path": "/auth",
+                "same_site": 1,
+                "secure": false,
+                "value": "tokenized"
+            },
+            "sess": {
+                "name": "sess",
+                "value": "myauthtoken"
+            }
+        },
+        "format": {
+            "csv": {
+                "comma": ";"
+            },
+            "type": "csv"
+        },
         "header": {
             "key1": [
                 "val1",
                 "val2",
                 "val3"
             ],
-
-            // Headers sharing the same key are concatenated using ";", if the comparison value is a simple string,
-            // thus "key1" can also be checked like this:
-            "key1": "val1;val2;val3"
-
-            // :control in header is always applied to the flat format
-            "key1:control": {
-                // see below, this is not applied against the array
-            },
+            "key2": "val1;val2;val3",
+            "key3:control": {},
             "x-easydb-token": [
                 "csdklmwerf8ßwji02kopwfjko2"
             ]
         },
-
-        // Cookies will be under this key, in a map name => cookie
-        "cookie": {
-            "sess": {
-                "name": "sess",
-                "value": "myauthtoken"
-            },
-            "jwtoken": {
-                "name": "jwtoken",
-                "value": "tokenized",
-                "path": "/auth",
-                "domain": "mydomain",
-                "expires": "2021-11-10T10:00:00Z",
-                "max_age": 86400,
-                "secure": false,
-                "http_only": true,
-                "same_site": 1
-            }
-        }
-
-        // optionally, the expected format of the response can be specified so that it can be converted into json and can be checked
-        "format": {
-            "type": "csv",
-            "csv": {
-                "comma": ";"
-            }
-        },
-
-        // The body we want to assert on
-        "body": {
-            "objecttypes": [
-                "pictures"
-            ]
-        }
+        "statuscode": 200
     },
-
-    // Store parts of the response into the datastore
-    "store_response_gjson": {
-        "eas_id": "body.0.eas._id",
-
-        // Cookies are stored in `cookie` map
-        "sess_cookie": "cookie.sess"
-    },
-
-    // wait_before_ms pauses right before sending the test request <n> milliseconds
-    "wait_before_ms": 0,
-    // wait_after_ms pauses right before sending the test request <n> milliseconds
-    "wait_after_ms": 0,
-
-    // Delay the request by x msec
-    "delay_ms": 5000,
-    // With the poll we can make the testing tool redo the request to wait for certain events (Only the timeout_msec is required)
-    // timeout_ms:* If this timeout is done, no new redo will be started
-    // -1: No timeout - run endless
-    // break_response: [Array] [Logical OR] If one of this responses occures, the tool fails the test and tells it found a break repsponse
-    // collect_response:  [Array] [Logical AND] If this is set, the tool will check if all reponses occure in the response (even in different poll runs)
-    "timeout_ms": 5000,
-
     "break_response": [
         "@break_response.json"
     ],
-
     "collect_response": [
         "@continue_response_pending.json",
         "@continue_response_processing.json"
     ],
-
-    // If set to true, the test case will consider its failure as a success, and the other way around
-    "reverse_test_result": false
+    "store_response_gjson": {
+        "eas_id": "body.0.eas._id",
+        "sess_cookie": "cookie.sess"
+    },
+    "log_network": true,
+    "log_short": false,
+    "log_verbose": false,
+    "reverse_test_result": false,
+    "delay_ms": 5000,
+    "timeout_ms": 5000,
+    "wait_after_ms": 0,
+    "wait_before_ms": 0,
+    "continue_on_failure": true
 }
 ```
 

@@ -481,7 +481,7 @@ func (testCase Case) loadRequest() (api.Request, error) {
 func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	// unspecified response is interpreted as status_code 200
 	if testCase.ResponseData == nil {
-		return api.NewResponse(http.StatusOK, nil, nil, nil, nil, res.Format)
+		return api.NewResponse(golib.IntRef(http.StatusOK), nil, nil, nil, nil, res.Format)
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
@@ -495,6 +495,17 @@ func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 }
 
 func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
+	if expected.StatusCode == nil {
+		// if the statuscode is not set, use the default status code 200
+		expected.StatusCode = golib.IntRef(200)
+	} else {
+		// if the statuscode is set to 0,
+		// remove the statuscode key from the expected response to accept any response code
+		if *expected.StatusCode == 0 {
+			expected.StatusCode = nil
+		}
+	}
+
 	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
 		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)

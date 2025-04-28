@@ -18,7 +18,7 @@ import (
 )
 
 type Response struct {
-	StatusCode  int
+	StatusCode  *int
 	Headers     map[string]any
 	HeaderFlat  map[string]any // ":control" is an object, so we must use "any" here
 	Cookies     []*http.Cookie
@@ -52,7 +52,7 @@ type Cookie struct {
 }
 
 type ResponseSerialization struct {
-	StatusCode  int               `yaml:"statuscode" json:"statuscode"`
+	StatusCode  *int              `yaml:"statuscode,omitempty" json:"statuscode,omitempty"`
 	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
 	Cookies     map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
 	Body        any               `yaml:"body" json:"body,omitempty"`
@@ -74,7 +74,7 @@ type ResponseFormat struct {
 	PreProcess *PreProcess `json:"pre_process,omitempty"`
 }
 
-func NewResponse(statusCode int,
+func NewResponse(statusCode *int,
 	headersAny map[string]any,
 	cookies []*http.Cookie,
 	body io.Reader,
@@ -144,10 +144,6 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 			return res, err
 		}
 		body = bytes.NewReader(bodyBytes)
-	}
-	// if statuscode is not explicitly set; we assume 200
-	if spec.StatusCode == 0 {
-		spec.StatusCode = 200
 	}
 
 	// Build standard cookies bag from spec map
@@ -377,16 +373,6 @@ func (response Response) ServerResponseToJsonString(bodyOnly bool) (string, erro
 	return string(bytes), nil
 }
 
-func (response *Response) marshalBodyInto(target any) (err error) {
-	bodyBytes := response.Body
-	if len(bodyBytes) > 0 {
-		if err = json.Unmarshal(bodyBytes, target); err != nil {
-			return fmt.Errorf("error unmarshaling response: %s", err)
-		}
-	}
-	return nil
-}
-
 func (response Response) ToString() string {
 	var (
 		headersString string
@@ -446,5 +432,9 @@ func (response Response) ToString() string {
 		}
 	}
 
-	return fmt.Sprintf("%d\n%s\n\n%s", resp.StatusCode, headersString, bodyString)
+	statuscode := 0
+	if resp.StatusCode != nil {
+		statuscode = *resp.StatusCode
+	}
+	return fmt.Sprintf("%d\n%s\n\n%s", statuscode, headersString, bodyString)
 }

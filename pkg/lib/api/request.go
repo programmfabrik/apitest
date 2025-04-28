@@ -15,6 +15,7 @@ import (
 	"github.com/moul/http2curl"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/golib"
 )
 
 var httpClient *http.Client
@@ -357,7 +358,7 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, err
 	}
-	response, err = NewResponse(httpResponse.StatusCode, header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
+	response, err = NewResponse(golib.IntRef(httpResponse.StatusCode), header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("error constructing response from http response: %w", err)
 	}
