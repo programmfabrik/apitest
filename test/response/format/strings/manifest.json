@@ -1,0 +1,12 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../../_res/assets",
+        "testmode": false
+    },
+    "name": "check strings with newlines",
+    "tests": [
+        // cmp  equal
+        "@string.json"
+    ]
+}
