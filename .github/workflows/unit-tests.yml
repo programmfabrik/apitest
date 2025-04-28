@@ -29,7 +29,7 @@ jobs:
 
       - name: output imagemagick version
         shell: bash
-        run: magick -version
+        run: compare -version
 
       - name: execute unit tests, build & apitest
         shell: bash
