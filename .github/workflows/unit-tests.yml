@@ -27,6 +27,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: output imagemagick version
+        shell: bash
+        run: magick -version
+
       - name: execute unit tests, build & apitest
         shell: bash
         run: make all
