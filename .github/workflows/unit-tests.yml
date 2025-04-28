@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Install prerequisites
         shell: bash
-        run: sudo apt install libimage-exiftool-perl
+        run: sudo apt install libimage-exiftool-perl imagemagick
 
       - name: Run go ${{ env.go_version }}
         uses: actions/setup-go@v5
@@ -26,6 +26,10 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: output imagemagick version
+        shell: bash
+        run: compare -version
 
       - name: execute unit tests, build & apitest
         shell: bash
