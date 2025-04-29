@@ -7,6 +7,7 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/test_utils"
+	"github.com/programmfabrik/golib"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/programmfabrik/apitest/pkg/lib/api"
@@ -82,7 +83,7 @@ func TestBigIntRender(t *testing.T) {
 
 	inputNumber := "132132132182323"
 
-	resp, _ := api.NewResponse(200, nil, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil, api.ResponseFormat{})
+	resp, _ := api.NewResponse(golib.IntRef(200), nil, nil, strings.NewReader(fmt.Sprintf(`{"bigINT":%s}`, inputNumber)), nil, api.ResponseFormat{})
 
 	respJson, _ := resp.ServerResponseToJsonString(false)
 	store.SetWithGjson(respJson, map[string]string{"testINT": "body.bigINT"})
@@ -405,7 +406,7 @@ func TestRender_LoadFile_GJson(t *testing.T) {
 
 func Test_DataStore_GJson(t *testing.T) {
 	response, _ := api.NewResponse(
-		200,
+		golib.IntRef(200),
 		map[string]any{"x-header": []string{"foo", "bar"}},
 		nil,
 		strings.NewReader(`{
