@@ -146,7 +146,7 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 
 Manifest is loaded as **template**, so you can use variables, Go **range** and **if** and others.
 
-```js
+```jsonc
 {
     // Testname
     // Should include the ticket number if the test is based on a ticket
@@ -191,15 +191,31 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 
 | **Key**                            | **Description** |
 |------------------------------------|-----------------|
-| `name`                             | Name to identify this single test. Is important for the log. Try to give an explaning name |
-| `request`                          | [Request definition](#request) |
-| `response`                         | [Response definition](#response) |
+| `name`                             | Name to identify this single test. Is important for the log. Try to give an explaining name |
 | `store`                            | Store custom values to the datastore |
 | `http_server`                      | Optional temporary [HTTP Server](#http-server) |
 | `smtp_server`                      | Optional temporary [SMTP Server](#smtp-server) |
 | `log_network`                      | Log network only for this single test |
 | `log_verbose`                      | Verbose logging only for this single test |
 | `log_short`                        | Show or disable minimal logs for this test |
+| `request.endpoint`                 | What endpoint we want to target. You find all possible endpoints in the api documentation |
+| `request.server_url`               | The server url to connect can be set directly for a request, overwriting the configured server url |
+| `request.method`                   | How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible |
+| `request.no_redirect`              | If set to `true`, don't follow redirects |
+| `request.query_params`             | Parameters that will be added to the url |
+| `request.query_params_from_store`  | With this set a query parameter to the value of the datastore field |
+| `request.header`                   | Additional headers that should be added to the request |
+| `request.cookies`                  | Cookies can be added to the request |
+| `request.header-x-test-set-cookie` | Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry). Used in the built-in `http_server` |
+| `request.header_from_store`        | With this you set a header to the value of the datastore field |
+| `request.body`                     | All the content you want to send in the http body. Is a JSON object or array |
+| `request.body_type`                | If the body should be marshaled in a special way, you can define this here. Possible: [`multipart`, `urlencoded`, `file`] |
+| `request.body_file`                | If `body_type` is `file`, `body_file` points to the file to be sent as binary body |
+| `response.statuscode`              | Expected http [status code](#statuscode). See api documentation for the endpoint to decide which code to expect |
+| `response.header`                  | If you expect certain response headers, you can define them here. A single key can have multiple headers |
+| `response.cookie`                  | Cookies will be under this key, in a map `name => cookie` |
+| `response.format`                  | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison) |
+| `response.body`                    | The body we want to assert on |
 | `store_response_gjson`             | Store parts of the response into the datastore |
 | `store_response_gjson.sess_cookie` | Cookies are stored in `cookie` map |
 | `wait_before_ms`                   | Pauses right before sending the test request `<n>` milliseconds |
@@ -211,39 +227,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 | `reverse_test_result`              | If set to true, the test case will consider its failure as a success, and the other way around |
 | `continue_on_failure`              | Define if the test suite should continue even if this test fails. (default: false) |
 
-### Request
-
-Top level key: `request`
-
-| **Key**                    | **Description** |
-|----------------------------|-----------------|
-| `endpoint`                 | What endpoint we want to target. You find all possible endpoints in the api documentation |
-| `server_url`               | The server url to connect can be set directly for a request, overwriting the configured server url |
-| `method`                   | How the endpoint should be accessed. The api documentations tells your which methods are possible for an endpoint. All HTTP methods are possible |
-| `no_redirect`              | If set to `true`, don't follow redirects |
-| `query_params`             | Parameters that will be added to the url |
-| `query_params_from_store`  | With this set a query parameter to the value of the datastore field |
-| `header`                   | Additional headers that should be added to the request |
-| `cookies`                  | Cookies can be added to the request |
-| `header-x-test-set-cookie` | Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry). Used in the built-in `http_server` |
-| `header_from_store`        | With this you set a header to the value of the datastore field |
-| `body`                     | All the content you want to send in the http body. Is a JSON object or array |
-| `body_type`                | If the body should be marshaled in a special way, you can define this here. Possible: [`multipart`, `urlencoded`, `file`] |
-| `body_file`                | If `body_type` is `file`, `body_file` points to the file to be sent as binary body |
-
-### Response
-
-Top level key: `response`
-
-The response definition is optional, if it is not included in the test case, a status code of `200` and no specific body is expected.
-
-| **Key**      | **Description** |
-|--------------|-----------------|
-| `statuscode` | Expected http [status code](#statuscode). See api documentation vor the right ones |
-| `header`     | If you expect certain response headers, you can define them here. A single key can have multiple headers |
-| `cookie`     | Cookies will be under this key, in a map `name => cookie` |
-| `format`     | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison) |
-| `body`       | The body we want to assert on |
+The `response` definition is optional. If it is not included in the test case, a status code of `200` and no specific body is expected.
 
 #### Statuscode
 
@@ -254,38 +238,71 @@ Expected http status code, if the response has another status code, the test cas
 
 ### manifest.json
 
-```js
+```jsonc
 {
+    // Name to identify this single test.
+    "name": "Testname",
+
+    // Store custom values to the datastore
+    "store": {
+        "key1": "value1",
+        "key2": "value2"
+    },
+
+    // Optional temporary HTTP Server (see below)
     "http_server": {
         "addr": ":1234",
         "dir": ".",
         "testmode": false
     },
+
+    // Optional temporary SMTP Server (see below)
     "smtp_server": {
         "addr": ":9025",
         "max_message_size": 1000000
     },
-    "store": {
-        "key1": "value1",
-        "key2": "value2"
-    },
-    "name": "Testname",
+
+    // Specify a unique log behavior only for this single test.
+    "log_network": true,
+    "log_verbose": false,
+
+    // Show or disable minimal logs for this test
+    "log_short": false,
+
+    // Defines what gets send to the server
     "request": {
-        "body": {
-            "animal": "dog",
-            "flower": "rose"
-        },
-        "body_type": "urlencoded",
-        "cookies": {
-            "cookie1": {
-                "value": "value",
-                "value_from_store": "sess_cookie"
-            },
-            "cookie2": {
-                "value_from_store": "ads_cookie"
-            }
-        },
+
+        // What endpoint we want to target. You find all possible endpoints in the api documentation
         "endpoint": "suggest",
+
+        // the server url to connect can be set directly for a request, overwriting the configured server url
+        "server_url": "",
+
+        // How the endpoint should be accessed.
+        // The api documentations tells your which methods are possible for an endpoint.
+        // All HTTP methods are possible.
+        "method": "GET",
+
+        // If set to true, don't follow redirects.
+        "no_redirect": false,
+
+        // Parameters that will be added to the url.
+        // e.g. http:// 5.testing.pf-berlin.de/api/v1/session?token=testtoken&number=2 would be defined as follows
+        "query_params": {
+            "number": 2,
+            "token": "testtoken"
+        },
+
+        // With query_params_from_store set a query parameter to the value of the datastore field
+        "query_params_from_store": {
+            "format": "formatFromDatastore",
+            // If the datastore key starts with an ?, we do not throw an error if the key could not be found,
+            // but just do not set the query param.
+            // If the key "a" is not found it datastore, the query parameter test will not be set
+            "test": "?a"
+        },
+
+        // Additional headers that should be added to the request
         "header": {
             "header1": "value",
             "header2": [
@@ -293,82 +310,147 @@ Expected http status code, if the response has another status code, the test cas
                 "value2"
             ]
         },
+
+        // Cookies can be added to the request
+        "cookies": {
+            // name of a cookie to be set
+            "cookie1": {
+                // A cookie can be get parsed from store if it was saved before
+                // It will ignore the cookie if it is not set
+                "value_from_store": "sess_cookie",
+                // Or its values can be directly set, overriding the one from store, if defined
+                "value": "value"
+            },
+            "cookie2": {
+                "value_from_store": "ads_cookie",
+            }
+        },
+
+        // Special headers `X-Test-Set-Cookie` can be populated in the request (on per entry)
+        // It is used in the builting `http_server` to automatically set those cookies on response
+        // So it is useful for mocking them for further testing
         "header-x-test-set-cookie": [
             {
                 "name": "sess",
                 "value": "myauthtoken"
             },
             {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "path": "/auth",
                 "domain": "mydomain",
                 "expires": "2021-11-10T10:00:00Z",
-                "http_only": true,
                 "max_age": 86400,
-                "name": "jwtoken",
-                "path": "/auth",
-                "same_site": 1,
                 "secure": false,
-                "value": "tokenized"
+                "http_only": true,
+                "same_site": 1
             }
         ],
+
+        // With header_from_store you set a header to the value of the datastore field
+        // In this example we set the "Content-Type" header to the value "application/json"
+        // "application/json" is stored as string in the datastore on index "contentType"
         "header_from_store": {
             "Content-Type": "contentType",
+            // If the datastore key starts with an ?, wo do not throw an error if the key could not be found, but just
+            // do not set the header. If the key "a" is not found it datastore, the header Range will not be set
             "Range": "?a"
         },
-        "method": "GET",
-        "no_redirect": false,
-        "query_params": {
-            "number": 2,
-            "token": "testtoken"
-        },
-        "query_params_from_store": {
-            "format": "formatFromDatastore",
-            "test": "?a"
-        },
-        "server_url": ""
-    },
-    "response": {
+
+        // All the content you want to send in the http body. Is a JSON Object
         "body": {
-            "objecttypes": [
-                "pictures"
-            ]
+            "flower": "rose",
+            "animal": "dog"
         },
-        "cookie": {
-            "jwtoken": {
-                "domain": "mydomain",
-                "expires": "2021-11-10T10:00:00Z",
-                "http_only": true,
-                "max_age": 86400,
-                "name": "jwtoken",
-                "path": "/auth",
-                "same_site": 1,
-                "secure": false,
-                "value": "tokenized"
-            },
-            "sess": {
-                "name": "sess",
-                "value": "myauthtoken"
-            }
-        },
-        "format": {
-            "csv": {
-                "comma": ";"
-            },
-            "type": "csv"
-        },
+
+        // If the body should be marshaled in a special way, you can define this here. Is not a required attribute. Standart is to marshal the body as json. Possible: [multipart,urlencoded, file]
+        "body_type": "urlencoded",
+
+        // If body_type is file, "body_file" points to the file to be sent as binary body
+        "body_file": "<path|url>"
+    },
+
+    // Define how the response should look like. Testtool checks against this response
+    "response": {
+
+        // Expected http status code. Default: 200. Use 0 to accept any statuscode
+        "statuscode": 200,
+
+        // If you expect certain response headers, you can define them here. A single key can have multiple headers (as defined in rfc2616)
         "header": {
             "key1": [
                 "val1",
                 "val2",
                 "val3"
             ],
-            "key2": "val1;val2;val3",
-            "key3:control": {},
+            // Headers sharing the same key are concatenated using ";", if the comparison value is a simple string,
+            // thus "key1" can also be checked like this:
+            "key1": "val1;val2;val3",
+            // :control in header is always applied to the flat format
+            "key1:control": {
+                // see below, this is not applied against the array
+            },
             "x-easydb-token": [
                 "csdklmwerf8ßwji02kopwfjko2"
             ]
         },
-        "statuscode": 200
+
+        // Cookies will be under this key, in a map name => cookie
+        "cookie": {
+            "sess": {
+                "name": "sess",
+                "value": "myauthtoken"
+            },
+            "jwtoken": {
+                "name": "jwtoken",
+                "value": "tokenized",
+                "path": "/auth",
+                "domain": "mydomain",
+                "expires": "2021-11-10T10:00:00Z",
+                "max_age": 86400,
+                "secure": false,
+                "http_only": true,
+                "same_site": 1
+            }
+        },
+
+        // optionally, the expected format of the response can be specified so that it can be converted into json and can be checked
+        "format": {
+            "type": "csv",
+            "csv": {
+                "comma": ";"
+            }
+        },
+
+        // The body we want to assert on
+        "body": {
+            "objecttypes": [
+                "pictures"
+            ]
+        }
     },
+
+    // Store parts of the response into the datastore
+    "store_response_gjson": {
+        "eas_id": "body.0.eas._id",
+        // Cookies are stored in `cookie` map
+        "sess_cookie": "cookie.sess"
+    },
+
+    // wait_before_ms pauses right before sending the test request <n> milliseconds
+    "wait_before_ms": 0,
+
+    // wait_after_ms pauses right before sending the test request <n> milliseconds
+    "wait_after_ms": 0,
+
+    // Delay the request by x msec
+    "delay_ms": 5000,
+
+    // With the poll we can make the testing tool redo the request to wait for certain events (Only timeout_ms is required)
+    // timeout_ms:                             If this timeout is done, no new redo will be started (-1: No timeout - run endless)
+    // break_response:   [Array] [Logical OR]  If one of this responses occures, the tool fails the test and tells it found a break repsponse
+    // collect_response: [Array] [Logical AND] If this is set, the tool will check if all reponses occure in the response (even in different poll runs)
+    "timeout_ms": 5000,
     "break_response": [
         "@break_response.json"
     ],
@@ -376,18 +458,11 @@ Expected http status code, if the response has another status code, the test cas
         "@continue_response_pending.json",
         "@continue_response_processing.json"
     ],
-    "store_response_gjson": {
-        "eas_id": "body.0.eas._id",
-        "sess_cookie": "cookie.sess"
-    },
-    "log_network": true,
-    "log_short": false,
-    "log_verbose": false,
+
+    // If set to true, the test case will consider its failure as a success, and the other way around
     "reverse_test_result": false,
-    "delay_ms": 5000,
-    "timeout_ms": 5000,
-    "wait_after_ms": 0,
-    "wait_before_ms": 0,
+
+    // Define if the test suite should continue even if this test fails. (default: false)
     "continue_on_failure": true
 }
 ```
@@ -396,14 +471,14 @@ Expected http status code, if the response has another status code, the test cas
 
 Go template delimiters can be redefined as part of a single line comment in any of these syntax:
 
-```
+```jsonc
 // template-delims: <delim_left> <delim_right>
 /* template-delims: <delim_left> <delim_right> */
 ```
 
 Examples:
 
-```
+```jsonc
 // template-delims: /* */
 /* template-delims: // // */
 // template-delims {{ }}
@@ -416,14 +491,14 @@ All external tests/requests/responses inherit those delimiters if not overriden 
 
 Go templates may break the proper JSONC format even when separators are comments. So we could use placeholders for filling missing parts then strip them.
 
-```
+```jsonc
 // template-remove-tokens: <token> [<token>]*
 /* template-remove-tokens: <token> [<token>] */
 ```
 
 Example:
 
-```
+```jsonc
 // template-delims: /* */
 // template-remove-tokens: "delete_me"
 {
@@ -433,7 +508,7 @@ Example:
 
 This would be an actual proper JSONC as per the `"delete_me"` string. However that one will be stripped before parsing the template, which would be just:
 
-```
+```jsonc
 {
     "prop": /* datastore "something" */
 }
@@ -453,7 +528,7 @@ Only tests directly included by a manifest are allowed to run in parallel.
 
 Using `"0@file.json"` will not run that specific test.
 
-```js
+```json
 {
     "name": "Example Manifest",
     "tests": [
@@ -477,12 +552,12 @@ For comparing a binary file, simply point the response to the binary file:
         "endpoint": "suggest",
         "method": "GET"
     },
-    // Path to binary file with @
     "response": {
         "format": {
             "type": "binary"
         },
         "body": {
+            // Path to binary file with @
             "md5sum": {{ md5sum "@simple.bin" || marshal }}
         }
     }
@@ -523,7 +598,7 @@ If the response format is specified as `"type": "csv"`, we internally marshal th
 
 You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
-```js
+```json
 {
     "name": "CSV comparison",
     "request": {
@@ -550,7 +625,7 @@ The response body is piped to the `stdin` of the tool and the result is read fro
 
 To define a preprocessing for a response, add a `format` object that defines the `pre_process` to the response definition:
 
-```js
+```json
 {
     "response": {
         "format": {
@@ -578,7 +653,7 @@ To define a preprocessing for a response, add a `format` object that defines the
 
 This basic example shows how to use the `pre_process` feature. The response is piped through `cat` which returns the input without any changes. This command takes no arguments.
 
-```js
+```json
 {
     "response": {
         "format": {
@@ -636,7 +711,7 @@ To check the file metadata of a file that is directly downloaded as a binary fil
 
 If there is a file with the asset ID `1`, and the apitest needs to check that the MIME type is `image/jpeg`, create the following test case:
 
-```js
+```json
 {
     "request": {
         "endpoint": "eas/download/1/original",
@@ -677,7 +752,7 @@ If there is a file with the asset ID `1`, and the apitest needs to check that th
 
 This example shows the combination of `pre_process` and `type`. Instead of calling `exiftool` with JSON output, it can also be used with XML output, which then will be formatted to JSON by the apitest tool.
 
-```js
+```json
 {
     "request": {
         "endpoint": "eas/download/1/original",
@@ -719,7 +794,7 @@ This example shows the combination of `pre_process` and `type`. Instead of calli
 
 If there is any error during the call of the command line tool, the error is formatted as a JSON object and returned instead of the expected response:
 
-```js
+```json
 {
     "command": "cat --INVALID",
     "error": "exit status 1",
@@ -752,7 +827,7 @@ The custom store uses a **string** as index and can store any type of data.
 
 **Map**: If an key ends in `[key]`, the value is assumed to be an map, and writes the data into the map at that key. If no map exists, an map is created.
 
-```js
+```json
 {
     "store": {
         "eas_ids[]": 15,
@@ -806,7 +881,7 @@ Some of them also need a value and some don't. For those which don't need a valu
 
 In the example we use the jsonObject `test` and define some control structures on it. A control structure uses the key it is attached to plus `:control`. So for our case it would be `test:control`. The tool gets that this two keys `test` and `test:control` are in relationship with each other.
 
-```js
+```json
 {
     "test": {
         "hallo": 2,
@@ -839,7 +914,7 @@ The following response would **fail** as there are to many fields in the actual 
 
 #### expected response defined with `no_extra`
 
-```js
+```json
 {
     "body": {
         "testObject": {
@@ -855,7 +930,7 @@ The following response would **fail** as there are to many fields in the actual 
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testObject": {
@@ -877,7 +952,7 @@ E.g. the following response would **fail** as the order in the actual response i
 
 #### expected response defined with `order_matters`
 
-```js
+```json
 {
     "body": {
         "testArray": [
@@ -894,7 +969,7 @@ E.g. the following response would **fail** as the order in the actual response i
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testArray": [
@@ -925,7 +1000,7 @@ The following response would **fail** as there are too many entries in the actua
 
 #### expected response defined with `no_extra` and `depth`
 
-```js
+```json
 {
     "body": {
         "testArray": [
@@ -942,7 +1017,7 @@ The following response would **fail** as there are too many entries in the actua
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testArray": [
@@ -965,7 +1040,7 @@ E.g. the following response would **fail** as `"iShouldExist"` is not in the act
 
 #### expected response defined with `must_exist`
 
-```js
+```json
 {
     "body": {
         "iShouldExist:control": {
@@ -977,7 +1052,7 @@ E.g. the following response would **fail** as `"iShouldExist"` is not in the act
 
 #### actual response
 
-```js
+```json
 {
     "body": {}
 }
@@ -995,7 +1070,7 @@ E.g. the following response would **fail** as `"count"` has the wrong length:
 
 #### expected response defined with `element_count`
 
-```js
+```json
 {
     "body": {
         "count:control": {
@@ -1007,7 +1082,7 @@ E.g. the following response would **fail** as `"count"` has the wrong length:
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "count": [
@@ -1031,7 +1106,7 @@ E.g. the following response would **fail** as `"extra"` has an extra element:
 
 #### expected response defined with `element_no_extra`
 
-```js
+```json
 {
     "body": {
         "count": [
@@ -1048,7 +1123,7 @@ E.g. the following response would **fail** as `"extra"` has an extra element:
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "count": [
@@ -1073,7 +1148,7 @@ E.g. the following response would **fail** as `"iShouldNotExist"` is in the actu
 
 #### expected response defined with `must_not_exist`
 
-```js
+```json
 {
     "body": {
         "iShouldNotExist:control": {
@@ -1085,7 +1160,7 @@ E.g. the following response would **fail** as `"iShouldNotExist"` is in the actu
 
 ##### actual response
 
-```js
+```json
 {
     "body": {
         "iShouldNotExist": "i exist, hahahah"
@@ -1105,7 +1180,7 @@ E.g. the following response would **fail** as `"testNumber"` has the value `5`:
 
 #### expected response defined with `not_equal`
 
-```js
+```json
 {
     "body": {
         "testNumber:control": {
@@ -1117,7 +1192,7 @@ E.g. the following response would **fail** as `"testNumber"` has the value `5`:
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testNumber": 5
@@ -1133,7 +1208,7 @@ E.g. the following response would **fail** as `"text"` does not match the regula
 
 #### expected string response checked with a regex:
 
-```js
+```json
 {
     "body": {
         "text:control": {
@@ -1145,7 +1220,7 @@ E.g. the following response would **fail** as `"text"` does not match the regula
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "text": "valid_string-123"
@@ -1167,7 +1242,7 @@ E.g. the following response would **fail** as `"text"` does not have the prefix:
 
 #### expected string response checked with a prefix
 
-```js
+```json
 {
     "body": {
         "text:control": {
@@ -1179,7 +1254,7 @@ E.g. the following response would **fail** as `"text"` does not have the prefix:
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "text": "abc-123"
@@ -1195,7 +1270,7 @@ E.g. the following response would **fail** as `"text"` does not have the suffix:
 
 #### expected string response checked with a suffix
 
-```js
+```json
 {
     "body": {
         "text:control": {
@@ -1207,7 +1282,7 @@ E.g. the following response would **fail** as `"text"` does not have the suffix:
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "text": "abc-123"
@@ -1227,7 +1302,7 @@ E.g. the following response would **fail** as `"testString"` is not a string in 
 
 #### expected response defined with `is_string`
 
-```js
+```json
 {
     "body": {
         "testString:control": {
@@ -1239,7 +1314,7 @@ E.g. the following response would **fail** as `"testString"` is not a string in 
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testString": 555
@@ -1259,7 +1334,7 @@ E.g. the following response would **fail** as `"testBool"` is no boolean value i
 
 #### expected response defined with `is_bool`
 
-```js
+```json
 {
     "body": {
         "testBool:control": {
@@ -1271,7 +1346,7 @@ E.g. the following response would **fail** as `"testBool"` is no boolean value i
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testBool": "not a boolean"
@@ -1291,7 +1366,7 @@ E.g. the following response would **fail** as `"testNumber"` is no numeric value
 
 #### expected response defined with `is_number`
 
-```js
+```json
 {
     "body": {
         "testNumber:control": {
@@ -1303,7 +1378,7 @@ E.g. the following response would **fail** as `"testNumber"` is no numeric value
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testNumber": "not a number"
@@ -1323,7 +1398,7 @@ E.g. the following response would **fail** as `"testObj"` is not an object in th
 
 #### expected response defined with `is_object`
 
-```js
+```json
 {
     "body": {
         "testObj:control": {
@@ -1335,7 +1410,7 @@ E.g. the following response would **fail** as `"testObj"` is not an object in th
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testObj": "not an object"
@@ -1355,7 +1430,7 @@ E.g. the following response would **fail** as `"testArr"` is not an array in the
 
 #### expected response defined with `is_array`
 
-```js
+```json
 {
     "body": {
         "testArr:control": {
@@ -1367,7 +1442,7 @@ E.g. the following response would **fail** as `"testArr"` is not an array in the
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "testArr": "not an array"
@@ -1385,7 +1460,7 @@ E.g. the following response would **fail** as `"beGreater"` is equal to the expe
 
 #### expected response defined with `number_gt`
 
-```js
+```json
 {
     "body": {
         "beGreater:control": {
@@ -1397,7 +1472,7 @@ E.g. the following response would **fail** as `"beGreater"` is equal to the expe
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "beGreater": 5
@@ -1415,7 +1490,7 @@ E.g. the following response would **fail** as `"beGreaterOrEqual"` is less than 
 
 #### expected response defined with `number_ge`
 
-```js
+```json
 {
     "body": {
         "beGreaterOrEqual:control": {
@@ -1427,7 +1502,7 @@ E.g. the following response would **fail** as `"beGreaterOrEqual"` is less than 
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "beGreaterOrEqual": 3
@@ -1445,7 +1520,7 @@ E.g. the following response would **fail** as `"beLess"` is equal to the expecte
 
 #### expected response defined with `number_lt`
 
-```js
+```json
 {
     "body": {
         "beLess:control": {
@@ -1457,7 +1532,7 @@ E.g. the following response would **fail** as `"beLess"` is equal to the expecte
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "beLess": 5
@@ -1475,7 +1550,7 @@ E.g. the following response would **fail** as `"beLessOrEqual"` is greater than 
 
 #### expected response defined with `number_le`
 
-```js
+```json
 {
     "body": {
         "beLessOrEqual:control": {
@@ -1487,7 +1562,7 @@ E.g. the following response would **fail** as `"beLessOrEqual"` is greater than 
 
 #### actual response
 
-```js
+```json
 {
     "body": {
         "beLessOrEqual": 7
@@ -1503,7 +1578,7 @@ This is exspecially helpfull for keeping the manifest file simpler/smaller and k
 
 A single test could look as simple as following:
 
-```js
+```json
 {
     "name": "Test loading request & response from external file",
     "request": "@path/to/requestFile.json",
@@ -1517,7 +1592,7 @@ The content of the request and response file are execatly the same as if you wou
 
 ## Request:
 
-```js
+```json
 {
     "body": {
         "animal": "dog",
@@ -1539,7 +1614,7 @@ The content of the request and response file are execatly the same as if you wou
 
 ## Response:
 
-```js
+```json
 {
     "body": {
         "objecttypes": [
@@ -1649,7 +1724,7 @@ pivot_rows("key","type",(file_csv "file.csv" ','))
 
 returns
 
-```js
+```json
 [
     {
         "filename": "bicyle",
@@ -1675,7 +1750,7 @@ Assume you have the following structure in your sheet:
 
 If you parse this now to CSV and then load it via `file_csv` you get the following JSON structure:
 
-```js
+```json
 [
     {
         "column_a": "row1a",
@@ -1692,7 +1767,7 @@ If you parse this now to CSV and then load it via `file_csv` you get the followi
 
 For mapping now certain values to a map you can use ` rows_to_map "column_a" "column_c" `  and the output will be a map with the following content:
 
-```js
+```json
 {
     "row1a": "row1c",
     "row2a": 22
@@ -1724,7 +1799,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```js
+```json
 [
     [
         {
@@ -1777,7 +1852,7 @@ The CSV can look at follows, use **file_csv** to read it and pipe into **group_r
 
 Produces this output (presented as **json** for better readability:
 
-```js
+```json
 {
     "one": [
         {
@@ -1820,7 +1895,7 @@ The `keyColumn`  **must** be of the type string, as it functions as map index (w
 ```
 
 Rendering that will give you :
-```js
+```json
 {
     "row1a": "row1c",
     "row2a": "row2c"
@@ -1835,7 +1910,7 @@ The function returns an empty map
 
 For `rows_to_map`:
 
-```go
+```json
 {}
 ```
 
@@ -1845,17 +1920,17 @@ The complete row gets mapped
 
 For `rows_to_map "column_a"`:
 
-```js
+```json
 {
     "row1a": {
-        column_a: "row1a",
-        column_b: "row1b",
-        column_c: "row1c",
+        "column_a": "row1a",
+        "column_b": "row1b",
+        "column_c": "row1c",
     },
     "row2a": {
-        column_a: "row2a",
-        column_b: "row2b",
-        column_c: "row2c",
+        "column_a": "row2a",
+        "column_b": "row2b",
+        "column_c": "row2c",
     }
 }
 ```
@@ -1866,31 +1941,31 @@ The row does get skipped
 
 **Input:**
 
-```js
+```json
 [
     {
-        column_a: "row1a",
-        column_b: "row1b",
-        column_c: "row1c",
+        "column_a": "row1a",
+        "column_b": "row1b",
+        "column_c": "row1c",
     },
     {
-        column_b: "row2b",
-        column_c: "row2c",
+        "column_b": "row2b",
+        "column_c": "row2c",
     }
     {
-        column_a: "row3a",
-        column_b: "row3b",
-        column_c: "row3c",
+        "column_a": "row3a",
+        "column_b": "row3b",
+        "column_c": "row3c",
     }
 ]
 ```
 
 For `rows_to_map "column_a" "column_c" `:
 
-```js
+```json
 {
-    row1a: "row1c",
-    row3a: "row3c",
+    "row1a": "row1c",
+    "row3a": "row3c",
 }
 ```
 
@@ -1900,28 +1975,28 @@ The value will be set to `""` (empty string)
 
 **Input:**
 
-```js
+```json
 [
     {
-        column_a: "row1a",
-        column_b: "row1b",
-        column_c: "row1c",
+        "column_a": "row1a",
+        "column_b": "row1b",
+        "column_c": "row1c",
     },
     {
-        column_a: "row2a",
-        column_b: "row2b",
+        "column_a": "row2a",
+        "column_b": "row2b",
     }
     {
-        column_a: "row3a",
-        column_b: "row3b",
-        column_c: "row3c",
+        "column_a": "row3a",
+        "column_b": "row3b",
+        "column_c": "row3c",
     }
 ]
 ```
 
 For `rows_to_map "column_a" "column_c" `:
 
-```js
+```json
 {
     "row1a": "row1c",
     "row2a": "",
@@ -1941,7 +2016,7 @@ If the `key` is a string, the datastore is accessed directly, allowing access to
 
 The datastore stores all responses in a list. We can retrieve the response (as a json string) by using this template function. `{{ datastore 0  }}` will render to
 
-```js
+```json
 {
     "statuscode": 200,
     "header": {
@@ -2145,7 +2220,7 @@ The call
 
 would result in
 
-```js
+```json
 {
     "objects": {
         "-xmlns": "https://schema.easydb.de/EASYDB/1.0/objects/",
@@ -2215,7 +2290,7 @@ The call
 
 would result in
 
-```js
+```json
 {
     "html": {
         "-lang": "en",
@@ -2293,7 +2368,7 @@ The call
 
 would result in
 
-```js
+```json
 {
     "html": {
         "-xmlns": "http://www.w3.org/1999/xhtml",
@@ -2604,7 +2679,7 @@ Different stores can be configured within the proxy.
 
 To configure a HTTP Server, the manifest need to include these lines:
 
-```js
+```jsonc
 {
     "http_server": {
         "addr": ":8788",           // address to listen on
@@ -2632,7 +2707,7 @@ The server provides endpoints to serve local files and return responses based on
 
 To access any static file, use the path relative to the server directory (`dir`) as the endpoint:
 
-```js
+```json
 {
     "request": {
         "endpoint": "path/to/file.jpg",
@@ -2649,7 +2724,7 @@ For some tests, you may not want the Content-Length header to be sent alongside 
 
 In this case, add `no-content-length=1` to the query string of the asset url:
 
-```js
+```json
 {
     "request": {
         "endpoint": "path/to/file.jpg?no-content-length=1",
@@ -2662,7 +2737,7 @@ In this case, add `no-content-length=1` to the query string of the asset url:
 
 The endpoint `bounce` returns the binary of the request body, as well as the request headers and query parameters as part of the response headers.
 
-```js
+```json
 {
     "request": {
         "endpoint": "bounce",
@@ -2685,7 +2760,7 @@ The file that is specified is relative to the apitest file, not relative to the 
 
 Request headers are included in the response header with the prefix `X-Req-Header-`, request query parameters are included in the response header with the prefix `X-Req-Query-`:
 
-```js
+```json
 {
     "response": {
         "header": {
@@ -2704,7 +2779,7 @@ Request headers are included in the response header with the prefix `X-Req-Heade
 
 The endpoint `bounce-json` returns the a response that includes `header`, `query_params` and `body` in the body.
 
-```js
+```json
 {
     "request": {
         "endpoint": "bounce-json",
@@ -2727,7 +2802,7 @@ The endpoint `bounce-json` returns the a response that includes `header`, `query
 
 will return this response:
 
-```js
+```json
 {
     "response": {
         "body": {
@@ -2758,7 +2833,7 @@ The endpoint `bounce-query` returns the a response that includes in its `body` t
 
 This is useful in endpoints where a body cannot be configured, like oAuth urls, so we can simulate responses in the request for testing.
 
-```js
+```json
 {
     "request": {
         "endpoint": "bounce-query?here=is&all=stuff",
@@ -2770,7 +2845,7 @@ This is useful in endpoints where a body cannot be configured, like oAuth urls, 
 
 will return this response:
 
-```js
+```json
 {
     "response": {
         "body": "here=is&all=stuff"
@@ -2784,7 +2859,7 @@ The proxy different stores can be used to both store and read their stored reque
 
 The configuration, as already defined in [HTTP Server](#http-server), is as follows:
 
-```js
+```jsonc
 "proxy": {                 // proxy configuration
     "<store_name>": {      // proxy store configuration
         "mode": "passthru" // proxy store mode
@@ -2812,7 +2887,7 @@ The expected response will have either `200` status code and the used offset as 
 
 Given this request:
 
-```js
+```json
 {
     "endpoint": "/proxywrite/test",
     "method": "POST",
@@ -2835,7 +2910,7 @@ Given this request:
 
 The expected response:
 
-```js
+```json
 {
     "statuscode": 200,
     "body": {
@@ -2854,7 +2929,7 @@ Where:
 
 Given this request:
 
-```js
+```json
 {
     "endpoint": "/proxyread/test",
     "method": "GET",
@@ -2866,7 +2941,7 @@ Given this request:
 
 The expected response:
 
-```js
+```jsonc
 {
     // Merged headers. original request headers prefixed with 'X-Request`
     "header": {
@@ -2894,7 +2969,8 @@ The expected response:
         "X-Apitest-Proxy-Store-Next-Offset": [
             "1"
         ]
-        ... // All other standard headers sent with the original request (like Content-Type)
+        // [...]
+        // All other standard headers sent with the original request (like Content-Type)
     },
     // The body of this request to the proxy store, always in binary format
     "body": {
@@ -2915,7 +2991,7 @@ The apitest tool can run a mock SMTP server intended to catch locally sent email
 
 To add the SMTP Server to your test, put the following in your manifest:
 
-```js
+```jsonc
 {
     "smtp_server": {
         "addr":             ":9025", // address to listen on
@@ -2954,7 +3030,7 @@ messages is made available on the `/smtp/gui` endpoint.
 On the `/smtp` endpoint, an index of all received messages will be made
 available as JSON in the following schema:
 
-```js
+```json
 {
     "count": 3,
     "messages": [
@@ -3016,7 +3092,7 @@ Headers that were encoded according to RFC2047 are decoded first.
 
 On the `/smtp/$idx` endpoint (e.g. `/smtp/1`), metadata about the message with the corresponding index is made available as JSON:
 
-```js
+```json
 {
     "bodySize": 306,
     "contentType": "multipart/mixed",
@@ -3105,7 +3181,7 @@ If the message was sent with a `Content-Type` header, it will be passed through 
 
 For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g. `/smtp/1/multipart`) will contain an index of that messages multiparts in the following schema:
 
-```js
+```json
 {
     "multiparts": [
         {
@@ -3145,7 +3221,7 @@ For multipart messages, the `/smtp/$idx/multipart` endpoint (e.g. `/smtp/1/multi
 
 On the `/smtp/$idx/multipart/$partIdx` endpoint (e.g. `/smtp/1/multipart/0`), metadata about the multipart with the corresponding index is made available:
 
-```js
+```json
 {
     "bodySize": 15,
     "contentType": "text/plain",
