@@ -1,0 +1,50 @@
+[
+    {
+        "name": "Get existing xml file, check content in xml format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.xml",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "xml2"
+            },
+            "body": {
+                "files": {
+                    "file": [
+                        {
+                            "extension": "pdf",
+                            "name": "yo",
+                            "size": "50"
+                        },
+                        {
+                            "extension": "png",
+                            "name": "jo",
+                            "size": "11500"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "name": "Get existing xml file, check content in text format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.xml",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "text"
+            },
+            "body": {
+                // "text": "<files>\n    <file>\n        <name>[...]"
+                "text": {{ file "../../../_res/assets/dummy.xml" | marshal }}
+            }
+        }
+    }
+]

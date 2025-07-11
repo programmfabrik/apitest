@@ -67,7 +67,7 @@ type responseSerializationInternal struct {
 
 type ResponseFormat struct {
 	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
-	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary"
+	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text"
 	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
@@ -226,12 +226,21 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(resp.Body))
-		JsonObject := util.JsonObject{
+		jsonObject := util.JsonObject{
 			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
-		bodyData, err = json.Marshal(JsonObject)
+		bodyData, err = json.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("Could not marshal body with md5sum to json: %w", err)
+		}
+	case "text":
+		// render the content as text
+		jsonObject := util.JsonObject{
+			"text": util.JsonString(resp.Body),
+		}
+		bodyData, err = json.Marshal(jsonObject)
+		if err != nil {
+			return res, fmt.Errorf("Could not marshal body to text (string): %w", err)
 		}
 	case "":
 		// no specific format, we assume a json, and thereby try to unmarshal it into our body
@@ -409,7 +418,7 @@ func (response Response) ToString() string {
 
 	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html", "xhtml":
+	case "xml", "xml2", "csv", "html", "xhtml", "text":
 		if utf8.Valid(body) {
 			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {

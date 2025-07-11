@@ -1,0 +1,46 @@
+[
+    {
+        "name": "Get existing CSV file, check content in csv format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "csv"
+            },
+            "body": [
+                {
+                    "extension": "pdf",
+                    "name": "yo",
+                    "size": "50"
+                },
+                {
+                    "extension": "png",
+                    "name": "jo",
+                    "size": "11500"
+                }
+            ]
+        }
+    },
+    {
+        "name": "Get existing CSV file, check content in text format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.csv",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "text"
+            },
+            "body": {
+                // "text": "name,extension,size\nyo,pdf,50\n[...]"
+                "text": {{ file "../../../_res/assets/dummy.csv" | marshal }}
+            }
+        }
+    }
+]
