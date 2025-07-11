@@ -2,7 +2,7 @@
     {
         "name": "Get non-existing CSV file (expecting statuscode)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "wrong/path.jpg",
             "method": "GET"
         },
@@ -13,7 +13,7 @@
     {
         "name": "Get non-existing CSV file (not expecting statuscode, so should fail)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "wrong/path.jpg",
             "method": "GET"
         },
@@ -22,7 +22,7 @@
     {
         "name": "Get existing CSV file",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         },
@@ -33,7 +33,7 @@
     {
         "name": "Get existing CSV file, without checking response",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         }
@@ -41,7 +41,7 @@
     {
         "name": "Get existing CSV file, checking response and storing data (fail - no format)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         },
@@ -56,7 +56,7 @@
     {
         "name": "Get existing CSV file, checking response and storing data (success)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         },
@@ -73,7 +73,7 @@
     {
         "name": "Get existing CSV file, only storing data (fail - no format)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         },
@@ -85,7 +85,7 @@
     {
         "name": "Get existing CSV file, only storing data (success)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+             "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "dummy.csv",
             "method": "GET"
         },

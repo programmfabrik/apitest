@@ -2,7 +2,7 @@
     {
         "name": "test static endpoint (invalid file path)",
         "request": {
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": {{ datastore "local_url" | marshal }},
             "endpoint": "wrong/path.jpg",
             "method": "GET"
         },
@@ -13,7 +13,7 @@
     {
         "name": "test static endpoint (serve static file relative to server directory)",
         "request": {
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": {{ datastore "local_url" | marshal }},
             "endpoint": "camera.jpg",
             "method": "GET"
         },

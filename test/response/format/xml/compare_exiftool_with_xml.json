@@ -2,7 +2,7 @@
     "name": "preprocess asset berlin.jpg with exiftool in xml format, compare \"exiftool_result.xml\"",
     "request": {
         // load static file
-        "server_url": "{{ datastore `req_base_url` }}",
+        "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "berlin.jpg",
         "method": "GET"
     },

@@ -1,7 +1,7 @@
 {
     "name": "get sample.html from test server, use response format \"html\"",
     "request": {
-        "server_url": "{{ datastore "req_base_url" }}",
+        "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "sample.html",
         "method": "GET"
     },

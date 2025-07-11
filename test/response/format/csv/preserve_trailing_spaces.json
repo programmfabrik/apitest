@@ -1,7 +1,7 @@
 {
     "name": "Get existing CSV file with trailing spaces in values of type \"string,array\"",
     "request": {
-        "server_url": "{{ datastore "req_base_url" }}",
+        "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "bounce-json",
         "method": "POST",
         "body": {{ file_csv "trailing_spaces.csv" ',' | marshal }}

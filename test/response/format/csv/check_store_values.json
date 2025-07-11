@@ -2,7 +2,7 @@
 {
     "name": "Get existing CSV file, checking response with previously stored data",
     "request": {
-        "server_url": "{{ datastore "req_base_url" }}",
+         "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "dummy.csv",
         "method": "GET"
     },
@@ -13,8 +13,8 @@
         },
         "body": [
             {
-                "name": "{{ datastore "name" }}",
-                "extension": "{{ datastore "ext" }}"
+                "name": {{ datastore "name" | marshal }},
+                "extension": {{ datastore "ext" | marshal }}
             }
         ]
     }
