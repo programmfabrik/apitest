@@ -10,9 +10,9 @@ import (
 func TestLoadManifest(t *testing.T) {
 	filesystem.Fs = afero.NewMemMapFs()
 
-	afero.WriteFile(filesystem.Fs, "externalFile", []byte(`{"load":{"me":"loaded"}}`), 644)
+	afero.WriteFile(filesystem.Fs, "externalFile", []byte(`{"load":{"me":"loaded"}}`), 0644)
 
-	afero.WriteFile(filesystem.Fs, "testManifest.json", []byte(`{"testload": {{ file "externalFile" | gjson "load.me"}}}`), 644)
+	afero.WriteFile(filesystem.Fs, "testManifest.json", []byte(`{"testload": {{ file "externalFile" | gjson "load.me"}}}`), 0644)
 
 	s := Suite{manifestPath: "testManifest.json"}
 

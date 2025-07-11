@@ -73,7 +73,7 @@ func TestCollectResponseShouldWork(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 
@@ -124,8 +124,8 @@ func TestCollectLoadExternalFile(t *testing.T) {
         }`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
 
 	r := report.NewReport()
 
@@ -184,8 +184,8 @@ func TestCollectLoadExternalCollect(t *testing.T) {
         }`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
 
 	r := report.NewReport()
 
@@ -283,8 +283,8 @@ func TestCollectEvents(t *testing.T) {
         }`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
 
 	r := report.NewReport()
 
@@ -336,7 +336,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
@@ -398,7 +398,7 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
@@ -449,7 +449,7 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
@@ -507,7 +507,7 @@ func TestCookieSetInDatastore(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
@@ -603,7 +603,7 @@ func TestCookiesReceivedFromRequest(t *testing.T) {
 `)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true

@@ -62,7 +62,7 @@ type ResponseSerialization struct {
 
 type responseSerializationInternal struct {
 	ResponseSerialization
-	HeaderFlat map[string]any `json:"header_flat,omitemty"`
+	HeaderFlat map[string]any `json:"header_flat,omitempty"`
 }
 
 type ResponseFormat struct {
@@ -425,7 +425,7 @@ func (response Response) ToString() string {
 				bodyString = string(body)
 			}
 		} else {
-			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
+			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}
 	case "binary":
 		resp.Format.IgnoreBody = false
@@ -437,7 +437,7 @@ func (response Response) ToString() string {
 		if utf8.Valid(body) {
 			bodyString = string(body)
 		} else {
-			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
+			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}
 	}
 
