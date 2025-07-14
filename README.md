@@ -617,6 +617,28 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 }
 ```
 
+## Text Data comparison
+
+If the response format is specified as `"type": "text"`, the content of the response is returned in a JSON object with a single JSON String.
+
+```json
+{
+    "name": "Text comparison",
+    "request": {
+        "endpoint": "export/1/files/file.csv",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "type": "text"
+        },
+        "body": {
+            "text": "<content>"
+        }
+    }
+}
+```
+
 ## Preprocessing responses
 
 Responses in arbitrary formats can be preprocessed by calling any command line tool that can produce JSON, XML, CSV or binary output. In combination with the `type` parameter in `format`, non-JSON output can be [formatted after preprocessing](#reading-metadata-from-a-file-xml-format). If the result is already in JSON format, it can be [checked directly](#reading-metadata-from-a-file-json-format).
