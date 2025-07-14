@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Install prerequisites
         shell: bash
-        run: sudo apt install libimage-exiftool-perl imagemagick
+        run: sudo apt update && sudo apt install libimage-exiftool-perl imagemagick
 
       - name: Run go ${{ env.go_version }}
         uses: actions/setup-go@v5
