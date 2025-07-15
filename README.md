@@ -629,7 +629,7 @@ The object contains the following keys:
 * `float64`: if the text can be parsed into a float64 value, the numerical value is returned, else `null`
 * `int64`: if the text can be parsed into a int64 value, the numerical value is returned, else `null`
 
-Assume we get the content of this text file in the response:
+Assume we get the content of this text file in the response, including whitespaces and newlines:
 
 ```
     42.35
@@ -644,12 +644,12 @@ Assume we get the content of this text file in the response:
         "method": "GET"
     },
     "response": {
-        "text": "    42\n",
-        "text_trimmed": "42",
+        "text": "    42.35\n",
+        "text_trimmed": "42.35",
         "lines": [
-            "42"
+            "    42"
         ],
-        "float64": 42,
+        "float64": 42.35,
         "int64": 42,
     }
 }
