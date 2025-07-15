@@ -214,7 +214,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 | `response.statuscode`              | Expected http [status code](#statuscode). See api documentation for the endpoint to decide which code to expect |
 | `response.header`                  | If you expect certain response headers, you can define them here. A single key can have multiple headers |
 | `response.cookie`                  | Cookies will be under this key, in a map `name => cookie` |
-| `response.format`                  | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison) |
+| `response.format`                  | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison), [`text`](#text-data-comparison) |
 | `response.body`                    | The body we want to assert on |
 | `store_response_gjson`             | Store parts of the response into the datastore |
 | `store_response_gjson.sess_cookie` | Cookies are stored in `cookie` map |
