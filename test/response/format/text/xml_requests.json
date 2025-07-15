@@ -42,8 +42,24 @@
                 "type": "text"
             },
             "body": {
-                // "text": "<files>\n    <file>\n        <name>[...]"
-                "text": {{ file "../../../_res/assets/dummy.xml" | marshal }}
+                "text": "<files>\n    <file>\n        <name>yo</name>\n        <extension>pdf</extension>\n        <size>50</size>\n    </file>\n    <file>\n        <name>jo</name>\n        <extension>png</extension>\n        <size>11500</size>\n    </file>\n</files>\n",
+                "text_trimmed": "<files>\n    <file>\n        <name>yo</name>\n        <extension>pdf</extension>\n        <size>50</size>\n    </file>\n    <file>\n        <name>jo</name>\n        <extension>png</extension>\n        <size>11500</size>\n    </file>\n</files>",
+                "lines": [
+                    "<files>",
+                    "    <file>",
+                    "        <name>yo</name>",
+                    "        <extension>pdf</extension>",
+                    "        <size>50</size>",
+                    "    </file>",
+                    "    <file>",
+                    "        <name>jo</name>",
+                    "        <extension>png</extension>",
+                    "        <size>11500</size>",
+                    "    </file>",
+                    "</files>"
+                ],
+                "int64": null,
+                "float64": null,
             }
         }
     }

@@ -12,6 +12,7 @@
     "tests": [
         "@csv_requests.json"
         ,"@xml_requests.json"
+        ,"@num_requests.json"
         // format "text" with pre process
         ,"@csv_requests_pre_process.json"
     ]

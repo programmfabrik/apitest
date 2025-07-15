@@ -19,7 +19,10 @@
             }
         },
         "body": {
-             "text": "      42\n"
+            "text": "43\n",
+            "text_trimmed": "43",
+            "float64": 43,
+            "int64": 43,
         }
     }
 }

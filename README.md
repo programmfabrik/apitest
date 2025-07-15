@@ -619,22 +619,38 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
 
 ## Text Data comparison
 
-If the response format is specified as `"type": "text"`, the content of the response is returned in a JSON object with a single JSON String.
+If the response format is specified as `"type": "text"`, the content of the response is returned in a JSON object.
+
+The object contains the following keys:
+
+* `text`: the response text without any changes
+* `text_trimmed`: the response text, leading and trailing whitespaces have been trimmed
+* `lines`: the response text, split into lines
+* `float64`: if the text can be parsed into a float64 value, the numerical value is returned, else `null`
+* `int64`: if the text can be parsed into a int64 value, the numerical value is returned, else `null`
+
+Assume we get the content of this text file in the response:
+
+```
+    42.35
+
+```
 
 ```json
 {
     "name": "Text comparison",
     "request": {
-        "endpoint": "export/1/files/file.csv",
+        "endpoint": "export/1/files/number.txt",
         "method": "GET"
     },
     "response": {
-        "format": {
-            "type": "text"
-        },
-        "body": {
-            "text": "<content>"
-        }
+        "text": "    42\n",
+        "text_trimmed": "42",
+        "lines": [
+            "42"
+        ],
+        "float64": 42,
+        "int64": 42,
     }
 }
 ```

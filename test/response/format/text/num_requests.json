@@ -1,0 +1,25 @@
+[
+    {
+        "name": "Get existing text file with numerical content, check content in text and parsed number format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "number.txt",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "text"
+            },
+            "body": {
+                "text": "    42.35\n",
+                "text_trimmed": "42.35",
+                "lines": [
+                    "    42.35"
+                ],
+                "float64": 42.35,
+                "int64": 42,
+            }
+        }
+    }
+]

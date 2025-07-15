@@ -38,8 +38,15 @@
                 "type": "text"
             },
             "body": {
-                // "text": "name,extension,size\nyo,pdf,50\n[...]"
-                "text": {{ file "../../../_res/assets/dummy.csv" | marshal }}
+                "text": "name,extension,size\nyo,pdf,50\njo,png,11500\n",
+                "text_trimmed": "name,extension,size\nyo,pdf,50\njo,png,11500",
+                "lines": [
+                    "name,extension,size",
+                    "yo,pdf,50",
+                    "jo,png,11500"
+                ],
+                "int64": null,
+                "float64": null,
             }
         }
     }

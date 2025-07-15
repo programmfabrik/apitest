@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -168,6 +170,16 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
+// splitLines is a helper function needed for format "text"
+func splitLines(s string) (lines util.JsonArray) {
+	lines = util.JsonArray{}
+	sc := bufio.NewScanner(strings.NewReader(s))
+	for sc.Scan() {
+		lines = append(lines, sc.Text())
+	}
+	return lines
+}
+
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
 func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (any, error) {
 	var (
@@ -235,9 +247,23 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		}
 	case "text":
 		// render the content as text
+		bodyText := string(resp.Body)
+		bodyTextTrimmed := strings.TrimSpace(bodyText)
 		jsonObject := util.JsonObject{
-			"text": util.JsonString(resp.Body),
+			"text":         util.JsonString(bodyText),
+			"text_trimmed": util.JsonString(bodyTextTrimmed),
+			"lines":        splitLines(bodyText),
+			"float64":      nil,
+			"int64":        nil,
 		}
+		// try to parse the string as float and int
+		// ignore errors silently in case the text is not numerical
+		n, err2 := strconv.ParseFloat(bodyTextTrimmed, 64)
+		if err2 == nil {
+			jsonObject["float64"] = util.JsonNumber(n)
+			jsonObject["int64"] = util.JsonNumber(int64(n))
+		}
+
 		bodyData, err = json.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("Could not marshal body to text (string): %w", err)
@@ -404,14 +430,7 @@ func (response Response) ToString() string {
 		}
 	}
 
-	if response.Format.PreProcess != nil {
-		resp, err = response.Format.PreProcess.RunPreProcess(response)
-		if err != nil {
-			resp = response
-		}
-	} else {
-		resp = response
-	}
+	resp = response
 
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
