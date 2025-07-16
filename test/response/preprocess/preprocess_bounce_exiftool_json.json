@@ -2,7 +2,7 @@
     {
         "name": "bounce (binary), pre_process exiftool",
         "request": {
-            "server_url": "{{ datastore "local_url" }}",
+            "server_url": {{ datastore "local_url" | marshal }},
             "endpoint": "bounce",
             "method": "POST",
             "query_params": {

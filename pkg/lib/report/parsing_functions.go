@@ -114,7 +114,7 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 	}
 
 	stats.Groups = make([]statsGroup, baseResult.report.StatsGroups)
-	for i := 0; i < baseResult.report.StatsGroups; i++ {
+	for i := range baseResult.report.StatsGroups {
 		stats.Groups[i] = statsGroup{
 			Number:  i,
 			Runtime: 0,

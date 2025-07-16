@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -62,12 +64,12 @@ type ResponseSerialization struct {
 
 type responseSerializationInternal struct {
 	ResponseSerialization
-	HeaderFlat map[string]any `json:"header_flat,omitemty"`
+	HeaderFlat map[string]any `json:"header_flat,omitempty"`
 }
 
 type ResponseFormat struct {
 	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
-	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary"
+	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text"
 	CSV        struct {
 		Comma string `json:"comma,omitempty"`
 	} `json:"csv,omitempty"`
@@ -168,6 +170,16 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	return NewResponse(spec.StatusCode, spec.Headers, cookies, body, spec.BodyControl, spec.Format)
 }
 
+// splitLines is a helper function needed for format "text"
+func splitLines(s string) (lines util.JsonArray) {
+	lines = util.JsonArray{}
+	sc := bufio.NewScanner(strings.NewReader(s))
+	for sc.Scan() {
+		lines = append(lines, sc.Text())
+	}
+	return lines
+}
+
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
 func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (any, error) {
 	var (
@@ -226,12 +238,35 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(resp.Body))
-		JsonObject := util.JsonObject{
+		jsonObject := util.JsonObject{
 			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
 		}
-		bodyData, err = json.Marshal(JsonObject)
+		bodyData, err = json.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("Could not marshal body with md5sum to json: %w", err)
+		}
+	case "text":
+		// render the content as text
+		bodyText := string(resp.Body)
+		bodyTextTrimmed := strings.TrimSpace(bodyText)
+		jsonObject := util.JsonObject{
+			"text":         util.JsonString(bodyText),
+			"text_trimmed": util.JsonString(bodyTextTrimmed),
+			"lines":        splitLines(bodyText),
+			"float64":      nil,
+			"int64":        nil,
+		}
+		// try to parse the string as float and int
+		// ignore errors silently in case the text is not numerical
+		n, err2 := strconv.ParseFloat(bodyTextTrimmed, 64)
+		if err2 == nil {
+			jsonObject["float64"] = util.JsonNumber(n)
+			jsonObject["int64"] = util.JsonNumber(int64(n))
+		}
+
+		bodyData, err = json.Marshal(jsonObject)
+		if err != nil {
+			return res, fmt.Errorf("Could not marshal body to text (string): %w", err)
 		}
 	case "":
 		// no specific format, we assume a json, and thereby try to unmarshal it into our body
@@ -395,28 +430,21 @@ func (response Response) ToString() string {
 		}
 	}
 
-	if response.Format.PreProcess != nil {
-		resp, err = response.Format.PreProcess.RunPreProcess(response)
-		if err != nil {
-			resp = response
-		}
-	} else {
-		resp = response
-	}
+	resp = response
 
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
 
 	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html", "xhtml":
+	case "xml", "xml2", "csv", "html", "xhtml", "text":
 		if utf8.Valid(body) {
 			bodyString, err = resp.ServerResponseToJsonString(true)
 			if err != nil {
 				bodyString = string(body)
 			}
 		} else {
-			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
+			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}
 	case "binary":
 		resp.Format.IgnoreBody = false
@@ -428,7 +456,7 @@ func (response Response) ToString() string {
 		if utf8.Valid(body) {
 			bodyString = string(body)
 		} else {
-			bodyString = fmt.Sprintf("[BINARY DATA NOT DISPLAYED]\n\n")
+			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}
 	}
 

@@ -1,7 +1,7 @@
 {
     "name": "Get existing XML file",
     "request": {
-        "server_url": "{{ datastore "req_base_url" }}",
+        "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "bounce-json",
         "method": "POST",
         "body": {{ file "result_xml2.json" }}

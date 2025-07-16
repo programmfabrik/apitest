@@ -34,18 +34,18 @@ func SetupFS() {
 
 	//Setup test filesystem
 	filesystem.Fs = afero.NewMemMapFs()
-	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath1), 755)
-	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath2), 755)
-	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath3), 755)
-	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath4), 755)
-	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath5), 755)
-	filesystem.Fs.MkdirAll(filepath.Join("path", "empty"), 755)
+	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath1), 0755)
+	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath2), 0755)
+	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath3), 0755)
+	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath4), 0755)
+	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath5), 0755)
+	filesystem.Fs.MkdirAll(filepath.Join("path", "empty"), 0755)
 
-	afero.WriteFile(filesystem.Fs, manifestPath1, []byte(""), 644)
-	afero.WriteFile(filesystem.Fs, manifestPath2, []byte(""), 644)
-	afero.WriteFile(filesystem.Fs, manifestPath3, []byte(""), 644)
-	afero.WriteFile(filesystem.Fs, manifestPath4, []byte(""), 644)
-	afero.WriteFile(filesystem.Fs, manifestPath5, []byte(""), 644)
+	afero.WriteFile(filesystem.Fs, manifestPath1, []byte(""), 0644)
+	afero.WriteFile(filesystem.Fs, manifestPath2, []byte(""), 0644)
+	afero.WriteFile(filesystem.Fs, manifestPath3, []byte(""), 0644)
+	afero.WriteFile(filesystem.Fs, manifestPath4, []byte(""), 0644)
+	afero.WriteFile(filesystem.Fs, manifestPath5, []byte(""), 0644)
 
 }
 

@@ -44,7 +44,7 @@ func TestBuildMultipart(t *testing.T) {
 func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 	testRequest := Request{
 		Body: map[string]any{
-			"somekey": fmt.Sprintf("noPathspec"),
+			"somekey": "noPathspec",
 		},
 		ManifestDir: "test/path/",
 	}

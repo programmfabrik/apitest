@@ -1,0 +1,66 @@
+[
+    {
+        "name": "Get existing xml file, check content in xml format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.xml",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "xml2"
+            },
+            "body": {
+                "files": {
+                    "file": [
+                        {
+                            "extension": "pdf",
+                            "name": "yo",
+                            "size": "50"
+                        },
+                        {
+                            "extension": "png",
+                            "name": "jo",
+                            "size": "11500"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "name": "Get existing xml file, check content in text format",
+        "request": {
+            "server_url": {{ datastore "req_base_url" | marshal }},
+            "endpoint": "dummy.xml",
+            "method": "GET"
+        },
+        "response": {
+            "statuscode": 200,
+            "format": {
+                "type": "text"
+            },
+            "body": {
+                "text": "<files>\n    <file>\n        <name>yo</name>\n        <extension>pdf</extension>\n        <size>50</size>\n    </file>\n    <file>\n        <name>jo</name>\n        <extension>png</extension>\n        <size>11500</size>\n    </file>\n</files>\n",
+                "text_trimmed": "<files>\n    <file>\n        <name>yo</name>\n        <extension>pdf</extension>\n        <size>50</size>\n    </file>\n    <file>\n        <name>jo</name>\n        <extension>png</extension>\n        <size>11500</size>\n    </file>\n</files>",
+                "lines": [
+                    "<files>",
+                    "    <file>",
+                    "        <name>yo</name>",
+                    "        <extension>pdf</extension>",
+                    "        <size>50</size>",
+                    "    </file>",
+                    "    <file>",
+                    "        <name>jo</name>",
+                    "        <extension>png</extension>",
+                    "        <size>11500</size>",
+                    "    </file>",
+                    "</files>"
+                ],
+                "int64": null,
+                "float64": null,
+            }
+        }
+    }
+]

@@ -4,7 +4,7 @@
         {
             "name": "Add some JSON requests to proxy 'test'",
             "request": {
-                "server_url": "{{ datastore "req_base_url" }}",
+                "server_url": {{ datastore "req_base_url" | marshal }},
                 "endpoint": "proxywrite/test",
                 "method": "POST",
                 "query_params": {
@@ -31,7 +31,7 @@
     ,{
         "name": "post image to proxy 'test'",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+            "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "proxywrite/test",
             "method": "POST",
             "body_file": "@../_res/assets/camera.jpg",
@@ -51,7 +51,7 @@
         ,{
             "name": "Add some JSON requests to proxy 'test2'",
             "request": {
-                "server_url": "{{ datastore "req_base_url" }}",
+                "server_url": {{ datastore "req_base_url" | marshal }},
                 "endpoint": "proxywrite/test2",
                 "method": "GET",
                 "query_params": {

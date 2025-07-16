@@ -207,7 +207,7 @@ int64,string,"stringer,array","int64,array"`, ``, true},
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal }}`))
+			root := []byte(`{{ file_csv "somefile.json" ',' | marshal }}`)
 
 			target := []byte(testCase.csv)
 
@@ -253,7 +253,7 @@ int64,string,"string,array","int64,array"
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | rows_to_map "name" "ages" | marshal }}`))
+			root := []byte(`{{ file_csv "somefile.json" ',' | rows_to_map "name" "ages" | marshal }}`)
 
 			target := []byte(testCase.csv)
 

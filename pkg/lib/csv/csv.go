@@ -173,9 +173,7 @@ func renderCSV(read io.Reader, comma rune) ([][]string, error) {
 }
 
 func isValidFormat(format string) bool {
-	if strings.HasPrefix(format, "*") {
-		format = format[1:]
-	}
+	format = strings.TrimPrefix(format, "*")
 	validFormats := []string{"string", "int64", "int", "float64", "bool"}
 	for _, v := range validFormats {
 		if format == v || format == v+",array" || format == "json" {

@@ -1,7 +1,7 @@
 {
     "name": "bounce xml file, use response format \"xml\"",
     "request": {
-        "server_url": "{{ datastore "req_base_url" }}",
+        "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "bounce",
         "method": "POST",
         "body": {

@@ -214,7 +214,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 | `response.statuscode`              | Expected http [status code](#statuscode). See api documentation for the endpoint to decide which code to expect |
 | `response.header`                  | If you expect certain response headers, you can define them here. A single key can have multiple headers |
 | `response.cookie`                  | Cookies will be under this key, in a map `name => cookie` |
-| `response.format`                  | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison) |
+| `response.format`                  | Optionally, the expected format of the response can be specified or [preprocessed](#preprocessing-responses) so that it can be converted into json and can be checked. Formats are: [`binary`](#binary-data-comparison), [`xml`](#xml-data-comparison), [`html`](#html-data-comparison), [`csv`](#csv-data-comparison), [`text`](#text-data-comparison) |
 | `response.body`                    | The body we want to assert on |
 | `store_response_gjson`             | Store parts of the response into the datastore |
 | `store_response_gjson.sess_cookie` | Cookies are stored in `cookie` map |
@@ -613,6 +613,44 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
             }
         },
         "body": {}
+    }
+}
+```
+
+## Text Data comparison
+
+If the response format is specified as `"type": "text"`, the content of the response is returned in a JSON object.
+
+The object contains the following keys:
+
+* `text`: the response text without any changes
+* `text_trimmed`: the response text, leading and trailing whitespaces have been trimmed
+* `lines`: the response text, split into lines
+* `float64`: if the text can be parsed into a float64 value, the numerical value is returned, else `null`
+* `int64`: if the text can be parsed into a int64 value, the numerical value is returned, else `null`
+
+Assume we get the content of this text file in the response, including whitespaces and newlines:
+
+```
+    42.35
+
+```
+
+```json
+{
+    "name": "Text comparison",
+    "request": {
+        "endpoint": "export/1/files/number.txt",
+        "method": "GET"
+    },
+    "response": {
+        "text": "    42.35\n",
+        "text_trimmed": "42.35",
+        "lines": [
+            "    42"
+        ],
+        "float64": 42.35,
+        "int64": 42,
     }
 }
 ```

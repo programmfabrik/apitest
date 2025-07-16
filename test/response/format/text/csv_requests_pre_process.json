@@ -1,0 +1,32 @@
+{
+    "name": "Get existing CSV file, check content in text format",
+    "request": {
+        "server_url": {{ datastore "req_base_url" | marshal }},
+        "endpoint": "dummy.csv",
+        "method": "GET"
+    },
+    "response": {
+        "statuscode": 200,
+        "format": {
+            "type": "text",
+            "pre_process": {
+                "cmd": {
+                    "name": "wc",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            }
+        },
+        "body": {
+            // unstable results between wc on mac / linux:
+            // "text": "      43\n",
+            // "lines": [
+            //    "      43\n",
+            // ]
+            "text_trimmed": "43",
+            "float64": 43,
+            "int64": 43
+        }
+    }
+}

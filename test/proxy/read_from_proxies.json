@@ -4,7 +4,7 @@
         {
             "name": "Poll 'test' proxy store, offset {{ $offset }}",
             "request": {
-                "server_url": "{{ datastore "req_base_url" }}",
+                "server_url": {{ datastore "req_base_url" | marshal }},
                 "endpoint": "proxyread/test",
                 "method": "GET",
                 "query_params": {
@@ -32,12 +32,12 @@
     ,{
         "name": "Poll 'test' proxy store for binary content (image)",
         "request": {
-            "server_url": "{{ datastore "req_base_url" }}",
+            "server_url": {{ datastore "req_base_url" | marshal }},
             "endpoint": "proxyread/test",
             "method": "GET",
             "query_params": {
-                "offset": "{{ datastore "max_entries" }}"
-            }            
+                "offset": "{{ datastore `max_entries` }}"
+            }
         },
         "response": {
             "header": {
@@ -59,7 +59,7 @@
         {
             "name": "Poll 'test2' proxy store, offset {{ $offset }}",
             "request": {
-                "server_url": "{{ datastore "req_base_url" }}",
+                "server_url": {{ datastore "req_base_url" | marshal }},
                 "endpoint": "proxyread/test2",
                 "method": "GET",
                 "query_params": {
@@ -72,7 +72,7 @@
                     "X-Apitest-Proxy-Request-Path": ["/proxywrite/test2"],
                     "X-Apitest-Proxy-Request-Query": ["is=here&my=data_{{ $offset }}&some=value"],
                     "X-Some": ["x-header"],
-                    "X-Apitest-Proxy-Store-Count": ["{{ datastore "max_entries" }}"],
+                    "X-Apitest-Proxy-Store-Count": ["{{ datastore `max_entries` }}"],
                     {{ $nextOffset := add $offset 1 }}
                     {{ if gt $nextOffset (subtract 1 (datastore "max_entries")) }}
                         {{ $nextOffset = 0 }}
