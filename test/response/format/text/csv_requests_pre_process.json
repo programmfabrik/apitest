@@ -1,5 +1,5 @@
 {
-    "name": "Get existing CSV file, check content in text format",
+    "name": "Get existing CSV file, preprocess: check number of bytes",
     "request": {
         "server_url": {{ datastore "req_base_url" | marshal }},
         "endpoint": "dummy.csv",
