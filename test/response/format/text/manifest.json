@@ -15,5 +15,7 @@
         ,"@num_requests.json"
         // format "text" with pre process
         ,"@csv_requests_pre_process.json"
+        // format "text" on xlsx
+        ,"@xlsx_requests_pre_process.json"
     ]
 }

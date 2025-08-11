@@ -434,27 +434,15 @@ func (response Response) ToString() string {
 
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
-
-	body := resp.Body
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html", "xhtml", "text":
-		if utf8.Valid(body) {
-			bodyString, err = resp.ServerResponseToJsonString(true)
-			if err != nil {
-				bodyString = string(body)
-			}
-		} else {
-			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
-		}
-	case "binary":
-		resp.Format.IgnoreBody = false
+	case "xml", "xml2", "csv", "html", "xhtml", "text", "binary":
 		bodyString, err = resp.ServerResponseToJsonString(true)
 		if err != nil {
-			bodyString = string(body)
+			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}
 	default:
-		if utf8.Valid(body) {
-			bodyString = string(body)
+		if utf8.Valid(resp.Body) {
+			bodyString = string(resp.Body)
 		} else {
 			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"
 		}

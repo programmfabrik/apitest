@@ -1,8 +1,8 @@
 {
-    "name": "Get existing CSV file, preprocess: check number of bytes",
+    "name": "Get existing XLSX file, preprocess: check number of bytes",
     "request": {
         "server_url": {{ datastore "req_base_url" | marshal }},
-        "endpoint": "dummy.csv",
+        "endpoint": "test.xlsx",
         "method": "GET"
     },
     "response": {
@@ -19,14 +19,9 @@
             }
         },
         "body": {
-            // unstable results between wc on mac / linux:
-            // "text": "      43\n",
-            // "lines": [
-            //    "      43\n",
-            // ]
-            "text_trimmed": "43",
-            "float64": 43,
-            "int64": 43
+            "text_trimmed": "101024",
+            "float64": 101024,
+            "int64": 101024
         }
     }
 }
