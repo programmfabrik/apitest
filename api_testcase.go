@@ -314,24 +314,29 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	return responsesMatch, req, apiResp, nil
 }
 
-// LogResp print the response to the console
-func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
-
-	if !testCase.ReverseTestResult && testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
-		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debug(errString)
+func (testCase Case) logBody(prefix, body string, limit int) {
+	if testCase.ReverseTestResult {
+		return
 	}
+	if testCase.ContinueOnFailure {
+		return
+	}
+	if testCase.LogNetwork == nil || *testCase.LogNetwork {
+		return
+	}
+
+	errString := fmt.Sprintf("[%s]:\n%s\n\n", prefix, limitLines(body, limit))
+	testCase.ReportElem.SaveToReportLog(errString)
+	logrus.Debug(errString)
+}
+
+func (testCase Case) LogResp(response api.Response) {
+	testCase.logBody("RESPONSE", response.ToString(), Config.Apitest.Limit.Response)
 }
 
 // LogReq print the request to the console
 func (testCase Case) LogReq(req api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
-
-	if !testCase.ReverseTestResult && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && !*testCase.LogNetwork {
-		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debug(errString)
-	}
+	testCase.logBody("REQUEST", req.ToString(logCurl), Config.Apitest.Limit.Request)
 }
 
 func limitLines(in string, limitCount int) string {
