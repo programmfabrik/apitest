@@ -1,0 +1,31 @@
+{{ $local_port:=":9999" }}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../../../_res/assets",
+        "testmode": false
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
+    "name": "XLSX tests",
+    "tests": [
+        // xlsx file with only text and some formatting (ignored)
+        {
+            "store": {
+                "xlsx_file": "sample.xlsx",
+                "result_file": "result.json"
+            }
+        },
+        "@check_response_format_xlsx.json",
+        // xlsx file with text, images (ignored) and some formatting (ignored)
+        // the "thumbnail" column which includes images (anchored only) is empty when only text parsed
+        {
+            "store": {
+                "xlsx_file": "sample_with_thumbnails.xlsx",
+                "result_file": "result_with_thumbnails.json"
+            }
+        },
+        "@check_response_format_xlsx.json"
+    ]
+}

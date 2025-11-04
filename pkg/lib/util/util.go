@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
+	libcsv "github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/golib"
+	"github.com/xuri/excelize/v2"
 	"golang.org/x/net/html"
 )
 
@@ -93,6 +96,58 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 	}
 
 	jsonStr, err := mv.JsonIndent("", " ")
+	if err != nil {
+		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
+	}
+	return jsonStr, nil
+}
+
+// Xlsx2Json parses the raw xlsx data and converts it into a json string.
+// Only the content is parsed, all formatting etc is discarded.
+// The result structure is the same as for CSV.
+func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
+	var (
+		csvBuf bytes.Buffer
+		err    error
+	)
+
+	// parse xlsx raw data
+	xlsx, err := excelize.OpenReader(bytes.NewReader(rawXlsx))
+	if err != nil {
+		return []byte{}, fmt.Errorf("Could not read raw xlsx data: %w", err)
+	}
+	defer xlsx.Close()
+
+	// only care for first sheet
+	xlsxSheet := xlsx.GetSheetName(0)
+	if xlsxSheet == "" {
+		return []byte{}, fmt.Errorf("Could not parse xlsx: no sheets found")
+	}
+
+	// read xlsx xlsxRows
+	xlsxRows, err := xlsx.GetRows(xlsxSheet)
+	if err != nil {
+		return []byte{}, fmt.Errorf("Could not parse xlsx: %w", err)
+	}
+
+	// built dummy csv to convert it into json
+	csvWriter := csv.NewWriter(&csvBuf)
+	csvWriter.Comma = ','
+	for _, xlsxRow := range xlsxRows {
+		err = csvWriter.Write(xlsxRow)
+		if err != nil {
+			return []byte{}, fmt.Errorf("Could not convert xlsx into csv: %w", err)
+		}
+	}
+	csvWriter.Flush()
+
+	// parse dummy csv to convert it into json
+	csvData, err := libcsv.GenericCSVToMap(csvBuf.Bytes(), csvWriter.Comma)
+	if err != nil {
+		return []byte{}, fmt.Errorf("Could not parse csv: %w", err)
+	}
+
+	jsonStr, err := json.Marshal(csvData)
 	if err != nil {
 		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
 	}

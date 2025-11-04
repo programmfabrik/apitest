@@ -219,6 +219,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		if err != nil {
 			return res, fmt.Errorf("Could not marshal xhtml to json: %w", err)
 		}
+	case "xlsx":
+		bodyData, err = util.Xlsx2Json(resp.Body)
+		if err != nil {
+			return res, fmt.Errorf("Could not marshal xlsx to json: %w", err)
+		}
 	case "csv":
 		runeComma := ','
 		if responseFormat.CSV.Comma != "" {
