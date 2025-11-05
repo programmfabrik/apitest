@@ -64,10 +64,10 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 }
 
@@ -127,10 +127,10 @@ func TestGetClientCredentialsToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 }
 
@@ -247,10 +247,10 @@ func TestGetCodeToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 
 	cfg = OAuthClientConfig{
@@ -270,10 +270,10 @@ func TestGetCodeToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 }
 
@@ -356,10 +356,10 @@ func TestGetAuthToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 
 	cfg = OAuthClientConfig{
@@ -377,9 +377,9 @@ func TestGetAuthToken(t *testing.T) {
 		t.Fatal("No token nor error returned")
 	}
 	if token.AccessToken != theToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 	if token.RefreshToken != theRefreshToken {
-		t.Fatalf("Received token: %s , expected: %s", token.AccessToken, theToken)
+		t.Fatalf("Received token: %s, expected: %s", token.AccessToken, theToken)
 	}
 }

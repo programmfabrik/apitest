@@ -87,15 +87,15 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	}
 	manifest, err := suitePreload.loadManifest()
 	if err != nil {
-		err = fmt.Errorf("error loading manifest: %s", err)
-		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("loading manifest: %w", err)
+		suitePreload.reporterRoot.Failure = err.Error()
 		return &suitePreload, err
 	}
 
 	err = util.Unmarshal(manifest, &suitePreload)
 	if err != nil {
-		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
-		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
+		suitePreload.reporterRoot.Failure = err.Error()
 		return &suitePreload, err
 	}
 
@@ -122,16 +122,16 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	// Here we load the usable manifest, now that we can do all potential replacements
 	manifest, err = suitePreload.loadManifest()
 	if err != nil {
-		err = fmt.Errorf("error loading manifest: %s", err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("loading manifest: %w", err)
+		suite.reporterRoot.Failure = err.Error()
 		return &suite, err
 	}
-	// fmt.Printf("%s", string(manifest))
+	// fmt.Printf(%q, string(manifest))
 	// We unmarshall the final manifest into the final working suite
 	err = util.Unmarshal(manifest, &suite)
 	if err != nil {
-		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
+		suite.reporterRoot.Failure = err.Error()
 		return &suite, err
 	}
 	suite.HTTPServerHost = suitePreload.HTTPServerHost
@@ -143,14 +143,14 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	// Parse serverURL
 	suite.serverURL, err = url.Parse(suite.Config.ServerURL)
 	if err != nil {
-		return nil, fmt.Errorf("can not load server url : %s", err)
+		return nil, fmt.Errorf("can not load server url : %w", err)
 	}
 
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
-		err = fmt.Errorf("error setting datastore map:%s", err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("setting datastore map: %w", err)
+		suite.reporterRoot.Failure = err.Error()
 		return &suite, err
 	}
 
@@ -263,7 +263,7 @@ func (ats *Suite) parseAndRunTest(
 	referencedPathSpec, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
+		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %w", testFilePath, err))
 		return false
 	}
 	if referencedPathSpec != nil {
@@ -273,7 +273,7 @@ func (ats *Suite) parseAndRunTest(
 
 	// If parallel runs are requested, check that they're actually allowed
 	if parallelRuns > 1 && !allowParallelExec {
-		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
+		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests in (%s)", testFilePath))
 		return false
 	}
 
@@ -311,7 +311,7 @@ func (ats *Suite) testGoroutine(
 	testRendered, err := loader.Render(testRaw, testFileDir, nil)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
+		logrus.Error(fmt.Errorf("can not render template (%s): %w", testFilePath, err))
 
 		// note that successCount is not incremented
 		return
@@ -327,7 +327,7 @@ func (ats *Suite) testGoroutine(
 		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
-			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+			logrus.Error(fmt.Errorf("can not unmarshal (%s): %w", testFilePath, err))
 
 			// note that successCount is not incremented
 			return
@@ -376,18 +376,19 @@ func (ats *Suite) testGoroutine(
 }
 
 func (ats *Suite) runLiteralTest(
-	tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader,
+	tc TestContainer,
+	r *report.ReportElement,
+	testFilePath string,
+	loader template.Loader,
 	index int,
 ) bool {
 	r.SetName(testFilePath)
 
 	var test Case
-	jErr := util.Unmarshal(tc.CaseByte, &test)
-	if jErr != nil {
-
-		r.SaveToReportLog(jErr.Error())
-		logrus.Error(fmt.Errorf("can not unmarshal single test (%s): %s", testFilePath, jErr))
-
+	err := util.Unmarshal(tc.CaseByte, &test)
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not unmarshal single test (%s): %w", testFilePath, err))
 		return false
 	}
 
@@ -429,19 +430,19 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 	loader.HTTPServerHost = ats.HTTPServerHost
 	serverURL, err := url.Parse(ats.Config.ServerURL)
 	if err != nil {
-		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
+		return nil, fmt.Errorf("can not load server url into manifest (%s): %w", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
 	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
-		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)
+		return res, fmt.Errorf("opening manifestPath (%s): %w", ats.manifestPath, err)
 	}
 	defer manifestFile.Close()
 
 	manifestTmpl, err := io.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
+		return res, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
 	}
 
 	b, err := loader.Render(manifestTmpl, ats.manifestDir, nil)

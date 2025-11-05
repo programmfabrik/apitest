@@ -33,7 +33,7 @@ func ParsePathSpec(s string) (*PathSpec, error) {
 	if parallelRuns != "" {
 		spec.ParallelRuns, err = strconv.Atoi(parallelRuns)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing ParallelRuns of path spec %q: %w", s, err)
+			return nil, fmt.Errorf("parsing ParallelRuns of path spec %q: %w", s, err)
 		}
 	} else {
 		spec.ParallelRuns = 1
@@ -57,13 +57,13 @@ func IsPathSpec(s string) bool {
 func (ps PathSpec) LoadContents(manifestDir string) ([]byte, error) {
 	requestFile, err := OpenFileOrUrl(ps.Path, manifestDir)
 	if err != nil {
-		return nil, fmt.Errorf("error opening path: %w", err)
+		return nil, fmt.Errorf("opening path: %w", err)
 	}
 	defer requestFile.Close()
 
 	contents, err := io.ReadAll(requestFile)
 	if err != nil {
-		return nil, fmt.Errorf("error loading file at %q: %w", ps, err)
+		return nil, fmt.Errorf("loading file at %q: %w", ps, err)
 	}
 
 	return contents, nil

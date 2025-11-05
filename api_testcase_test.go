@@ -375,7 +375,7 @@ func TestCollectResponseShouldFail(t *testing.T) {
 func TestHeaderFromDatastoreWithMap(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"Auth": "%s"}`, r.Header.Get("AuthHeader"))
+		fmt.Fprintf(w, `{"Auth": %q}`, r.Header.Get("AuthHeader"))
 	}))
 	defer ts.Close()
 
@@ -426,7 +426,7 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"Auth": "%s"}`, r.Header.Get("AuthHeader"))
+		fmt.Fprintf(w, `{"Auth": %q}`, r.Header.Get("AuthHeader"))
 	}))
 	defer ts.Close()
 
@@ -535,11 +535,11 @@ func TestCookieSetInDatastore(t *testing.T) {
 	var ck http.Cookie
 	ckBytes, err := json.Marshal(ckData)
 	if err != nil {
-		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", ckData, err)
+		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", ckData, err.Error())
 	}
 	err = json.Unmarshal(ckBytes, &ck)
 	if err != nil {
-		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", ckData, err)
+		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", ckData, err.Error())
 	}
 
 	go_test_utils.AssertStringEquals(t, ck.Value, "you_session_data")
@@ -550,7 +550,7 @@ func TestCookiesReceivedFromRequest(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ck, err := r.Cookie("sess")
 		if err != nil {
-			fmt.Fprintf(w, `{"status": "error", "error": "%s"}`, err)
+			fmt.Fprintf(w, `{"status": "error", "error": %q}`, err)
 			return
 		}
 		if ck == nil {
@@ -563,7 +563,7 @@ func TestCookiesReceivedFromRequest(t *testing.T) {
 		}
 		ck2, err := r.Cookie("sess2")
 		if err != nil {
-			fmt.Fprintf(w, `{"status": "error", "error": "%s"}`, err)
+			fmt.Fprintf(w, `{"status": "error", "error": %q}`, err)
 			return
 		}
 		if ck2 == nil {

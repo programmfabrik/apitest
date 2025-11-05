@@ -68,7 +68,7 @@ func (ats *Suite) StartHttpServer() {
 		err := ats.httpServer.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// Error starting or closing listener:
-			logrus.Fatal("HTTP server ListenAndServe:", err)
+			logrus.Fatalf("HTTP server ListenAndServe: %s", err.Error())
 		}
 	}
 
@@ -132,7 +132,7 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
 
 	b, err2 := golib.JsonBytesIndent(resp, "", "  ")
 	if err2 != nil {
-		logrus.Debugf("Could not marshall error message %s: %s", err, err2)
+		logrus.Debugf("Could not marshall error message %s: %s", err.Error(), err2.Error())
 		http.Error(w, err2.Error(), 500)
 	}
 

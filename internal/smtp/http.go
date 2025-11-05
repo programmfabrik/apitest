@@ -305,7 +305,7 @@ func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		handlerutil.RespondWithErr(
 			w, http.StatusBadRequest,
-			fmt.Errorf("error reading body: %w", err),
+			fmt.Errorf("reading body: %w", err),
 		)
 		return
 	}

@@ -145,7 +145,7 @@ func (s *session) Data(r io.Reader) error {
 		idx, s.from, s.rcptTo, rawData, now, s.server.maxMessageSize,
 	)
 	if err != nil {
-		errWrapped := fmt.Errorf("error constructing ReceivedMessage in SMTP server: %w", err)
+		errWrapped := fmt.Errorf("constructing ReceivedMessage in SMTP server: %w", err)
 		logrus.Error("SMTP:", errWrapped) // this is logged in our server
 		return errWrapped                 // this is returned via SMTP
 	}

@@ -63,7 +63,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 	if r.Body != nil {
 		reqData.Body, err = io.ReadAll(r.Body)
 		if err != nil {
-			handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not read request body: %w", err))
+			handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("could not read request body: %w", err))
 			return
 		}
 	}
@@ -74,7 +74,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 		Offset int `json:"offset"`
 	}{offset})
 	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not encode response: %w", err))
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("could not encode response: %w", err))
 	}
 }
 
@@ -124,6 +124,6 @@ func (st *store) read(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(req.Body)
 	if err != nil {
-		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("Could not encode response: %w", err))
+		handlerutil.RespondWithErr(w, http.StatusInternalServerError, fmt.Errorf("could not encode response: %w", err))
 	}
 }

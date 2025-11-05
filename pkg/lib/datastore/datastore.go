@@ -166,7 +166,7 @@ func (ds *Datastore) Set(index string, value any) error {
 	}
 
 	if ds.logDatastore {
-		logrus.Tracef("Set datastore[\"%s\"]=%#v", index, value)
+		logrus.Tracef("Set datastore[%q]=%#v", index, value)
 	}
 
 	return nil

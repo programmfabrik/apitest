@@ -198,7 +198,7 @@ func (r *Report) WriteToFile(reportFile, reportFormat string) error {
 
 	err := os.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 	if err != nil {
-		logrus.Errorf("Could not save report into file: %s", err)
+		logrus.Errorf("Could not save report into file: %s", err.Error())
 		return err
 	}
 

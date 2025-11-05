@@ -48,7 +48,7 @@ func LoadConfig(cfgFile string) {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		logrus.Infof("No config \"%s\" read (will only use command line parameters): %s", cfgFile, err)
+		logrus.Infof("No config %q read (will only use command line parameters): %s", cfgFile, err.Error())
 	}
 
 	viper.Unmarshal(&Config)

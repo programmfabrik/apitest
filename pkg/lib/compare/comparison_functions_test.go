@@ -1,7 +1,6 @@
 package compare
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -1158,11 +1157,11 @@ func TestComparison(t *testing.T) {
 
 			wantFailures := []string{}
 			for _, v := range data.eFailures {
-				wantFailures = append(wantFailures, fmt.Sprintf("%s", v))
+				wantFailures = append(wantFailures, v.String())
 			}
 			haveFailures := []string{}
 			for _, v := range equal.Failures {
-				haveFailures = append(haveFailures, fmt.Sprintf("%s", v))
+				haveFailures = append(haveFailures, v.String())
 			}
 
 			go_test_utils.AssertStringArraysEqualNoOrder(t, wantFailures, haveFailures)

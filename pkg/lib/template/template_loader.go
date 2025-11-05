@@ -133,7 +133,7 @@ func (loader *Loader) Render(
 		// 	}
 		// 	data, err := csv.GenericCSVToMap(fileBytes, delimiter)
 		// 	if err != nil {
-		// 		return data, fmt.Errorf("'%s' %s", path, err)
+		// 		return data, fmt.Errorf("'%s' %w", path, err)
 		// 	}
 		// 	return data, err
 		// },
@@ -191,7 +191,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Xml2Json(fileBytes, "xml2")
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal xml to json: %w", err)
+				return "", fmt.Errorf("could not marshal xml to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -204,7 +204,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Xhtml2Json(fileBytes)
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal xhtml to json: %w", err)
+				return "", fmt.Errorf("could not marshal xhtml to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -217,7 +217,7 @@ func (loader *Loader) Render(
 
 			bytes, err := util.Html2Json(fileBytes)
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal html to json: %w", err)
+				return "", fmt.Errorf("could not marshal html to json: %w", err)
 			}
 
 			return string(bytes), nil
@@ -289,7 +289,7 @@ func (loader *Loader) Render(
 			for _, row := range rows {
 				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+					return nil, fmt.Errorf("Group column %q does not exist in row.", groupColumn)
 				}
 				switch idx := group_key.(type) {
 				case string:
@@ -299,7 +299,7 @@ func (loader *Loader) Render(
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
+					return nil, fmt.Errorf("Group column %q needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
 			return grouped_rows, nil
@@ -311,12 +311,12 @@ func (loader *Loader) Render(
 			for _, row := range rows {
 				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+					return nil, fmt.Errorf("Group column %q does not exist in row.", groupColumn)
 				}
 				switch idx := group_key.(type) {
 				case int64:
 					if idx <= 0 {
-						return nil, fmt.Errorf("Group column \"%s\" needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
+						return nil, fmt.Errorf("Group column %q needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
 					}
 					rows2 := grouped_rows[idx]
 					if rows2 == nil {
@@ -324,7 +324,7 @@ func (loader *Loader) Render(
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
+					return nil, fmt.Errorf("Group column %q needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
 			// remove empty rows
@@ -416,7 +416,7 @@ func (loader *Loader) Render(
 				return "", fmt.Errorf("OAuth client %s not configured", client)
 			}
 
-			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
+			return "Basic " + base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", oAuthClient.Client, oAuthClient.Secret)), nil
 		},
 		"query_escape": func(in string) string {
 			return url.QueryEscape(in)
@@ -493,13 +493,14 @@ func (loader *Loader) Render(
 		Funcs(funcMap).
 		Parse(string(tmplBytes))
 	if err != nil {
-		return nil, fmt.Errorf("error loading template: %s", err)
+		return nil, fmt.Errorf("loading template: %w", err)
 	}
 
 	var b []byte
 	buf := bytes.NewBuffer(b)
-	if err = tmpl.Execute(buf, ctx); err != nil {
-		return nil, fmt.Errorf("error executing template: %s", err)
+	err = tmpl.Execute(buf, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
 	return buf.Bytes(), nil
 }

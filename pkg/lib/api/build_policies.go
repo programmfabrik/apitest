@@ -108,7 +108,7 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 	} else {
 		bodyBytes, err := json.Marshal(request.Body)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error marshaling request body: %s", err)
+			return nil, nil, fmt.Errorf("marshaling request body: %w", err)
 		}
 		body = bytes.NewBuffer(bodyBytes)
 	}

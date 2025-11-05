@@ -108,10 +108,11 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 	}
 
 	// We reached an error in the scanner, so output it
-	if scanner.Err() != nil {
-		jsonWithLineNumbers = fmt.Sprintf("%s-----------\nText scanner error: %s", jsonWithLineNumbers, scanner.Err())
+	err := scanner.Err()
+	if err != nil {
+		jsonWithLineNumbers = fmt.Sprintf("%s-----------\nText scanner error: %s", jsonWithLineNumbers, err.Error())
 		// The manifest is just too long, add advice
-		if scanner.Err() == bufio.ErrTooLong {
+		if err == bufio.ErrTooLong {
 			jsonWithLineNumbers = fmt.Sprintf("%s\nSome fields are too long, consider splitting tests or reducing datasets", jsonWithLineNumbers)
 		}
 		jsonWithLineNumbers = fmt.Sprintf("%s\n-----------\n", jsonWithLineNumbers)

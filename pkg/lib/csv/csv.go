@@ -317,7 +317,7 @@ func getTyped(value, format string) (any, error) {
 		var data any
 		err := json.Unmarshal([]byte(value), &data)
 		if err != nil {
-			return nil, fmt.Errorf("file_csv: Error in JSON: \"%s\": %s", value, err)
+			return nil, fmt.Errorf("file_csv: Error in JSON: %q: %s", value, err)
 		}
 		return data, nil
 	default:

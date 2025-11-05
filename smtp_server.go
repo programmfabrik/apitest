@@ -27,7 +27,7 @@ func (ats *Suite) StartSmtpServer() {
 		err := ats.smtpServer.ListenAndServe()
 		if err != nil && !errors.Is(err, esmtp.ErrServerClosed) {
 			// Error starting or closing listener:
-			logrus.Fatal("SMTP server ListenAndServe:", err)
+			logrus.Fatalf("SMTP server ListenAndServe: %s", err.Error())
 		}
 	}()
 

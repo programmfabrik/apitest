@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -73,12 +74,12 @@ func Xml2Json(rawXml []byte, format string) ([]byte, error) {
 	}
 
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not parse xml: %w", err)
+		return []byte{}, fmt.Errorf("could not parse xml: %w", err)
 	}
 
 	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
+		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
 	return jsonStr, nil
 }
@@ -92,12 +93,12 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 
 	mv, err = mxj.NewMapXml(rawXhtml)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not parse xhtml: %w", err)
+		return []byte{}, fmt.Errorf("could not parse xhtml: %w", err)
 	}
 
 	jsonStr, err := mv.JsonIndent("", " ")
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
+		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
 	return jsonStr, nil
 }
@@ -114,20 +115,20 @@ func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
 	// parse xlsx raw data
 	xlsx, err := excelize.OpenReader(bytes.NewReader(rawXlsx))
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not read raw xlsx data: %w", err)
+		return []byte{}, fmt.Errorf("could not read raw xlsx data: %w", err)
 	}
 	defer xlsx.Close()
 
 	// only care for first sheet
 	xlsxSheet := xlsx.GetSheetName(0)
 	if xlsxSheet == "" {
-		return []byte{}, fmt.Errorf("Could not parse xlsx: no sheets found")
+		return []byte{}, errors.New("Could not parse xlsx: no sheets found")
 	}
 
 	// read xlsx xlsxRows
 	xlsxRows, err := xlsx.GetRows(xlsxSheet)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not parse xlsx: %w", err)
+		return []byte{}, fmt.Errorf("could not parse xlsx: %w", err)
 	}
 
 	// built dummy csv to convert it into json
@@ -136,7 +137,7 @@ func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
 	for _, xlsxRow := range xlsxRows {
 		err = csvWriter.Write(xlsxRow)
 		if err != nil {
-			return []byte{}, fmt.Errorf("Could not convert xlsx into csv: %w", err)
+			return []byte{}, fmt.Errorf("could not convert xlsx into csv: %w", err)
 		}
 	}
 	csvWriter.Flush()
@@ -144,12 +145,12 @@ func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
 	// parse dummy csv to convert it into json
 	csvData, err := libcsv.GenericCSVToMap(csvBuf.Bytes(), csvWriter.Comma)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not parse csv: %w", err)
+		return []byte{}, fmt.Errorf("could not parse csv: %w", err)
 	}
 
 	jsonStr, err := json.Marshal(csvData)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not convert to json: %w", err)
+		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
 	return jsonStr, nil
 }
@@ -163,7 +164,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 
 	htmlDoc, err = goquery.NewDocumentFromReader(bytes.NewReader(rawHtml))
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not parse html: %w", err)
+		return []byte{}, fmt.Errorf("could not parse html: %w", err)
 	}
 
 	htmlData := map[string]any{}
@@ -179,7 +180,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 
 	jsonStr, err := golib.JsonBytesIndent(htmlData, "", " ")
 	if err != nil {
-		return []byte{}, fmt.Errorf("Could not convert html to json: %w", err)
+		return []byte{}, fmt.Errorf("could not convert html to json: %w", err)
 	}
 
 	return jsonStr, nil

@@ -186,7 +186,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 		for k, v := range Config.Apitest.StoreInit {
 			err := store.Set(k, v)
 			if err != nil {
-				logrus.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err)
+				logrus.Errorf("Could not add init value for datastore Key: '%s', Value: '%v'. %s", k, v, err.Error())
 			}
 		}
 
