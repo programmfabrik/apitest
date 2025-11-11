@@ -1,0 +1,21 @@
+{
+    "name": "bounce XLSX file \"{{ datastore `xlsx_file` }}\", use response format \"xlsx\", expect error",
+    "request": {
+        "server_url": {{ datastore "req_base_url" | marshal }},
+        "endpoint": "bounce",
+        "method": "POST",
+        "body": {
+            "file": "@{{ datastore `xlsx_file` }}"
+        },
+        "body_type": "multipart"
+    },
+    "response": {
+        "format": {
+            "type": "xlsx",
+            "xlsx": {
+                "sheet_idx": 123
+            }
+        }
+    },
+    "reverse_test_result": true
+}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -106,7 +105,7 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 // Xlsx2Json parses the raw xlsx data and converts it into a json string.
 // Only the content is parsed, all formatting etc is discarded.
 // The result structure is the same as for CSV.
-func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
+func Xlsx2Json(rawXlsx []byte, sheetIdx int) ([]byte, error) {
 	var (
 		csvBuf bytes.Buffer
 		err    error
@@ -119,10 +118,14 @@ func Xlsx2Json(rawXlsx []byte) ([]byte, error) {
 	}
 	defer xlsx.Close()
 
-	// only care for first sheet
-	xlsxSheet := xlsx.GetSheetName(0)
+	// check if the requested sheet idx is valid
+	if sheetIdx < 0 || sheetIdx >= xlsx.SheetCount {
+		return []byte{}, fmt.Errorf("could not read xlsx sheet: idx %d invalid: expect idx between 0 and %d", sheetIdx, xlsx.SheetCount-1)
+	}
+
+	xlsxSheet := xlsx.GetSheetName(sheetIdx)
 	if xlsxSheet == "" {
-		return []byte{}, errors.New("Could not parse xlsx: no sheets found")
+		return []byte{}, fmt.Errorf("could not parse xlsx: idx %d invalid: no sheets found", sheetIdx)
 	}
 
 	// read xlsx xlsxRows

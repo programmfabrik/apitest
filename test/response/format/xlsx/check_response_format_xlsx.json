@@ -11,7 +11,12 @@
     },
     "response": {
         "format": {
-            "type": "xlsx"
+            "type": "xlsx",
+            "xlsx": {
+                {{ if ge (datastore `sheet_idx`) 0 }}
+                    "sheet_idx": {{ datastore `sheet_idx` }}
+                {{ end }}
+            }
         },
         "body:control": {
             "order_matters": true,

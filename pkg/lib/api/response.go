@@ -67,13 +67,20 @@ type responseSerializationInternal struct {
 	HeaderFlat map[string]any `json:"header_flat,omitempty"`
 }
 
+type ResponseFormatCSV struct {
+	Comma string `json:"comma,omitempty"`
+}
+
+type ResponseFormatXLSX struct {
+	SheetIdx int `json:"sheet_idx,omitempty"`
+}
+
 type ResponseFormat struct {
-	IgnoreBody bool   `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
-	Type       string `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text"
-	CSV        struct {
-		Comma string `json:"comma,omitempty"`
-	} `json:"csv,omitempty"`
-	PreProcess *PreProcess `json:"pre_process,omitempty"`
+	IgnoreBody bool               `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
+	Type       string             `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text", "xlsx"
+	CSV        ResponseFormatCSV  `json:"csv"`  // ignored if type != "csv"
+	XLSX       ResponseFormatXLSX `json:"xlsx"` // ignored if type != "xlsx"
+	PreProcess *PreProcess        `json:"pre_process,omitempty"`
 }
 
 func NewResponse(statusCode *int,
@@ -220,7 +227,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, fmt.Errorf("could not marshal xhtml to json: %w", err)
 		}
 	case "xlsx":
-		bodyData, err = util.Xlsx2Json(resp.Body)
+		bodyData, err = util.Xlsx2Json(resp.Body, responseFormat.XLSX.SheetIdx)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xlsx to json: %w", err)
 		}
