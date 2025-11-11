@@ -46,7 +46,7 @@ type Suite struct {
 	StandardHeader          map[string]any    `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string `yaml:"header_from_store" json:"header_from_store"`
 
-	Config          TestToolConfig
+	config          testToolConfig
 	datastore       *datastore.Datastore
 	manifestRelDir  string
 	manifestDir     string
@@ -58,14 +58,14 @@ type Suite struct {
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
-	HTTPServerHost  string
+	httpServerHost  string
 	loader          template.Loader
 	smtpServer      *smtp.Server
 }
 
-// NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(
-	config TestToolConfig,
+// newTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
+func newTestSuite(
+	config testToolConfig,
 	manifestPath, manifestDir string,
 	r *report.ReportElement,
 	datastore *datastore.Datastore,
@@ -77,7 +77,7 @@ func NewTestSuite(
 	)
 
 	suite = &Suite{
-		Config:         config,
+		config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
 		manifestRelDir: manifestDir,
@@ -90,7 +90,7 @@ func NewTestSuite(
 	// It is needed, for example, for getting the suite HTTP server address
 	// Then preloaded values are used to load again the manifest with relevant replacements
 	suitePreload = Suite{
-		Config:         config,
+		config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
 		manifestRelDir: manifestDir,
@@ -131,7 +131,7 @@ func NewTestSuite(
 			return nil, fmt.Errorf("set http_server_host failed (manifesr addr): %w", err)
 		}
 	}
-	suitePreload.HTTPServerHost = httpServerReplaceHost
+	suitePreload.httpServerHost = httpServerReplaceHost
 
 	// Here we load the usable manifest, now that we can do all potential replacements
 	manifest, err = suitePreload.loadManifest()
@@ -148,14 +148,14 @@ func NewTestSuite(
 		suite.reporterRoot.Failure = err.Error()
 		return suite, err
 	}
-	suite.HTTPServerHost = suitePreload.HTTPServerHost
+	suite.httpServerHost = suitePreload.httpServerHost
 	suite.loader = suitePreload.loader
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
 	// Parse serverURL
-	suite.serverURL, err = url.Parse(suite.Config.ServerURL)
+	suite.serverURL, err = url.Parse(suite.config.serverURL)
 	if err != nil {
 		return nil, fmt.Errorf("can not load server url : %w", err)
 	}
@@ -171,18 +171,18 @@ func NewTestSuite(
 	return suite, nil
 }
 
-// Run run the given testsuite
-func (ats *Suite) Run() bool {
+// run run the given testsuite
+func (ats *Suite) run() bool {
 	r := ats.reporterRoot
-	if !ats.Config.LogShort {
+	if !ats.config.logShort {
 		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 	}
 
-	ats.StartSmtpServer()
-	defer ats.StopSmtpServer()
+	ats.startSmtpServer()
+	defer ats.stopSmtpServer()
 
-	ats.StartHttpServer()
-	defer ats.StopHttpServer()
+	ats.startHttpServer()
+	defer ats.stopHttpServer()
 
 	err := os.Chdir(ats.manifestDir)
 	if err != nil {
@@ -214,13 +214,13 @@ func (ats *Suite) Run() bool {
 	elapsed := time.Since(start)
 	r.Leave(success)
 	if success {
-		if ats.Config.LogShort {
+		if ats.config.logShort {
 			fmt.Printf("OK '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 		}
 	} else {
-		if ats.Config.LogShort {
+		if ats.config.logShort {
 			fmt.Printf("FAIL '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
@@ -246,7 +246,7 @@ func (ats *Suite) Run() bool {
 	return success
 }
 
-type TestContainer struct {
+type testContainer struct {
 	CaseByte json.RawMessage
 	Path     string
 }
@@ -254,9 +254,9 @@ type TestContainer struct {
 func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) template.Loader {
 	loader := template.NewLoader(ats.datastore)
 	loader.Delimiters = rootLoader.Delimiters
-	loader.HTTPServerHost = ats.HTTPServerHost
+	loader.HTTPServerHost = ats.httpServerHost
 	loader.ServerURL = ats.serverURL
-	loader.OAuthClient = ats.Config.OAuthClient
+	loader.OAuthClient = ats.config.oAuthClient
 
 	if rootLoader.ParallelRunIdx < 0 {
 		loader.ParallelRunIdx = parallelRunIdx
@@ -369,7 +369,7 @@ func (ats *Suite) testGoroutine(
 		} else {
 			// Otherwise simply run the literal test case
 			success = ats.runLiteralTest(
-				TestContainer{
+				testContainer{
 					CaseByte: testCase,
 					Path:     testFileDir,
 				},
@@ -390,7 +390,7 @@ func (ats *Suite) testGoroutine(
 }
 
 func (ats *Suite) runLiteralTest(
-	tc TestContainer,
+	tc testContainer,
 	r *report.ReportElement,
 	testFilePath string,
 	loader template.Loader,
@@ -415,16 +415,16 @@ func (ats *Suite) runLiteralTest(
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 	if test.LogNetwork == nil {
-		test.LogNetwork = &ats.Config.LogNetwork
+		test.LogNetwork = &ats.config.logNetwork
 	}
 	if test.LogVerbose == nil {
-		test.LogVerbose = &ats.Config.LogVerbose
+		test.LogVerbose = &ats.config.logVerbose
 	}
 	if test.LogShort == nil {
-		test.LogShort = &ats.Config.LogShort
+		test.LogShort = &ats.config.logShort
 	}
 	if test.ServerURL == "" {
-		test.ServerURL = ats.Config.ServerURL
+		test.ServerURL = ats.config.serverURL
 	}
 	success := test.runAPITestCase(r)
 
@@ -443,18 +443,18 @@ func (ats *Suite) loadManifest() (b []byte, err error) {
 		manifestFile afero.File
 	)
 
-	if !ats.Config.LogShort {
+	if !ats.config.logShort {
 		logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	}
 
 	loader = template.NewLoader(ats.datastore)
-	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err = url.Parse(ats.Config.ServerURL)
+	loader.HTTPServerHost = ats.httpServerHost
+	serverURL, err = url.Parse(ats.config.serverURL)
 	if err != nil {
 		return nil, fmt.Errorf("can not load server url into manifest (%s): %w", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
-	loader.OAuthClient = ats.Config.OAuthClient
+	loader.OAuthClient = ats.config.oAuthClient
 
 	manifestFile, err = filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {

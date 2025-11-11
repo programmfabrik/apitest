@@ -14,7 +14,7 @@ func TestComparison(t *testing.T) {
 		left      util.JsonObject
 		right     util.JsonObject
 		eEqual    bool
-		eFailures []CompareFailure
+		eFailures []compareFailure
 	}{
 		// {
 		// 	name: "Should be equal",
@@ -870,7 +870,7 @@ func TestComparison(t *testing.T) {
 				},
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "body",
 					Message: "extra elements found in array",
@@ -953,7 +953,7 @@ func TestComparison(t *testing.T) {
 				"v": nil,
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "v",
 					Message: "is null",
@@ -1036,7 +1036,7 @@ func TestComparison(t *testing.T) {
 				"v": "left",
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "v",
 					Message: "is equal to String 'left', should not be equal",
@@ -1067,7 +1067,7 @@ func TestComparison(t *testing.T) {
 				"v": util.JsonArray([]any{"left", "right"}),
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "v",
 					Message: `is equal to Array ["left","right"], should not be equal`,
@@ -1098,7 +1098,7 @@ func TestComparison(t *testing.T) {
 				"v": 0.111,
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "v",
 					Message: "is equal to Number 0.111, should not be equal",
@@ -1129,7 +1129,7 @@ func TestComparison(t *testing.T) {
 				"v": false,
 			},
 			eEqual: false,
-			eFailures: []CompareFailure{
+			eFailures: []compareFailure{
 				{
 					Key:     "v",
 					Message: "is equal to Bool false, should not be equal",

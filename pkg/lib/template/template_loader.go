@@ -18,6 +18,7 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
+	"github.com/yudai/pp"
 	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 
@@ -283,7 +284,7 @@ func (loader *Loader) Render(
 			}
 			return gj, nil
 		},
-		"N": N,
+		"N": n,
 		"marshal": func(data any) (jsonBytes string, err error) {
 			var (
 				bytes []byte
@@ -406,8 +407,12 @@ func (loader *Loader) Render(
 			return reflect.ValueOf(v).IsZero()
 		},
 		"oauth2_password_token": func(client string, login string, password string) (token *oauth2.Token, err error) {
-			// println("client", client, login, password)
+			pp.Println("client", client, login, password)
+			pp.Println("loader.OAuthClient[client]", loader.OAuthClient)
 			oAuthClient, ok := loader.OAuthClient[client]
+			pp.Println("oAuthClient ok?", ok)
+			pp.Println("oAuthClient", oAuthClient)
+
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %q not configured", client)
 			}

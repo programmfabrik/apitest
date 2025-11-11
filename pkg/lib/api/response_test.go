@@ -115,7 +115,7 @@ func TestResponse_Cookies(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	header, err := HttpHeaderToMap(res.Header)
+	header, err := httpHeaderToMap(res.Header)
 	if err != nil {
 		t.Fatal(err)
 	}

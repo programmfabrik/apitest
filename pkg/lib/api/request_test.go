@@ -68,7 +68,7 @@ func TestBuildCurl(t *testing.T) {
 }
 
 func TestRequestBuildHttpWithCookie(t *testing.T) {
-	reqCookies := map[string]*RequestCookie{
+	reqCookies := map[string]*requestCookie{
 		"sess": {
 			ValueFromStore: "sess_cookie",
 		},

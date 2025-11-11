@@ -28,27 +28,27 @@ func NewStore(logDatastore bool) *Datastore {
 	return &ds
 }
 
-type DatastoreKeyNotFoundError struct {
+type datastoreKeyNotFoundError struct {
 	error string
 }
 
-func (data DatastoreKeyNotFoundError) Error() string {
+func (data datastoreKeyNotFoundError) Error() string {
 	return data.error
 }
 
-type DatastoreIndexOutOfBoundsError struct {
+type datastoreIndexOutOfBoundsError struct {
 	error string
 }
 
-func (data DatastoreIndexOutOfBoundsError) Error() string {
+func (data datastoreIndexOutOfBoundsError) Error() string {
 	return data.error
 }
 
-type DatastoreIndexError struct {
+type datastoreIndexError struct {
 	error string
 }
 
-func (data DatastoreIndexError) Error() string {
+func (data datastoreIndexError) Error() string {
 	return data.error
 }
 
@@ -67,7 +67,7 @@ func (ds *Datastore) SetWithGjson(jsonResponse string, storeResponse map[string]
 			}
 			// Remove value from datastore
 			if setEmpty {
-				ds.Delete(k)
+				ds.delete(k)
 			}
 			continue
 		}
@@ -78,7 +78,7 @@ func (ds *Datastore) SetWithGjson(jsonResponse string, storeResponse map[string]
 	}
 	return nil
 }
-func (ds *Datastore) Delete(k string) {
+func (ds *Datastore) delete(k string) {
 	delete(ds.storage, k)
 }
 
@@ -194,7 +194,7 @@ func (ds Datastore) Get(index string) (res any, err error) {
 		tmpRes, ok := ds.storage[useIndex]
 		if !ok {
 			logrus.Errorf("datastore: key: %s not found.", useIndex)
-			return "", DatastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
+			return "", datastoreKeyNotFoundError{error: fmt.Sprintf("datastore: key: %s not found.", useIndex)}
 		}
 
 		tmpResMap, ok := tmpRes.(map[string]any)
@@ -214,7 +214,7 @@ func (ds Datastore) Get(index string) (res any, err error) {
 			//We have a slice
 			sliceIdx, err := strconv.Atoi(mapIndex)
 			if err != nil {
-				return "", DatastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
+				return "", datastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}
 			}
 
 			if sliceIdx < 0 {
@@ -238,7 +238,7 @@ func (ds Datastore) Get(index string) (res any, err error) {
 			if idx >= len(ds.responseJson) || idx < 0 {
 				// index out of range
 
-				return "", DatastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
+				return "", datastoreIndexOutOfBoundsError{error: fmt.Sprintf("datastore.Get: idx out of range: %d, current length: %d", idx, len(ds.responseJson))}
 			}
 			return ds.responseJson[idx], nil
 		}

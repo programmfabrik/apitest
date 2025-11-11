@@ -17,14 +17,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func Max(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
-}
-
-func RemoveFromJsonArray(input []any, removeIndex int) (output []any) {
+func removeFromJsonArray(input []any, removeIndex int) (output []any) {
 	output = make([]any, len(input))
 	copy(output, input)
 

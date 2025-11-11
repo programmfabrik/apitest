@@ -17,8 +17,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// StartHttpServer start a simple http server that can server local test resources during the testsuite is running
-func (ats *Suite) StartHttpServer() {
+// startHttpServer start a simple http server that can server local test resources during the testsuite is running
+func (ats *Suite) startHttpServer() {
 
 	if ats.HttpServer == nil || ats.httpServer != nil {
 		return
@@ -35,24 +35,24 @@ func (ats *Suite) StartHttpServer() {
 	} else {
 		ats.httpServerDir = filepath.Join(ats.manifestDir, ats.HttpServer.Dir)
 	}
-	mux.Handle("/", logH(ats.Config.LogShort, customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
+	mux.Handle("/", logH(ats.config.logShort, customStaticHandler(http.FileServer(http.Dir(ats.httpServerDir)))))
 
 	// bounce json response
-	mux.Handle("/bounce-json", logH(ats.Config.LogShort, cookiesMiddleware(http.HandlerFunc(bounceJSON))))
+	mux.Handle("/bounce-json", logH(ats.config.logShort, cookiesMiddleware(http.HandlerFunc(bounceJSON))))
 
 	// bounce binary response with information in headers
-	mux.Handle("/bounce", logH(ats.Config.LogShort, http.HandlerFunc(bounceBinary)))
+	mux.Handle("/bounce", logH(ats.config.logShort, http.HandlerFunc(bounceBinary)))
 
 	// bounce query response with query in response body, as it is
-	mux.Handle("/bounce-query", logH(ats.Config.LogShort, http.HandlerFunc(bounceQuery)))
+	mux.Handle("/bounce-query", logH(ats.config.logShort, http.HandlerFunc(bounceQuery)))
 
 	// Start listening into proxy
 	ats.httpServerProxy = httpproxy.New(ats.HttpServer.Proxy)
-	ats.httpServerProxy.RegisterRoutes(mux, "/", ats.Config.LogShort)
+	ats.httpServerProxy.RegisterRoutes(mux, "/", ats.config.logShort)
 
 	// Register SMTP server query routes
 	if ats.smtpServer != nil {
-		ats.smtpServer.RegisterRoutes(mux, "/", ats.Config.LogShort)
+		ats.smtpServer.RegisterRoutes(mux, "/", ats.config.logShort)
 	}
 
 	ats.httpServer = &http.Server{
@@ -61,7 +61,7 @@ func (ats *Suite) StartHttpServer() {
 	}
 
 	run := func() {
-		if !ats.Config.LogShort {
+		if !ats.config.logShort {
 			logrus.Infof("Starting HTTP Server: %s: %s", ats.HttpServer.Addr, ats.httpServerDir)
 		}
 
@@ -99,8 +99,8 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 	}
 }
 
-// StopHttpServer stop the http server that was started for this test suite
-func (ats *Suite) StopHttpServer() {
+// stopHttpServer stop the http server that was started for this test suite
+func (ats *Suite) stopHttpServer() {
 
 	if ats.HttpServer == nil || ats.httpServer == nil {
 		return
@@ -112,20 +112,20 @@ func (ats *Suite) StopHttpServer() {
 		logrus.Errorf("HTTP server Shutdown: %v", err)
 		close(ats.idleConnsClosed)
 		<-ats.idleConnsClosed
-	} else if !ats.Config.LogShort {
+	} else if !ats.config.logShort {
 		logrus.Infof("Http Server stopped: %s", ats.httpServerDir)
 	}
 
 	ats.httpServer = nil
 }
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Error string `json:"error"`
 	Body  any    `json:"body,omitempty"`
 }
 
-func errorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
-	resp := ErrorResponse{
+func formatErrorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
+	resp := errorResponse{
 		Error: err.Error(),
 		Body:  body,
 	}
@@ -139,7 +139,7 @@ func errorResponse(w http.ResponseWriter, statuscode int, err error, body any) {
 	http.Error(w, string(b), statuscode)
 }
 
-type BounceResponse struct {
+type bounceResponse struct {
 	Header      http.Header `json:"header"`
 	QueryParams url.Values  `json:"query_params"`
 	Body        any         `json:"body"`
@@ -167,18 +167,18 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		errorResponse(w, 500, err, errorBody)
+		formatErrorResponse(w, 500, err, errorBody)
 		return
 	}
 
-	response := BounceResponse{
+	response := bounceResponse{
 		Header:      r.Header,
 		QueryParams: r.URL.Query(),
 	}
 	if len(bodyBytes) > 0 {
 		err = json.Unmarshal(bodyBytes, &bodyJSON)
 		if err != nil {
-			errorResponse(w, 500, err, errorBody)
+			formatErrorResponse(w, 500, err, errorBody)
 			return
 		}
 		response.Body = bodyJSON
@@ -186,7 +186,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 
 	responseData, err := golib.JsonBytesIndent(response, "", "  ")
 	if err != nil {
-		errorResponse(w, 500, err, response)
+		formatErrorResponse(w, 500, err, response)
 		return
 	}
 

@@ -125,7 +125,7 @@ var cfgFile string
 
 func setup(ccmd *cobra.Command, args []string) {
 	// Load yml config
-	LoadConfig(cfgFile)
+	loadConfig(cfgFile)
 
 	// Set log verbosity to trace
 	logrus.SetLevel(logrus.TraceLevel)
@@ -171,7 +171,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 	rep.Version = buildCommit
 
 	// Save the config into TestToolConfig
-	testToolConfig, err := NewTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
+	testToolConfig, err := newTestToolConfig(server, rootDirectorys, logNetwork, logVerbose, Config.Apitest.Log.Short)
 	if err != nil {
 		logrus.Error(err)
 		if reportFile != "" {
@@ -190,7 +190,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		suite, err := NewTestSuite(testToolConfig, manifestPath, manifestDir, reportElem, store, 0)
+		suite, err := newTestSuite(testToolConfig, manifestPath, manifestDir, reportElem, store, 0)
 		if err != nil {
 			logrus.Error(err)
 			if reportFile != "" {
@@ -199,7 +199,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			return false
 		}
 
-		return suite.Run()
+		return suite.run()
 	}
 
 	// Decide if run only one test
@@ -215,7 +215,7 @@ func runApiTests(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
-		for _, singlerootDirectory := range testToolConfig.TestDirectories {
+		for _, singlerootDirectory := range testToolConfig.testDirectories {
 			manifestPath := filepath.Join(singlerootDirectory, "manifest.json")
 			c := rep.Root().NewChild(manifestPath)
 

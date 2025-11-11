@@ -303,7 +303,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		// Check for the given key functions
 		err := keyChecks(rv, rOK, *control)
 		if err != nil {
-			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
+			res.Failures = append(res.Failures, compareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
 			// There is no use in checking the equality of the value if the preconditions do not work
 			continue
@@ -335,7 +335,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	if noExtra {
 		for k := range right {
 			if !takenInRight[k] {
-				res.Failures = append(res.Failures, CompareFailure{Key: "", Message: "extra elements found in object"})
+				res.Failures = append(res.Failures, compareFailure{Key: "", Message: "extra elements found in object"})
 				res.Equal = false
 				return
 			}
@@ -367,7 +367,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 			return CompareResult{}, fmt.Errorf("could not marshal actual array: %w", err)
 		}
 
-		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})
+		res.Failures = append(res.Failures, compareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})
 		return res, nil
 	}
 
@@ -397,12 +397,12 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 				if err == nil {
 					elStr = string(elBytes)
 				}
-				res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("element %s not found in array in proper order", elStr)})
+				res.Failures = append(res.Failures, compareFailure{key, fmt.Sprintf("element %s not found in array in proper order", elStr)})
 				res.Equal = false
 			}
 		} else {
 			found := false
-			allTmpFailures := make([]CompareFailure, 0)
+			allTmpFailures := make([]compareFailure, 0)
 
 			for rk, rv := range right {
 				if takenInRight[rk] {
@@ -434,7 +434,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 					if v.Key == "" {
 						key = fmt.Sprintf("[%d]", lk)
 					}
-					res.Failures = append(res.Failures, CompareFailure{key, v.Message})
+					res.Failures = append(res.Failures, compareFailure{key, v.Message})
 				}
 				res.Equal = false
 			}
@@ -445,7 +445,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 	if currControl.noExtra {
 		for k := range right {
 			if !takenInRight[k] {
-				res.Failures = append(res.Failures, CompareFailure{Key: "", Message: "extra elements found in array"})
+				res.Failures = append(res.Failures, compareFailure{Key: "", Message: "extra elements found in array"})
 				res.Equal = false
 				return
 			}

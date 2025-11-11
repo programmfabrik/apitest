@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-// SearchByHeader returns the list of all given ContentHavers that,
+// searchByHeader returns the list of all given ContentHavers that,
 // for each of the given regular expressions, has at least one header
 // matching it (different regexes can be matched by different headers or
 // the same header).
@@ -15,7 +15,7 @@ import (
 // value is first serialized by concatenating it after the header name, colon
 // and space. It is not being encoded as if for transport (e.g. quoted-
 // printable), but concatenated as-is.
-func SearchByHeader[T ContentHaver](haystack []T, rxs ...*regexp.Regexp) []T {
+func searchByHeader[T contentHaver](haystack []T, rxs ...*regexp.Regexp) []T {
 	out := make([]T, 0, len(haystack))
 
 	for _, c := range haystack {

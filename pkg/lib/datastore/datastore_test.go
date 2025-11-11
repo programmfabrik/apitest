@@ -117,7 +117,7 @@ func TestDataStore_Get_Err_Index_Out_Of_Bounds(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error, got nil")
 	} else {
-		if _, ok := err.(DatastoreIndexOutOfBoundsError); !ok {
+		if _, ok := err.(datastoreIndexOutOfBoundsError); !ok {
 			t.Errorf("Wrong error type. Expected 'DatastoreIndexOutOfBoundsError' != '%T' Got", err)
 		}
 	}

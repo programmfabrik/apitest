@@ -9,19 +9,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Report struct {
+type report struct {
 	StatsGroups int
 	Version     string
 	root        *ReportElement
 	m           *sync.Mutex
 }
 
-func (r Report) Root() *ReportElement {
+func (r report) Root() *ReportElement {
 	return r.root
 }
 
-func NewReport() *Report {
-	var report Report
+func NewReport() *report {
+	var report report
 
 	newElem := ReportElement{}
 	newElem.SubTests = make([]*ReportElement, 0)
@@ -36,13 +36,13 @@ func NewReport() *Report {
 }
 
 // GetTestResult Parses the test report with the given function from the report root on
-func (r Report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
+func (r report) GetTestResult(parsingFunction func(baseResult *ReportElement) []byte) []byte {
 
 	return parsingFunction(r.root.getTestResult())
 }
 
 // DidFail, Check if the testsuite did produce failures
-func (r Report) DidFail() bool {
+func (r report) DidFail() bool {
 	aggRes := r.root.getTestResult()
 	if aggRes.Failures > 0 {
 		return true
@@ -51,8 +51,8 @@ func (r Report) DidFail() bool {
 	}
 }
 
-func (r Report) GetLog() []string {
-	return r.root.GetLog()
+func (r report) GetLog() []string {
+	return r.root.getLog()
 }
 
 type ReportElement struct {
@@ -62,18 +62,18 @@ type ReportElement struct {
 	StartTime     time.Time      `json:"-"`
 	Name          string         `json:"name,omitempty"`
 	LogStorage    []string       `json:"log,omitempty"`
-	SubTests      ReportElements `json:"sub_tests,omitempty"`
+	SubTests      reportElements `json:"sub_tests,omitempty"`
 	Parent        *ReportElement `json:"-"`
 	NoLogTime     bool           `json:"-"`
 	Failure       string         `json:"failure,omitempty"`
-	report        *Report
+	report        *report
 	m             *sync.Mutex
 }
 
-type ReportElements []*ReportElement
+type reportElements []*ReportElement
 
-func (re ReportElements) Flat() ReportElements {
-	rElements := ReportElements{}
+func (re reportElements) Flat() reportElements {
+	rElements := reportElements{}
 	for _, v := range re {
 		rElements = append(rElements, v)
 
@@ -142,7 +142,7 @@ func (r *ReportElement) getTestResult() *ReportElement {
 	return r
 }
 
-func (r ReportElement) GetLog() []string {
+func (r ReportElement) getLog() []string {
 	errors := make([]string, 0)
 
 	//root Errors
@@ -152,7 +152,7 @@ func (r ReportElement) GetLog() []string {
 
 	//Child errors
 	for _, singleTest := range r.SubTests {
-		errors = append(errors, singleTest.GetLog()...)
+		errors = append(errors, singleTest.getLog()...)
 	}
 	return errors
 }
@@ -178,15 +178,15 @@ func (r *ReportElement) SaveToReportLogF(v string, args ...any) {
 }
 
 // WriteToFile write the report into the report file
-func (r *Report) WriteToFile(reportFile, reportFormat string) (err error) {
+func (r *report) WriteToFile(reportFile, reportFormat string) (err error) {
 	var parsingFunction func(baseResult *ReportElement) []byte
 	switch reportFormat {
 	case "junit":
-		parsingFunction = ParseJUnitResult
+		parsingFunction = parseJUnitResult
 	case "json":
 		parsingFunction = ParseJSONResult
 	case "stats":
-		parsingFunction = ParseJSONStatsResult
+		parsingFunction = parseJSONStatsResult
 	default:
 		logrus.Warnf(
 			"Given report format '%s' not supported. Saving report '%s' as json",

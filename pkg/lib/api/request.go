@@ -36,7 +36,7 @@ func init() {
 	}
 }
 
-type RequestCookie struct {
+type requestCookie struct {
 	ValueFromStore string `yaml:"value_from_store" json:"value_from_store"`
 	Value          string `yaml:"value" json:"value"`
 }
@@ -50,8 +50,8 @@ type Request struct {
 	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
 	Headers              map[string]any            `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
-	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	Cookies              map[string]*requestCookie `yaml:"cookies" json:"cookies"`
+	SetCookies           []*cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 any                       `yaml:"body" json:"body"`
@@ -355,7 +355,7 @@ func (request Request) Send() (response Response, err error) {
 
 	defer httpResponse.Body.Close()
 
-	header, err := HttpHeaderToMap(httpResponse.Header)
+	header, err := httpHeaderToMap(httpResponse.Header)
 	if err != nil {
 		return response, err
 	}

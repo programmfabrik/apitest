@@ -276,14 +276,14 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 
 	expRes, err := testCase.loadExpectedResponse()
 	if err != nil {
-		testCase.LogReq(req)
+		testCase.logReq(req)
 		err = fmt.Errorf("loading response: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
 	apiResp, err = req.Send()
 	if err != nil {
-		testCase.LogReq(req)
+		testCase.logReq(req)
 		err = fmt.Errorf("sending request: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
@@ -295,7 +295,7 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// That's problematic if the response is not JSON, as we try to parse it for the datastore anyway
 	// So we don't fail the test in that edge case
 	if err != nil && (testCase.ResponseData != nil || len(testCase.StoreResponse) > 0) {
-		testCase.LogReq(req)
+		testCase.logReq(req)
 		err = fmt.Errorf("getting json from response: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
@@ -303,7 +303,7 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// Store in custom store
 	err = testCase.dataStore.SetWithGjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
-		testCase.LogReq(req)
+		testCase.logReq(req)
 		err = fmt.Errorf("store response with gjson: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
@@ -318,7 +318,7 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// Compare Responses
 	responsesMatch, err = testCase.responsesEqual(expRes, apiResp)
 	if err != nil {
-		testCase.LogReq(req)
+		testCase.logReq(req)
 		err = fmt.Errorf("matching responses: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
@@ -342,12 +342,12 @@ func (testCase Case) logBody(prefix, body string, limit int) {
 	logrus.Debug(errString)
 }
 
-func (testCase Case) LogResp(response api.Response) {
+func (testCase Case) logResp(response api.Response) {
 	testCase.logBody("RESPONSE", response.ToString(), Config.Apitest.Limit.Response)
 }
 
-// LogReq print the request to the console
-func (testCase Case) LogReq(req api.Request) {
+// logReq print the request to the console
+func (testCase Case) logReq(req api.Request) {
 	testCase.logBody("REQUEST", req.ToString(logCurl), Config.Apitest.Limit.Request)
 }
 
@@ -399,7 +399,7 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			logrus.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), Config.Apitest.Limit.Response))
 		}
 		if err != nil {
-			testCase.LogResp(apiResponse)
+			testCase.logResp(apiResponse)
 			return false, apiResponse, err
 		}
 
@@ -409,21 +409,21 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 
 		breakPresent, err := testCase.breakResponseIsPresent(apiResponse)
 		if err != nil {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
 			return false, apiResponse, fmt.Errorf("checking for break response: %w", err)
 		}
 
 		if breakPresent {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
 			return false, apiResponse, fmt.Errorf("break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(apiResponse)
 		if err != nil {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
 			return false, apiResponse, fmt.Errorf("checking for continue response: %w", err)
 		}
 
@@ -462,8 +462,8 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					testCase.LogReq(request)
-					testCase.LogResp(apiResponse)
+					testCase.logReq(request)
+					testCase.logResp(apiResponse)
 					return false, apiResponse, err
 				}
 				logrus.Errorf("Collect response not found: %s", jsonV)
@@ -471,8 +471,8 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			}
 		}
 
-		testCase.LogReq(request)
-		testCase.LogResp(apiResponse)
+		testCase.logReq(request)
+		testCase.logResp(apiResponse)
 		return false, apiResponse, nil
 	}
 

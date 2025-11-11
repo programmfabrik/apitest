@@ -19,7 +19,7 @@ const defaultMaxMessageSize = 30 * 1024 * 1024 // 30MiB
 // of Server.
 type Server struct {
 	server           *smtp.Server
-	receivedMessages []*ReceivedMessage
+	receivedMessages []*receivedMessage
 	maxMessageSize   int64
 	mutex            sync.RWMutex
 	clock            func() time.Time // making clock mockable for unit testing
@@ -68,7 +68,7 @@ func NewServer(addr string, maxMessageSize int64) (server *Server) {
 // AppendMessage adds a custom message to the Server's storage.
 // The index of the provided message will be updated to the index at which
 // it was actually inserted into the Server's storage.
-func (s *Server) AppendMessage(msg *ReceivedMessage) {
+func (s *Server) AppendMessage(msg *receivedMessage) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -90,7 +90,7 @@ func (s *Server) Shutdown(ctx context.Context) (err error) {
 
 // ReceivedMessage returns a message that the server has retrieved
 // by its index in the list of received messages.
-func (s *Server) ReceivedMessage(idx int) (msg *ReceivedMessage, err error) {
+func (s *Server) ReceivedMessage(idx int) (msg *receivedMessage, err error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -105,13 +105,13 @@ func (s *Server) ReceivedMessage(idx int) (msg *ReceivedMessage, err error) {
 
 // ReceivedMessages returns the list of all messages that the server has
 // retrieved.
-func (s *Server) ReceivedMessages() (msgs []*ReceivedMessage) {
+func (s *Server) ReceivedMessages() (msgs []*receivedMessage) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	// We copy the slice to avoid race conditions when the receivedMessages slice is updated.
 	// It's just a slice of pointers, so it should be relatively lightweight.
-	view := make([]*ReceivedMessage, len(s.receivedMessages))
+	view := make([]*receivedMessage, len(s.receivedMessages))
 	copy(view, s.receivedMessages)
 
 	return view
@@ -137,7 +137,7 @@ func (s *session) Data(r io.Reader) (err error) {
 	idx := len(s.server.receivedMessages)
 	now := s.server.clock()
 
-	msg, err := NewReceivedMessage(
+	msg, err := newReceivedMessage(
 		idx, s.from, s.rcptTo, rawData, now, s.server.maxMessageSize,
 	)
 	if err != nil {

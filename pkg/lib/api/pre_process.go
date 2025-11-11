@@ -11,19 +11,19 @@ import (
 	"github.com/programmfabrik/golib"
 )
 
-type CmdOutputType string
+type cmdOutputType string
 
 const (
-	CmdOutputStdout   CmdOutputType = "stdout"
-	CmdOutputStderr   CmdOutputType = "stderr"
-	CmdOutputExitCode CmdOutputType = "exitcode"
+	CmdOutputStdout   cmdOutputType = "stdout"
+	CmdOutputStderr   cmdOutputType = "stderr"
+	CmdOutputExitCode cmdOutputType = "exitcode"
 )
 
-type PreProcess struct {
+type preProcess struct {
 	Cmd struct {
 		Name   string        `json:"name"`
 		Args   []string      `json:"args,omitempty"`
-		Output CmdOutputType `json:"output,omitempty"`
+		Output cmdOutputType `json:"output,omitempty"`
 	} `json:"cmd"`
 }
 
@@ -34,7 +34,7 @@ type preProcessError struct {
 	StdErr   string `json:"stderr"`
 }
 
-func (proc *PreProcess) RunPreProcess(response Response) (resp Response, err error) {
+func (proc *preProcess) runPreProcess(response Response) (resp Response, err error) {
 
 	var (
 		stdout     bytes.Buffer

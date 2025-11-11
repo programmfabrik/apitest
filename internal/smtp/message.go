@@ -16,52 +16,52 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// ReceivedMessage contains a single email message as received via SMTP.
-type ReceivedMessage struct {
+// receivedMessage contains a single email message as received via SMTP.
+type receivedMessage struct {
 	index          int
 	smtpFrom       string
 	smtpRcptTo     []string
 	rawMessageData []byte
 	receivedAt     time.Time
-	content        *ReceivedContent
+	content        *receivedContent
 }
 
-// ReceivedPart contains a single part of a multipart message as received
+// receivedPart contains a single part of a multipart message as received
 // via SMTP.
-type ReceivedPart struct {
+type receivedPart struct {
 	index   int
-	content *ReceivedContent
+	content *receivedContent
 }
 
-// ReceivedContent contains the contents of an email message or multipart part.
-type ReceivedContent struct {
+// receivedContent contains the contents of an email message or multipart part.
+type receivedContent struct {
 	headers           map[string][]string
 	body              []byte
 	contentType       string
 	contentTypeParams map[string]string
 	isMultipart       bool
-	multiparts        []*ReceivedPart
+	multiparts        []*receivedPart
 }
 
-// ContentHaver makes it easier to write algorithms over types that have an
+// contentHaver makes it easier to write algorithms over types that have an
 // email message and/or multipart content.
-type ContentHaver interface {
-	Content() *ReceivedContent
+type contentHaver interface {
+	Content() *receivedContent
 }
 
-// NewReceivedMessage parses a raw message as received via SMTP into a
+// newReceivedMessage parses a raw message as received via SMTP into a
 // ReceivedMessage struct.
 // Incoming data is truncated after the given maximum message size.
 // If a maxMessageSize of 0 is given, this function will default to using
 // DefaultMaxMessageSize.
-func NewReceivedMessage(
+func newReceivedMessage(
 	index int,
 	from string,
 	rcptTo []string,
 	rawMessageData []byte,
 	receivedAt time.Time,
 	maxMessageSize int64,
-) (msg *ReceivedMessage, err error) {
+) (msg *receivedMessage, err error) {
 
 	var (
 		parsedMsg *mail.Message
@@ -76,7 +76,7 @@ func NewReceivedMessage(
 		return nil, fmt.Errorf("could not parse message: %w", err)
 	}
 
-	return NewReceivedMessageFromParsed(
+	return newReceivedMessageFromParsed(
 		index,
 		from,
 		rcptTo,
@@ -87,10 +87,10 @@ func NewReceivedMessage(
 	)
 }
 
-// NewReceivedMessageFromParsed creates a ReceivedMessage from an already parsed email.
+// newReceivedMessageFromParsed creates a ReceivedMessage from an already parsed email.
 //
 // See the documentation of NewReceivedMessage for more details.
-func NewReceivedMessageFromParsed(
+func newReceivedMessageFromParsed(
 	index int,
 	from string,
 	rcptTo []string,
@@ -98,17 +98,17 @@ func NewReceivedMessageFromParsed(
 	receivedAt time.Time,
 	maxMessageSize int64,
 	parsedMsg *mail.Message,
-) (msg *ReceivedMessage, err error) {
+) (msg *receivedMessage, err error) {
 	var (
-		content *ReceivedContent
+		content *receivedContent
 	)
 
-	content, err = NewReceivedContent(parsedMsg.Header, parsedMsg.Body, maxMessageSize)
+	content, err = newReceivedContent(parsedMsg.Header, parsedMsg.Body, maxMessageSize)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse content: %w", err)
 	}
 
-	msg = &ReceivedMessage{
+	msg = &receivedMessage{
 		index:          index,
 		smtpFrom:       from,
 		smtpRcptTo:     rcptTo,
@@ -120,19 +120,19 @@ func NewReceivedMessageFromParsed(
 	return msg, nil
 }
 
-// NewReceivedPart parses a MIME multipart part into a ReceivedPart struct.
+// newReceivedPart parses a MIME multipart part into a ReceivedPart struct.
 // maxMessageSize is passed through to NewReceivedContent (see its documentation for details).
-func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (part *ReceivedPart, err error) {
+func newReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (part *receivedPart, err error) {
 	var (
-		content *ReceivedContent
+		content *receivedContent
 	)
 
-	content, err = NewReceivedContent(p.Header, p, maxMessageSize)
+	content, err = newReceivedContent(p.Header, p, maxMessageSize)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse content: %w", err)
 	}
 
-	part = &ReceivedPart{
+	part = &receivedPart{
 		index:   index,
 		content: content,
 	}
@@ -140,15 +140,15 @@ func NewReceivedPart(index int, p *multipart.Part, maxMessageSize int64) (part *
 	return part, nil
 }
 
-// NewReceivedContent parses a message or part headers and body into a ReceivedContent struct.
+// newReceivedContent parses a message or part headers and body into a ReceivedContent struct.
 // Incoming data is truncated after the given maximum message size.
 // If a maxMessageSize of 0 is given, this function will default to using
 // DefaultMaxMessageSize.
-func NewReceivedContent(
+func newReceivedContent(
 	headers map[string][]string,
 	bodyReader io.Reader,
 	maxMessageSize int64,
-) (content *ReceivedContent, err error) {
+) (content *receivedContent, err error) {
 	var (
 		body []byte
 	)
@@ -164,7 +164,7 @@ func NewReceivedContent(
 		return nil, fmt.Errorf("could not read body: %w", err)
 	}
 
-	content = &ReceivedContent{
+	content = &receivedContent{
 		headers: headers,
 		body:    body,
 	}
@@ -200,7 +200,7 @@ func NewReceivedContent(
 				}
 			}
 
-			part, err := NewReceivedPart(i, rawPart, maxMessageSize)
+			part, err := newReceivedPart(i, rawPart, maxMessageSize)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse message part: %w", err)
 			}
@@ -265,58 +265,58 @@ func wrapBodyReader(r io.Reader, headers map[string][]string, maxMessageSize int
 // Getters
 // =======
 
-func (c *ReceivedContent) ContentType() (contentType string) {
+func (c *receivedContent) ContentType() (contentType string) {
 	return c.contentType
 }
 
-func (c *ReceivedContent) ContentTypeParams() (contentTypeParams map[string]string) {
+func (c *receivedContent) ContentTypeParams() (contentTypeParams map[string]string) {
 	return c.contentTypeParams
 }
 
-func (c *ReceivedContent) Body() (body []byte) {
+func (c *receivedContent) Body() (body []byte) {
 	return c.body
 }
 
-func (c *ReceivedContent) Headers() (headers map[string][]string) {
+func (c *receivedContent) Headers() (headers map[string][]string) {
 	return c.headers
 }
 
-func (c *ReceivedContent) IsMultipart() (isMultipart bool) {
+func (c *receivedContent) IsMultipart() (isMultipart bool) {
 	return c.isMultipart
 }
 
-func (c *ReceivedContent) Multiparts() (multiparts []*ReceivedPart) {
+func (c *receivedContent) Multiparts() (multiparts []*receivedPart) {
 	return c.multiparts
 }
 
-func (m *ReceivedMessage) Content() (content *ReceivedContent) {
+func (m *receivedMessage) Content() (content *receivedContent) {
 	return m.content
 }
 
-func (m *ReceivedMessage) Index() (index int) {
+func (m *receivedMessage) Index() (index int) {
 	return m.index
 }
 
-func (m *ReceivedMessage) RawMessageData() (rawMessageData []byte) {
+func (m *receivedMessage) RawMessageData() (rawMessageData []byte) {
 	return m.rawMessageData
 }
 
-func (m *ReceivedMessage) ReceivedAt() (receivedAt time.Time) {
+func (m *receivedMessage) ReceivedAt() (receivedAt time.Time) {
 	return m.receivedAt
 }
 
-func (m *ReceivedMessage) SmtpFrom() (smtpFrom string) {
+func (m *receivedMessage) SmtpFrom() (smtpFrom string) {
 	return m.smtpFrom
 }
 
-func (m *ReceivedMessage) SmtpRcptTo() (smtpRcptTo []string) {
+func (m *receivedMessage) SmtpRcptTo() (smtpRcptTo []string) {
 	return m.smtpRcptTo
 }
 
-func (p *ReceivedPart) Content() (content *ReceivedContent) {
+func (p *receivedPart) Content() (content *receivedContent) {
 	return p.content
 }
 
-func (p *ReceivedPart) Index() (index int) {
+func (p *receivedPart) Index() (index int) {
 	return p.index
 }

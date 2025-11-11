@@ -11,13 +11,8 @@ import (
 	"github.com/programmfabrik/apitest/internal/handlerutil"
 )
 
-// Mode definition
-type Mode string
-
-const (
-	// ModePassthrough mode
-	ModePassthrough Mode = "passthru"
-)
+// mode definition
+type mode string
 
 // request definition
 type request struct {
@@ -36,13 +31,13 @@ type storeEntry struct {
 
 // storeConfig definition
 type storeConfig struct {
-	Mode Mode `json:"mode"`
+	Mode mode `json:"mode"`
 }
 
 // store definition
 type store struct {
 	Name string
-	Mode Mode
+	Mode mode
 	Data []storeEntry
 }
 

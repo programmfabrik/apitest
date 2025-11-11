@@ -13,9 +13,9 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-// N returns a slice of N 0-sized elements, suitable for ranging over. (github.com/bradfitz)
-func N(n any) (elements []struct{}, err error) {
-	switch v := n.(type) {
+// n returns a slice of n 0-sized elements, suitable for ranging over. (github.com/bradfitz)
+func n(count any) (elements []struct{}, err error) {
+	switch v := count.(type) {
 	case float64:
 		return make([]struct{}, int(v)), nil
 	case int64:
@@ -26,11 +26,11 @@ func N(n any) (elements []struct{}, err error) {
 		var i int64
 		i, err = v.Int64()
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("N needs to receive a number. Could not parse %T: %w", count, err)
 		}
 		return make([]struct{}, i), nil
 	}
-	return nil, fmt.Errorf("N needs to receive a float64, int, int64. Got: %T", n)
+	return nil, fmt.Errorf("N needs to receive a float64, int, int64. Got: %T", count)
 }
 
 // rowsToMap creates a new map, maps "key" column of each to the "value" column of that row. #51482

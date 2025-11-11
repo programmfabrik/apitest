@@ -32,7 +32,7 @@ type Response struct {
 	BodyLoadDur time.Duration
 }
 
-func HttpHeaderToMap(header http.Header) (headers map[string]any, err error) {
+func httpHeaderToMap(header http.Header) (headers map[string]any, err error) {
 	headers = map[string]any{}
 	for k, h := range header {
 		headers[k] = h
@@ -40,8 +40,8 @@ func HttpHeaderToMap(header http.Header) (headers map[string]any, err error) {
 	return headers, nil
 }
 
-// Cookie definition
-type Cookie struct {
+// cookie definition
+type cookie struct {
 	Name     string        `json:"name"`
 	Value    string        `json:"value"`
 	Path     string        `json:"path,omitempty"`
@@ -56,7 +56,7 @@ type Cookie struct {
 type ResponseSerialization struct {
 	StatusCode  *int              `yaml:"statuscode,omitempty" json:"statuscode,omitempty"`
 	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Cookies     map[string]cookie `yaml:"cookie" json:"cookie,omitempty"`
 	Body        any               `yaml:"body" json:"body,omitempty"`
 	BodyControl util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
@@ -67,20 +67,20 @@ type responseSerializationInternal struct {
 	HeaderFlat map[string]any `json:"header_flat,omitempty"`
 }
 
-type ResponseFormatCSV struct {
+type responseFormatCSV struct {
 	Comma string `json:"comma,omitempty"`
 }
 
-type ResponseFormatXLSX struct {
+type responseFormatXLSX struct {
 	SheetIdx int `json:"sheet_idx,omitempty"`
 }
 
 type ResponseFormat struct {
 	IgnoreBody bool               `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
 	Type       string             `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text", "xlsx"
-	CSV        ResponseFormatCSV  `json:"csv"`  // ignored if type != "csv"
-	XLSX       ResponseFormatXLSX `json:"xlsx"` // ignored if type != "xlsx"
-	PreProcess *PreProcess        `json:"pre_process,omitempty"`
+	CSV        responseFormatCSV  `json:"csv"`  // ignored if type != "csv"
+	XLSX       responseFormatXLSX `json:"xlsx"` // ignored if type != "xlsx"
+	PreProcess *preProcess        `json:"pre_process,omitempty"`
 }
 
 func NewResponse(statusCode *int,
@@ -200,7 +200,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	)
 
 	if responseFormat.PreProcess != nil {
-		resp, err = responseFormat.PreProcess.RunPreProcess(response)
+		resp, err = responseFormat.PreProcess.runPreProcess(response)
 		if err != nil {
 			return res, fmt.Errorf("could not pre process response: %w", err)
 		}
@@ -308,10 +308,10 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 
 	// Build cookies map from standard bag
 	if len(resp.Cookies) > 0 {
-		responseJSON.Cookies = make(map[string]Cookie)
+		responseJSON.Cookies = make(map[string]cookie)
 		for _, ck := range resp.Cookies {
 			if ck != nil {
-				responseJSON.Cookies[ck.Name] = Cookie{
+				responseJSON.Cookies[ck.Name] = cookie{
 					Name:     ck.Name,
 					Value:    ck.Value,
 					Path:     ck.Path,
@@ -383,10 +383,10 @@ func (response Response) ToGenericJSON() (res any, err error) {
 
 	// Build cookies map from standard bag
 	if len(response.Cookies) > 0 {
-		responseJSON.Cookies = make(map[string]Cookie)
+		responseJSON.Cookies = make(map[string]cookie)
 		for _, ck := range response.Cookies {
 			if ck != nil {
-				responseJSON.Cookies[ck.Name] = Cookie{
+				responseJSON.Cookies[ck.Name] = cookie{
 					Name:     ck.Name,
 					Value:    ck.Value,
 					Path:     ck.Path,
