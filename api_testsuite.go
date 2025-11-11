@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/programmfabrik/apitest/internal/smtp"
@@ -63,8 +64,19 @@ type Suite struct {
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
-	suite := Suite{
+func NewTestSuite(
+	config TestToolConfig,
+	manifestPath, manifestDir string,
+	r *report.ReportElement,
+	datastore *datastore.Datastore,
+	index int,
+) (suite *Suite, err error) {
+
+	var (
+		suitePreload Suite
+	)
+
+	suite = &Suite{
 		Config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
@@ -73,10 +85,11 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		datastore:      datastore,
 		index:          index,
 	}
+
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
 	// Then preloaded values are used to load again the manifest with relevant replacements
-	suitePreload := Suite{
+	suitePreload = Suite{
 		Config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
@@ -85,6 +98,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		datastore:      datastore,
 		index:          index,
 	}
+
 	manifest, err := suitePreload.loadManifest()
 	if err != nil {
 		err = fmt.Errorf("loading manifest: %w", err)
@@ -124,7 +138,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	if err != nil {
 		err = fmt.Errorf("loading manifest: %w", err)
 		suite.reporterRoot.Failure = err.Error()
-		return &suite, err
+		return suite, err
 	}
 	// fmt.Printf(%q, string(manifest))
 	// We unmarshall the final manifest into the final working suite
@@ -132,7 +146,7 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	if err != nil {
 		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
 		suite.reporterRoot.Failure = err.Error()
-		return &suite, err
+		return suite, err
 	}
 	suite.HTTPServerHost = suitePreload.HTTPServerHost
 	suite.loader = suitePreload.loader
@@ -151,10 +165,10 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 	if err != nil {
 		err = fmt.Errorf("setting datastore map: %w", err)
 		suite.reporterRoot.Failure = err.Error()
-		return &suite, err
+		return suite, err
 	}
 
-	return &suite, nil
+	return suite, nil
 }
 
 // Run run the given testsuite
@@ -421,20 +435,28 @@ func (ats *Suite) runLiteralTest(
 	return true
 }
 
-func (ats *Suite) loadManifest() ([]byte, error) {
-	var res []byte
+func (ats *Suite) loadManifest() (b []byte, err error) {
+	var (
+		res          []byte
+		loader       template.Loader
+		serverURL    *url.URL
+		manifestFile afero.File
+	)
+
 	if !ats.Config.LogShort {
 		logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	}
-	loader := template.NewLoader(ats.datastore)
+
+	loader = template.NewLoader(ats.datastore)
 	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := url.Parse(ats.Config.ServerURL)
+	serverURL, err = url.Parse(ats.Config.ServerURL)
 	if err != nil {
 		return nil, fmt.Errorf("can not load server url into manifest (%s): %w", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
 	loader.OAuthClient = ats.Config.OAuthClient
-	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
+
+	manifestFile, err = filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
 		return res, fmt.Errorf("opening manifestPath (%s): %w", ats.manifestPath, err)
 	}
@@ -445,7 +467,8 @@ func (ats *Suite) loadManifest() ([]byte, error) {
 		return res, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
 	}
 
-	b, err := loader.Render(manifestTmpl, ats.manifestDir, nil)
+	b, err = loader.Render(manifestTmpl, ats.manifestDir, nil)
 	ats.loader = loader
+
 	return b, err
 }

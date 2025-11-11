@@ -695,7 +695,7 @@ func getJsonType(value any) string {
 	}
 }
 
-func getAsInt64(value any) (int64, error) {
+func getAsInt64(value any) (n int64, err error) {
 	switch t := value.(type) {
 	case int64:
 		return t, nil

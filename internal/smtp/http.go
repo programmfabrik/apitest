@@ -290,7 +290,7 @@ func (h *smtpHTTPHandler) handleMultipartMeta(w http.ResponseWriter, part *Recei
 func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Request) {
 	maxMessageSize := h.server.maxMessageSize
 	if maxMessageSize == 0 {
-		maxMessageSize = DefaultMaxMessageSize
+		maxMessageSize = defaultMaxMessageSize
 	}
 
 	if r.Method != http.MethodPost {

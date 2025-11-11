@@ -136,109 +136,121 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 
 // cheRckForBreak Response tests the given response for a so called break response.
 // If this break response is present it returns a true
-func (testCase Case) breakResponseIsPresent(response api.Response) (bool, error) {
+func (testCase Case) breakResponseIsPresent(response api.Response) (present bool, err error) {
+	if testCase.BreakResponse == nil {
+		return false, nil
+	}
 
-	if testCase.BreakResponse != nil {
-		for _, v := range testCase.BreakResponse {
-			spec, err := testCase.loadResponseSerialization(v)
-			if err != nil {
-				return false, fmt.Errorf("loading check response serilization: %w", err)
-			}
+	var (
+		spec             api.ResponseSerialization
+		expectedResponse api.Response
+		responsesMatch   compare.CompareResult
+	)
 
-			expectedResponse, err := api.NewResponseFromSpec(spec)
-			if err != nil {
-				return false, fmt.Errorf("loading check response from spec: %w", err)
-			}
-
-			if expectedResponse.Format.Type != "" {
-				response.Format = expectedResponse.Format
-			} else {
-				expectedResponse.Format = response.Format
-			}
-
-			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
-			if err != nil {
-				return false, fmt.Errorf("matching break responses: %w", err)
-			}
-
-			if testCase.LogVerbose != nil && *testCase.LogVerbose {
-				logrus.Tracef("breakResponseIsPresent: %v", responsesMatch)
-			}
-
-			if responsesMatch.Equal {
-				return true, nil
-			}
+	for _, v := range testCase.BreakResponse {
+		spec, err = testCase.loadResponseSerialization(v)
+		if err != nil {
+			return false, fmt.Errorf("loading check response serilization: %w", err)
 		}
 
+		expectedResponse, err = api.NewResponseFromSpec(spec)
+		if err != nil {
+			return false, fmt.Errorf("loading check response from spec: %w", err)
+		}
+
+		if expectedResponse.Format.Type != "" {
+			response.Format = expectedResponse.Format
+		} else {
+			expectedResponse.Format = response.Format
+		}
+
+		responsesMatch, err = testCase.responsesEqual(expectedResponse, response)
+		if err != nil {
+			return false, fmt.Errorf("matching break responses: %w", err)
+		}
+
+		if testCase.LogVerbose != nil && *testCase.LogVerbose {
+			logrus.Tracef("breakResponseIsPresent: %v", responsesMatch)
+		}
+
+		if responsesMatch.Equal {
+			return true, nil
+		}
 	}
+
 	return false, nil
 }
 
-// checkCollectResponse loops over all given collect responses and then
-// If this continue response is present it returns a true.
-// If no continue response is set, it also returns true to keep the testsuite running
-func (testCase *Case) checkCollectResponse(response api.Response) (int, error) {
-
-	if testCase.CollectResponse != nil {
-		_, loadedResponses, err := template.LoadManifestDataAsObject(testCase.CollectResponse, testCase.manifestDir, testCase.loader)
-		if err != nil {
-			return -1, fmt.Errorf("loading check response: %w", err)
-		}
-
-		var jsonRespArray util.JsonArray
-		switch t := loadedResponses.(type) {
-		case util.JsonArray:
-			jsonRespArray = t
-		case util.JsonObject:
-			jsonRespArray = util.JsonArray{t}
-		default:
-			return -1, fmt.Errorf("loading check response: no valid type")
-
-		}
-
-		leftResponses := make(util.JsonArray, 0)
-		for _, v := range jsonRespArray {
-			spec, err := testCase.loadResponseSerialization(v)
-			if err != nil {
-				return -1, fmt.Errorf("loading check response serilization: %w", err)
-			}
-
-			expectedResponse, err := api.NewResponseFromSpec(spec)
-			if err != nil {
-				return -1, fmt.Errorf("loading check response from spec: %w", err)
-			}
-
-			if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
-				response.Format = expectedResponse.Format
-			} else {
-				expectedResponse.Format = response.Format
-			}
-
-			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
-			if err != nil {
-				return -1, fmt.Errorf("matching check responses: %w", err)
-			}
-			// !eq && !reverse -> add
-			// !eq && reverse -> don't add
-			// eq && !reverse -> don't add
-			// eq && reverse -> add
-
-			if !responsesMatch.Equal && !testCase.ReverseTestResult ||
-				responsesMatch.Equal && testCase.ReverseTestResult {
-				leftResponses = append(leftResponses, v)
-			}
-		}
-
-		testCase.CollectResponse = leftResponses
-
-		if testCase.LogVerbose != nil && *testCase.LogVerbose {
-			logrus.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
-		}
-
-		return len(leftResponses), nil
+// checkCollectResponse loops over all given collect responses and
+// if this continue response is present it returns the number of responses.
+// If no continue response is set, it returns -1 to keep the testsuite running
+func (testCase *Case) checkCollectResponse(response api.Response) (responses int, err error) {
+	if testCase.CollectResponse == nil {
+		return 0, nil
 	}
 
-	return 0, nil
+	var (
+		loadedResponses any
+		jsonRespArray   util.JsonArray
+		leftResponses   util.JsonArray
+		spec            api.ResponseSerialization
+		responsesMatch  compare.CompareResult
+	)
+
+	_, loadedResponses, err = template.LoadManifestDataAsObject(testCase.CollectResponse, testCase.manifestDir, testCase.loader)
+	if err != nil {
+		return -1, fmt.Errorf("loading check response: %w", err)
+	}
+
+	switch t := loadedResponses.(type) {
+	case util.JsonArray:
+		jsonRespArray = t
+	case util.JsonObject:
+		jsonRespArray = util.JsonArray{t}
+	default:
+		return -1, fmt.Errorf("loading check response: no valid type")
+	}
+
+	leftResponses = make(util.JsonArray, 0)
+	for _, v := range jsonRespArray {
+		spec, err = testCase.loadResponseSerialization(v)
+		if err != nil {
+			return -1, fmt.Errorf("loading check response serilization: %w", err)
+		}
+
+		expectedResponse, err := api.NewResponseFromSpec(spec)
+		if err != nil {
+			return -1, fmt.Errorf("loading check response from spec: %w", err)
+		}
+
+		if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
+			response.Format = expectedResponse.Format
+		} else {
+			expectedResponse.Format = response.Format
+		}
+
+		responsesMatch, err = testCase.responsesEqual(expectedResponse, response)
+		if err != nil {
+			return -1, fmt.Errorf("matching check responses: %w", err)
+		}
+		// !eq && !reverse -> add
+		// !eq && reverse -> don't add
+		// eq && !reverse -> don't add
+		// eq && reverse -> add
+
+		if !responsesMatch.Equal && !testCase.ReverseTestResult ||
+			responsesMatch.Equal && testCase.ReverseTestResult {
+			leftResponses = append(leftResponses, v)
+		}
+	}
+
+	testCase.CollectResponse = leftResponses
+
+	if testCase.LogVerbose != nil && *testCase.LogVerbose {
+		logrus.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
+	}
+
+	return len(leftResponses), nil
 }
 
 func (testCase Case) executeRequest(counter int) (responsesMatch compare.CompareResult, req api.Request, apiResp api.Response, err error) {
@@ -474,12 +486,11 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 	return true, apiResponse, nil
 }
 
-func (testCase Case) loadRequest() (api.Request, error) {
-	req, err := testCase.loadRequestSerialization()
+func (testCase Case) loadRequest() (req api.Request, err error) {
+	req, err = testCase.loadRequestSerialization()
 	if err != nil {
-		return req, fmt.Errorf("loadRequestSerialization: %w", err)
+		return api.Request{}, fmt.Errorf("loadRequestSerialization: %w", err)
 	}
-
 	return req, err
 }
 
@@ -499,7 +510,7 @@ func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	return res, nil
 }
 
-func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
+func (testCase Case) responsesEqual(expected, got api.Response) (comp compare.CompareResult, err error) {
 	if expected.StatusCode == nil {
 		// if the statuscode is not set, use the default status code 200
 		expected.StatusCode = golib.IntRef(200)
@@ -511,33 +522,41 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 		}
 	}
 
-	expectedJSON, err := expected.ToGenericJSON()
+	var (
+		expectedJSON any
+		gotJSON      any
+	)
+
+	expectedJSON, err = expected.ToGenericJSON()
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("loading expected generic json: %w", err)
+		return comp, fmt.Errorf("loading expected generic json: %w", err)
 	}
 	if len(expected.Body) == 0 && len(expected.BodyControl) == 0 {
 		expected.Format.IgnoreBody = true
 	} else {
 		expected.Format.IgnoreBody = false
 	}
-	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
+
+	gotJSON, err = got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("loading response generic json: %w", err)
+		return comp, fmt.Errorf("loading response generic json: %w", err)
 	}
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
-func (testCase Case) loadRequestSerialization() (api.Request, error) {
+func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 	var (
-		spec api.Request
+		spec        api.Request
+		requestData any
+		specBytes   []byte
 	)
 
-	reqLoader := testCase.loader
-	_, requestData, err := template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, reqLoader)
+	_, requestData, err = template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, testCase.loader)
 	if err != nil {
 		return spec, fmt.Errorf("loading request data: %w", err)
 	}
-	specBytes, err := json.Marshal(requestData)
+
+	specBytes, err = json.Marshal(requestData)
 	if err != nil {
 		return spec, fmt.Errorf("marshaling requet: %w", err)
 	}

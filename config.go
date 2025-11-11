@@ -82,15 +82,16 @@ func NewTestToolConfig(serverURL string, rootDirectory []string, logNetwork bool
 	return config, err
 }
 
-func (config *TestToolConfig) extractTestDirectories() error {
+func (config *TestToolConfig) extractTestDirectories() (err error) {
 	for _, rootDirectory := range config.rootDirectorys {
-		if _, err := filesystem.Fs.Stat(rootDirectory); err != nil {
+		_, err = filesystem.Fs.Stat(rootDirectory)
+		if err != nil {
 			return fmt.Errorf("The given root directory '%s' is not valid", rootDirectory)
 		}
 	}
 
 	for _, rootDirectory := range config.rootDirectorys {
-		err := afero.Walk(filesystem.Fs, rootDirectory, func(path string, info os.FileInfo, err error) error {
+		err = afero.Walk(filesystem.Fs, rootDirectory, func(path string, info os.FileInfo, _ error) (err2 error) {
 			if info.IsDir() {
 				// Skip directories starting with "_"
 				if strings.Contains(path, "/_") {
@@ -98,13 +99,15 @@ func (config *TestToolConfig) extractTestDirectories() error {
 					return filepath.SkipDir
 				}
 				//Skip directories not containing a manifest
-				_, err := filesystem.Fs.Stat(filepath.Join(path, "manifest.json"))
-				if err != nil {
+				_, err2 = filesystem.Fs.Stat(filepath.Join(path, "manifest.json"))
+				if err2 != nil {
 					return nil
 				}
+
 				config.TestDirectories = append(config.TestDirectories, path)
-				dirRel, err := filepath.Rel(rootDirectory, path)
-				if err != nil {
+				var dirRel string
+				dirRel, err2 = filepath.Rel(rootDirectory, path)
+				if err2 != nil {
 					dirRel = path
 				}
 				if dirRel == "." {

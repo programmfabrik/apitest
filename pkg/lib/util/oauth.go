@@ -31,7 +31,7 @@ type OAuthEndpointConfig struct {
 	AuthURL  string `mapstructure:"auth_url" json:"auth_url"`
 }
 
-func getOAuthClientConfig(c OAuthClientConfig) oauth2.Config {
+func getOAuthClientConfig(c OAuthClientConfig) (cfg oauth2.Config) {
 	return oauth2.Config{
 		ClientID:     c.Client,
 		ClientSecret: c.Secret,
@@ -44,7 +44,7 @@ func getOAuthClientConfig(c OAuthClientConfig) oauth2.Config {
 	}
 }
 
-func getOAuthClientCredentialsConfig(c OAuthClientConfig) clientcredentials.Config {
+func getOAuthClientCredentialsConfig(c OAuthClientConfig) (cfg clientcredentials.Config) {
 	return clientcredentials.Config{
 		ClientID:     c.Client,
 		ClientSecret: c.Secret,
@@ -54,33 +54,52 @@ func getOAuthClientCredentialsConfig(c OAuthClientConfig) clientcredentials.Conf
 
 // GetPasswordCredentialsAuthToken sends request to oAuth token endpoint
 // to get a token on behalf of a user
-func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, password string) (tok *oauth2.Token, err error) {
-	cfg := getOAuthClientConfig(c)
+func (c OAuthClientConfig) GetPasswordCredentialsAuthToken(username string, password string) (token *oauth2.Token, err error) {
+	var (
+		cfg        oauth2.Config
+		httpClient *http.Client
+		ctx        context.Context
+	)
+
 	defer func() {
 		if err != nil {
 			log.Printf("oauth2 password error: %s client: %s secret: %s", err.Error(), cfg.ClientID, cfg.ClientSecret)
 		}
 	}()
-	httpClient := &http.Client{Timeout: 60 * time.Second}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+
+	cfg = getOAuthClientConfig(c)
+	httpClient = &http.Client{Timeout: 60 * time.Second}
+	ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return cfg.PasswordCredentialsToken(ctx, username, password)
 }
 
 // GetClientCredentialsAuthToken sends request to oAuth token endpoint
 // to get a token on behalf of a user
-func (c OAuthClientConfig) GetClientCredentialsAuthToken() (*oauth2.Token, error) {
-	cfg := getOAuthClientCredentialsConfig(c)
-	httpClient := &http.Client{Timeout: 60 * time.Second}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+func (c OAuthClientConfig) GetClientCredentialsAuthToken() (token *oauth2.Token, err error) {
+	var (
+		cfg        clientcredentials.Config
+		httpClient *http.Client
+		ctx        context.Context
+	)
+
+	cfg = getOAuthClientCredentialsConfig(c)
+	httpClient = &http.Client{Timeout: 60 * time.Second}
+	ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return cfg.Token(ctx)
 }
 
 // GetCodeAuthURL sends request to oAuth code endpoint
 // to get the auth url back
-func (c OAuthClientConfig) getCodeAuthURL(params ...string) string {
-	cfg := getOAuthClientConfig(c)
-	state := ""
-	opts := []oauth2.AuthCodeOption{}
+func (c OAuthClientConfig) getCodeAuthURL(params ...string) (authURLStr string) {
+	var (
+		cfg   oauth2.Config
+		state string
+		opts  []oauth2.AuthCodeOption
+	)
+
+	cfg = getOAuthClientConfig(c)
+	state = ""
+	opts = []oauth2.AuthCodeOption{}
 	for i := 0; i < len(params); i += 2 {
 		if params[i] == "state" {
 			state = params[i+1]
@@ -94,74 +113,106 @@ func (c OAuthClientConfig) getCodeAuthURL(params ...string) string {
 // GetRedirectURL sends request to oAuth auth endpoint
 // to get the redirect URL, optionally bypassing login form
 // username, password have to be provided in the params list if needed
-func (c OAuthClientConfig) getRedirectURL(params ...string) (*url.URL, error) {
-	authURLStr := c.getCodeAuthURL(params...)
-	authURL, err := url.Parse(authURLStr)
+func (c OAuthClientConfig) getRedirectURL(params ...string) (redirectURL *url.URL, err error) {
+	var (
+		authURLStr string
+		authURL    *url.URL
+		qv, cqv    url.Values
+		httpClient *http.Client
+		ctx        context.Context
+		res        *http.Response
+	)
+
+	authURLStr = c.getCodeAuthURL(params...)
+	authURL, err = url.Parse(authURLStr)
 	if err != nil {
 		return nil, err
 	}
-	qv := url.Values{}
+
+	qv = url.Values{}
 	for i := 0; i < len(params); i += 2 {
 		qv.Set(params[i], params[i+1])
 	}
-	cqv := authURL.Query()
+
+	cqv = authURL.Query()
 	for k, v := range qv {
 		for _, vv := range v {
 			cqv.Set(k, vv)
 		}
 	}
+
 	authURL.RawQuery = cqv.Encode()
-	httpClient := &http.Client{Timeout: 60 * time.Second}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+	httpClient = &http.Client{Timeout: 60 * time.Second}
+	ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	req, err := http.NewRequestWithContext(ctx, "GET", authURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	res, err := httpClient.Do(req)
+
+	res, err = httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("No proper status after redirect returned: %s (%d)", res.Status, res.StatusCode)
 	}
+
 	return res.Request.URL, nil
 }
 
 // GetCodeAuthToken sends request to oAuth auth endpoint
 // to get a token, optionally bypassing login form
 // username, password have to be provided in the params list if needed
-func (c OAuthClientConfig) GetCodeAuthToken(params ...string) (*oauth2.Token, error) {
-	redirectURL, err := c.getRedirectURL(params...)
+func (c OAuthClientConfig) GetCodeAuthToken(params ...string) (token *oauth2.Token, err error) {
+	var (
+		redirectURL *url.URL
+		code        string
+		cfg         oauth2.Config
+		httpClient  *http.Client
+		ctx         context.Context
+		opts        []oauth2.AuthCodeOption
+	)
+
+	redirectURL, err = c.getRedirectURL(params...)
 	if err != nil {
 		return nil, err
 	}
-	code := redirectURL.Query().Get("code")
-	cfg := getOAuthClientConfig(c)
-	httpClient := &http.Client{Timeout: 60 * time.Second}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
-	opts := []oauth2.AuthCodeOption{}
+
+	code = redirectURL.Query().Get("code")
+	cfg = getOAuthClientConfig(c)
+	httpClient = &http.Client{Timeout: 60 * time.Second}
+	ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+	opts = []oauth2.AuthCodeOption{}
 	for i := 0; i < len(params); i += 2 {
 		opts = append(opts, oauth2.SetAuthURLParam(params[i], params[i+1]))
 	}
+
 	return cfg.Exchange(ctx, code, opts...)
 }
 
 // GetCodeAuthToken sends request to oAuth auth endpoint
 // to get a token, optionally bypassing login form
 // username, password have to be provided in the params list if needed
-func (c OAuthClientConfig) GetAuthToken(params ...string) (*oauth2.Token, error) {
-	redirectURL, err := c.getRedirectURL(params...)
+func (c OAuthClientConfig) GetAuthToken(params ...string) (token *oauth2.Token, err error) {
+	var (
+		redirectURL *url.URL
+		tokensF     string
+		qv          url.Values
+	)
+
+	redirectURL, err = c.getRedirectURL(params...)
 	if err != nil {
 		return nil, err
 	}
-	tokensF := redirectURL.EscapedFragment()
-	qv, err := url.ParseQuery(tokensF)
+
+	tokensF = redirectURL.EscapedFragment()
+	qv, err = url.ParseQuery(tokensF)
 	if err != nil {
 		return nil, err
 	}
-	token := oauth2.Token{
+	token = &oauth2.Token{
 		AccessToken:  qv.Get("access_token"),
 		RefreshToken: qv.Get("refresh_token"),
 	}
-	return &token, nil
+	return token, nil
 }

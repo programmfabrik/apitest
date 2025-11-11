@@ -178,7 +178,7 @@ func (r *ReportElement) SaveToReportLogF(v string, args ...any) {
 }
 
 // WriteToFile write the report into the report file
-func (r *Report) WriteToFile(reportFile, reportFormat string) error {
+func (r *Report) WriteToFile(reportFile, reportFormat string) (err error) {
 	var parsingFunction func(baseResult *ReportElement) []byte
 	switch reportFormat {
 	case "junit":
@@ -196,7 +196,7 @@ func (r *Report) WriteToFile(reportFile, reportFormat string) error {
 		parsingFunction = ParseJSONResult
 	}
 
-	err := os.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
+	err = os.WriteFile(reportFile, r.GetTestResult(parsingFunction), 0644)
 	if err != nil {
 		logrus.Errorf("Could not save report into file: %s", err.Error())
 		return err

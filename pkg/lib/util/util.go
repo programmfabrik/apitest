@@ -36,7 +36,7 @@ func RemoveFromJsonArray(input []any, removeIndex int) (output []any) {
 	return output
 }
 
-func GetStringFromInterface(queryParam any) (string, error) {
+func GetStringFromInterface(queryParam any) (v string, err error) {
 	switch t := queryParam.(type) {
 	case string:
 		return t, nil
@@ -45,7 +45,8 @@ func GetStringFromInterface(queryParam any) (string, error) {
 	case int:
 		return fmt.Sprintf("%d", t), nil
 	default:
-		jsonVal, err := json.Marshal(t)
+		var jsonVal []byte
+		jsonVal, err = json.Marshal(t)
 		return string(jsonVal), err
 	}
 }
@@ -54,14 +55,15 @@ func GetStringFromInterface(queryParam any) (string, error) {
 // there are 2 formats for the result json:
 // - "xml": use mxj.NewMapXmlSeq (more complex format including #seq)
 // - "xml2": use mxj.NewMapXmlSeq (simpler format)
-func Xml2Json(rawXml []byte, format string) ([]byte, error) {
+func Xml2Json(rawXml []byte, format string) (jsonStr []byte, err error) {
 	var (
-		mv  mxj.Map
-		err error
+		mv                  mxj.Map
+		xmlDeclarationRegex *regexp.Regexp
+		replacedXML         []byte
 	)
 
-	xmlDeclarationRegex := regexp.MustCompile(`<\?xml.*?\?>`)
-	replacedXML := xmlDeclarationRegex.ReplaceAll(rawXml, []byte{})
+	xmlDeclarationRegex = regexp.MustCompile(`<\?xml.*?\?>`)
+	replacedXML = xmlDeclarationRegex.ReplaceAll(rawXml, []byte{})
 
 	switch format {
 	case "xml":
@@ -76,18 +78,18 @@ func Xml2Json(rawXml []byte, format string) ([]byte, error) {
 		return []byte{}, fmt.Errorf("could not parse xml: %w", err)
 	}
 
-	jsonStr, err := mv.JsonIndent("", " ")
+	jsonStr, err = mv.JsonIndent("", " ")
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
+
 	return jsonStr, nil
 }
 
 // Xhtml2Json parses the raw xhtml data and converts it into a json string
-func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
+func Xhtml2Json(rawXhtml []byte) (jsonStr []byte, err error) {
 	var (
-		mv  mxj.Map
-		err error
+		mv mxj.Map
 	)
 
 	mv, err = mxj.NewMapXml(rawXhtml)
@@ -95,24 +97,25 @@ func Xhtml2Json(rawXhtml []byte) ([]byte, error) {
 		return []byte{}, fmt.Errorf("could not parse xhtml: %w", err)
 	}
 
-	jsonStr, err := mv.JsonIndent("", " ")
+	jsonStr, err = mv.JsonIndent("", " ")
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
+
 	return jsonStr, nil
 }
 
 // Xlsx2Json parses the raw xlsx data and converts it into a json string.
 // Only the content is parsed, all formatting etc is discarded.
 // The result structure is the same as for CSV.
-func Xlsx2Json(rawXlsx []byte, sheetIdx int) ([]byte, error) {
+func Xlsx2Json(rawXlsx []byte, sheetIdx int) (jsonStr []byte, err error) {
 	var (
 		csvBuf bytes.Buffer
-		err    error
+		xlsx   *excelize.File
 	)
 
 	// parse xlsx raw data
-	xlsx, err := excelize.OpenReader(bytes.NewReader(rawXlsx))
+	xlsx, err = excelize.OpenReader(bytes.NewReader(rawXlsx))
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not read raw xlsx data: %w", err)
 	}
@@ -151,18 +154,19 @@ func Xlsx2Json(rawXlsx []byte, sheetIdx int) ([]byte, error) {
 		return []byte{}, fmt.Errorf("could not parse csv: %w", err)
 	}
 
-	jsonStr, err := json.Marshal(csvData)
+	jsonStr, err = json.Marshal(csvData)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}
+
 	return jsonStr, nil
 }
 
 // Html2Json parses the raw html data and converts it into a json string
-func Html2Json(rawHtml []byte) ([]byte, error) {
+func Html2Json(rawHtml []byte) (jsonStr []byte, err error) {
 	var (
-		htmlDoc *goquery.Document
-		err     error
+		htmlDoc  *goquery.Document
+		htmlData map[string]any
 	)
 
 	htmlDoc, err = goquery.NewDocumentFromReader(bytes.NewReader(rawHtml))
@@ -170,7 +174,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 		return []byte{}, fmt.Errorf("could not parse html: %w", err)
 	}
 
-	htmlData := map[string]any{}
+	htmlData = map[string]any{}
 	htmlDoc.Selection.Contents().Each(func(_ int, node *goquery.Selection) {
 		switch node.Get(0).Type {
 		case html.ElementNode:
@@ -181,7 +185,7 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 		}
 	})
 
-	jsonStr, err := golib.JsonBytesIndent(htmlData, "", " ")
+	jsonStr, err = golib.JsonBytesIndent(htmlData, "", " ")
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert html to json: %w", err)
 	}
@@ -191,12 +195,15 @@ func Html2Json(rawHtml []byte) ([]byte, error) {
 
 // parseHtmlNode recursivly parses the html node and adds it to a map
 // the resulting structure is the same as the result of format "xml2" (using mxj.NewMapXmlSeq)
-func parseHtmlNode(node *goquery.Selection) map[string]any {
-	tagData := map[string]any{}
+func parseHtmlNode(node *goquery.Selection) (htmlMap map[string]any) {
+	var (
+		tagData        map[string]any
+		childrenByName map[string][]any
+		comments       []string
+	)
 
-	childrenByName := map[string][]any{}
-	comments := []string{}
-
+	childrenByName = map[string][]any{}
+	comments = []string{}
 	node.Contents().Each(func(i int, content *goquery.Selection) {
 		switch content.Get(0).Type {
 		case html.ElementNode:
@@ -210,6 +217,8 @@ func parseHtmlNode(node *goquery.Selection) map[string]any {
 			return
 		}
 	})
+
+	tagData = map[string]any{}
 
 	// include attributes
 	for _, attr := range node.Get(0).Attr {

@@ -337,7 +337,7 @@ func (request Request) Send() (response Response, err error) {
 	}
 
 	if request.NoRedirect {
-		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) (err error) {
 			return http.ErrUseLastResponse
 		}
 	} else {

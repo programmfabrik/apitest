@@ -18,16 +18,15 @@ type PathSpec struct {
 }
 
 // ParsePathSpec tries to parse the given string into a PathSpec.
-//
 // The string takes the format "[n]@file.json". Invalid path specs
 // result in an error.
-func ParsePathSpec(s string) (*PathSpec, error) {
+func ParsePathSpec(s string) (spec *PathSpec, err error) {
 	var (
 		ok           bool
-		err          error
 		parallelRuns string
-		spec         PathSpec
 	)
+
+	spec = &PathSpec{}
 
 	parallelRuns, spec.Path, ok = strings.Cut(s, "@")
 	if parallelRuns != "" {
@@ -43,25 +42,25 @@ func ParsePathSpec(s string) (*PathSpec, error) {
 		return nil, fmt.Errorf("invalid path spec %q", s)
 	}
 
-	return &spec, err
+	return spec, err
 }
 
 // IsPathSpec is a wrapper around ParsePathSpec that discards the parsed PathSpec.
 // It's useful for chaining within boolean expressions.
-func IsPathSpec(s string) bool {
+func IsPathSpec(s string) (isPathSpec bool) {
 	_, err := ParsePathSpec(s)
 	return err == nil
 }
 
 // Load loads the contents of the file pointed to by the PathSpec into a byte array.
-func (ps PathSpec) LoadContents(manifestDir string) ([]byte, error) {
+func (ps PathSpec) LoadContents(manifestDir string) (contents []byte, err error) {
 	requestFile, err := OpenFileOrUrl(ps.Path, manifestDir)
 	if err != nil {
 		return nil, fmt.Errorf("opening path: %w", err)
 	}
 	defer requestFile.Close()
 
-	contents, err := io.ReadAll(requestFile)
+	contents, err = io.ReadAll(requestFile)
 	if err != nil {
 		return nil, fmt.Errorf("loading file at %q: %w", ps, err)
 	}

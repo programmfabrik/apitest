@@ -13,8 +13,8 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-// N returns a slice of n 0-sized elements, suitable for ranging over. (github.com/bradfitz)
-func N(n any) ([]struct{}, error) {
+// N returns a slice of N 0-sized elements, suitable for ranging over. (github.com/bradfitz)
+func N(n any) (elements []struct{}, err error) {
 	switch v := n.(type) {
 	case float64:
 		return make([]struct{}, int(v)), nil
@@ -23,7 +23,8 @@ func N(n any) ([]struct{}, error) {
 	case int:
 		return make([]struct{}, v), nil
 	case json.Number:
-		i, err := v.Int64()
+		var i int64
+		i, err = v.Int64()
 		if err != nil {
 			panic(err)
 		}
@@ -135,7 +136,7 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 // functions copied from: https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // add returns the sum of a and b.
-func add(b, a any) (any, error) {
+func add(b, a any) (result any, err error) {
 	a = intOrFloatFromJsonNumber(a)
 	b = intOrFloatFromJsonNumber(b)
 
@@ -192,7 +193,7 @@ func add(b, a any) (any, error) {
 }
 
 // subtract returns the difference of b from a.
-func subtract(b, a any) (any, error) {
+func subtract(b, a any) (result any, err error) {
 	a = intOrFloatFromJsonNumber(a)
 	b = intOrFloatFromJsonNumber(b)
 
@@ -255,7 +256,7 @@ func intOrFloatFromJsonNumber(a any) any {
 }
 
 // multiply returns the product of a and b.
-func multiply(b, a any) (any, error) {
+func multiply(b, a any) (result any, err error) {
 	a = intOrFloatFromJsonNumber(a)
 	b = intOrFloatFromJsonNumber(b)
 
@@ -304,7 +305,7 @@ func multiply(b, a any) (any, error) {
 // FROM https://github.com/hashicorp/consul-template/blob/de2ebf4/template_functions.go#L727-L901
 
 // divide returns the division of b from a.
-func divide(b, a any) (any, error) {
+func divide(b, a any) (result any, err error) {
 	a = intOrFloatFromJsonNumber(a)
 	b = intOrFloatFromJsonNumber(b)
 
@@ -350,14 +351,14 @@ func divide(b, a any) (any, error) {
 	}
 }
 
-func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
+func fileReadInternal(pathOrURL, rootDir string) (data []byte, err error) {
 	file, err := util.OpenFileOrUrl(pathOrURL, rootDir)
 	if err != nil {
 		return nil, fmt.Errorf("fileReadInternal: %q: %w", pathOrURL, err)
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(file)
+	data, err = io.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("fileReadInternal: %q: %w", pathOrURL, err)
 	}
@@ -366,7 +367,7 @@ func fileReadInternal(pathOrURL, rootDir string) ([]byte, error) {
 
 // fileRender loads file from path and renders is as Go template passing
 // the arguments as ".Param1", ".Param2" into the template.
-func loadFileAndRender(rootDir string, loader *Loader) any {
+func loadFileAndRender(rootDir string, loader *Loader) (rendered any) {
 	return func(path string, params ...any) (st string, err error) {
 		data, err := fileReadInternal(path, rootDir)
 		if err != nil {

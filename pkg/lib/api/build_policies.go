@@ -31,7 +31,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 
 	additionalHeaders["Content-Type"] = w.FormDataContentType()
 
-	createPart := func(key string, val any) error {
+	createPart := func(key string, val any) (err error) {
 		if key == "file:filename" {
 			return nil
 		}
@@ -117,20 +117,24 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 
 // buildFile opens a file for use with buildPolicy.
 // WARNING: This returns a file handle that must be closed!
-func buildFile(req Request) (map[string]string, io.Reader, error) {
-	headers := map[string]string{}
-
+func buildFile(req Request) (headers map[string]string, file io.Reader, err error) {
 	if req.BodyFile == "" {
 		return nil, nil, errors.New(`Request.buildFile: Missing "body_file"`)
 	}
 
-	path := req.BodyFile
-	pathSpec, err := util.ParsePathSpec(req.BodyFile)
+	var (
+		path     string
+		pathSpec *util.PathSpec
+	)
+
+	headers = map[string]string{}
+	path = req.BodyFile
+	pathSpec, err = util.ParsePathSpec(req.BodyFile)
 	if err == nil && pathSpec != nil { // we unwrap the path, if an @-notation path spec was passed into body_file
 		path = pathSpec.Path
 	}
 
-	file, err := util.OpenFileOrUrl(path, req.ManifestDir)
+	file, err = util.OpenFileOrUrl(path, req.ManifestDir)
 	if err != nil {
 		return nil, nil, err
 	}

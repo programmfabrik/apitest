@@ -188,12 +188,15 @@ func splitLines(s string) (lines util.JsonArray) {
 }
 
 // ServerResponseToGenericJSON parse response from server. convert xml, csv, binary to json if necessary
-func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (any, error) {
+func (response Response) ServerResponseToGenericJSON(responseFormat ResponseFormat, bodyOnly bool) (res any, err error) {
 	var (
-		res, bodyJSON any
+		bodyJSON      any
 		bodyData      []byte
-		err           error
 		resp          Response
+		headerFlat    map[string]any
+		headersAny    map[string]any
+		responseJSON  responseSerializationInternal
+		responseBytes []byte
 	)
 
 	if responseFormat.PreProcess != nil {
@@ -287,18 +290,21 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		return res, fmt.Errorf("Invalid response format '%s'", responseFormat.Type)
 	}
 
-	headerFlat := map[string]any{}
-	headersAny := map[string]any{}
+	headerFlat = map[string]any{}
+	headersAny = map[string]any{}
 	for key, value := range resp.Headers {
 		headersAny[key] = value
 		values := value.([]string) // this must be []string, if not this panics
 		headerFlat[key] = strings.Join(values, ";")
 	}
 
-	responseJSON := responseSerializationInternal{}
-	responseJSON.StatusCode = resp.StatusCode
-	responseJSON.Headers = headersAny
-	responseJSON.HeaderFlat = headerFlat
+	responseJSON = responseSerializationInternal{
+		ResponseSerialization: ResponseSerialization{
+			StatusCode: resp.StatusCode,
+			Headers:    headersAny,
+		},
+		HeaderFlat: headerFlat,
+	}
 
 	// Build cookies map from standard bag
 	if len(resp.Cookies) > 0 {
@@ -337,10 +343,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err := json.Marshal(responseJSON)
+	responseBytes, err = json.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
+
 	err = json.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
@@ -350,27 +357,29 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 }
 
 // ToGenericJSON parse expected response
-func (response Response) ToGenericJSON() (any, error) {
+func (response Response) ToGenericJSON() (res any, err error) {
 	var (
-		bodyJSON, res any
-		err           error
+		bodyJSON      any
+		responseJSON  responseSerializationInternal
+		responseBytes []byte
 	)
 
 	// We have a json, and thereby try to unmarshal it into our body
-	resBody := response.Body
-	if len(resBody) > 0 {
-		err = json.Unmarshal(resBody, &bodyJSON)
+	if len(response.Body) > 0 {
+		err = json.Unmarshal(response.Body, &bodyJSON)
 		if err != nil {
 			return res, err
 		}
 	}
 
-	responseJSON := responseSerializationInternal{}
-
-	responseJSON.StatusCode = response.StatusCode
-	responseJSON.Headers = response.Headers
-	responseJSON.HeaderFlat = response.HeaderFlat
-	responseJSON.BodyControl = response.BodyControl
+	responseJSON = responseSerializationInternal{
+		ResponseSerialization: ResponseSerialization{
+			StatusCode:  response.StatusCode,
+			Headers:     response.Headers,
+			BodyControl: response.BodyControl,
+		},
+		HeaderFlat: response.HeaderFlat,
+	}
 
 	// Build cookies map from standard bag
 	if len(response.Cookies) > 0 {
@@ -397,7 +406,7 @@ func (response Response) ToGenericJSON() (any, error) {
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err := json.Marshal(responseJSON)
+	responseBytes, err = json.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
@@ -408,24 +417,32 @@ func (response Response) ToGenericJSON() (any, error) {
 	return res, nil
 }
 
-func (response Response) ServerResponseToJsonString(bodyOnly bool) (string, error) {
-	genericJSON, err := response.ServerResponseToGenericJSON(response.Format, bodyOnly)
+func (response Response) ServerResponseToJsonString(bodyOnly bool) (jstring string, err error) {
+	var (
+		genericJSON any
+		bytes       []byte
+	)
+
+	genericJSON, err = response.ServerResponseToGenericJSON(response.Format, bodyOnly)
 	if err != nil {
 		return "", fmt.Errorf("formatting response: %w", err)
 	}
-	bytes, err := golib.JsonBytesIndent(genericJSON, "", "  ")
+
+	bytes, err = golib.JsonBytesIndent(genericJSON, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("formatting response: %w", err)
 	}
+
 	return string(bytes), nil
 }
 
-func (response Response) ToString() string {
+func (response Response) ToString() (s string) {
 	var (
 		headersString string
 		bodyString    string
 		err           error
 		resp          Response
+		statuscode    int
 	)
 
 	for k, v := range response.Headers {
@@ -460,7 +477,6 @@ func (response Response) ToString() string {
 		}
 	}
 
-	statuscode := 0
 	if resp.StatusCode != nil {
 		statuscode = *resp.StatusCode
 	}

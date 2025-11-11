@@ -53,7 +53,7 @@ func (data DatastoreIndexError) Error() string {
 }
 
 // SetWithGjson stores the given response driven by a map key => gjson
-func (ds *Datastore) SetWithGjson(jsonResponse string, storeResponse map[string]string) error {
+func (ds *Datastore) SetWithGjson(jsonResponse string, storeResponse map[string]string) (err error) {
 	for k, qv := range storeResponse {
 		setEmpty := false
 		if len(qv) > 0 && qv[0] == '!' {
@@ -98,7 +98,7 @@ func (ds *Datastore) AppendResponse(s string) {
 	ds.responseJson = append(ds.responseJson, s)
 }
 
-func (ds *Datastore) SetMap(smap map[string]any) error {
+func (ds *Datastore) SetMap(smap map[string]any) (err error) {
 	for k, v := range smap {
 		err := ds.Set(k, v)
 		if err != nil {
@@ -108,7 +108,7 @@ func (ds *Datastore) SetMap(smap map[string]any) error {
 	return nil
 }
 
-func (ds *Datastore) Set(index string, value any) error {
+func (ds *Datastore) Set(index string, value any) (err error) {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
 	//typeswitch for checking if float is actually int
