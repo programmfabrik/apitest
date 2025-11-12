@@ -35,8 +35,6 @@ type delimiters struct {
 	Right string
 }
 
-var delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
-
 // Loader loads and executes a manifest template.
 //
 // A manifest template is a customized version of Go's text/template, plus
@@ -70,30 +68,42 @@ func (loader *Loader) Render(
 	rootDir string,
 	ctx any) (res []byte, err error) {
 
+	var (
+		delimsRE        *regexp.Regexp
+		removeCheckRE   *regexp.Regexp
+		splitRE         *regexp.Regexp
+		removeCommentRE *regexp.Regexp
+		matches         []string
+		replacements    []string
+		newTmplStr      string
+	)
+
+	delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
+	removeCheckRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
+	splitRE = regexp.MustCompile(`[\t ]`)
+	removeCommentRE = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
+
 	// First check for custom delimiters
-	matches := delimsRE.FindStringSubmatch(string(tmplBytes))
+	matches = delimsRE.FindStringSubmatch(string(tmplBytes))
 	if len(matches) == 3 {
 		loader.Delimiters.Left, loader.Delimiters.Right = matches[1], matches[2]
 	}
 
 	// Second check for placeholders removal
-	removeCheckRE := regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
 	matches = removeCheckRE.FindStringSubmatch(string(tmplBytes))
-	replacements := []string{}
+	replacements = []string{}
 	if len(matches) > 1 {
-		splitRE := regexp.MustCompile(`[\t ]`)
 		placeholders := splitRE.Split(matches[1], -1)
 		for _, s := range placeholders {
 			replacements = append(replacements, s, "")
 		}
 	}
-	newTmplStr := strings.NewReplacer(replacements...).Replace(string(tmplBytes))
+	newTmplStr = strings.NewReplacer(replacements...).Replace(string(tmplBytes))
 	tmplBytes = []byte(newTmplStr)
 
 	// Remove comments from template if comments are not the delimiters
 	if loader.Delimiters.Left != "//" {
-		var re = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
-		tmplBytes = []byte(re.ReplaceAllString(string(tmplBytes), ``))
+		tmplBytes = []byte(removeCommentRE.ReplaceAllString(string(tmplBytes), ``))
 	}
 
 	funcMap := template.FuncMap{
@@ -109,11 +119,15 @@ func (loader *Loader) Render(
 			}
 			return
 		},
-		"split": func(s, sep string) []string {
+		"split": func(s, sep string) (split []string) {
 			return strings.Split(s, sep)
 		},
-		"md5sum": func(path string) (string, error) {
-			fileBytes, err := fileReadInternal(path, rootDir)
+		"md5sum": func(path string) (md5sum string, err error) {
+			var (
+				fileBytes []byte
+			)
+
+			fileBytes, err = fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}
@@ -122,7 +136,7 @@ func (loader *Loader) Render(
 			hasher.Write([]byte(fileBytes))
 			return hex.EncodeToString(hasher.Sum(nil)), nil
 		},
-		// "parse_csv": func(path string, delimiter rune) ([]map[string]any, error) {
+		// "parse_csv": func(path string, delimiter rune) ([]map[string]any, err error) {
 		// 	_, file, err := util.OpenFileOrUrl(path, rootDir)
 		// 	if err != nil {
 		// 		return nil, err
@@ -133,34 +147,39 @@ func (loader *Loader) Render(
 		// 	}
 		// 	data, err := csv.GenericCSVToMap(fileBytes, delimiter)
 		// 	if err != nil {
-		// 		return data, fmt.Errorf("'%s' %s", path, err)
+		// 		return data, fmt.Errorf("'%s' %w", path, err)
 		// 	}
 		// 	return data, err
 		// },
 		"file":        loadFile(rootDir),
 		"file_render": loadFileAndRender(rootDir, loader),
 		"file_csv":    loadFileCSV(rootDir),
-		"file_sqlite": func(path, statement string) ([]map[string]any, error) {
-			sqliteFile := filepath.Join(rootDir, path)
-			database, err := sql.Open("sqlite3", sqliteFile)
+		"file_sqlite": func(path, statement string) (data []map[string]any, err error) {
+			var (
+				database *sql.DB
+				rows     *sql.Rows
+				columns  []*sql.ColumnType
+				row      []any
+			)
+
+			database, err = sql.Open("sqlite3", filepath.Join(rootDir, path))
 			if err != nil {
 				return nil, err
 			}
 			defer database.Close()
 
-			rows, err := database.Query(statement)
+			rows, err = database.Query(statement)
 			if err != nil {
 				return nil, err
 			}
 			defer rows.Close()
 
-			columns, err := rows.ColumnTypes()
+			columns, err = rows.ColumnTypes()
 			if err != nil {
 				return nil, err
 			}
-			row := make([]any, len(columns))
-
-			data := []map[string]any{}
+			row = make([]any, len(columns))
+			data = []map[string]any{}
 
 			for rows.Next() {
 				dataEntry := map[string]any{}
@@ -183,49 +202,64 @@ func (loader *Loader) Render(
 
 			return data, nil
 		},
-		"file_xml2json": func(path string) (string, error) {
-			fileBytes, err := fileReadInternal(path, rootDir)
+		"file_xml2json": func(path string) (jsonBytes string, err error) {
+			var (
+				fileBytes []byte
+				bytes     []byte
+			)
+
+			fileBytes, err = fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}
 
-			bytes, err := util.Xml2Json(fileBytes, "xml2")
+			bytes, err = util.Xml2Json(fileBytes, "xml2")
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal xml to json: %w", err)
+				return "", fmt.Errorf("could not marshal xml to json: %w", err)
 			}
 
 			return string(bytes), nil
 		},
-		"file_xhtml2json": func(path string) (string, error) {
-			fileBytes, err := fileReadInternal(path, rootDir)
+		"file_xhtml2json": func(path string) (jsonBytes string, err error) {
+			var (
+				fileBytes []byte
+				bytes     []byte
+			)
+
+			fileBytes, err = fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}
 
-			bytes, err := util.Xhtml2Json(fileBytes)
+			bytes, err = util.Xhtml2Json(fileBytes)
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal xhtml to json: %w", err)
+				return "", fmt.Errorf("could not marshal xhtml to json: %w", err)
 			}
 
 			return string(bytes), nil
 		},
-		"file_html2json": func(path string) (string, error) {
-			fileBytes, err := fileReadInternal(path, rootDir)
+		"file_html2json": func(path string) (jsonBytes string, err error) {
+			var (
+				fileBytes []byte
+				bytes     []byte
+			)
+
+			fileBytes, err = fileReadInternal(path, rootDir)
 			if err != nil {
 				return "", err
 			}
 
-			bytes, err := util.Html2Json(fileBytes)
+			bytes, err = util.Html2Json(fileBytes)
 			if err != nil {
-				return "", fmt.Errorf("Could not marshal html to json: %w", err)
+				return "", fmt.Errorf("could not marshal html to json: %w", err)
 			}
 
 			return string(bytes), nil
 		},
-		"file_path": func(path string) string {
+		"file_path": func(path string) (file_path string) {
 			return util.LocalPath(path, rootDir)
 		},
-		"datastore": func(index any) (any, error) {
+		"datastore": func(index any) (data any, err error) {
 			var key string
 
 			switch idxType := index.(type) {
@@ -242,29 +276,32 @@ func (loader *Loader) Render(
 
 			return loader.datastore.Get(key)
 		},
-		"unmarshal": func(s string) (any, error) {
-			var gj any
-			err := util.Unmarshal([]byte(s), &gj)
+		"unmarshal": func(s string) (gj any, err error) {
+			err = util.Unmarshal([]byte(s), &gj)
 			if err != nil {
 				return nil, err
 			}
 			return gj, nil
 		},
-		"N": N,
-		"marshal": func(data any) (string, error) {
-			bytes, err := json.Marshal(data)
+		"N": n,
+		"marshal": func(data any) (jsonBytes string, err error) {
+			var (
+				bytes []byte
+			)
+
+			bytes, err = json.Marshal(data)
 			if err != nil {
 				return "", err
 			}
 			return string(bytes), nil
 		},
 		// return json escape string
-		"str_escape": func(s string) (string, error) {
-			s = strings.Replace(s, "\\", "\\\\", -1)
-			return strings.Replace(s, "\"", "\\\"", -1), nil
+		"str_escape": func(s string) (escaped string) {
+			s = strings.ReplaceAll(s, "\\", "\\\\")
+			return strings.ReplaceAll(s, "\"", "\\\"")
 		},
 		// return json escape string
-		"url_path_escape": func(s string) (string, error) {
+		"url_path_escape": func(s string) (escaped string, err error) {
 			return url.PathEscape(s), nil
 		},
 		// add a + b
@@ -279,17 +316,17 @@ func (loader *Loader) Render(
 		"slice": func(args ...any) []any {
 			return args
 		},
-		"rows_to_map": func(keyColumn, valueColumn string, rowsInput any) (map[string]any, error) {
+		"rows_to_map": func(keyColumn, valueColumn string, rowsInput any) (rowMap map[string]any, err error) {
 			return rowsToMap(keyColumn, valueColumn, getRowsFromInput(rowsInput))
 		},
 		"pivot_rows": pivotRows,
-		"group_map_rows": func(groupColumn string, rowsInput any) (map[string][]map[string]any, error) {
+		"group_map_rows": func(groupColumn string, rowsInput any) (rowsMap map[string][]map[string]any, err error) {
 			grouped_rows := make(map[string][]map[string]any, 1000)
 			rows := getRowsFromInput(rowsInput)
 			for _, row := range rows {
 				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+					return nil, fmt.Errorf("Group column %q does not exist in row.", groupColumn)
 				}
 				switch idx := group_key.(type) {
 				case string:
@@ -299,24 +336,24 @@ func (loader *Loader) Render(
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
+					return nil, fmt.Errorf("Group column %q needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
 			return grouped_rows, nil
 		},
-		"group_rows": func(groupColumn string, rowsInput any) ([][]map[string]any, error) {
-			grouped_rows := make([][]map[string]any, 1000)
+		"group_rows": func(groupColumn string, rowsInput any) (grouped_rows [][]map[string]any, err error) {
+			grouped_rows = make([][]map[string]any, 1000)
 			rows := getRowsFromInput(rowsInput)
 
 			for _, row := range rows {
 				group_key, ok := row[groupColumn]
 				if !ok {
-					return nil, fmt.Errorf("Group column \"%s\" does not exist in row.", groupColumn)
+					return nil, fmt.Errorf("Group column %q does not exist in row.", groupColumn)
 				}
 				switch idx := group_key.(type) {
 				case int64:
 					if idx <= 0 {
-						return nil, fmt.Errorf("Group column \"%s\" needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
+						return nil, fmt.Errorf("Group column %q needs to be >= 0 and < 1000 but is %d.", groupColumn, idx)
 					}
 					rows2 := grouped_rows[idx]
 					if rows2 == nil {
@@ -324,7 +361,7 @@ func (loader *Loader) Render(
 					}
 					grouped_rows[idx] = append(grouped_rows[idx], row)
 				default:
-					return nil, fmt.Errorf("Group column \"%s\" needs to be int64 but is %t.", groupColumn, idx)
+					return nil, fmt.Errorf("Group column %q needs to be int64 but is %t.", groupColumn, idx)
 				}
 			}
 			// remove empty rows
@@ -337,39 +374,38 @@ func (loader *Loader) Render(
 			}
 			return g_rows, nil
 		},
-		"match": func(regex, text string) (bool, error) {
+		"match": func(regex, text string) (match bool, err error) {
 			return regexp.Match(regex, []byte(text))
 		},
-		"not_match": func(regex, text string) (bool, error) {
+		"not_match": func(regex, text string) (not_match bool, err error) {
 			match, err := regexp.Match(regex, []byte(text))
 			return !match, err
 		},
-		"replace_host": func(srcURL string) (string, error) {
+		"replace_host": func(srcURL string) (host string, err error) {
 			// If no override provided, return original one
 			if loader.HTTPServerHost == "" {
 				return srcURL, nil
 			}
 			return replaceHost(srcURL, loader.HTTPServerHost)
 		},
-		"server_url": func() *url.URL {
-			u := new(url.URL)
-			*u = *loader.ServerURL
-			return u
+		"server_url": func() (server_url *url.URL) {
+			server_url = new(url.URL)
+			*server_url = *loader.ServerURL
+			return server_url
 		},
-		"server_url_no_user": func() *url.URL {
-			u := new(url.URL)
-			*u = *loader.ServerURL
-			u.User = nil
-			return u
+		"server_url_no_user": func() (server_url *url.URL) {
+			server_url = new(url.URL)
+			*server_url = *loader.ServerURL
+			server_url.User = nil
+			return server_url
 		},
-		"is_zero": func(v any) bool {
+		"is_zero": func(v any) (is_zero bool) {
 			if v == nil {
 				return true
 			}
 			return reflect.ValueOf(v).IsZero()
 		},
-		"oauth2_password_token": func(client string, login string, password string) (tok *oauth2.Token, err error) {
-			// println("client", client, login, password)
+		"oauth2_password_token": func(client string, login string, password string) (token *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %q not configured", client)
@@ -378,7 +414,7 @@ func (loader *Loader) Render(
 			return oAuthClient.GetPasswordCredentialsAuthToken(login, password)
 
 		},
-		"oauth2_client_token": func(client string) (tok *oauth2.Token, err error) {
+		"oauth2_client_token": func(client string) (token *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %q not configured", client)
@@ -386,7 +422,7 @@ func (loader *Loader) Render(
 
 			return oAuthClient.GetClientCredentialsAuthToken()
 		},
-		"oauth2_code_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
+		"oauth2_code_token": func(client string, params ...string) (token *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %q not configured", client)
@@ -394,7 +430,7 @@ func (loader *Loader) Render(
 
 			return oAuthClient.GetCodeAuthToken(params...)
 		},
-		"oauth2_implicit_token": func(client string, params ...string) (tok *oauth2.Token, err error) {
+		"oauth2_implicit_token": func(client string, params ...string) (token *oauth2.Token, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %q not configured", client)
@@ -402,7 +438,7 @@ func (loader *Loader) Render(
 
 			return oAuthClient.GetAuthToken(params...)
 		},
-		"oauth2_client": func(client string) (c *util.OAuthClientConfig, err error) {
+		"oauth2_client": func(client string) (cfg *util.OAuthClientConfig, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return nil, fmt.Errorf("OAuth client %s not configured", client)
@@ -410,35 +446,35 @@ func (loader *Loader) Render(
 
 			return &oAuthClient, nil
 		},
-		"oauth2_basic_auth": func(client string) (string, error) {
+		"oauth2_basic_auth": func(client string) (basic_auth string, err error) {
 			oAuthClient, ok := loader.OAuthClient[client]
 			if !ok {
 				return "", fmt.Errorf("OAuth client %s not configured", client)
 			}
 
-			return "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", oAuthClient.Client, oAuthClient.Secret))), nil
+			return "Basic " + base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", oAuthClient.Client, oAuthClient.Secret)), nil
 		},
-		"query_escape": func(in string) string {
+		"query_escape": func(in string) (escaped string) {
 			return url.QueryEscape(in)
 		},
-		"query_unescape": func(in string) string {
+		"query_unescape": func(in string) (unescaped string) {
 			out, err := url.QueryUnescape(in)
 			if err != nil {
 				return err.Error()
 			}
 			return out
 		},
-		"base64_encode": func(in string) string {
+		"base64_encode": func(in string) (encoded string) {
 			return base64.StdEncoding.EncodeToString([]byte(in))
 		},
-		"base64_decode": func(in string) string {
+		"base64_decode": func(in string) (decoded string) {
 			b, err := base64.StdEncoding.DecodeString(in)
 			if err != nil {
 				return err.Error()
 			}
 			return string(b)
 		},
-		"semver_compare": func(v, w string) (int, error) {
+		"semver_compare": func(v, w string) (comp int, err error) {
 			if v == "" {
 				// empty version
 				v = "v0.0.0"
@@ -472,7 +508,7 @@ func (loader *Loader) Render(
 			return u.String()
 		},
 		// value_from_url returns the value from url's query part
-		"value_from_url": func(qKey, urlStr string) string {
+		"value_from_url": func(qKey, urlStr string) (value string) {
 			u, err := url.Parse(urlStr)
 			if err != nil {
 				return ""
@@ -482,7 +518,7 @@ func (loader *Loader) Render(
 		},
 		// parallel_run_idx returns the index of the Parallel Run that the current template
 		// is rendered in.
-		"parallel_run_idx": func() int {
+		"parallel_run_idx": func() (parallelRunIdx int) {
 			return loader.ParallelRunIdx
 		},
 	}
@@ -493,13 +529,14 @@ func (loader *Loader) Render(
 		Funcs(funcMap).
 		Parse(string(tmplBytes))
 	if err != nil {
-		return nil, fmt.Errorf("error loading template: %s", err)
+		return nil, fmt.Errorf("loading template: %w", err)
 	}
 
 	var b []byte
 	buf := bytes.NewBuffer(b)
-	if err = tmpl.Execute(buf, ctx); err != nil {
-		return nil, fmt.Errorf("error executing template: %s", err)
+	err = tmpl.Execute(buf, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
 	return buf.Bytes(), nil
 }

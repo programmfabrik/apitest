@@ -16,7 +16,7 @@ type info struct {
 	format string
 }
 
-func CSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
+func CSVToMap(inputCSV []byte, comma rune) (output []map[string]any, err error) {
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
@@ -33,7 +33,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 		return nil, err
 	}
 
-	output := []map[string]any{}
+	output = []map[string]any{}
 
 	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[2:] {
@@ -72,7 +72,7 @@ func CSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 
 }
 
-func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
+func GenericCSVToMap(inputCSV []byte, comma rune) (output []map[string]any, err error) {
 	if len(inputCSV) == 0 {
 		return nil, fmt.Errorf("The given input csv was empty")
 	}
@@ -87,7 +87,7 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 		infos = append(infos, info{name: strings.TrimSpace(v)})
 	}
 
-	output := []map[string]any{}
+	output = []map[string]any{}
 
 	//Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[1:] {
@@ -112,8 +112,8 @@ func GenericCSVToMap(inputCSV []byte, comma rune) ([]map[string]any, error) {
 	return output, nil
 }
 
-func extractHeaderInformation(names, formats []string) ([]info, error) {
-	infos := make([]info, 0)
+func extractHeaderInformation(names, formats []string) (infos []info, err error) {
+	infos = make([]info, 0)
 
 	for k, v := range names {
 		if k >= len(formats) {
@@ -159,20 +159,20 @@ func removeEmptyRowsAndComments(input [][]string) (output [][]string) {
 	return output
 }
 
-func renderCSV(read io.Reader, comma rune) ([][]string, error) {
+func renderCSV(read io.Reader, comma rune) (records [][]string, err error) {
 	reader := csv.NewReader(read)
 	reader.Comma = comma
 	reader.FieldsPerRecord = -1
 	reader.LazyQuotes = true
 
-	records, err := reader.ReadAll()
+	records, err = reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
 	return records, nil
 }
 
-func isValidFormat(format string) bool {
+func isValidFormat(format string) (valid bool) {
 	format = strings.TrimPrefix(format, "*")
 	validFormats := []string{"string", "int64", "int", "float64", "bool"}
 	for _, v := range validFormats {
@@ -185,7 +185,10 @@ func isValidFormat(format string) bool {
 }
 
 // getTyped
-func getTyped(value, format string) (any, error) {
+func getTyped(value, format string) (typed any, err error) {
+	var (
+		records [][]string
+	)
 
 	switch format {
 	case "string":
@@ -215,13 +218,13 @@ func getTyped(value, format string) (any, error) {
 			return []string{}, nil
 		}
 
-		records, err := renderCSV(strings.NewReader(value), ',')
+		records, err = renderCSV(strings.NewReader(value), ',')
 		if err != nil {
 
 			return nil, err
 		}
 
-		//Check if we only have one row. If not return error
+		// Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'string,array': %s", value)
 		}
@@ -241,7 +244,7 @@ func getTyped(value, format string) (any, error) {
 			return []int64{}, nil
 		}
 
-		records, err := renderCSV(strings.NewReader(value), ',')
+		records, err = renderCSV(strings.NewReader(value), ',')
 		if err != nil {
 			return nil, err
 		}
@@ -268,7 +271,7 @@ func getTyped(value, format string) (any, error) {
 			return []float64{}, nil
 		}
 
-		records, err := renderCSV(strings.NewReader(value), ',')
+		records, err = renderCSV(strings.NewReader(value), ',')
 		if err != nil {
 			return nil, err
 		}
@@ -295,7 +298,7 @@ func getTyped(value, format string) (any, error) {
 			return []bool{}, nil
 		}
 
-		records, err := renderCSV(strings.NewReader(value), ',')
+		records, err = renderCSV(strings.NewReader(value), ',')
 		if err != nil {
 			return nil, err
 		}
@@ -315,9 +318,9 @@ func getTyped(value, format string) (any, error) {
 			return nil, nil
 		}
 		var data any
-		err := json.Unmarshal([]byte(value), &data)
+		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
-			return nil, fmt.Errorf("file_csv: Error in JSON: \"%s\": %s", value, err)
+			return nil, fmt.Errorf("file_csv: Error in JSON: %q: %s", value, err)
 		}
 		return data, nil
 	default:

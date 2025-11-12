@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
 	"github.com/programmfabrik/apitest/internal/httpproxy"
 	"github.com/programmfabrik/apitest/internal/smtp"
@@ -45,7 +46,7 @@ type Suite struct {
 	StandardHeader          map[string]any    `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string `yaml:"header_from_store" json:"header_from_store"`
 
-	Config          TestToolConfig
+	config          testToolConfig
 	datastore       *datastore.Datastore
 	manifestRelDir  string
 	manifestDir     string
@@ -57,15 +58,26 @@ type Suite struct {
 	httpServerProxy *httpproxy.Proxy
 	httpServerDir   string
 	idleConnsClosed chan struct{}
-	HTTPServerHost  string
+	httpServerHost  string
 	loader          template.Loader
 	smtpServer      *smtp.Server
 }
 
-// NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
-func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string, r *report.ReportElement, datastore *datastore.Datastore, index int) (*Suite, error) {
-	suite := Suite{
-		Config:         config,
+// newTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
+func newTestSuite(
+	config testToolConfig,
+	manifestPath, manifestDir string,
+	r *report.ReportElement,
+	datastore *datastore.Datastore,
+	index int,
+) (suite *Suite, err error) {
+
+	var (
+		suitePreload Suite
+	)
+
+	suite = &Suite{
+		config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
 		manifestRelDir: manifestDir,
@@ -73,11 +85,12 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		datastore:      datastore,
 		index:          index,
 	}
+
 	// Here we create this additional struct in order to preload the suite manifest
 	// It is needed, for example, for getting the suite HTTP server address
 	// Then preloaded values are used to load again the manifest with relevant replacements
-	suitePreload := Suite{
-		Config:         config,
+	suitePreload = Suite{
+		config:         config,
 		manifestDir:    filepath.Dir(manifestPath),
 		manifestPath:   manifestPath,
 		manifestRelDir: manifestDir,
@@ -85,17 +98,18 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 		datastore:      datastore,
 		index:          index,
 	}
+
 	manifest, err := suitePreload.loadManifest()
 	if err != nil {
-		err = fmt.Errorf("error loading manifest: %s", err)
-		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("loading manifest: %w", err)
+		suitePreload.reporterRoot.Failure = err.Error()
 		return &suitePreload, err
 	}
 
 	err = util.Unmarshal(manifest, &suitePreload)
 	if err != nil {
-		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
-		suitePreload.reporterRoot.Failure = fmt.Sprintf("%s", err)
+		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
+		suitePreload.reporterRoot.Failure = err.Error()
 		return &suitePreload, err
 	}
 
@@ -117,58 +131,58 @@ func NewTestSuite(config TestToolConfig, manifestPath string, manifestDir string
 			return nil, fmt.Errorf("set http_server_host failed (manifesr addr): %w", err)
 		}
 	}
-	suitePreload.HTTPServerHost = httpServerReplaceHost
+	suitePreload.httpServerHost = httpServerReplaceHost
 
 	// Here we load the usable manifest, now that we can do all potential replacements
 	manifest, err = suitePreload.loadManifest()
 	if err != nil {
-		err = fmt.Errorf("error loading manifest: %s", err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
-		return &suite, err
+		err = fmt.Errorf("loading manifest: %w", err)
+		suite.reporterRoot.Failure = err.Error()
+		return suite, err
 	}
-	// fmt.Printf("%s", string(manifest))
+	// fmt.Printf(%q, string(manifest))
 	// We unmarshall the final manifest into the final working suite
 	err = util.Unmarshal(manifest, &suite)
 	if err != nil {
-		err = fmt.Errorf("error unmarshaling manifest '%s': %s", manifestPath, err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
-		return &suite, err
+		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
+		suite.reporterRoot.Failure = err.Error()
+		return suite, err
 	}
-	suite.HTTPServerHost = suitePreload.HTTPServerHost
+	suite.httpServerHost = suitePreload.httpServerHost
 	suite.loader = suitePreload.loader
 
 	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
 	// Parse serverURL
-	suite.serverURL, err = url.Parse(suite.Config.ServerURL)
+	suite.serverURL, err = url.Parse(suite.config.serverURL)
 	if err != nil {
-		return nil, fmt.Errorf("can not load server url : %s", err)
+		return nil, fmt.Errorf("can not load server url : %w", err)
 	}
 
 	// init store
 	err = suite.datastore.SetMap(suite.Store)
 	if err != nil {
-		err = fmt.Errorf("error setting datastore map:%s", err)
-		suite.reporterRoot.Failure = fmt.Sprintf("%s", err)
-		return &suite, err
+		err = fmt.Errorf("setting datastore map: %w", err)
+		suite.reporterRoot.Failure = err.Error()
+		return suite, err
 	}
 
-	return &suite, nil
+	return suite, nil
 }
 
-// Run run the given testsuite
-func (ats *Suite) Run() bool {
+// run run the given testsuite
+func (ats *Suite) run() bool {
 	r := ats.reporterRoot
-	if !ats.Config.LogShort {
+	if !ats.config.logShort {
 		logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 	}
 
-	ats.StartSmtpServer()
-	defer ats.StopSmtpServer()
+	ats.startSmtpServer()
+	defer ats.stopSmtpServer()
 
-	ats.StartHttpServer()
-	defer ats.StopHttpServer()
+	ats.startHttpServer()
+	defer ats.stopHttpServer()
 
 	err := os.Chdir(ats.manifestDir)
 	if err != nil {
@@ -200,13 +214,13 @@ func (ats *Suite) Run() bool {
 	elapsed := time.Since(start)
 	r.Leave(success)
 	if success {
-		if ats.Config.LogShort {
+		if ats.config.logShort {
 			fmt.Printf("OK '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Infof("[%2d] success", ats.index)
 		}
 	} else {
-		if ats.Config.LogShort {
+		if ats.config.logShort {
 			fmt.Printf("FAIL '%s' (%.3fs)\n", ats.manifestRelDir, elapsed.Seconds())
 		} else {
 			logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
@@ -232,7 +246,7 @@ func (ats *Suite) Run() bool {
 	return success
 }
 
-type TestContainer struct {
+type testContainer struct {
 	CaseByte json.RawMessage
 	Path     string
 }
@@ -240,9 +254,9 @@ type TestContainer struct {
 func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) template.Loader {
 	loader := template.NewLoader(ats.datastore)
 	loader.Delimiters = rootLoader.Delimiters
-	loader.HTTPServerHost = ats.HTTPServerHost
+	loader.HTTPServerHost = ats.httpServerHost
 	loader.ServerURL = ats.serverURL
-	loader.OAuthClient = ats.Config.OAuthClient
+	loader.OAuthClient = ats.config.oAuthClient
 
 	if rootLoader.ParallelRunIdx < 0 {
 		loader.ParallelRunIdx = parallelRunIdx
@@ -263,7 +277,7 @@ func (ats *Suite) parseAndRunTest(
 	referencedPathSpec, testRaw, err := template.LoadManifestDataAsRawJson(v, filepath.Dir(testFilePath))
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %s", testFilePath, err))
+		logrus.Error(fmt.Errorf("can not LoadManifestDataAsRawJson (%s): %w", testFilePath, err))
 		return false
 	}
 	if referencedPathSpec != nil {
@@ -273,7 +287,7 @@ func (ats *Suite) parseAndRunTest(
 
 	// If parallel runs are requested, check that they're actually allowed
 	if parallelRuns > 1 && !allowParallelExec {
-		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests (%s)", testFilePath))
+		logrus.Error(fmt.Errorf("parallel runs are not allowed in nested tests in (%s)", testFilePath))
 		return false
 	}
 
@@ -311,7 +325,7 @@ func (ats *Suite) testGoroutine(
 	testRendered, err := loader.Render(testRaw, testFileDir, nil)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
-		logrus.Error(fmt.Errorf("can not render template (%s): %s", testFilePath, err))
+		logrus.Error(fmt.Errorf("can not render template (%s): %w", testFilePath, err))
 
 		// note that successCount is not incremented
 		return
@@ -327,7 +341,7 @@ func (ats *Suite) testGoroutine(
 		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
-			logrus.Error(fmt.Errorf("can not unmarshal (%s): %s", testFilePath, err))
+			logrus.Error(fmt.Errorf("can not unmarshal (%s): %w", testFilePath, err))
 
 			// note that successCount is not incremented
 			return
@@ -355,7 +369,7 @@ func (ats *Suite) testGoroutine(
 		} else {
 			// Otherwise simply run the literal test case
 			success = ats.runLiteralTest(
-				TestContainer{
+				testContainer{
 					CaseByte: testCase,
 					Path:     testFileDir,
 				},
@@ -376,18 +390,19 @@ func (ats *Suite) testGoroutine(
 }
 
 func (ats *Suite) runLiteralTest(
-	tc TestContainer, r *report.ReportElement, testFilePath string, loader template.Loader,
+	tc testContainer,
+	r *report.ReportElement,
+	testFilePath string,
+	loader template.Loader,
 	index int,
 ) bool {
 	r.SetName(testFilePath)
 
 	var test Case
-	jErr := util.Unmarshal(tc.CaseByte, &test)
-	if jErr != nil {
-
-		r.SaveToReportLog(jErr.Error())
-		logrus.Error(fmt.Errorf("can not unmarshal single test (%s): %s", testFilePath, jErr))
-
+	err := util.Unmarshal(tc.CaseByte, &test)
+	if err != nil {
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not unmarshal single test (%s): %w", testFilePath, err))
 		return false
 	}
 
@@ -400,16 +415,16 @@ func (ats *Suite) runLiteralTest(
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 	if test.LogNetwork == nil {
-		test.LogNetwork = &ats.Config.LogNetwork
+		test.LogNetwork = &ats.config.logNetwork
 	}
 	if test.LogVerbose == nil {
-		test.LogVerbose = &ats.Config.LogVerbose
+		test.LogVerbose = &ats.config.logVerbose
 	}
 	if test.LogShort == nil {
-		test.LogShort = &ats.Config.LogShort
+		test.LogShort = &ats.config.logShort
 	}
 	if test.ServerURL == "" {
-		test.ServerURL = ats.Config.ServerURL
+		test.ServerURL = ats.config.serverURL
 	}
 	success := test.runAPITestCase(r)
 
@@ -420,31 +435,40 @@ func (ats *Suite) runLiteralTest(
 	return true
 }
 
-func (ats *Suite) loadManifest() ([]byte, error) {
-	var res []byte
-	if !ats.Config.LogShort {
+func (ats *Suite) loadManifest() (b []byte, err error) {
+	var (
+		res          []byte
+		loader       template.Loader
+		serverURL    *url.URL
+		manifestFile afero.File
+	)
+
+	if !ats.config.logShort {
 		logrus.Tracef("Loading manifest: %s", ats.manifestPath)
 	}
-	loader := template.NewLoader(ats.datastore)
-	loader.HTTPServerHost = ats.HTTPServerHost
-	serverURL, err := url.Parse(ats.Config.ServerURL)
+
+	loader = template.NewLoader(ats.datastore)
+	loader.HTTPServerHost = ats.httpServerHost
+	serverURL, err = url.Parse(ats.config.serverURL)
 	if err != nil {
-		return nil, fmt.Errorf("can not load server url into manifest (%s): %s", ats.manifestPath, err)
+		return nil, fmt.Errorf("can not load server url into manifest (%s): %w", ats.manifestPath, err)
 	}
 	loader.ServerURL = serverURL
-	loader.OAuthClient = ats.Config.OAuthClient
-	manifestFile, err := filesystem.Fs.Open(ats.manifestPath)
+	loader.OAuthClient = ats.config.oAuthClient
+
+	manifestFile, err = filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
-		return res, fmt.Errorf("error opening manifestPath (%s): %s", ats.manifestPath, err)
+		return res, fmt.Errorf("opening manifestPath (%s): %w", ats.manifestPath, err)
 	}
 	defer manifestFile.Close()
 
 	manifestTmpl, err := io.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("error loading manifest (%s): %s", ats.manifestPath, err)
+		return res, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
 	}
 
-	b, err := loader.Render(manifestTmpl, ats.manifestDir, nil)
+	b, err = loader.Render(manifestTmpl, ats.manifestDir, nil)
 	ats.loader = loader
+
 	return b, err
 }

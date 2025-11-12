@@ -13,7 +13,7 @@ import (
 	"github.com/programmfabrik/golib"
 )
 
-type XMLRoot struct {
+type xmlRoot struct {
 	XMLName    xml.Name    `xml:"testsuites"`
 	Id         string      `xml:"id,attr"`
 	Name       string      `xml:"name,attr"`
@@ -43,10 +43,6 @@ type testcase struct {
 type failure struct {
 	Message string `xml:"message,attr"`
 	Type    string `xml:"type,attr"`
-}
-
-type JUnitReporter struct {
-	report Report
 }
 
 type statsReport struct {
@@ -96,7 +92,7 @@ func ParseJSONResult(baseResult *ReportElement) []byte {
 }
 
 // ParseJSONResult Print the result to the console
-func ParseJSONStatsResult(baseResult *ReportElement) []byte {
+func parseJSONStatsResult(baseResult *ReportElement) []byte {
 
 	currUsername := "unknown"
 	if currUser, _ := user.Current(); currUser != nil {
@@ -150,11 +146,11 @@ func ParseJSONStatsResult(baseResult *ReportElement) []byte {
 	return jsonResult
 }
 
-// ParseJUnitResult Print the result to the console
-func ParseJUnitResult(baseResult *ReportElement) []byte {
+// parseJUnitResult Print the result to the console
+func parseJUnitResult(baseResult *ReportElement) []byte {
 
 	testName := time.Now().Format("2006-01-02 15:04")
-	result := XMLRoot{
+	result := xmlRoot{
 		Name:     testName,
 		Id:       testName,
 		Failures: baseResult.Failures,
@@ -196,7 +192,7 @@ func ParseJUnitResult(baseResult *ReportElement) []byte {
 
 			if iv.Failures > 0 {
 				newTestCase.Failure = &failure{Type: "ERROR"}
-				for _, jv := range iv.GetLog() {
+				for _, jv := range iv.getLog() {
 					newTestCase.Failure.Message = fmt.Sprintf("%s\n\n%s", newTestCase.Failure.Message, jv)
 				}
 				if len(newTestCase.Failure.Message) == 0 {

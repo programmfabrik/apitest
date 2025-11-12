@@ -2,6 +2,7 @@ package compare
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"regexp"
@@ -34,7 +35,7 @@ type ComparisonContext struct {
 	startsWith     *util.JsonString
 	endsWith       *util.JsonString
 	notEqualNull   bool
-	notEqual       *interface{}
+	notEqual       *any
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -45,14 +46,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "depth":
 			tV, err := getAsInt64(v)
 			if err != nil {
-				return out, fmt.Errorf("depth is no int64: %s", err)
+				return out, fmt.Errorf("depth is no int64: %w", err)
 
 			}
 			out.depth = tV
 		case "order_matters":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("order_matters is no bool")
+				err = errors.New("order_matters is no bool")
 				return
 
 			}
@@ -60,14 +61,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "no_extra":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("no_extra is no bool")
+				err = errors.New("no_extra is no bool")
 				return
 			}
 			out.noExtra = tV
 		case "element_no_extra":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("element_no_extra is no bool")
+				err = errors.New("element_no_extra is no bool")
 				return
 
 			}
@@ -75,7 +76,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "must_exist":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("must_exist is no bool")
+				err = errors.New("must_exist is no bool")
 				return
 
 			}
@@ -83,14 +84,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "element_count":
 			tV, err := getAsInt64(v)
 			if err != nil {
-				return out, fmt.Errorf("element_count is no int64: %s", err)
+				return out, fmt.Errorf("element_count is no int64: %w", err)
 
 			}
 			out.elementCount = &tV
 		case "is_string":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("is_string is no bool")
+				err = errors.New("is_string is no bool")
 				return
 
 			}
@@ -98,14 +99,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "match":
 			tV, ok := v.(string)
 			if !ok {
-				err = fmt.Errorf("match is no string")
+				err = errors.New("match is no string")
 				return
 			}
 			out.regexMatch = &tV
 		case "not_match":
 			tV, ok := v.(string)
 			if !ok {
-				err = fmt.Errorf("not_match is no string")
+				err = errors.New("not_match is no string")
 				return
 
 			}
@@ -113,7 +114,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "starts_with":
 			tV, ok := v.(string)
 			if !ok || tV == "" {
-				err = fmt.Errorf("starts_with must be a string with length > 0")
+				err = errors.New("starts_with must be a string with length > 0")
 				return
 
 			}
@@ -121,7 +122,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "ends_with":
 			tV, ok := v.(string)
 			if !ok || tV == "" {
-				err = fmt.Errorf("ends_with must be a string with length > 0")
+				err = errors.New("ends_with must be a string with length > 0")
 				return
 
 			}
@@ -129,7 +130,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("is_number is no bool")
+				err = errors.New("is_number is no bool")
 				return
 
 			}
@@ -137,7 +138,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "is_array":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("is_array is no bool")
+				err = errors.New("is_array is no bool")
 				return
 
 			}
@@ -145,7 +146,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "must_not_exist":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("must_not_exist is no bool")
+				err = errors.New("must_not_exist is no bool")
 				return
 
 			}
@@ -153,7 +154,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "is_object":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("is_object is no bool")
+				err = errors.New("is_object is no bool")
 				return
 
 			}
@@ -161,7 +162,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 		case "is_bool":
 			tV, ok := v.(bool)
 			if !ok {
-				err = fmt.Errorf("is_bool is no bool")
+				err = errors.New("is_bool is no bool")
 				return
 
 			}
@@ -170,7 +171,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be bigger
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_gt is no number")
+				err = errors.New("number_gt is no number")
 				return
 
 			}
@@ -180,7 +181,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be equal or bigger
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_gt is no number")
+				err = errors.New("number_gt is no number")
 				return
 
 			}
@@ -190,7 +191,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be smaller
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_lt is no number")
+				err = errors.New("number_lt is no number")
 				return
 
 			}
@@ -200,7 +201,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			// Number must be equal or smaller
 			tV, ok := v.(util.JsonNumber)
 			if !ok {
-				err = fmt.Errorf("number_le is no number")
+				err = errors.New("number_le is no number")
 				return
 			}
 			out.numberLE = &tV
@@ -302,7 +303,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		// Check for the given key functions
 		err := keyChecks(rv, rOK, *control)
 		if err != nil {
-			res.Failures = append(res.Failures, CompareFailure{Key: k, Message: err.Error()})
+			res.Failures = append(res.Failures, compareFailure{Key: k, Message: err.Error()})
 			res.Equal = false
 			// There is no use in checking the equality of the value if the preconditions do not work
 			continue
@@ -334,7 +335,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 	if noExtra {
 		for k := range right {
 			if !takenInRight[k] {
-				res.Failures = append(res.Failures, CompareFailure{Key: "", Message: "extra elements found in object"})
+				res.Failures = append(res.Failures, compareFailure{Key: "", Message: "extra elements found in object"})
 				res.Equal = false
 				return
 			}
@@ -359,14 +360,14 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 
 		leftJson, err := golib.JsonBytesIndent(left, "", "  ")
 		if err != nil {
-			return CompareResult{}, fmt.Errorf("Could not marshal expected array: %w", err)
+			return CompareResult{}, fmt.Errorf("could not marshal expected array: %w", err)
 		}
 		rightJson, err := golib.JsonBytesIndent(right, "", "  ")
 		if err != nil {
-			return CompareResult{}, fmt.Errorf("Could not marshal actual array: %w", err)
+			return CompareResult{}, fmt.Errorf("could not marshal actual array: %w", err)
 		}
 
-		res.Failures = append(res.Failures, CompareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})
+		res.Failures = append(res.Failures, compareFailure{"", fmt.Sprintf("[arrayComparison] length of expected response (%d) > length of actual response (%d)\nExpected response:\n%s\nActual response:\n%s\n", len(left), len(right), string(leftJson), string(rightJson))})
 		return res, nil
 	}
 
@@ -396,12 +397,12 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 				if err == nil {
 					elStr = string(elBytes)
 				}
-				res.Failures = append(res.Failures, CompareFailure{key, fmt.Sprintf("element %s not found in array in proper order", elStr)})
+				res.Failures = append(res.Failures, compareFailure{key, fmt.Sprintf("element %s not found in array in proper order", elStr)})
 				res.Equal = false
 			}
 		} else {
 			found := false
-			allTmpFailures := make([]CompareFailure, 0)
+			allTmpFailures := make([]compareFailure, 0)
 
 			for rk, rv := range right {
 				if takenInRight[rk] {
@@ -433,7 +434,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 					if v.Key == "" {
 						key = fmt.Sprintf("[%d]", lk)
 					}
-					res.Failures = append(res.Failures, CompareFailure{key, v.Message})
+					res.Failures = append(res.Failures, compareFailure{key, v.Message})
 				}
 				res.Equal = false
 			}
@@ -444,7 +445,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 	if currControl.noExtra {
 		for k := range right {
 			if !takenInRight[k] {
-				res.Failures = append(res.Failures, CompareFailure{Key: "", Message: "extra elements found in array"})
+				res.Failures = append(res.Failures, compareFailure{Key: "", Message: "extra elements found in array"})
 				res.Equal = false
 				return
 			}
@@ -480,7 +481,7 @@ func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext
 func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 	if control.isString {
 		if right == nil {
-			return fmt.Errorf("== nil but should exist")
+			return errors.New("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
@@ -488,7 +489,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	} else if control.isNumber {
 		if right == nil {
-			return fmt.Errorf("== nil but should exist")
+			return errors.New("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "JsonNumber" && jsonType != "Number" {
@@ -496,7 +497,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	} else if control.isBool {
 		if right == nil {
-			return fmt.Errorf("== nil but should exist")
+			return errors.New("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Bool" {
@@ -504,7 +505,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	} else if control.isArray {
 		if right == nil {
-			return fmt.Errorf("== nil but should exist")
+			return errors.New("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
@@ -512,7 +513,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	} else if control.isObject {
 		if right == nil {
-			return fmt.Errorf("== nil but should exist")
+			return errors.New("== nil but should exist")
 		}
 		jsonType := getJsonType(right)
 		if jsonType != "Object" {
@@ -522,11 +523,11 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check if exists
 	if !rOK && control.mustExist {
-		return fmt.Errorf("was not found, but should exist")
+		return errors.New("was not found, but should exist")
 	}
 
 	if rOK && control.mustNotExist {
-		return fmt.Errorf("was found, but should NOT exist")
+		return errors.New("was found, but should NOT exist")
 	}
 
 	// Check for array length
@@ -539,7 +540,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		rightArray := right.(util.JsonArray)
 		rightLen := int64(len(rightArray))
 		if rightLen != *control.elementCount {
-			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *control.elementCount)
+			return fmt.Errorf("length of the actual response array %d != %d expected length", rightLen, *control.elementCount)
 		}
 	}
 
@@ -547,25 +548,25 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 	if control.numberGE != nil {
 		rightNumber := right.(util.JsonNumber)
 		if !(rightNumber >= *control.numberGE) {
-			return fmt.Errorf("actual number '%f' is not equal or greater than '%f'", rightNumber, *control.numberGE)
+			return fmt.Errorf("actual number %f is not equal or greater than %f", rightNumber, *control.numberGE)
 		}
 	}
 	if control.numberGT != nil {
 		rightNumber := right.(util.JsonNumber)
 		if !(rightNumber > *control.numberGT) {
-			return fmt.Errorf("actual number '%f' is not greater than '%f'", rightNumber, *control.numberGT)
+			return fmt.Errorf("actual number %f is not greater than %f", rightNumber, *control.numberGT)
 		}
 	}
 	if control.numberLE != nil {
 		rightNumber := right.(util.JsonNumber)
 		if !(rightNumber <= *control.numberLE) {
-			return fmt.Errorf("actual number '%f' is not equal or less than '%f'", rightNumber, *control.numberLE)
+			return fmt.Errorf("actual number %f is not equal or less than %f", rightNumber, *control.numberLE)
 		}
 	}
 	if control.numberLT != nil {
 		rightNumber := right.(util.JsonNumber)
 		if !(rightNumber < *control.numberLT) {
-			return fmt.Errorf("actual number '%f' is not less than '%f'", rightNumber, *control.numberLT)
+			return fmt.Errorf("actual number %f is not less than %f", rightNumber, *control.numberLT)
 		}
 	}
 
@@ -599,10 +600,10 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(matchS))
 		if err != nil {
-			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatchNot, err)
+			return fmt.Errorf("could not match regex %q: %w", *control.regexMatchNot, err)
 		}
 		if doesMatch {
-			return fmt.Errorf("matches regex '%s' but should not match", *control.regexMatchNot)
+			return fmt.Errorf("matches regex %q but should not match", *control.regexMatchNot)
 		}
 	}
 
@@ -630,7 +631,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	if control.notEqualNull {
 		if right == nil {
-			return fmt.Errorf("is null")
+			return errors.New("is null")
 		}
 	}
 	if control.notEqual != nil {
@@ -643,11 +644,11 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 			case "Array":
 				leftMar, err := json.Marshal((*control.notEqual).(util.JsonArray))
 				if err != nil {
-					return fmt.Errorf("could not marshal left: %w", err)
+					return fmt.Errorf("could not marshal left part: %w", err)
 				}
 				rightMar, err := json.Marshal(right.(util.JsonArray))
 				if err != nil {
-					return fmt.Errorf("could not marshal right: %w", err)
+					return fmt.Errorf("could not marshal right part: %w", err)
 				}
 				if string(leftMar) == string(rightMar) {
 					return fmt.Errorf("is equal to %s %s, should not be equal", jsonType, string(leftMar))
@@ -662,7 +663,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 				}
 			case "JsonNumber":
 				if jsonNumberEq((*control.notEqual).(json.Number), right.(json.Number)) {
-					return fmt.Errorf("expected %v got %v", right, *control.notEqual)
+					return fmt.Errorf("expected %v, got %v", right, *control.notEqual)
 				}
 			case "Bool":
 				if (*control.notEqual).(util.JsonBool) == right.(util.JsonBool) {
@@ -694,7 +695,7 @@ func getJsonType(value any) string {
 	}
 }
 
-func getAsInt64(value any) (int64, error) {
+func getAsInt64(value any) (n int64, err error) {
 	switch t := value.(type) {
 	case int64:
 		return t, nil

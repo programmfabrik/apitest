@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"maps"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -135,7 +136,7 @@ func (h *smtpHTTPHandler) routeMessageEndpoint(w http.ResponseWriter, r *http.Re
 
 // subrouteContentEndpoint recursively finds a route for the remaining path parts
 // based on the given ReceivedContent.
-func (h *smtpHTTPHandler) subrouteContentEndpoint(w http.ResponseWriter, r *http.Request, c *ReceivedContent, remainingPathParts []string) {
+func (h *smtpHTTPHandler) subrouteContentEndpoint(w http.ResponseWriter, r *http.Request, c *receivedContent, remainingPathParts []string) {
 	ensureIsMultipart := func() bool {
 		if !c.IsMultipart() {
 			handlerutil.RespondWithErr(w, http.StatusNotFound, fmt.Errorf(
@@ -200,7 +201,7 @@ func (h *smtpHTTPHandler) subrouteContentEndpoint(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, c *ReceivedContent) {
+func (h *smtpHTTPHandler) handleContentBody(w http.ResponseWriter, c *receivedContent) {
 	contentType, ok := c.Headers()["Content-Type"]
 	if ok {
 		w.Header()["Content-Type"] = contentType
@@ -218,7 +219,7 @@ func (h *smtpHTTPHandler) handleGUIIndex(w http.ResponseWriter) {
 	}
 }
 
-func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleGUIMessage(w http.ResponseWriter, msg *receivedMessage) {
 	metadata := buildMessageFullMeta(msg)
 	metadataJson := golib.JsonStringIndent(metadata, "", "  ")
 
@@ -243,7 +244,7 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 
 	receivedMessages := h.server.ReceivedMessages()
 	if len(headerSearchRxs) > 0 {
-		receivedMessages = SearchByHeader(receivedMessages, headerSearchRxs...)
+		receivedMessages = searchByHeader(receivedMessages, headerSearchRxs...)
 	}
 
 	messagesOut := make([]any, 0)
@@ -259,16 +260,16 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
 
-func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleMessageMeta(w http.ResponseWriter, msg *receivedMessage) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMessageFullMeta(msg))
 }
 
-func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, msg *ReceivedMessage) {
+func (h *smtpHTTPHandler) handleMessageRaw(w http.ResponseWriter, msg *receivedMessage) {
 	w.Header().Set("Content-Type", "message/rfc822")
 	w.Write(msg.RawMessageData())
 }
 
-func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, c *ReceivedContent) {
+func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Request, c *receivedContent) {
 	headerSearchRxs, err := extractSearchRegexes(r.URL.Query(), "header")
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusBadRequest, err)
@@ -277,20 +278,20 @@ func (h *smtpHTTPHandler) handleMultipartIndex(w http.ResponseWriter, r *http.Re
 
 	multiparts := c.Multiparts()
 	if len(headerSearchRxs) > 0 {
-		multiparts = SearchByHeader(multiparts, headerSearchRxs...)
+		multiparts = searchByHeader(multiparts, headerSearchRxs...)
 	}
 
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartIndex(multiparts))
 }
 
-func (h *smtpHTTPHandler) handleMultipartMeta(w http.ResponseWriter, part *ReceivedPart) {
+func (h *smtpHTTPHandler) handleMultipartMeta(w http.ResponseWriter, part *receivedPart) {
 	handlerutil.RespondWithJSON(w, http.StatusOK, buildMultipartMeta(part))
 }
 
 func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Request) {
 	maxMessageSize := h.server.maxMessageSize
 	if maxMessageSize == 0 {
-		maxMessageSize = DefaultMaxMessageSize
+		maxMessageSize = defaultMaxMessageSize
 	}
 
 	if r.Method != http.MethodPost {
@@ -305,7 +306,7 @@ func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		handlerutil.RespondWithErr(
 			w, http.StatusBadRequest,
-			fmt.Errorf("error reading body: %w", err),
+			fmt.Errorf("reading body: %w", err),
 		)
 		return
 	}
@@ -327,7 +328,7 @@ func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Reque
 	rcptTo := parsedRfcMsg.Header["To"]
 	receivedAt := time.Now()
 
-	msg, err := NewReceivedMessageFromParsed(
+	msg, err := newReceivedMessageFromParsed(
 		0, // the index will be overriden by Server.AppendMessage below
 		from, rcptTo, rawMessageData, receivedAt, maxMessageSize,
 		parsedRfcMsg,
@@ -348,8 +349,12 @@ func (h *smtpHTTPHandler) handlePostMessage(w http.ResponseWriter, r *http.Reque
 // retrieveMessage attempts to retrieve the message referenced by the given index (still in string
 // form at this point). If the index could not be read or the message could not be retrieved,
 // an according error message will be returned via HTTP.
-func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, sIdx string) (*ReceivedMessage, bool) {
-	idx, err := strconv.Atoi(sIdx)
+func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, sIdx string) (msg *receivedMessage, ok bool) {
+	var (
+		idx int
+		err error
+	)
+	idx, err = strconv.Atoi(sIdx)
 	if err != nil {
 		handlerutil.RespondWithErr(
 			w, http.StatusBadRequest,
@@ -358,7 +363,7 @@ func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, sIdx string) (*
 		return nil, false
 	}
 
-	msg, err := h.server.ReceivedMessage(idx)
+	msg, err = h.server.ReceivedMessage(idx)
 	if err != nil {
 		handlerutil.RespondWithErr(w, http.StatusNotFound, err)
 		return nil, false
@@ -367,7 +372,7 @@ func (h *smtpHTTPHandler) retrieveMessage(w http.ResponseWriter, sIdx string) (*
 	return msg, true
 }
 
-func buildContentMeta(c *ReceivedContent) map[string]any {
+func buildContentMeta(c *receivedContent) (out map[string]any) {
 	contentTypeParams := c.ContentTypeParams()
 	if contentTypeParams == nil {
 		// Returning an empty map instead of null more closely resembles the semantics
@@ -375,7 +380,7 @@ func buildContentMeta(c *ReceivedContent) map[string]any {
 		contentTypeParams = make(map[string]string)
 	}
 
-	out := map[string]any{
+	out = map[string]any{
 		"bodySize":          len(c.Body()),
 		"isMultipart":       c.IsMultipart(),
 		"contentType":       c.ContentType(),
@@ -398,10 +403,10 @@ func buildContentMeta(c *ReceivedContent) map[string]any {
 	return out
 }
 
-func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
+func buildMessageBasicMeta(msg *receivedMessage) (out map[string]any) {
 	content := msg.Content()
 
-	out := map[string]any{
+	out = map[string]any{
 		"idx":         msg.Index(),
 		"isMultipart": content.IsMultipart(),
 		"receivedAt":  msg.ReceivedAt(),
@@ -427,8 +432,8 @@ func buildMessageBasicMeta(msg *ReceivedMessage) map[string]any {
 	return out
 }
 
-func buildMessageFullMeta(msg *ReceivedMessage) map[string]any {
-	out := buildMessageBasicMeta(msg)
+func buildMessageFullMeta(msg *receivedMessage) (out map[string]any) {
+	out = buildMessageBasicMeta(msg)
 	contentMeta := buildContentMeta(msg.Content())
 
 	for k, v := range contentMeta {
@@ -438,30 +443,27 @@ func buildMessageFullMeta(msg *ReceivedMessage) map[string]any {
 	return out
 }
 
-func buildMultipartIndex(parts []*ReceivedPart) map[string]any {
+func buildMultipartIndex(parts []*receivedPart) (out map[string]any) {
 	multipartsOut := make([]any, len(parts))
 
 	for i, part := range parts {
 		multipartsOut[i] = buildMultipartMeta(part)
 	}
 
-	out := make(map[string]any)
+	out = make(map[string]any)
 	out["multipartsCount"] = len(parts)
 	out["multiparts"] = multipartsOut
 
 	return out
 }
 
-func buildMultipartMeta(part *ReceivedPart) map[string]any {
-	out := map[string]any{
+func buildMultipartMeta(part *receivedPart) (out map[string]any) {
+	out = map[string]any{
 		"idx": part.Index(),
 	}
 
 	contentMeta := buildContentMeta(part.Content())
-
-	for k, v := range contentMeta {
-		out[k] = v
-	}
+	maps.Copy(out, contentMeta)
 
 	return out
 }

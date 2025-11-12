@@ -1,6 +1,6 @@
 module github.com/programmfabrik/apitest
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -17,13 +17,21 @@ require (
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/jsonc v0.3.2
 	github.com/yudai/pp v2.0.1+incompatible
-	golang.org/x/mod v0.17.0
-	golang.org/x/net v0.30.0
+	golang.org/x/mod v0.29.0
+	golang.org/x/net v0.46.0
 	golang.org/x/oauth2 v0.9.0
+)
+
+require (
+	github.com/richardlehane/mscfb v1.0.4 // indirect
+	github.com/richardlehane/msoleps v1.0.4 // indirect
+	github.com/tiendc/go-deepcopy v1.7.1 // indirect
+	github.com/xuri/efp v0.0.1 // indirect
+	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 )
 
 require (
@@ -63,10 +71,11 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/xuri/excelize/v2 v2.10.0
 	github.com/yuin/goldmark v1.7.8 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

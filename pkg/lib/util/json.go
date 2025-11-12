@@ -24,11 +24,11 @@ func init() {
 	coloredError = true
 }
 
-func Unmarshal(input []byte, output any) error {
-
+func Unmarshal(input []byte, output any) (err error) {
 	// Remove # comments from template
 	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
 	tmplBytes := []byte(commentRegex.ReplaceAllString(string(input), ``))
+
 	// Remove //, /* comments plus tailing commas
 	tmplBytes = jsonc.ToJSON(tmplBytes)
 
@@ -36,7 +36,7 @@ func Unmarshal(input []byte, output any) error {
 	dec.DisallowUnknownFields()
 
 	// unmarshal into object
-	err := dec.Decode(output)
+	err = dec.Decode(output)
 	if err != nil {
 		return getIndepthJsonError(tmplBytes, err)
 	}
@@ -44,30 +44,52 @@ func Unmarshal(input []byte, output any) error {
 }
 
 func getIndepthJsonError(input []byte, inputError error) (err error) {
+	var (
+		syntaxError        *json.SyntaxError
+		unmarshalTypeError *json.UnmarshalTypeError
+		ok                 bool
+		line, character    int
+		lcErr              error
+	)
 
 	err = inputError
 
-	if jsonError, ok := inputError.(*json.SyntaxError); ok {
-		line, character, lcErr := lineAndCharacter(string(input), int(jsonError.Offset))
+	syntaxError, ok = inputError.(*json.SyntaxError)
+	if ok {
+		line, character, lcErr = lineAndCharacter(string(input), int(syntaxError.Offset))
 		if lcErr != nil {
-			err = jsonError
+			err = syntaxError
 			return
 		}
 
-		err = fmt.Errorf("Cannot parse JSON '%s' schema due to a syntax error at line %d, character %d: %v",
-			getErrorJsonWithLineNumbers(string(input), line), line, character, jsonError.Error())
+		err = fmt.Errorf(
+			"Cannot parse JSON '%s' schema due to a syntax error at line %d, character %d: %v",
+			getErrorJsonWithLineNumbers(string(input), line),
+			line,
+			character,
+			syntaxError.Error(),
+		)
 		return
 	}
 
-	if jsonError, ok := inputError.(*json.UnmarshalTypeError); ok {
-		line, character, lcErr := lineAndCharacter(string(input), int(jsonError.Offset))
+	unmarshalTypeError, ok = inputError.(*json.UnmarshalTypeError)
+	if ok {
+		line, character, lcErr = lineAndCharacter(string(input), int(unmarshalTypeError.Offset))
 		if lcErr != nil {
-			err = jsonError
+			err = unmarshalTypeError
 			return
 		}
 
-		return fmt.Errorf(`In JSON '%s', the type '%v' cannot be converted into the Go '%v' type on struct '%s', field '%v'. See input file line %d, character %d`,
-			getErrorJsonWithLineNumbers(string(input), line), jsonError.Value, jsonError.Type.Name(), jsonError.Struct, jsonError.Field, line, character)
+		return fmt.Errorf(
+			`In JSON '%s', the type '%v' cannot be converted into the Go '%v' type on struct '%s', field '%v'. See input file line %d, character %d`,
+			getErrorJsonWithLineNumbers(string(input), line),
+			unmarshalTypeError.Value,
+			unmarshalTypeError.Type.Name(),
+			unmarshalTypeError.Struct,
+			unmarshalTypeError.Field,
+			line,
+			character,
+		)
 	}
 
 	return
@@ -108,10 +130,11 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 	}
 
 	// We reached an error in the scanner, so output it
-	if scanner.Err() != nil {
-		jsonWithLineNumbers = fmt.Sprintf("%s-----------\nText scanner error: %s", jsonWithLineNumbers, scanner.Err())
+	err := scanner.Err()
+	if err != nil {
+		jsonWithLineNumbers = fmt.Sprintf("%s-----------\nText scanner error: %s", jsonWithLineNumbers, err.Error())
 		// The manifest is just too long, add advice
-		if scanner.Err() == bufio.ErrTooLong {
+		if err == bufio.ErrTooLong {
 			jsonWithLineNumbers = fmt.Sprintf("%s\nSome fields are too long, consider splitting tests or reducing datasets", jsonWithLineNumbers)
 		}
 		jsonWithLineNumbers = fmt.Sprintf("%s\n-----------\n", jsonWithLineNumbers)

@@ -10,19 +10,19 @@ import (
 
 type CompareResult struct {
 	Equal    bool
-	Failures []CompareFailure
+	Failures []compareFailure
 }
 
-type CompareFailure struct {
+type compareFailure struct {
 	Key     string
 	Message string
 }
 
-func (f CompareFailure) String() string {
+func (f compareFailure) String() string {
 	return fmt.Sprintf("[%s] %s", f.Key, f.Message)
 }
 
-func (f CompareFailure) Error() string {
+func (f compareFailure) Error() string {
 	return f.String()
 }
 
@@ -83,7 +83,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 	if right == nil && left != nil {
 		res := CompareResult{
 			false,
-			[]CompareFailure{
+			[]compareFailure{
 				{
 					"$",
 					"response == nil && expected response != nil",
@@ -99,7 +99,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						fmt.Sprintf("expected json.Number, but got %T", right),
@@ -116,7 +116,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		} else {
 			res = CompareResult{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []compareFailure{
 					{
 						"",
 						fmt.Sprintf("Got '%s', expected '%s'", typedRight, typedLeft),
@@ -131,7 +131,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						"the actual response is no JsonObject",
@@ -154,7 +154,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						"the actual response is no JsonArray",
@@ -170,7 +170,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						"the actual response is no JsonString",
@@ -186,7 +186,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		} else {
 			res = CompareResult{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []compareFailure{
 					{
 						"",
 						fmt.Sprintf("Got '%s', expected '%s'", rightAsString, typedLeft),
@@ -200,7 +200,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						"the actual response is no JsonNumber",
@@ -216,7 +216,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		} else {
 			res = CompareResult{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []compareFailure{
 					{
 						"",
 						fmt.Sprintf("Got '%v', expected '%v'", rightAsNumber, typedLeft),
@@ -231,7 +231,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		if !ok {
 			res := CompareResult{
 				false,
-				[]CompareFailure{
+				[]compareFailure{
 					{
 						"$",
 						"the actual response is no JsonBool",
@@ -248,7 +248,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		} else {
 			res = CompareResult{
 				Equal: false,
-				Failures: []CompareFailure{
+				Failures: []compareFailure{
 					{
 						"",
 						fmt.Sprintf("Got '%t', expected '%t'", rightAsBool, typedLeft),
@@ -261,7 +261,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 	default:
 		res := CompareResult{
 			false,
-			[]CompareFailure{
+			[]compareFailure{
 				{
 					"",
 					fmt.Sprintf("the type of the expected response is invalid. Got '%T', expected '%T'", right, left),

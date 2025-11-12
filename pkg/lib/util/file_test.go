@@ -56,7 +56,7 @@ func TestOpenFileOrUrl(t *testing.T) {
 	}
 
 	for _, v := range tests {
-		t.Run(fmt.Sprintf("%s", v.filename), func(t *testing.T) {
+		t.Run(v.filename, func(t *testing.T) {
 			file, err := OpenFileOrUrl(v.filename, "")
 			if err != nil {
 				if err.Error() != v.expError.Error() {
@@ -87,12 +87,12 @@ func TestOpenLocalFile(t *testing.T) {
 
 	reader, err := openLocalFile("/root/file.json", "/manifestdir")
 	if err != nil {
-		t.Fatal("Root File: ", err)
+		t.Fatalf("Root File: %s", err.Error())
 	}
 	defer reader.Close()
 	rootFile, err := io.ReadAll(reader)
 	if err != nil {
-		t.Fatal("Root File: ", err)
+		t.Fatalf("Root File: %s", err.Error())
 	}
 	if string(rootFile) != "From ROOT /" {
 		t.Errorf("Wrong file content for root file: %s", string(rootFile))
@@ -100,29 +100,28 @@ func TestOpenLocalFile(t *testing.T) {
 
 	reader, err = openLocalFile("file.json", "/manifestdir")
 	if err != nil {
-		t.Fatal("Manifest file: ", err)
+		t.Fatalf("Manifest File: %s", err.Error())
 	}
 	defer reader.Close()
 	manifestFile, err := io.ReadAll(reader)
 	if err != nil {
-		t.Fatal("Manifest file: ", err)
+		t.Fatalf("Manifest File: %s", err.Error())
 	}
 	if string(manifestFile) != "From manifest" {
-		t.Errorf("Wrong file content for manifest  file: %s", string(manifestFile))
-
+		t.Errorf("Wrong file content for manifest file: %s", string(manifestFile))
 	}
 
 	reader, err = openLocalFile("./file.json", "/manifestdir")
 	if err != nil {
-		t.Fatal("Binary file: ", err)
+		t.Fatalf("Binary File: %s", err.Error())
 	}
 	defer reader.Close()
+
 	binaryFile, err := io.ReadAll(reader)
 	if err != nil {
-		t.Fatal("Binary file: ", err)
+		t.Fatalf("Binary File: %s", err.Error())
 	}
 	if string(binaryFile) != "From binary ./" {
 		t.Errorf("Wrong file content for binary file: %s", string(binaryFile))
 	}
-
 }

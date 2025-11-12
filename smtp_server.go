@@ -11,8 +11,8 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
-// StartSmtpServer starts the testing SMTP server, if configured.
-func (ats *Suite) StartSmtpServer() {
+// startSmtpServer starts the testing SMTP server, if configured.
+func (ats *Suite) startSmtpServer() {
 	if ats.SmtpServer == nil || ats.smtpServer != nil {
 		return
 	}
@@ -20,22 +20,22 @@ func (ats *Suite) StartSmtpServer() {
 	ats.smtpServer = smtp.NewServer(ats.SmtpServer.Addr, ats.SmtpServer.MaxMessageSize)
 
 	go func() {
-		if !ats.Config.LogShort {
+		if !ats.config.logShort {
 			logrus.Infof("Starting SMTP Server: %s", ats.SmtpServer.Addr)
 		}
 
 		err := ats.smtpServer.ListenAndServe()
 		if err != nil && !errors.Is(err, esmtp.ErrServerClosed) {
 			// Error starting or closing listener:
-			logrus.Fatal("SMTP server ListenAndServe:", err)
+			logrus.Fatalf("SMTP server ListenAndServe: %s", err.Error())
 		}
 	}()
 
 	util.WaitForTCP(ats.SmtpServer.Addr)
 }
 
-// StopSmtpServer stops the SMTP server that was started using StartSMTPServer.
-func (ats *Suite) StopSmtpServer() {
+// stopSmtpServer stops the SMTP server that was started using StartSMTPServer.
+func (ats *Suite) stopSmtpServer() {
 	if ats.SmtpServer == nil || ats.smtpServer == nil {
 		return
 	}
@@ -47,7 +47,7 @@ func (ats *Suite) StopSmtpServer() {
 		// during closing of a server shouldn't affect the outcome of
 		// the test.
 		logrus.Error("SMTP Server shutdown:", err)
-	} else if !ats.Config.LogShort {
+	} else if !ats.config.logShort {
 		logrus.Info("SMTP Server stopped")
 	}
 

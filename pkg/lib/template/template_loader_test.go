@@ -23,7 +23,7 @@ func TestRender_Custom_Delimiters(t *testing.T) {
 	loader.Delimiters.Left = "**"
 	loader.Delimiters.Right = "**"
 	res, err := loader.Render(root, "", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), " 0  1  2 ")
 }
 
@@ -33,7 +33,7 @@ func TestRender_Custom_Delimiters_Comments(t *testing.T) {
 	loader.Delimiters.Left = "//"
 	loader.Delimiters.Right = "//"
 	res, err := loader.Render(root, "", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), " 0  1  2 ")
 }
 
@@ -43,7 +43,7 @@ func TestRender_Custom_Delimiters_Comments_Stripped(t *testing.T) {
 	loader.Delimiters.Left = "##"
 	loader.Delimiters.Right = "##"
 	res, err := loader.Render(root, "", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), "")
 }
 
@@ -57,7 +57,7 @@ func TestRender_LoadFile_withParam(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), "bogus")
 }
 
@@ -73,7 +73,7 @@ func TestRenderWithDataStore_LoadFile_withParam_recursive(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "root", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), "bogus")
 }
 
@@ -106,7 +106,7 @@ func TestRowsToMapTemplate(t *testing.T) {
 	res, err := loader.Render(root, "some/path", nil)
 
 	t.Log(string(res))
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	go_test_utils.AssertStringContainsSubstringsNoOrder(t, string(res), []string{
 		"row1a:row1c",
@@ -124,7 +124,7 @@ func TestRender_LoadFile_GJson_Params(t *testing.T) {
 
 	loader := NewLoader(datastore.NewStore(false))
 	res, err := loader.Render(root, "some/path", nil)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, string(res), `"bar"`)
 }
 
@@ -292,7 +292,7 @@ int64,string,"string,array","int64,array"
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal | gjson "%s" }}`, testCase.gjson))
+			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal | gjson %q }}`, testCase.gjson))
 
 			target := []byte(testCase.csv)
 
@@ -382,7 +382,7 @@ func TestRender_LoadFile_GJson(t *testing.T) {
 	}
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file "somefile.json" | gjson "%s" }}`, testCase.path))
+			root := []byte(fmt.Sprintf(`{{ file "somefile.json" | gjson %q }}`, testCase.path))
 			target := []byte(testCase.json)
 
 			filesystem.Fs = afero.NewMemMapFs()
@@ -450,10 +450,10 @@ func Test_DataStore_GJson(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ datastore 0 | gjson "%s" }}`, testCase.path))
+			root := []byte(fmt.Sprintf(`{{ datastore 0 | gjson %q }}`, testCase.path))
 			res, err := loader.Render(root, "some/path", nil)
 
-			go_test_utils.ExpectNoError(t, err, fmt.Sprintf("%s", err))
+			go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 			test_utils.AssertJsonStringEquals(t, string(res), testCase.expected)
 		})
 	}
@@ -494,4 +494,11 @@ func TestReplaceHost(t *testing.T) {
 		return
 	}
 
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

@@ -1,0 +1,64 @@
+{{ $local_port:=":9999" }}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../../../_res/assets",
+        "testmode": false
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
+    "name": "XLSX tests",
+    "tests": [
+        // xlsx file with only text and some formatting (ignored)
+        // load content for sheet 0
+        {
+            "name": "check sheet #0 of sample.xlsx",
+            "store": {
+                "xlsx_file": "sample.xlsx",
+                "result_file": "result_sheet0.json",
+                "sheet_idx": 0
+            }
+        },
+        "@check_response_format_xlsx.json",
+
+        // xlsx file with only text and some formatting (ignored)
+        // load content for sheet 0 (implicitly, when "sheet_idx" is not set)
+        {
+            "name": "check first sheet of sample.xlsx",
+            "store": {
+                "xlsx_file": "sample.xlsx",
+                "result_file": "result_sheet0.json",
+                "sheet_idx": -1
+            }
+        },
+        "@check_response_format_xlsx.json",
+
+        // xlsx file with only text and some formatting (ignored)
+        // load content for sheet 1
+        {
+            "name": "check sheet #1 of sample.xlsx",
+            "store": {
+                "xlsx_file": "sample.xlsx",
+                "result_file": "result_sheet1.json",
+                "sheet_idx": 1
+            }
+        },
+        "@check_response_format_xlsx.json",
+
+        // xlsx file with text, images (ignored) and some formatting (ignored)
+        // the "thumbnail" column which includes images (anchored only) is empty when only text parsed
+        {
+            "name": "check first sheet of sample_with_thumbnails.xlsx",
+            "store": {
+                "xlsx_file": "sample_with_thumbnails.xlsx",
+                "result_file": "result_with_thumbnails.json",
+                "sheet_idx": -1
+            }
+        },
+        "@check_response_format_xlsx.json",
+
+        // invalid sheet idx, expect error
+        "@response_error_invalid_sheet_idx.json"
+    ]
+}

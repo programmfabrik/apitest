@@ -107,7 +107,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	child2.Leave(true)
 	child.Leave(true)
 
-	jsonResult := r.GetTestResult(ParseJUnitResult)
+	jsonResult := r.GetTestResult(parseJUnitResult)
 	expResult := `<testsuites failures="2" tests="3">
 	<testsuite id="0" name="Level 1 - 1" tests="1" failures="1" ></testsuite>
 	<testsuite id="1" name="Level 1 - 2" tests="2" failures="1">
@@ -117,7 +117,7 @@ func TestReportGetJUnitResult(t *testing.T) {
 	</testsuite>
 </testsuites>`
 
-	var expX, realX XMLRoot
+	var expX, realX xmlRoot
 
 	xml.Unmarshal([]byte(expResult), &expX)
 	xml.Unmarshal(jsonResult, &realX)
@@ -218,7 +218,7 @@ func TestReportGetStatsResult(t *testing.T) {
 	subchild6.Leave(true)
 	child3.Leave(true)
 
-	jsonResult := r.GetTestResult(ParseJSONStatsResult)
+	jsonResult := r.GetTestResult(parseJSONStatsResult)
 	var statsRep statsReport
 	util.Unmarshal(jsonResult, &statsRep)
 

@@ -1,0 +1,72 @@
+[
+    {
+        "thumbnail": "",
+        "_system_object_id": "10279",
+        "_id": "2722",
+        "_id_parent": "",
+        "_version": "1",
+        "_created": "2025-10-29T10:27:33Z",
+        "_last_modified": "2025-10-31T09:45:45Z",
+        "_exported_at": "2025-10-31T10:44:39Z",
+        "_objecttype": "alle_datenfelder",
+        "_mask": "alle_datenfelder__reiter",
+        "_format": "export",
+        "_tags": "4"
+    },
+    {
+        "thumbnail": "",
+        "_system_object_id": "10280",
+        "_id": "2723",
+        "_id_parent": "2722",
+        "_version": "1",
+        "_created": "2025-10-29T10:27:33Z",
+        "_last_modified": "2025-10-31T09:45:45Z",
+        "_exported_at": "2025-10-31T10:44:39Z",
+        "_objecttype": "alle_datenfelder",
+        "_mask": "alle_datenfelder__reiter",
+        "_format": "export",
+        "_tags": "4"
+    },
+    {
+        "thumbnail": "",
+        "_system_object_id": "10281",
+        "_id": "2724",
+        "_id_parent": "2723",
+        "_version": "1",
+        "_created": "2025-10-29T10:27:33Z",
+        "_last_modified": "2025-10-31T09:45:45Z",
+        "_exported_at": "2025-10-31T10:44:39Z",
+        "_objecttype": "alle_datenfelder",
+        "_mask": "alle_datenfelder__reiter",
+        "_format": "export",
+        "_tags": "4"
+    },
+    {
+        "thumbnail": "",
+        "_system_object_id": "10282",
+        "_id": "2725",
+        "_id_parent": "2724",
+        "_version": "1",
+        "_created": "2025-10-29T10:27:33Z",
+        "_last_modified": "2025-10-31T09:45:45Z",
+        "_exported_at": "2025-10-31T10:44:39Z",
+        "_objecttype": "alle_datenfelder",
+        "_mask": "alle_datenfelder__reiter",
+        "_format": "export",
+        "_tags": "4"
+    },
+    {
+        "thumbnail": "",
+        "_system_object_id": "10283",
+        "_id": "2726",
+        "_id_parent": "2725",
+        "_version": "1",
+        "_created": "2025-10-29T10:27:33Z",
+        "_last_modified": "2025-10-31T09:45:45Z",
+        "_exported_at": "2025-10-31T10:44:39Z",
+        "_objecttype": "alle_datenfelder",
+        "_mask": "alle_datenfelder__reiter",
+        "_format": "export",
+        "_tags": "4"
+    }
+]

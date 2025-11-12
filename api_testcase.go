@@ -77,16 +77,16 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 
 	// Store standard data into datastore
 	if testCase.dataStore == nil && len(testCase.Store) > 0 {
-		err := fmt.Errorf("error setting datastore. Datastore is nil")
-		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logrus.Errorf("     [%2d] %s", testCase.index, err)
+		err := fmt.Errorf("setting datastore. Datastore is nil")
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err.Error()))
+		logrus.Errorf("     [%2d] %s", testCase.index, err.Error())
 		return false
 	}
 	err := testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
-		err = fmt.Errorf("error setting datastore map:%s", err)
-		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
-		logrus.Errorf("     [%2d] %s", testCase.index, err)
+		err = fmt.Errorf("setting datastore map: %w", err)
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err.Error()))
+		logrus.Errorf("     [%2d] %s", testCase.index, err.Error())
 		return false
 	}
 
@@ -98,9 +98,9 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 
 	elapsed := time.Since(start)
 	if err != nil {
-		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err))
+		r.SaveToReportLog(fmt.Sprintf("Error during execution: %s", err.Error()))
 		if !testCase.ReverseTestResult || testCase.LogShort == nil || !*testCase.LogShort {
-			logrus.Errorf("     [%2d] %s", testCase.index, err)
+			logrus.Errorf("     [%2d] %s", testCase.index, err.Error())
 		}
 		success = false
 	}
@@ -136,109 +136,121 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) (suc
 
 // cheRckForBreak Response tests the given response for a so called break response.
 // If this break response is present it returns a true
-func (testCase Case) breakResponseIsPresent(response api.Response) (bool, error) {
+func (testCase Case) breakResponseIsPresent(response api.Response) (present bool, err error) {
+	if testCase.BreakResponse == nil {
+		return false, nil
+	}
 
-	if testCase.BreakResponse != nil {
-		for _, v := range testCase.BreakResponse {
-			spec, err := testCase.loadResponseSerialization(v)
-			if err != nil {
-				return false, fmt.Errorf("error loading check response serilization: %s", err)
-			}
+	var (
+		spec             api.ResponseSerialization
+		expectedResponse api.Response
+		responsesMatch   compare.CompareResult
+	)
 
-			expectedResponse, err := api.NewResponseFromSpec(spec)
-			if err != nil {
-				return false, fmt.Errorf("error loading check response from spec: %s", err)
-			}
-
-			if expectedResponse.Format.Type != "" {
-				response.Format = expectedResponse.Format
-			} else {
-				expectedResponse.Format = response.Format
-			}
-
-			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
-			if err != nil {
-				return false, fmt.Errorf("error matching break responses: %s", err)
-			}
-
-			if testCase.LogVerbose != nil && *testCase.LogVerbose {
-				logrus.Tracef("breakResponseIsPresent: %v", responsesMatch)
-			}
-
-			if responsesMatch.Equal {
-				return true, nil
-			}
+	for _, v := range testCase.BreakResponse {
+		spec, err = testCase.loadResponseSerialization(v)
+		if err != nil {
+			return false, fmt.Errorf("loading check response serilization: %w", err)
 		}
 
+		expectedResponse, err = api.NewResponseFromSpec(spec)
+		if err != nil {
+			return false, fmt.Errorf("loading check response from spec: %w", err)
+		}
+
+		if expectedResponse.Format.Type != "" {
+			response.Format = expectedResponse.Format
+		} else {
+			expectedResponse.Format = response.Format
+		}
+
+		responsesMatch, err = testCase.responsesEqual(expectedResponse, response)
+		if err != nil {
+			return false, fmt.Errorf("matching break responses: %w", err)
+		}
+
+		if testCase.LogVerbose != nil && *testCase.LogVerbose {
+			logrus.Tracef("breakResponseIsPresent: %v", responsesMatch)
+		}
+
+		if responsesMatch.Equal {
+			return true, nil
+		}
 	}
+
 	return false, nil
 }
 
-// checkCollectResponse loops over all given collect responses and then
-// If this continue response is present it returns a true.
-// If no continue response is set, it also returns true to keep the testsuite running
-func (testCase *Case) checkCollectResponse(response api.Response) (int, error) {
-
-	if testCase.CollectResponse != nil {
-		_, loadedResponses, err := template.LoadManifestDataAsObject(testCase.CollectResponse, testCase.manifestDir, testCase.loader)
-		if err != nil {
-			return -1, fmt.Errorf("error loading check response: %s", err)
-		}
-
-		var jsonRespArray util.JsonArray
-		switch t := loadedResponses.(type) {
-		case util.JsonArray:
-			jsonRespArray = t
-		case util.JsonObject:
-			jsonRespArray = util.JsonArray{t}
-		default:
-			return -1, fmt.Errorf("error loading check response no valid typew")
-
-		}
-
-		leftResponses := make(util.JsonArray, 0)
-		for _, v := range jsonRespArray {
-			spec, err := testCase.loadResponseSerialization(v)
-			if err != nil {
-				return -1, fmt.Errorf("error loading check response serilization: %s", err)
-			}
-
-			expectedResponse, err := api.NewResponseFromSpec(spec)
-			if err != nil {
-				return -1, fmt.Errorf("error loading check response from spec: %s", err)
-			}
-
-			if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
-				response.Format = expectedResponse.Format
-			} else {
-				expectedResponse.Format = response.Format
-			}
-
-			responsesMatch, err := testCase.responsesEqual(expectedResponse, response)
-			if err != nil {
-				return -1, fmt.Errorf("error matching check responses: %s", err)
-			}
-			// !eq && !reverse -> add
-			// !eq && reverse -> don't add
-			// eq && !reverse -> don't add
-			// eq && reverse -> add
-
-			if !responsesMatch.Equal && !testCase.ReverseTestResult ||
-				responsesMatch.Equal && testCase.ReverseTestResult {
-				leftResponses = append(leftResponses, v)
-			}
-		}
-
-		testCase.CollectResponse = leftResponses
-
-		if testCase.LogVerbose != nil && *testCase.LogVerbose {
-			logrus.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
-		}
-
-		return len(leftResponses), nil
+// checkCollectResponse loops over all given collect responses and
+// if this continue response is present it returns the number of responses.
+// If no continue response is set, it returns -1 to keep the testsuite running
+func (testCase *Case) checkCollectResponse(response api.Response) (responses int, err error) {
+	if testCase.CollectResponse == nil {
+		return 0, nil
 	}
 
-	return 0, nil
+	var (
+		loadedResponses any
+		jsonRespArray   util.JsonArray
+		leftResponses   util.JsonArray
+		spec            api.ResponseSerialization
+		responsesMatch  compare.CompareResult
+	)
+
+	_, loadedResponses, err = template.LoadManifestDataAsObject(testCase.CollectResponse, testCase.manifestDir, testCase.loader)
+	if err != nil {
+		return -1, fmt.Errorf("loading check response: %w", err)
+	}
+
+	switch t := loadedResponses.(type) {
+	case util.JsonArray:
+		jsonRespArray = t
+	case util.JsonObject:
+		jsonRespArray = util.JsonArray{t}
+	default:
+		return -1, fmt.Errorf("loading check response: no valid type")
+	}
+
+	leftResponses = make(util.JsonArray, 0)
+	for _, v := range jsonRespArray {
+		spec, err = testCase.loadResponseSerialization(v)
+		if err != nil {
+			return -1, fmt.Errorf("loading check response serilization: %w", err)
+		}
+
+		expectedResponse, err := api.NewResponseFromSpec(spec)
+		if err != nil {
+			return -1, fmt.Errorf("loading check response from spec: %w", err)
+		}
+
+		if expectedResponse.Format.Type != "" || expectedResponse.Format.PreProcess != nil {
+			response.Format = expectedResponse.Format
+		} else {
+			expectedResponse.Format = response.Format
+		}
+
+		responsesMatch, err = testCase.responsesEqual(expectedResponse, response)
+		if err != nil {
+			return -1, fmt.Errorf("matching check responses: %w", err)
+		}
+		// !eq && !reverse -> add
+		// !eq && reverse -> don't add
+		// eq && !reverse -> don't add
+		// eq && reverse -> add
+
+		if !responsesMatch.Equal && !testCase.ReverseTestResult ||
+			responsesMatch.Equal && testCase.ReverseTestResult {
+			leftResponses = append(leftResponses, v)
+		}
+	}
+
+	testCase.CollectResponse = leftResponses
+
+	if testCase.LogVerbose != nil && *testCase.LogVerbose {
+		logrus.Tracef("Remaining CheckReponses: %s", testCase.CollectResponse)
+	}
+
+	return len(leftResponses), nil
 }
 
 func (testCase Case) executeRequest(counter int) (responsesMatch compare.CompareResult, req api.Request, apiResp api.Response, err error) {
@@ -246,14 +258,14 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// Store datastore
 	err = testCase.dataStore.SetMap(testCase.Store)
 	if err != nil {
-		err = fmt.Errorf("error setting datastore map:%s", err)
+		err = fmt.Errorf("setting datastore map: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
 	//Do Request
 	req, err = testCase.loadRequest()
 	if err != nil {
-		err = fmt.Errorf("error loading request: %s", err)
+		err = fmt.Errorf("loading request: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
@@ -264,15 +276,15 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 
 	expRes, err := testCase.loadExpectedResponse()
 	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error loading response: %s", err)
+		testCase.logReq(req)
+		err = fmt.Errorf("loading response: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
 	apiResp, err = req.Send()
 	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error sending request: %s", err)
+		testCase.logReq(req)
+		err = fmt.Errorf("sending request: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
@@ -283,16 +295,16 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// That's problematic if the response is not JSON, as we try to parse it for the datastore anyway
 	// So we don't fail the test in that edge case
 	if err != nil && (testCase.ResponseData != nil || len(testCase.StoreResponse) > 0) {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error getting json from response: %s", err)
+		testCase.logReq(req)
+		err = fmt.Errorf("getting json from response: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
 	// Store in custom store
 	err = testCase.dataStore.SetWithGjson(apiRespJsonString, testCase.StoreResponse)
 	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error store response with gjson: %s", err)
+		testCase.logReq(req)
+		err = fmt.Errorf("store response with gjson: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
@@ -306,32 +318,37 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 	// Compare Responses
 	responsesMatch, err = testCase.responsesEqual(expRes, apiResp)
 	if err != nil {
-		testCase.LogReq(req)
-		err = fmt.Errorf("error matching responses: %s", err)
+		testCase.logReq(req)
+		err = fmt.Errorf("matching responses: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
 	return responsesMatch, req, apiResp, nil
 }
 
-// LogResp print the response to the console
-func (testCase Case) LogResp(response api.Response) {
-	errString := fmt.Sprintf("[RESPONSE]:\n%s\n\n", limitLines(response.ToString(), Config.Apitest.Limit.Response))
-
-	if !testCase.ReverseTestResult && testCase.LogNetwork != nil && !*testCase.LogNetwork && !testCase.ContinueOnFailure {
-		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debug(errString)
+func (testCase Case) logBody(prefix, body string, limit int) {
+	if testCase.ReverseTestResult {
+		return
 	}
+	if testCase.ContinueOnFailure {
+		return
+	}
+	if testCase.LogNetwork == nil || *testCase.LogNetwork {
+		return
+	}
+
+	errString := fmt.Sprintf("[%s]:\n%s\n\n", prefix, limitLines(body, limit))
+	testCase.ReportElem.SaveToReportLog(errString)
+	logrus.Debug(errString)
 }
 
-// LogReq print the request to the console
-func (testCase Case) LogReq(req api.Request) {
-	errString := fmt.Sprintf("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
+func (testCase Case) logResp(response api.Response) {
+	testCase.logBody("RESPONSE", response.ToString(), Config.Apitest.Limit.Response)
+}
 
-	if !testCase.ReverseTestResult && !testCase.ContinueOnFailure && testCase.LogNetwork != nil && !*testCase.LogNetwork {
-		testCase.ReportElem.SaveToReportLogF(errString)
-		logrus.Debug(errString)
-	}
+// logReq print the request to the console
+func (testCase Case) logReq(req api.Request) {
+	testCase.logBody("REQUEST", req.ToString(logCurl), Config.Apitest.Limit.Request)
 }
 
 func limitLines(in string, limitCount int) string {
@@ -382,7 +399,7 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			logrus.Debugf("[RESPONSE]:\n%s\n\n", limitLines(apiResponse.ToString(), Config.Apitest.Limit.Response))
 		}
 		if err != nil {
-			testCase.LogResp(apiResponse)
+			testCase.logResp(apiResponse)
 			return false, apiResponse, err
 		}
 
@@ -392,22 +409,22 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 
 		breakPresent, err := testCase.breakResponseIsPresent(apiResponse)
 		if err != nil {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
-			return false, apiResponse, fmt.Errorf("error checking for break response: %s", err)
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
+			return false, apiResponse, fmt.Errorf("checking for break response: %w", err)
 		}
 
 		if breakPresent {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
-			return false, apiResponse, fmt.Errorf("Break response found")
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
+			return false, apiResponse, fmt.Errorf("break response found")
 		}
 
 		collectLeft, err := testCase.checkCollectResponse(apiResponse)
 		if err != nil {
-			testCase.LogReq(request)
-			testCase.LogResp(apiResponse)
-			return false, apiResponse, fmt.Errorf("error checking for continue response: %s", err)
+			testCase.logReq(request)
+			testCase.logResp(apiResponse)
+			return false, apiResponse, fmt.Errorf("checking for continue response: %w", err)
 		}
 
 		if collectPresent && collectLeft <= 0 {
@@ -445,8 +462,8 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			for _, v := range collectArray {
 				jsonV, err := json.Marshal(v)
 				if err != nil {
-					testCase.LogReq(request)
-					testCase.LogResp(apiResponse)
+					testCase.logReq(request)
+					testCase.logResp(apiResponse)
 					return false, apiResponse, err
 				}
 				logrus.Errorf("Collect response not found: %s", jsonV)
@@ -454,8 +471,8 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			}
 		}
 
-		testCase.LogReq(request)
-		testCase.LogResp(apiResponse)
+		testCase.logReq(request)
+		testCase.logResp(apiResponse)
 		return false, apiResponse, nil
 	}
 
@@ -469,12 +486,11 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 	return true, apiResponse, nil
 }
 
-func (testCase Case) loadRequest() (api.Request, error) {
-	req, err := testCase.loadRequestSerialization()
+func (testCase Case) loadRequest() (req api.Request, err error) {
+	req, err = testCase.loadRequestSerialization()
 	if err != nil {
-		return req, fmt.Errorf("error loadRequestSerialization: %s", err)
+		return api.Request{}, fmt.Errorf("loadRequestSerialization: %w", err)
 	}
-
 	return req, err
 }
 
@@ -485,16 +501,16 @@ func (testCase Case) loadExpectedResponse() (res api.Response, err error) {
 	}
 	spec, err := testCase.loadResponseSerialization(testCase.ResponseData)
 	if err != nil {
-		return res, fmt.Errorf("error loading response spec: %s", err)
+		return res, fmt.Errorf("loading response spec: %w", err)
 	}
 	res, err = api.NewResponseFromSpec(spec)
 	if err != nil {
-		return res, fmt.Errorf("error creating response from spec: %s", err)
+		return res, fmt.Errorf("creating response from spec: %w", err)
 	}
 	return res, nil
 }
 
-func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
+func (testCase Case) responsesEqual(expected, got api.Response) (comp compare.CompareResult, err error) {
 	if expected.StatusCode == nil {
 		// if the statuscode is not set, use the default status code 200
 		expected.StatusCode = golib.IntRef(200)
@@ -506,35 +522,43 @@ func (testCase Case) responsesEqual(expected, got api.Response) (compare.Compare
 		}
 	}
 
-	expectedJSON, err := expected.ToGenericJSON()
+	var (
+		expectedJSON any
+		gotJSON      any
+	)
+
+	expectedJSON, err = expected.ToGenericJSON()
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading expected generic json: %s", err)
+		return comp, fmt.Errorf("loading expected generic json: %w", err)
 	}
 	if len(expected.Body) == 0 && len(expected.BodyControl) == 0 {
 		expected.Format.IgnoreBody = true
 	} else {
 		expected.Format.IgnoreBody = false
 	}
-	gotJSON, err := got.ServerResponseToGenericJSON(expected.Format, false)
+
+	gotJSON, err = got.ServerResponseToGenericJSON(expected.Format, false)
 	if err != nil {
-		return compare.CompareResult{}, fmt.Errorf("error loading response generic json: %s", err)
+		return comp, fmt.Errorf("loading response generic json: %w", err)
 	}
 	return compare.JsonEqual(expectedJSON, gotJSON, compare.ComparisonContext{})
 }
 
-func (testCase Case) loadRequestSerialization() (api.Request, error) {
+func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 	var (
-		spec api.Request
+		spec        api.Request
+		requestData any
+		specBytes   []byte
 	)
 
-	reqLoader := testCase.loader
-	_, requestData, err := template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, reqLoader)
+	_, requestData, err = template.LoadManifestDataAsObject(*testCase.RequestData, testCase.manifestDir, testCase.loader)
 	if err != nil {
-		return spec, fmt.Errorf("error loading request data: %s", err)
+		return spec, fmt.Errorf("loading request data: %w", err)
 	}
-	specBytes, err := json.Marshal(requestData)
+
+	specBytes, err = json.Marshal(requestData)
 	if err != nil {
-		return spec, fmt.Errorf("error marshaling req: %s", err)
+		return spec, fmt.Errorf("marshaling requet: %w", err)
 	}
 	err = util.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
@@ -568,17 +592,17 @@ func (testCase Case) loadResponseSerialization(genJSON any) (spec api.ResponseSe
 	resLoader := testCase.loader
 	_, responseData, err := template.LoadManifestDataAsObject(genJSON, testCase.manifestDir, resLoader)
 	if err != nil {
-		return spec, fmt.Errorf("error loading response data: %s", err)
+		return spec, fmt.Errorf("loading response data: %w", err)
 	}
 
 	specBytes, err := json.Marshal(responseData)
 	if err != nil {
-		return spec, fmt.Errorf("error marshaling res: %s", err)
+		return spec, fmt.Errorf("marshaling response: %w", err)
 	}
 
 	err = util.Unmarshal(specBytes, &spec)
 	if err != nil {
-		return spec, fmt.Errorf("error unmarshaling res: %s", err)
+		return spec, fmt.Errorf("unmarshaling response: %w", err)
 	}
 
 	// the body must not be parsed if it is not expected in the response, or should not be stored

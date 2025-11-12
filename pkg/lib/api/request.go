@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/moul/http2curl"
+	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
@@ -35,7 +36,7 @@ func init() {
 	}
 }
 
-type RequestCookie struct {
+type requestCookie struct {
 	ValueFromStore string `yaml:"value_from_store" json:"value_from_store"`
 	Value          string `yaml:"value" json:"value"`
 }
@@ -49,8 +50,8 @@ type Request struct {
 	QueryParamsFromStore map[string]string         `yaml:"query_params_from_store" json:"query_params_from_store"`
 	Headers              map[string]any            `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
-	Cookies              map[string]*RequestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*Cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	Cookies              map[string]*requestCookie `yaml:"cookies" json:"cookies"`
+	SetCookies           []*cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 any                       `yaml:"body" json:"body"`
@@ -92,12 +93,12 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	// io.Closer.
 	additionalHeaders, body, err := request.buildPolicy(request)
 	if err != nil {
-		return req, fmt.Errorf("error executing buildpolicy: %s", err)
+		return req, fmt.Errorf("executing buildpolicy: %w", err)
 	}
 
 	req, err = http.NewRequest(request.Method, requestUrl, body)
 	if err != nil {
-		return req, fmt.Errorf("error creating new request")
+		return req, fmt.Errorf("creating new request: %w", err)
 	}
 
 	// Remove library default agent
@@ -135,7 +136,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 
 		stringVal, err := util.GetStringFromInterface(queryParamInterface)
 		if err != nil {
-			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("GetStringFromInterface: %w", err)
 		}
 
 		if stringVal == "" {
@@ -147,7 +148,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	for key, val := range request.QueryParams {
 		stringVal, err := util.GetStringFromInterface(val)
 		if err != nil {
-			return req, fmt.Errorf("error GetStringFromInterface: %s", err)
+			return req, fmt.Errorf("GetStringFromInterface: %w", err)
 		}
 		q.Set(key, stringVal)
 	}
@@ -166,7 +167,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		}
 
 		if request.DataStore == nil {
-			return req, fmt.Errorf("can't get header_from_store as the datastore is nil")
+			return req, errors.New("can't get header_from_store as the datastore is nil")
 		}
 
 		headersInt, err := request.DataStore.Get(datastoreKey)
@@ -174,7 +175,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			if skipOnError {
 				continue
 			}
-			return nil, fmt.Errorf("could not get '%s' from Datastore: %s", datastoreKey, err)
+			return nil, fmt.Errorf("could not get %q from Datastore: %w", datastoreKey, err)
 		}
 
 		ownHeaders, ok := headersInt.([]any)
@@ -198,7 +199,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			}
 			req.Header.Set(headerName, ownHeader)
 		} else {
-			return nil, fmt.Errorf("could not set header '%s' from Datastore: '%s' is not a string. Got value: '%v'", headerName, datastoreKey, headersInt)
+			return nil, fmt.Errorf("could not set header %q from Datastore: %q is not a string. Got value: %v", headerName, datastoreKey, headersInt)
 		}
 	}
 
@@ -215,7 +216,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			for _, vOne := range v {
 				vOneS, isString := vOne.(string)
 				if !isString {
-					return nil, fmt.Errorf("unsupported header %q value %T: %v", key, vOne, vOne)
+					return nil, fmt.Errorf("unsupported header %q with value %T: %v", key, vOne, vOne)
 				}
 				vArr = append(vArr, vOneS)
 			}
@@ -238,11 +239,11 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			if err == nil && cookieInt != "" {
 				ckBytes, err := json.Marshal(cookieInt)
 				if err != nil {
-					return nil, fmt.Errorf("could not marshal cookie '%s' from Datastore", storeKey)
+					return nil, fmt.Errorf("could not marshal cookie %q from Datastore", storeKey)
 				}
 				err = json.Unmarshal(ckBytes, &ck)
 				if err != nil {
-					return nil, fmt.Errorf("could not unmarshal cookie '%s' from Datastore: %s", storeKey, string(ckBytes))
+					return nil, fmt.Errorf("could not unmarshal cookie %q from Datastore (%q): %w", storeKey, string(ckBytes), err)
 				}
 			}
 		}
@@ -284,7 +285,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 func (request Request) ToString(curl bool) (res string) {
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
-		return fmt.Sprintf("could not build httpRequest: %s", err)
+		return fmt.Sprintf("could not build httpRequest: %s", err.Error())
 	}
 
 	var dumpBody bool
@@ -314,7 +315,7 @@ func (request Request) ToString(curl bool) (res string) {
 		for key, val := range request.Body.(map[string]any) {
 			pathSpec, ok := val.(util.JsonString)
 			if !ok {
-				panic(fmt.Errorf("pathSpec should be a string"))
+				panic(errors.New("pathSpec should be a string"))
 			}
 			rep = fmt.Sprintf(`%s -F "%s=@%s"`, rep, key, path.Join(request.ManifestDir, pathSpec[1:]))
 		}
@@ -324,7 +325,7 @@ func (request Request) ToString(curl bool) (res string) {
 
 	resBytes, err := httputil.DumpRequestOut(httpRequest, dumpBody)
 	if err != nil {
-		return fmt.Sprintf("could not dump httpRequest: %s", err)
+		return fmt.Sprintf("could not dump httpRequest: %s", err.Error())
 	}
 	return string(resBytes)
 }
@@ -332,11 +333,11 @@ func (request Request) ToString(curl bool) (res string) {
 func (request Request) Send() (response Response, err error) {
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
-		return response, fmt.Errorf("Could not buildHttpRequest: %s", err)
+		return response, fmt.Errorf("could not buildHttpRequest: %w", err)
 	}
 
 	if request.NoRedirect {
-		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) (err error) {
 			return http.ErrUseLastResponse
 		}
 	} else {
@@ -347,20 +348,20 @@ func (request Request) Send() (response Response, err error) {
 
 	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
-		return response, fmt.Errorf("Could not do http request: %s", err)
+		return response, fmt.Errorf("could not do http request: %w", err)
 	}
 
 	elapsedTime := time.Since(now)
 
 	defer httpResponse.Body.Close()
 
-	header, err := HttpHeaderToMap(httpResponse.Header)
+	header, err := httpHeaderToMap(httpResponse.Header)
 	if err != nil {
 		return response, err
 	}
 	response, err = NewResponse(golib.IntRef(httpResponse.StatusCode), header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
-		return response, fmt.Errorf("error constructing response from http response: %w", err)
+		return response, fmt.Errorf("constructing response from http response: %w", err)
 	}
 	response.ReqDur = elapsedTime
 	return response, err

@@ -92,7 +92,7 @@ func TestMessageSearch(t *testing.T) {
 			query := testCase.queries[j]
 			t.Run(query, func(t *testing.T) {
 				re := regexp.MustCompile(query)
-				actual := SearchByHeader(server.ReceivedMessages(), re)
+				actual := searchByHeader(server.ReceivedMessages(), re)
 
 				actualIndices := make([]int, len(actual))
 				for ai, av := range actual {
@@ -141,7 +141,7 @@ func TestMessageSearchAND(t *testing.T) {
 				rxs[j] = regexp.MustCompile(query)
 			}
 
-			actual := SearchByHeader(server.ReceivedMessages(), rxs...)
+			actual := searchByHeader(server.ReceivedMessages(), rxs...)
 
 			actualIndices := make([]int, len(actual))
 			for ai, av := range actual {
@@ -212,7 +212,7 @@ func TestMultipartSearch(t *testing.T) {
 				msg, err := server.ReceivedMessage(8)
 				require.NoError(t, err)
 
-				actual := SearchByHeader(msg.Content().Multiparts(), re)
+				actual := searchByHeader(msg.Content().Multiparts(), re)
 
 				actualIndices := make([]int, len(actual))
 				for ai, av := range actual {
@@ -259,7 +259,7 @@ func TestMultipartSearchAND(t *testing.T) {
 			msg, err := server.ReceivedMessage(8)
 			require.NoError(t, err)
 
-			actual := SearchByHeader(msg.Content().Multiparts(), rxs...)
+			actual := searchByHeader(msg.Content().Multiparts(), rxs...)
 
 			actualIndices := make([]int, len(actual))
 			for ai, av := range actual {
@@ -280,7 +280,7 @@ func assertHeadersEqual(t *testing.T, expected, actual map[string][]string) {
 	}
 }
 
-func assertMessageEqual(t *testing.T, expected, actual *ReceivedMessage) {
+func assertMessageEqual(t *testing.T, expected, actual *receivedMessage) {
 	assert.Equal(t, expected.index, actual.index)
 	assert.Equal(t, expected.smtpFrom, actual.smtpFrom)
 	assert.ElementsMatch(t, expected.smtpRcptTo, actual.smtpRcptTo)
@@ -290,12 +290,12 @@ func assertMessageEqual(t *testing.T, expected, actual *ReceivedMessage) {
 	assertContentEqual(t, expected.content, actual.content)
 }
 
-func assertMultipartEqual(t *testing.T, expected, actual *ReceivedPart) {
+func assertMultipartEqual(t *testing.T, expected, actual *receivedPart) {
 	assert.Equal(t, expected.index, actual.index)
 	assertContentEqual(t, expected.content, actual.content)
 }
 
-func assertContentEqual(t *testing.T, expected, actual *ReceivedContent) {
+func assertContentEqual(t *testing.T, expected, actual *receivedContent) {
 	assert.Equal(t, expected.body, actual.body)
 	assert.Equal(t, expected.contentType, actual.contentType)
 	assert.Equal(t, expected.contentTypeParams, actual.contentTypeParams)
@@ -342,8 +342,8 @@ func runTestSession() *Server {
 	return server
 }
 
-func buildExpectedMessages() []*ReceivedMessage {
-	messages := []*ReceivedMessage{
+func buildExpectedMessages() []*receivedMessage {
+	messages := []*receivedMessage{
 		{
 			index:      0,
 			smtpFrom:   "testsender@programmfabrik.de",
@@ -354,7 +354,7 @@ To: testreceiver@programmfabrik.de
 Hello World!
 A simple plain text test mail.`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From": {"testsender@programmfabrik.de"},
 					"To":   {"testreceiver@programmfabrik.de"},
@@ -388,7 +388,7 @@ Some <b>text</b> <i>in</i> HTML format.
 
 Trailing text is ignored.`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"Mime-Version": {"1.0"},
 					"From":         {"testsender2@programmfabrik.de"},
@@ -415,10 +415,10 @@ Trailing text is ignored.`),
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-				multiparts: []*ReceivedPart{
+				multiparts: []*receivedPart{
 					{
 						index: 0,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type": {"text/plain; charset=utf-8"},
 							},
@@ -431,7 +431,7 @@ Trailing text is ignored.`),
 					},
 					{
 						index: 1,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type": {"text/html; charset=utf-8"},
 							},
@@ -456,7 +456,7 @@ Content-Type: text/plain; charset=utf-8
 
 Noch eine Testmail. Diesmal mit nicht-ASCII-Zeichen: äöüß`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From":         {"testsender3@programmfabrik.de"},
 					"To":           {"testreceiver3@programmfabrik.de"},
@@ -482,7 +482,7 @@ Content-Transfer-Encoding: base64
 RWluZSBiYXNlNjQtZW5rb2RpZXJ0ZSBUZXN0bWFpbCBtaXQgbmljaHQtQVNDSUktWmVpY2hlbjog
 w6TDtsO8w58K`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From":                      {"testsender4@programmfabrik.de"},
 					"To":                        {"testreceiver4@programmfabrik.de"},
@@ -510,7 +510,7 @@ Content-Transfer-Encoding: quoted-printable
 Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From":                      {"testsender5@programmfabrik.de"},
 					"To":                        {"testreceiver5@programmfabrik.de"},
@@ -550,7 +550,7 @@ Noch eine Testmail mit =C3=A4=C3=B6=C3=BC=C3=9F, diesmal enkodiert in quote=
 d-printable.
 --d36c3118be4745f9a1cb4556d11fe92d--`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"Mime-Version": {"1.0"},
 					"From":         {"testsender6@programmfabrik.de"},
@@ -577,10 +577,10 @@ d-printable.
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-				multiparts: []*ReceivedPart{
+				multiparts: []*receivedPart{
 					{
 						index: 0,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":              {"text/plain; charset=utf-8"},
 								"Content-Transfer-Encoding": {"base64"},
@@ -595,7 +595,7 @@ d-printable.
 					},
 					{
 						index: 1,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":              {"text/plain; charset=utf-8"},
 								"Content-Transfer-Encoding": {"quoted-printable"},
@@ -621,7 +621,7 @@ Subject: Tästmail mit Ümlauten im Header
 Hello World!
 A simple plain text test mail.`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From":    {"tästsender7@programmfabrik.de"},
 					"To":      {"testreceiver7@programmfabrik.de"},
@@ -642,7 +642,7 @@ Subject: =?utf-8?q?T=C3=A4stmail_mit_=C3=9Cmlauten_im_Header?=
 Hello World!
 A simple plain text test mail.`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"From":    {"tästsender8@programmfabrik.de"},
 					"To":      {"testreceiver8@programmfabrik.de"},
@@ -689,7 +689,7 @@ X-Funky-Header: Phase
 Foobar.
 --d36c3118be4745f9a1cb4556d11fe92d--`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"Mime-Version": {"1.0"},
 					"From":         {"testsender9@programmfabrik.de"},
@@ -728,10 +728,10 @@ Foobar.
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-				multiparts: []*ReceivedPart{
+				multiparts: []*receivedPart{
 					{
 						index: 0,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":              {"text/plain; charset=utf-8"},
 								"Content-Transfer-Encoding": {"base64"},
@@ -747,7 +747,7 @@ Foobar.
 					},
 					{
 						index: 1,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":              {"text/plain; charset=utf-8"},
 								"Content-Transfer-Encoding": {"quoted-printable"},
@@ -762,7 +762,7 @@ Foobar.
 					},
 					{
 						index: 2,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":   {"text/html; charset=utf-8"},
 								"X-Funky-Header": {"Nase"},
@@ -776,7 +776,7 @@ Foobar.
 					},
 					{
 						index: 3,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type":   {"text/plain; charset=utf-8"},
 								"X-Funky-Header": {"Phase"},
@@ -820,7 +820,7 @@ This is the <i>second</i> subpart.
 --710d3e95c17247d4bb35d621f25e094e--
 --d36c3118be4745f9a1cb4556d11fe92d--`),
 			receivedAt: testTime,
-			content: &ReceivedContent{
+			content: &receivedContent{
 				headers: map[string][]string{
 					"Mime-Version": {"1.0"},
 					"From":         {"testsender10@programmfabrik.de"},
@@ -851,10 +851,10 @@ This is the <i>second</i> subpart.
 					"boundary": "d36c3118be4745f9a1cb4556d11fe92d",
 				},
 				isMultipart: true,
-				multiparts: []*ReceivedPart{
+				multiparts: []*receivedPart{
 					{
 						index: 0,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type": {"text/plain; charset=utf-8"},
 							},
@@ -868,7 +868,7 @@ This is the <i>second</i> subpart.
 					},
 					{
 						index: 1,
-						content: &ReceivedContent{
+						content: &receivedContent{
 							headers: map[string][]string{
 								"Content-Type": {`multipart/mixed; boundary="710d3e95c17247d4bb35d621f25e094e"`},
 							},
@@ -888,10 +888,10 @@ This is the <i>second</i> subpart.
 							},
 
 							isMultipart: true,
-							multiparts: []*ReceivedPart{
+							multiparts: []*receivedPart{
 								{
 									index: 0,
-									content: &ReceivedContent{
+									content: &receivedContent{
 										headers: map[string][]string{
 											"Content-Type": {"text/plain; charset=ascii"},
 										},
@@ -905,7 +905,7 @@ This is the <i>second</i> subpart.
 								},
 								{
 									index: 1,
-									content: &ReceivedContent{
+									content: &receivedContent{
 										headers: map[string][]string{
 											"Content-Type": {"text/html; charset=utf-8"},
 										},
@@ -957,7 +957,7 @@ func formatRaw(b []byte) []byte {
 	return []byte(strings.ReplaceAll(string(b), "\n", "\r\n"))
 }
 
-func formatMultipartContent[T ContentHaver](parts []T) {
+func formatMultipartContent[T contentHaver](parts []T) {
 	for _, p := range parts {
 		content := p.Content()
 

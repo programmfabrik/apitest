@@ -53,11 +53,11 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 	SetupFS()
 
 	//Invalid rootDirectory -> Expect error
-	_, err := NewTestToolConfig(server.URL+"/api/v1", []string{"invalid"}, false, false, false)
+	_, err := newTestToolConfig(server.URL+"/api/v1", []string{"invalid"}, false, false, false)
 	go_test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
 
 	//Invalid rootDirectory -> Expect error
-	conf, err := NewTestToolConfig(server.URL+"/api/v1", []string{"path"}, false, false, false)
+	conf, err := newTestToolConfig(server.URL+"/api/v1", []string{"path"}, false, false, false)
 	go_test_utils.ExpectNoError(t, err, "NewTestToolConfig did fail on valid root directory")
 
 	expectedResults := []string{
@@ -66,13 +66,13 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 		filepath.Dir(manifestPath3),
 	}
 
-	if len(expectedResults) != len(conf.TestDirectories) {
-		t.Errorf("Len: Got %d, expected %d", len(conf.TestDirectories), len(expectedResults))
+	if len(expectedResults) != len(conf.testDirectories) {
+		t.Errorf("Len: Got %d, expected %d", len(conf.testDirectories), len(expectedResults))
 	}
 
 	for k, v := range expectedResults {
-		if conf.TestDirectories[k] != v {
-			t.Errorf("Got %s, exptected != %s", conf.TestDirectories[k], v)
+		if conf.testDirectories[k] != v {
+			t.Errorf("Got %s, exptected != %s", conf.testDirectories[k], v)
 		}
 	}
 

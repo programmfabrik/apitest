@@ -11,19 +11,19 @@ import (
 	"github.com/programmfabrik/golib"
 )
 
-type CmdOutputType string
+type cmdOutputType string
 
 const (
-	CmdOutputStdout   CmdOutputType = "stdout"
-	CmdOutputStderr   CmdOutputType = "stderr"
-	CmdOutputExitCode CmdOutputType = "exitcode"
+	CmdOutputStdout   cmdOutputType = "stdout"
+	CmdOutputStderr   cmdOutputType = "stderr"
+	CmdOutputExitCode cmdOutputType = "exitcode"
 )
 
-type PreProcess struct {
+type preProcess struct {
 	Cmd struct {
 		Name   string        `json:"name"`
 		Args   []string      `json:"args,omitempty"`
-		Output CmdOutputType `json:"output,omitempty"`
+		Output cmdOutputType `json:"output,omitempty"`
 	} `json:"cmd"`
 }
 
@@ -34,7 +34,7 @@ type preProcessError struct {
 	StdErr   string `json:"stderr"`
 }
 
-func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
+func (proc *preProcess) runPreProcess(response Response) (resp Response, err error) {
 
 	var (
 		stdout     bytes.Buffer
@@ -59,7 +59,7 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 	cmd.Stdin = bodyReader
 	cmd.Args = append(cmd.Args, proc.Cmd.Args...)
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		stderrBytes := stderr.Bytes()
 		var exitCode int
@@ -102,11 +102,17 @@ func (proc *PreProcess) RunPreProcess(response Response) (Response, error) {
 // ensureJson makes sure that data can be parsed as JSON. In case
 // that data is something like '0 (0)' the data is wrapped as string.
 func ensureJson(data []byte) (dataFixed []byte) {
-	var v any
-	parseErr := json.Unmarshal(data, &v)
+	var (
+		v        any
+		parseErr error
+	)
+
+	dataFixed = data
+
+	parseErr = json.Unmarshal(data, &v)
 	if parseErr != nil {
 		dataFixed, _ = golib.JsonBytes(string(data))
-		return dataFixed
 	}
-	return data
+
+	return dataFixed
 }

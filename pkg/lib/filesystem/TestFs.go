@@ -22,15 +22,15 @@ type TestFs struct {
 	MockChtimes   func(name string, atime time.Time, mtime time.Time) error
 }
 
-func NewTestFs(baseFs afero.Fs) *TestFs {
+func NewTestFs(baseFs afero.Fs) (test *TestFs) {
 	return &TestFs{BaseFs: baseFs}
 }
 
-func (*TestFs) Name() string {
+func (*TestFs) Name() (name string) {
 	return "TestFs"
 }
 
-func (m *TestFs) Create(name string) (afero.File, error) {
+func (m *TestFs) Create(name string) (file afero.File, err error) {
 	if m.MockCreate == nil {
 		return m.BaseFs.Create(name)
 	}
@@ -38,7 +38,7 @@ func (m *TestFs) Create(name string) (afero.File, error) {
 	return m.MockCreate(name)
 }
 
-func (m *TestFs) Mkdir(name string, perm os.FileMode) error {
+func (m *TestFs) Mkdir(name string, perm os.FileMode) (err error) {
 	if m.MockMkdir == nil {
 		return m.BaseFs.Mkdir(name, perm)
 	}
@@ -46,7 +46,7 @@ func (m *TestFs) Mkdir(name string, perm os.FileMode) error {
 	return m.MockMkdir(name, perm)
 }
 
-func (m *TestFs) MkdirAll(path string, perm os.FileMode) error {
+func (m *TestFs) MkdirAll(path string, perm os.FileMode) (err error) {
 	if m.MockMkdirAll == nil {
 		return m.BaseFs.MkdirAll(path, perm)
 	}
@@ -54,7 +54,7 @@ func (m *TestFs) MkdirAll(path string, perm os.FileMode) error {
 	return m.MockMkdirAll(path, perm)
 }
 
-func (m *TestFs) Open(name string) (afero.File, error) {
+func (m *TestFs) Open(name string) (file afero.File, err error) {
 	if m.MockOpen == nil {
 		return m.BaseFs.Open(name)
 	}
@@ -62,7 +62,7 @@ func (m *TestFs) Open(name string) (afero.File, error) {
 	return m.MockOpen(name)
 }
 
-func (m *TestFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+func (m *TestFs) OpenFile(name string, flag int, perm os.FileMode) (file afero.File, err error) {
 	if m.MockOpenFile == nil {
 		return m.BaseFs.OpenFile(name, flag, perm)
 	}
@@ -70,7 +70,7 @@ func (m *TestFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, 
 	return m.MockOpenFile(name, flag, perm)
 }
 
-func (m *TestFs) Remove(name string) error {
+func (m *TestFs) Remove(name string) (err error) {
 	if m.MockRemove == nil {
 		return m.BaseFs.Remove(name)
 	}
@@ -78,7 +78,7 @@ func (m *TestFs) Remove(name string) error {
 	return m.MockRemove(name)
 }
 
-func (m *TestFs) RemoveAll(path string) error {
+func (m *TestFs) RemoveAll(path string) (err error) {
 	if m.MockRemoveAll == nil {
 		return m.BaseFs.RemoveAll(path)
 	}
@@ -86,7 +86,7 @@ func (m *TestFs) RemoveAll(path string) error {
 	return m.MockRemoveAll(path)
 }
 
-func (m *TestFs) Rename(oldname, newname string) error {
+func (m *TestFs) Rename(oldname, newname string) (err error) {
 	if m.MockRename == nil {
 		return m.BaseFs.Rename(oldname, newname)
 	}
@@ -94,7 +94,7 @@ func (m *TestFs) Rename(oldname, newname string) error {
 	return m.MockRename(oldname, newname)
 }
 
-func (m *TestFs) Stat(name string) (os.FileInfo, error) {
+func (m *TestFs) Stat(name string) (info os.FileInfo, err error) {
 	if m.MockStat == nil {
 		return m.BaseFs.Stat(name)
 	}
@@ -102,7 +102,7 @@ func (m *TestFs) Stat(name string) (os.FileInfo, error) {
 	return m.MockStat(name)
 }
 
-func (m *TestFs) Chmod(name string, mode os.FileMode) error {
+func (m *TestFs) Chmod(name string, mode os.FileMode) (err error) {
 	if m.MockChmod == nil {
 		return m.BaseFs.Chmod(name, mode)
 	}
@@ -110,7 +110,7 @@ func (m *TestFs) Chmod(name string, mode os.FileMode) error {
 	return m.MockChmod(name, mode)
 }
 
-func (m *TestFs) Chtimes(name string, atime time.Time, mtime time.Time) error {
+func (m *TestFs) Chtimes(name string, atime time.Time, mtime time.Time) (err error) {
 	if m.MockChtimes == nil {
 		return m.BaseFs.Chtimes(name, atime, mtime)
 	}

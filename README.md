@@ -594,9 +594,9 @@ See also template [`file_xhtml2json`](#file_xhtml2json-path).
 
 ## CSV Data comparison
 
-If the response format is specified as `"type": "csv"`, we internally marshal that CSV into json.
+If the response format is specified as `"type": "csv"`, we internally marshal that CSV into JSON. The resulting JSON is an array of objects where each object contains the data of a single CSV row.
 
-You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
+You can also specify the delimiter (`csv.comma`) for parsing the CSV (default: `,`):
 
 ```json
 {
@@ -612,7 +612,34 @@ You can also specify the delimiter (`comma`) for the CSV format (default: `,`):
                 "comma": ";"
             }
         },
-        "body": {}
+        "body": []
+    }
+}
+```
+
+## XLSX (Excel) Data comparison
+
+If the response format is specified as `"type": "xlsx"`, the XLSX data of a sheet is marshalled into JSON. Only the text content of the cells is considered, formatting etc. is ignored.
+
+If there are multiple sheets in the file, a specific sheet index can be requested with `xlsx.sheet_idx`. This value must be between `0` and the number of sheets `- 1`. Other values will result in an error. If no index is specified, the first sheet is marshalled (default: `0`).
+
+Internally the CSV marshalling (see [above](#csv-data-comparison)) is used as a middle step, so the resulting JSON has the same structure as if a CSV file would be parsed.
+
+```json
+{
+    "name": "XLSX (Excel) comparison",
+    "request": {
+        "endpoint": "export/1/files/file.xlsx",
+        "method": "GET"
+    },
+    "response": {
+        "format": {
+            "type": "xlsx",
+            "xlsx": {
+                "sheet_idx": 2
+            }
+        },
+        "body": []
     }
 }
 ```

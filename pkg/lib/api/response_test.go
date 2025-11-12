@@ -115,7 +115,7 @@ func TestResponse_Cookies(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	header, err := HttpHeaderToMap(res.Header)
+	header, err := httpHeaderToMap(res.Header)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,11 +144,11 @@ func TestResponse_Cookies(t *testing.T) {
 	var ck http.Cookie
 	vb, err := json.Marshal(v.Value())
 	if err != nil {
-		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", v, err)
+		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", v, err.Error())
 	}
 	err = json.Unmarshal(vb, &ck)
 	if err != nil {
-		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", v, err)
+		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", v, err.Error())
 	}
 
 	go_test_utils.AssertStringEquals(t, ck.Value, "you_session_data")

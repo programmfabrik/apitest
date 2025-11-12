@@ -28,11 +28,11 @@ func TestRequestBuildHttp(t *testing.T) {
 		return ah, b, nil
 	}
 	httpRequest, err := request.buildHttpRequest()
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error building http-request: %s", err))
+	go_test_utils.ExpectNoError(t, err, fmt.Errorf("error building http-request: %w", err).Error())
 	go_test_utils.AssertStringEquals(t, httpRequest.Header.Get("mock-header"), "application/mock")
 
 	assertBody, err := io.ReadAll(httpRequest.Body)
-	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("error reading http-request body: %s", err))
+	go_test_utils.ExpectNoError(t, err, fmt.Errorf("error reading http-request body: %w", err).Error())
 	go_test_utils.AssertStringEquals(t, string(assertBody), "mock_body")
 
 	url := httpRequest.URL
@@ -68,7 +68,7 @@ func TestBuildCurl(t *testing.T) {
 }
 
 func TestRequestBuildHttpWithCookie(t *testing.T) {
-	reqCookies := map[string]*RequestCookie{
+	reqCookies := map[string]*requestCookie{
 		"sess": {
 			ValueFromStore: "sess_cookie",
 		},
@@ -95,12 +95,12 @@ func TestRequestBuildHttpWithCookie(t *testing.T) {
 	request.DataStore = ds
 	httpRequest, err := request.buildHttpRequest()
 	if err != nil {
-		t.Fatalf("Could not build http request: %s", err)
+		t.Fatalf("Could not build http request: %s", err.Error())
 	}
 	for k, v := range reqCookies {
 		ck, err := httpRequest.Cookie(k)
 		if err != nil {
-			t.Fatalf("Could not retieve cookie '%s' from http request: %s", k, err)
+			t.Fatalf("Could not retieve cookie '%s' from http request: %s", k, err.Error())
 		}
 		if v.Value != "" && ck.Value != v.Value {
 			t.Fatalf("Cookie %s value: '%s', expected: '%s'", k, ck.Value, v.Value)
