@@ -75,6 +75,17 @@ type responseFormatXLSX struct {
 	SheetIdx int `json:"sheet_idx,omitempty"`
 }
 
+const (
+	responseTypeXml    string = "xml"
+	responseTypeXml2   string = "xml2"
+	responseTypeHtml   string = "html"
+	responseTypeXhtml  string = "xhtml"
+	responseTypeXlsx   string = "xlsx"
+	responseTypeCsv    string = "csv"
+	responseTypeBinary string = "binary"
+	responseTypeText   string = "text"
+)
+
 type ResponseFormat struct {
 	IgnoreBody bool               `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
 	Type       string             `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text", "xlsx"
@@ -214,27 +225,27 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 
 	switch responseFormat.Type {
-	case "xml", "xml2":
+	case responseTypeXml, responseTypeXml2:
 		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xml to json: %w", err)
 		}
-	case "html":
+	case responseTypeHtml:
 		bodyData, err = util.Html2Json(resp.Body)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal html to json: %w", err)
 		}
-	case "xhtml":
+	case responseTypeXhtml:
 		bodyData, err = util.Xhtml2Json(resp.Body)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xhtml to json: %w", err)
 		}
-	case "xlsx":
+	case responseTypeXlsx:
 		bodyData, err = util.Xlsx2Json(resp.Body, responseFormat.XLSX.SheetIdx)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xlsx to json: %w", err)
 		}
-	case "csv":
+	case responseTypeCsv:
 		runeComma := ','
 		if responseFormat.CSV.Comma != "" {
 			runeComma = []rune(responseFormat.CSV.Comma)[0]
@@ -249,7 +260,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		if err != nil {
 			return res, fmt.Errorf("could not marshal csv to json: %w", err)
 		}
-	case "binary":
+	case responseTypeBinary:
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(resp.Body))
@@ -260,7 +271,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		if err != nil {
 			return res, fmt.Errorf("could not marshal body with md5sum to json: %w", err)
 		}
-	case "text":
+	case responseTypeText:
 		// render the content as text
 		bodyText := string(resp.Body)
 		bodyTextTrimmed := strings.TrimSpace(bodyText)
@@ -464,7 +475,14 @@ func (response Response) ToString() (s string) {
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html", "xhtml", "text", "binary":
+	case responseTypeXml,
+		responseTypeXml2,
+		responseTypeHtml,
+		responseTypeXhtml,
+		responseTypeXlsx,
+		responseTypeCsv,
+		responseTypeBinary,
+		responseTypeText:
 		bodyString, err = resp.ServerResponseToJsonString(true)
 		if err != nil {
 			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"

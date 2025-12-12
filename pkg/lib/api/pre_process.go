@@ -14,9 +14,9 @@ import (
 type cmdOutputType string
 
 const (
-	CmdOutputStdout   cmdOutputType = "stdout"
-	CmdOutputStderr   cmdOutputType = "stderr"
-	CmdOutputExitCode cmdOutputType = "exitcode"
+	cmdOutputStdout   cmdOutputType = "stdout"
+	cmdOutputStderr   cmdOutputType = "stderr"
+	cmdOutputExitCode cmdOutputType = "exitcode"
 )
 
 type preProcess struct {
@@ -48,7 +48,7 @@ func (proc *preProcess) runPreProcess(response Response) (resp Response, err err
 	}
 
 	if proc.Cmd.Output == "" {
-		proc.Cmd.Output = CmdOutputStdout
+		proc.Cmd.Output = cmdOutputStdout
 	}
 
 	bodyReader = bytes.NewReader(response.Body)
@@ -71,11 +71,11 @@ func (proc *preProcess) runPreProcess(response Response) (resp Response, err err
 		}
 
 		switch proc.Cmd.Output {
-		case CmdOutputExitCode:
+		case cmdOutputExitCode:
 			response.Body = []byte(strconv.Itoa(exitCode))
-		case CmdOutputStderr:
+		case cmdOutputStderr:
 			response.Body = stderrBytes
-		case CmdOutputStdout:
+		case cmdOutputStdout:
 			response.Body, err2 = golib.JsonBytesIndent(preProcessError{
 				Command:  strings.Join(cmd.Args, " "),
 				Error:    err.Error(),
@@ -88,11 +88,11 @@ func (proc *preProcess) runPreProcess(response Response) (resp Response, err err
 	}
 
 	switch proc.Cmd.Output {
-	case CmdOutputExitCode:
+	case cmdOutputExitCode:
 		response.Body = []byte(strconv.Itoa(cmd.ProcessState.ExitCode()))
-	case CmdOutputStderr:
+	case cmdOutputStderr:
 		response.Body = stderr.Bytes()
-	case CmdOutputStdout:
+	case cmdOutputStdout:
 		response.Body = stdout.Bytes()
 	}
 
