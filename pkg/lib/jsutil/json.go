@@ -1,10 +1,11 @@
-package util
+package jsutil
 
 import (
 	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,11 +13,14 @@ import (
 	"github.com/tidwall/jsonc"
 )
 
-type JsonObject = map[string]any
-type JsonArray = []any
-type JsonString = string
-type JsonNumber = float64
-type JsonBool = bool
+type (
+	Object     = map[string]any
+	Array      = []any
+	String     = string
+	Number     = json.Number
+	Bool       = bool
+	RawMessage = json.RawMessage
+)
 
 var coloredError bool
 
@@ -24,16 +28,23 @@ func init() {
 	coloredError = true
 }
 
+// UnmarshalString is a wrapper for Unmarshal for string input
+func UnmarshalString(input string, output any) (err error) {
+	return Unmarshal([]byte(input), output)
+}
+
+// Unmarshal decodes the input bytes into the output if it is valid cjson
 func Unmarshal(input []byte, output any) (err error) {
 	// Remove # comments from template
-	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
-	tmplBytes := []byte(commentRegex.ReplaceAllString(string(input), ``))
+	commentRegex := regexp.MustCompile(`(?m)^[\t ]*#.*$`)
+	tmplBytes := commentRegex.ReplaceAll(input, []byte{})
 
 	// Remove //, /* comments plus tailing commas
 	tmplBytes = jsonc.ToJSON(tmplBytes)
 
 	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
 	dec.DisallowUnknownFields()
+	dec.UseNumber()
 
 	// unmarshal into object
 	err = dec.Decode(output)
@@ -147,7 +158,7 @@ func lineAndCharacter(input string, offset int) (line int, character int, err er
 	if offset > len(input) || offset < 0 {
 		return 0, 0, fmt.Errorf("Couldn't find offset %d within the input.", offset)
 	}
-	//humans count line from 1
+	// humans count line from 1
 	line = 1
 	for _, b := range input[:offset] {
 		if b == rune('\n') {
@@ -159,4 +170,14 @@ func lineAndCharacter(input string, offset int) (line int, character int, err er
 	}
 
 	return line, character, nil
+}
+
+// wrappers for consistency
+// also to remove unnecessary imports of "encoding/json"
+func Marshal(v any) (data []byte, err error) {
+	return json.Marshal(v)
+}
+
+func Encode(w io.Writer, v any) (err error) {
+	return json.NewEncoder(w).Encode(v)
 }

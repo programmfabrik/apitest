@@ -352,7 +352,7 @@ func TestRender_LoadFile_GJson(t *testing.T) {
 					"_id": 2
 				}
 			]
-		}`, ``, fmt.Errorf("'body.invalid' was not found or was empty string")}, //beware wrong access returns nothing
+		}`, ``, fmt.Errorf("'body.invalid' was not found or was empty string")}, // beware wrong access returns nothing
 		{`body.array`, `{
 			"body": {
 				"array": [

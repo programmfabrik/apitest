@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
@@ -48,7 +48,7 @@ func TestBuildCurl(t *testing.T) {
 			"query_param": "value",
 		},
 		ServerURL: "https://serverUrl",
-		Body: util.JsonObject{
+		Body: jsutil.Object{
 			"hey": 1,
 		},
 	}

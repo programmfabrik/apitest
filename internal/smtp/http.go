@@ -3,7 +3,6 @@ package smtp
 import (
 	"bytes"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -19,6 +18,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/internal/handlerutil"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 )
@@ -484,7 +484,7 @@ func extractSearchRegexes(qp url.Values, paramName string) (rgs []*regexp.Regexp
 	sp := []string{}
 	for _, v := range qp[paramName] {
 		var searchParams []string
-		err := json.Unmarshal([]byte(v), &searchParams)
+		err := jsutil.UnmarshalString(v, &searchParams)
 		if err == nil {
 			sp = append(sp, searchParams...)
 		} else {

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/internal/httpproxy"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
@@ -176,7 +176,7 @@ func bounceJSON(w http.ResponseWriter, r *http.Request) {
 		QueryParams: r.URL.Query(),
 	}
 	if len(bodyBytes) > 0 {
-		err = json.Unmarshal(bodyBytes, &bodyJSON)
+		err = jsutil.Unmarshal(bodyBytes, &bodyJSON)
 		if err != nil {
 			formatErrorResponse(w, 500, err, errorBody)
 			return

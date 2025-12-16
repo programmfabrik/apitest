@@ -1,13 +1,12 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/programmfabrik/golib"
 	"github.com/tidwall/gjson"
@@ -31,7 +30,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 	if !ok {
 		t.Fatalf("responseJsonObj should have status code field")
 	}
-	if statusCode != float64(200) {
+	if statusCode != jsutil.Number("200") {
 		t.Errorf("responseJson had wrong statuscode, expected 200, got: %d", statusCode)
 	}
 	jsonHeaders, ok := jsonObjResp["header"]
@@ -52,7 +51,7 @@ func TestResponse_NewResponseFromSpec(t *testing.T) {
 		StatusCode: golib.IntRef(200),
 		Headers: map[string]any{
 			"foo": []string{"bar"},
-			"foo2:control": util.JsonObject{
+			"foo2:control": jsutil.Object{
 				"must_not_exist": true,
 			},
 		},
@@ -142,11 +141,11 @@ func TestResponse_Cookies(t *testing.T) {
 	}
 
 	var ck http.Cookie
-	vb, err := json.Marshal(v.Value())
+	vb, err := jsutil.Marshal(v.Value())
 	if err != nil {
 		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", v, err.Error())
 	}
-	err = json.Unmarshal(vb, &ck)
+	err = jsutil.Unmarshal(vb, &ck)
 	if err != nil {
 		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", v, err.Error())
 	}

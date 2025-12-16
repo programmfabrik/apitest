@@ -1,15 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/tidwall/gjson"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
@@ -18,10 +16,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-
-}
 func TestGjson(t *testing.T) {
 	jsolo := `{"body":[{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":46,"global_object_id":"1@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":1,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:05+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":47,"global_object_id":"2@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":2,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:05+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":48,"global_object_id":"3@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":3,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":49,"global_object_id":"4@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":4,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":50,"global_object_id":"1@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":1,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":51,"global_object_id":"2@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":2,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INDEX"}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":52,"global_object_id":"5@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":5,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":53,"global_object_id":"6@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":6,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":54,"global_object_id":"7@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":7,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:06+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":55,"global_object_id":"8@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":8,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":56,"global_object_id":"9@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":9,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":57,"global_object_id":"10@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":10,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":58,"global_object_id":"11@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":11,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":59,"global_object_id":"12@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":12,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":60,"global_object_id":"5@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":5,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":61,"global_object_id":"6@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":6,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":62,"global_object_id":"3@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":3,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":63,"global_object_id":"4@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":4,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INDEX"}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":64,"global_object_id":"13@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":13,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:07+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":65,"global_object_id":"14@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":14,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":66,"global_object_id":"15@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":15,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"_session":{"token":"ac554a02-3ef0-42da-8ffb-603d73de95f9"},"event":{"_id":67,"global_object_id":"16@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":16,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","session_self":true,"timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INSERT"},"user":{"_generated_displayname":"Root","_id":1}},{"event":{"_id":68,"global_object_id":"8@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":8,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":69,"global_object_id":"9@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":9,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}},{"event":{"_id":70,"global_object_id":"7@ebe5e467-4da9-4cff-81b6-cee9b1385b7c","object_id":7,"object_version":1,"objecttype":"main","pollable":true,"schema":"USER","timestamp":"2019-03-13T10:41:08+01:00","type":"OBJECT_INDEX"}}],"header":{"Cache-Control":["no-cache"],"Content-Type":["application/json; charset=utf-8"],"Date":["Wed, 13 Mar 2019 09:41:16 GMT"],"Last-Modified":["Wed, 13 Mar 2019, 09:41:16 GMT"],"Pragma":["no-cache"],"Server":["Apache/2.4.25 (Debian)"],"Vary":["Origin,Accept-Encoding"],"X-Easydb-Api-Version":["1"],"X-Easydb-Base-Schema-Version":["207"],"X-Easydb-Solution":["simon"],"X-Easydb-User-Schema-Version":["2"]},"statuscode":200}`
 
@@ -33,52 +27,64 @@ func TestCollectResponseShouldWork(t *testing.T) {
 	i := -2
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `[{"ID":%d},{"ID":%d}]`, i, i+1)
+		fmt.Fprintf(w, `[
+			{
+				"ID": %d
+			},
+			{
+				"ID": %d
+			}
+		]`, i, i+1)
 		i = i + 2
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-				"request":{
-				"endpoint": "suggest",
-				"method": "GET"
-				},
-		        "timeout_ms":3000,
-		        "collect_response":[
+	testManifest := []byte(`{
+		"collect_response": [
+			{
+				"body": [
 					{
-						"body":[{
-							"ID":2
-						}]
-					},
-					{
-						"body":[{
-							"ID":22
-						}]
-					},
-					{
-						"body":[{
-							"ID":122
-						}]
-					},
-					{
-						"body":[{
-							"ID":212
-						}]
+						"ID": 2
 					}
 				]
-
-        }
-`)
+			},
+			{
+				"body": [
+					{
+						"ID": 22
+					}
+				]
+			},
+			{
+				"body": [
+					{
+						"ID": 122
+					}
+				]
+			},
+			{
+				"body": [
+					{
+						"ID": 212
+					}
+				]
+			}
+		],
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"method": "GET"
+		},
+		"timeout_ms": 3000
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,37 +106,47 @@ func TestCollectLoadExternalFile(t *testing.T) {
 	i := -2
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `[{"ID":%d},{"ID":%d}]`, i, i+1)
+		fmt.Fprintf(w, `[
+			{
+				"ID": %d
+			},
+			{
+				"ID": %d
+			}
+		]`, i, i+1)
 		i = i + 2
 	}))
 	defer ts.Close()
 
 	filesystem.Fs = afero.NewMemMapFs()
 	externalFile := []byte(`{
-						"body":[{
-							"ID":2
-						}]
-					}`)
+		"body": [
+			{
+				"ID": 2
+			}
+		]
+	}`)
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-				"request":{
-				"endpoint": "suggest",
-				"method": "GET"
-				},
-		        "timeout_ms":300,
-		        "collect_response":["@collect.json"]
-        }`)
+	testManifest := []byte(`{
+		"collect_response": [
+			"@collect.json"
+		],
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"method": "GET"
+		},
+		"timeout_ms": 300
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", externalFile, 0644)
 
 	r := report.NewReport()
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,45 +168,61 @@ func TestCollectLoadExternalCollect(t *testing.T) {
 	i := -2
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `[{"ID":%d},{"ID":%d}]`, i, i+1)
+		fmt.Fprintf(w, `[
+			{
+				"ID": %d
+			},
+			{
+				"ID": %d
+			}
+		]`, i, i+1)
 		i = i + 2
 	}))
 	defer ts.Close()
 
 	filesystem.Fs = afero.NewMemMapFs()
-	externalFile := []byte(`[{
-						"body":[{
-							"ID":2
-						}]
-					},{
-						"body":[{
-							"ID":6
-						}]
-					},{
-						"body":[{
-							"ID":7
-						}]
-					}]`)
+	externalFile := []byte(`[
+		{
+			"body": [
+				{
+					"ID": 2
+				}
+			]
+		},
+		{
+			"body": [
+				{
+					"ID": 6
+				}
+			]
+		},
+		{
+			"body": [
+				{
+					"ID": 7
+				}
+			]
+		}
+	]`)
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-				"request":{
-				"endpoint": "suggest",
-				"method": "GET"
-				},
-		        "timeout_ms":3000,
-		        "collect_response":"@collect.json"
-        }`)
+	testManifest := []byte(`{
+		"collect_response": "@collect.json",
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"method": "GET"
+		},
+		"timeout_ms": 3000
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", externalFile, 0644)
 
 	r := report.NewReport()
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,84 +244,119 @@ func TestCollectEvents(t *testing.T) {
 	j := 100
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `[
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 961,
-            "object_version": 1,
-            "object_id": 118,
-            "schema": "USER",
-            "objecttype": "pictures",
-            "global_object_id": "118@8367e587-f999-4e72-b69d-b5742eb4d5f4",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 962,
-            "object_version": 0,
-            "object_id": 1000832836,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 963,
-            "object_version": 0,
-            "object_id": %d,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    },
-    {
-        "event": {
-            "type": "OBJECT_INDEX",
-            "_id": 963,
-            "object_version": 0,
-            "object_id": %d,
-            "schema": "BASE",
-            "basetype": "asset",
-            "timestamp": "2018-11-28T17:37:27+01:00",
-            "pollable": true
-        }
-    }
-]
-`, i, j)
+			{
+				"event": {
+					"type": "OBJECT_INDEX",
+					"_id": 961,
+					"object_version": 1,
+					"object_id": 118,
+					"schema": "USER",
+					"objecttype": "pictures",
+					"global_object_id": "118@8367e587-f999-4e72-b69d-b5742eb4d5f4",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"pollable": true
+				}
+			},
+			{
+				"event": {
+					"type": "OBJECT_INDEX",
+					"_id": 962,
+					"object_version": 0,
+					"object_id": 1000832836,
+					"schema": "BASE",
+					"basetype": "asset",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"pollable": true
+				}
+			},
+			{
+				"event": {
+					"type": "OBJECT_INDEX",
+					"_id": 963,
+					"object_version": 0,
+					"object_id": %d,
+					"schema": "BASE",
+					"basetype": "asset",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"pollable": true
+				}
+			},
+			{
+				"event": {
+					"type": "OBJECT_INDEX",
+					"_id": 963,
+					"object_version": 0,
+					"object_id": %d,
+					"schema": "BASE",
+					"basetype": "asset",
+					"timestamp": "2018-11-28T17:37:27+01:00",
+					"pollable": true
+				}
+			}
+		]`, i, j)
 		i++
 		j--
 	}))
 	defer ts.Close()
 
 	filesystem.Fs = afero.NewMemMapFs()
-	externalFile := []byte(`[{"body":[{"event":{"object_id":117}}]},{"body":[{"event":{"object_id":118}}]},{"body":[{"event":{"object_id":418}}]},{"body":[{"event":{"object_id":92}}]}]`)
+	externalFile := []byte(`[
+		{
+			"body": [
+				{
+					"event": {
+						"object_id": 117
+					}
+				}
+			]
+		},
+		{
+			"body": [
+				{
+					"event": {
+						"object_id": 118
+					}
+				}
+			]
+		},
+		{
+			"body": [
+				{
+					"event": {
+						"object_id": 418
+					}
+				}
+			]
+		},
+		{
+			"body": [
+				{
+					"event": {
+						"object_id": 92
+					}
+				}
+			]
+		}
+	]`)
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-				"request":{
-				"endpoint": "suggest",
-				"method": "GET"
-				},
-		        "timeout_ms":6000,
-		        "collect_response":"@collect.json"
-        }`)
+	testManifest := []byte(`{
+		"collect_response": "@collect.json",
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"method": "GET"
+		},
+		"timeout_ms": 6000
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
-	afero.WriteFile(filesystem.Fs, "collect.json", []byte(externalFile), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
+	afero.WriteFile(filesystem.Fs, "collect.json", externalFile, 0644)
 
 	r := report.NewReport()
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,33 +383,32 @@ func TestCollectResponseShouldFail(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-				"request":{
-				"endpoint": "suggest",
-				"method": "GET"
-				},
-		        "timeout_ms":30,
-		        "collect_response":[
+	testManifest := []byte(`{
+		"collect_response": [
+			{
+				"body": [
 					{
-						"body":[{
-							"ID":1
-						}]
+						"ID": 1
 					}
 				]
-
-        }
-`)
+			}
+		],
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"method": "GET"
+		},
+		"timeout_ms": 30
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,32 +445,30 @@ func TestHeaderFromDatastoreWithMap(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-			"request":{
-				"endpoint": "suggest",
-				"method": "GET",
-				"header_from_store":{
-					"authHeader":"hallo[du]"
-				}
+	testManifest := []byte(`{
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"header_from_store": {
+				"authHeader": "hallo[du]"
 			},
-			"response":{
-				"body": {
-					"Auth": "du index"
-				}
+			"method": "GET"
+		},
+		"response": {
+			"body": {
+				"Auth": "du index"
 			}
-        }
-`)
+		}
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -430,32 +494,30 @@ func TestHeaderFromDatastoreWithSlice(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CollectTest",
-			"request":{
-				"endpoint": "suggest",
-				"method": "GET",
-				"header_from_store":{
-					"authHeader":"hallo[3]"
-				}
+	testManifest := []byte(`{
+		"name": "CollectTest",
+		"request": {
+			"endpoint": "suggest",
+			"header_from_store": {
+				"authHeader": "hallo[3]"
 			},
-			"response":{
-				"body": {
-					"Auth": "es index"
-				}
+			"method": "GET"
+		},
+		"response": {
+			"body": {
+				"Auth": "es index"
 			}
-        }
-`)
+		}
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,36 +546,36 @@ func TestCookieSetInDatastore(t *testing.T) {
 			Name:  "sess",
 			Value: "you_session_data",
 		})
-		fmt.Fprint(w, `{"status": "done"}`)
+		fmt.Fprint(w, `{
+			"status": "done"
+		}`)
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CookieToStoreTest",
-			"request":{
-				"endpoint": "whatever",
-				"method": "GET"
-			},
-			"response":{
-				"body": {
-					"status": "done"
-				}
-			},
-			"store_response_gjson": {
-				"sess_cookie": "cookie.sess"
+	testManifest := []byte(`{
+		"name": "CookieToStoreTest",
+		"request": {
+			"endpoint": "whatever",
+			"method": "GET"
+		},
+		"response": {
+			"body": {
+				"status": "done"
 			}
-        }
-`)
+		},
+		"store_response_gjson": {
+			"sess_cookie": "cookie.sess"
+		}
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -533,11 +595,11 @@ func TestCookieSetInDatastore(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ck http.Cookie
-	ckBytes, err := json.Marshal(ckData)
+	ckBytes, err := jsutil.Marshal(ckData)
 	if err != nil {
 		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", ckData, err.Error())
 	}
-	err = json.Unmarshal(ckBytes, &ck)
+	err = jsutil.Unmarshal(ckBytes, &ck)
 	if err != nil {
 		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", ckData, err.Error())
 	}
@@ -550,66 +612,84 @@ func TestCookiesReceivedFromRequest(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ck, err := r.Cookie("sess")
 		if err != nil {
-			fmt.Fprintf(w, `{"status": "error", "error": %q}`, err)
+			fmt.Fprintf(w, `{
+				"status": "error",
+				"error": %q
+			}`, err)
 			return
 		}
 		if ck == nil {
-			fmt.Fprint(w, `{"status": "error", "error": "empty sess cookie"}`)
+			fmt.Fprint(w, `{
+				"error": "empty sess cookie",
+				"status": "error"
+			}`)
 			return
 		}
 		if ck.Value != "you_session_data" {
-			fmt.Fprint(w, `{"status": "error", "error": "invalid sess cookie value"}`)
+			fmt.Fprint(w, `{
+				"error": "invalid sess cookie value",
+				"status": "error"
+			}`)
 			return
 		}
 		ck2, err := r.Cookie("sess2")
 		if err != nil {
-			fmt.Fprintf(w, `{"status": "error", "error": %q}`, err)
+			fmt.Fprintf(w, `{
+				"status": "error",
+				"error": %q
+			}`, err)
 			return
 		}
 		if ck2 == nil {
-			fmt.Fprint(w, `{"status": "error", "error": "sess2 empty cookie"}`)
+			fmt.Fprint(w, `{
+				"error": "sess2 empty cookie",
+				"status": "error"
+			}`)
 			return
 		}
 		if ck2.Value != "yet_another_sess" {
-			fmt.Fprint(w, `{"status": "error", "error": "invalid sess2 cookie value"}`)
+			fmt.Fprint(w, `{
+				"error": "invalid sess2 cookie value",
+				"status": "error"
+			}`)
 			return
 		}
-		fmt.Fprint(w, `{"status": "done"}`)
+		fmt.Fprint(w, `{
+			"status": "done"
+		}`)
 	}))
 	defer ts.Close()
 
-	testManifest := []byte(`
-        {
-            "name": "CookiesReceivedTest",
-			"request":{
-				"endpoint": "whatever",
-				"method": "GET",
-				"cookies": {
-					"sess": {
-						"value_from_store": "sess_cookie"
-					},
-					"sess2": {
-						"value_from_store": "?sess2_cookie",
-						"value": "yet_another_sess"
-					}
+	testManifest := []byte(`{
+		"name": "CookiesReceivedTest",
+		"request": {
+			"cookies": {
+				"sess": {
+					"value_from_store": "sess_cookie"
+				},
+				"sess2": {
+					"value": "yet_another_sess",
+					"value_from_store": "?sess2_cookie"
 				}
 			},
-			"response":{
-				"body": {
-					"status": "done"
-				}
+			"endpoint": "whatever",
+			"method": "GET"
+		},
+		"response": {
+			"body": {
+				"status": "done"
 			}
-        }
-`)
+		}
+	}`)
 
 	filesystem.Fs = afero.NewMemMapFs()
-	afero.WriteFile(filesystem.Fs, "manifest.json", []byte(testManifest), 0644)
+	afero.WriteFile(filesystem.Fs, "manifest.json", testManifest, 0644)
 
 	r := report.NewReport()
 	r.Root().NoLogTime = true
 
 	var test Case
-	err := json.Unmarshal(testManifest, &test)
+	err := jsutil.Unmarshal(testManifest, &test)
 	if err != nil {
 		t.Fatal(err)
 	}

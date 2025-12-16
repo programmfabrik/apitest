@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	"github.com/programmfabrik/apitest/internal/smtp"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
 	"github.com/programmfabrik/apitest/pkg/lib/template"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
@@ -106,7 +106,7 @@ func newTestSuite(
 		return &suitePreload, err
 	}
 
-	err = util.Unmarshal(manifest, &suitePreload)
+	err = jsutil.Unmarshal(manifest, &suitePreload)
 	if err != nil {
 		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
 		suitePreload.reporterRoot.Failure = err.Error()
@@ -142,7 +142,7 @@ func newTestSuite(
 	}
 	// fmt.Printf(%q, string(manifest))
 	// We unmarshall the final manifest into the final working suite
-	err = util.Unmarshal(manifest, &suite)
+	err = jsutil.Unmarshal(manifest, &suite)
 	if err != nil {
 		err = fmt.Errorf("unmarshaling manifest %q: %w", manifestPath, err)
 		suite.reporterRoot.Failure = err.Error()
@@ -151,7 +151,7 @@ func newTestSuite(
 	suite.httpServerHost = suitePreload.httpServerHost
 	suite.loader = suitePreload.loader
 
-	//Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
+	// Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
 
 	// Parse serverURL
@@ -247,7 +247,7 @@ func (ats *Suite) run() bool {
 }
 
 type testContainer struct {
-	CaseByte json.RawMessage
+	CaseByte []byte
 	Path     string
 }
 
@@ -268,7 +268,10 @@ func (ats *Suite) buildLoader(rootLoader template.Loader, parallelRunIdx int) te
 }
 
 func (ats *Suite) parseAndRunTest(
-	v any, testFilePath string, r *report.ReportElement, rootLoader template.Loader,
+	v any,
+	testFilePath string,
+	r *report.ReportElement,
+	rootLoader template.Loader,
 	allowParallelExec bool,
 ) bool {
 	parallelRuns := 1
@@ -310,9 +313,13 @@ func (ats *Suite) parseAndRunTest(
 }
 
 func (ats *Suite) testGoroutine(
-	waitGroup *sync.WaitGroup, successCount *atomic.Uint32,
-	testFilePath string, r *report.ReportElement, rootLoader template.Loader,
-	runIdx int, testRaw json.RawMessage,
+	waitGroup *sync.WaitGroup,
+	successCount *atomic.Uint32,
+	testFilePath string,
+	r *report.ReportElement,
+	rootLoader template.Loader,
+	runIdx int,
+	testRaw jsutil.RawMessage,
 ) {
 	defer waitGroup.Done()
 
@@ -332,12 +339,12 @@ func (ats *Suite) testGoroutine(
 	}
 
 	// Build list of test cases
-	var testCases []json.RawMessage
-	err = util.Unmarshal(testRendered, &testCases)
+	var testCases []jsutil.RawMessage
+	err = jsutil.Unmarshal(testRendered, &testCases)
 	if err != nil {
 		// Input could not be deserialized into list, try to deserialize into single object
-		var singleTest json.RawMessage
-		err = util.Unmarshal(testRendered, &singleTest)
+		var singleTest jsutil.RawMessage
+		err = jsutil.Unmarshal(testRendered, &singleTest)
 		if err != nil {
 			// Malformed json
 			r.SaveToReportLog(err.Error())
@@ -347,7 +354,7 @@ func (ats *Suite) testGoroutine(
 			return
 		}
 
-		testCases = []json.RawMessage{singleTest}
+		testCases = []jsutil.RawMessage{singleTest}
 	}
 
 	for testIdx, testCase := range testCases {
@@ -356,7 +363,7 @@ func (ats *Suite) testGoroutine(
 		// If testCase can be unmarshalled as string, we may have a
 		// reference to another test using @ notation at hand
 		var testCaseStr string
-		err = util.Unmarshal(testCase, &testCaseStr)
+		err = jsutil.Unmarshal(testCase, &testCaseStr)
 		if err == nil && util.IsPathSpec(testCaseStr) {
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
@@ -399,7 +406,7 @@ func (ats *Suite) runLiteralTest(
 	r.SetName(testFilePath)
 
 	var test Case
-	err := util.Unmarshal(tc.CaseByte, &test)
+	err := jsutil.Unmarshal(tc.CaseByte, &test)
 	if err != nil {
 		r.SaveToReportLog(err.Error())
 		logrus.Error(fmt.Errorf("can not unmarshal single test (%s): %w", testFilePath, err))
@@ -435,9 +442,8 @@ func (ats *Suite) runLiteralTest(
 	return true
 }
 
-func (ats *Suite) loadManifest() (b []byte, err error) {
+func (ats *Suite) loadManifest() (manifest []byte, err error) {
 	var (
-		res          []byte
 		loader       template.Loader
 		serverURL    *url.URL
 		manifestFile afero.File
@@ -458,17 +464,20 @@ func (ats *Suite) loadManifest() (b []byte, err error) {
 
 	manifestFile, err = filesystem.Fs.Open(ats.manifestPath)
 	if err != nil {
-		return res, fmt.Errorf("opening manifestPath (%s): %w", ats.manifestPath, err)
+		return nil, fmt.Errorf("opening manifestPath (%s): %w", ats.manifestPath, err)
 	}
 	defer manifestFile.Close()
 
 	manifestTmpl, err := io.ReadAll(manifestFile)
 	if err != nil {
-		return res, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
+		return nil, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
 	}
 
-	b, err = loader.Render(manifestTmpl, ats.manifestDir, nil)
-	ats.loader = loader
+	manifest, err = loader.Render(manifestTmpl, ats.manifestDir, nil)
+	if err != nil {
+		return nil, fmt.Errorf("loading manifest (%s): %w", ats.manifestPath, err)
+	}
 
-	return b, err
+	ats.loader = loader
+	return manifest, nil
 }

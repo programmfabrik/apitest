@@ -3,11 +3,12 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 )
 
 // Get information
@@ -35,7 +36,7 @@ func CSVToMap(inputCSV []byte, comma rune) (output []map[string]any, err error) 
 
 	output = []map[string]any{}
 
-	//Iterate over the records with skipping the first two lines (as they contain the infos)
+	// Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[2:] {
 		tmpRow := make(map[string]any, 0)
 
@@ -89,7 +90,7 @@ func GenericCSVToMap(inputCSV []byte, comma rune) (output []map[string]any, err 
 
 	output = []map[string]any{}
 
-	//Iterate over the records with skipping the first two lines (as they contain the infos)
+	// Iterate over the records with skipping the first two lines (as they contain the infos)
 	for _, v := range records[1:] {
 		tmpRow := make(map[string]any, 0)
 
@@ -249,7 +250,7 @@ func getTyped(value, format string) (typed any, err error) {
 			return nil, err
 		}
 
-		//Check if we only have one row. If not return error
+		// Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'int64,array'")
 		}
@@ -276,7 +277,7 @@ func getTyped(value, format string) (typed any, err error) {
 			return nil, err
 		}
 
-		//Check if we only have one row. If not return error
+		// Check if we only have one row. If not return error
 		if len(records) > 1 {
 
 			return nil, fmt.Errorf("Only one row is allowed for type 'float64,array'")
@@ -303,7 +304,7 @@ func getTyped(value, format string) (typed any, err error) {
 			return nil, err
 		}
 
-		//Check if we only have one row. If not return error
+		// Check if we only have one row. If not return error
 		if len(records) > 1 {
 			return nil, fmt.Errorf("Only one row is allowed for type 'bool,array'")
 		}
@@ -318,7 +319,7 @@ func getTyped(value, format string) (typed any, err error) {
 			return nil, nil
 		}
 		var data any
-		err = json.Unmarshal([]byte(value), &data)
+		err = jsutil.UnmarshalString(value, &data)
 		if err != nil {
 			return nil, fmt.Errorf("file_csv: Error in JSON: %q: %s", value, err)
 		}

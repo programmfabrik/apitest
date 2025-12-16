@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
@@ -111,19 +112,32 @@ func (ds *Datastore) SetMap(smap map[string]any) (err error) {
 func (ds *Datastore) Set(index string, value any) (err error) {
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
-	//typeswitch for checking if float is actually int
 	switch t := value.(type) {
 	case float64:
+		// try to convert float if float is actually int
 		if math.Mod(t, 1.0) == 0 {
-			//is int
+			// is int
 			value = int(t)
 		}
+	case jsutil.Number:
+		// try to store primitive number types where possible
+		n, err := t.Int64()
+		if err == nil {
+			value = n
+		} else {
+			f, err := t.Float64()
+			if err == nil {
+				value = f
+			}
+		}
+		// ignore errors silently
+		err = nil
 	}
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	//Slice in datastore
+	// Slice in datastore
 	if strings.HasSuffix(index, "[]") {
 		// do a push to an array
 		use_index := index[:len(index)-2]
@@ -145,24 +159,27 @@ func (ds *Datastore) Set(index string, value any) (err error) {
 
 		ds.storage[use_index] = append(s, value)
 
-	} else if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
-		// do a push to an array
-		use_index := rego[1]
-		_, ok := ds.storage[use_index]
-		if !ok {
-			ds.storage[use_index] = make(map[string]any, 0)
-		}
-
-		s, ok := ds.storage[use_index].(map[string]any)
-		if !ok {
-			ds.storage[use_index] = make(map[string]any, 0)
-			s = ds.storage[use_index].(map[string]any)
-		}
-		s[rego[2]] = value
-		ds.storage[use_index] = s
-
 	} else {
-		ds.storage[index] = value
+		rego := dsMapRegex.FindStringSubmatch(index)
+		if len(rego) > 0 {
+			// do a push to an array
+			use_index := rego[1]
+			_, ok := ds.storage[use_index]
+			if !ok {
+				ds.storage[use_index] = make(map[string]any, 0)
+			}
+
+			s, ok := ds.storage[use_index].(map[string]any)
+			if !ok {
+				ds.storage[use_index] = make(map[string]any, 0)
+				s = ds.storage[use_index].(map[string]any)
+			}
+			s[rego[2]] = value
+			ds.storage[use_index] = s
+
+		} else {
+			ds.storage[index] = value
+		}
 	}
 
 	if ds.logDatastore {
@@ -186,8 +203,9 @@ func (ds Datastore) Get(index string) (res any, err error) {
 
 	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
-	if rego := dsMapRegex.FindStringSubmatch(index); len(rego) > 0 {
-		//we have a map or slice
+	rego := dsMapRegex.FindStringSubmatch(index)
+	if len(rego) > 0 {
+		// we have a map or slice
 		useIndex := rego[1]
 		mapIndex := rego[2]
 
@@ -199,10 +217,10 @@ func (ds Datastore) Get(index string) (res any, err error) {
 
 		tmpResMap, ok := tmpRes.(map[string]any)
 		if ok {
-			//We have a map
+			// We have a map
 			mapVal, ok := tmpResMap[mapIndex]
 			if !ok {
-				//Value not found in map, so return empty string
+				// Value not found in map, so return empty string
 				return "", nil
 			} else {
 				return mapVal, nil
@@ -211,7 +229,7 @@ func (ds Datastore) Get(index string) (res any, err error) {
 
 		tmpResSlice, ok := tmpRes.([]any)
 		if ok {
-			//We have a slice
+			// We have a slice
 			sliceIdx, err := strconv.Atoi(mapIndex)
 			if err != nil {
 				return "", datastoreIndexError{error: fmt.Sprintf("datastore: could not convert key to int: %s", mapIndex)}

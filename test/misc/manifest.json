@@ -10,5 +10,6 @@
         ,"@store_encoded.json"
         ,"@store_decoded.json"
         ,"@bounce_back_values.json"
+        ,"@high_numbers.json"
     ]
 }

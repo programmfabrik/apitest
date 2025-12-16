@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -10,13 +9,13 @@ import (
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
 	"github.com/programmfabrik/apitest/pkg/lib/report"
 	"github.com/programmfabrik/apitest/pkg/lib/template"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -191,8 +190,8 @@ func (testCase *Case) checkCollectResponse(response api.Response) (responses int
 
 	var (
 		loadedResponses any
-		jsonRespArray   util.JsonArray
-		leftResponses   util.JsonArray
+		jsonRespArray   jsutil.Array
+		leftResponses   jsutil.Array
 		spec            api.ResponseSerialization
 		responsesMatch  compare.CompareResult
 	)
@@ -203,15 +202,15 @@ func (testCase *Case) checkCollectResponse(response api.Response) (responses int
 	}
 
 	switch t := loadedResponses.(type) {
-	case util.JsonArray:
+	case jsutil.Array:
 		jsonRespArray = t
-	case util.JsonObject:
-		jsonRespArray = util.JsonArray{t}
+	case jsutil.Object:
+		jsonRespArray = jsutil.Array{t}
 	default:
 		return -1, fmt.Errorf("loading check response: no valid type")
 	}
 
-	leftResponses = make(util.JsonArray, 0)
+	leftResponses = make(jsutil.Array, 0)
 	for _, v := range jsonRespArray {
 		spec, err = testCase.loadResponseSerialization(v)
 		if err != nil {
@@ -262,14 +261,14 @@ func (testCase Case) executeRequest(counter int) (responsesMatch compare.Compare
 		return responsesMatch, req, apiResp, err
 	}
 
-	//Do Request
+	// Do Request
 	req, err = testCase.loadRequest()
 	if err != nil {
 		err = fmt.Errorf("loading request: %w", err)
 		return responsesMatch, req, apiResp, err
 	}
 
-	//Log request on trace level (so only v2 will trigger this)
+	// Log request on trace level (so only v2 will trigger this)
 	if testCase.LogNetwork != nil && *testCase.LogNetwork {
 		logrus.Tracef("[REQUEST]:\n%s\n\n", limitLines(req.ToString(logCurl), Config.Apitest.Limit.Request))
 	}
@@ -387,7 +386,7 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 		time.Sleep(time.Duration(*testCase.WaitBefore) * time.Millisecond)
 	}
 
-	//Poll repeats the request until the right response is found, or a timeout triggers
+	// Poll repeats the request until the right response is found, or a timeout triggers
 	for {
 		// delay between repeating a request
 		if testCase.Delay != nil {
@@ -431,8 +430,9 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			break
 		}
 
-		//break if timeout or we do not have a repeater
-		if timedOut := time.Since(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond); timedOut && testCase.Timeout != -1 {
+		// break if timeout or we do not have a repeater
+		timedOut := time.Since(startTime) > (time.Duration(testCase.Timeout) * time.Millisecond)
+		if timedOut && testCase.Timeout != -1 {
 			if timedOut && testCase.Timeout > 0 {
 				logrus.Warnf("Pull Timeout '%dms' exceeded", testCase.Timeout)
 				r.SaveToReportLogF("Pull Timeout '%dms' exceeded", testCase.Timeout)
@@ -457,10 +457,10 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 			}
 		}
 
-		collectArray, ok := testCase.CollectResponse.(util.JsonArray)
+		collectArray, ok := testCase.CollectResponse.(jsutil.Array)
 		if ok {
 			for _, v := range collectArray {
-				jsonV, err := json.Marshal(v)
+				jsonV, err := jsutil.Marshal(v)
 				if err != nil {
 					testCase.logReq(request)
 					testCase.logResp(apiResponse)
@@ -556,11 +556,11 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 		return spec, fmt.Errorf("loading request data: %w", err)
 	}
 
-	specBytes, err = json.Marshal(requestData)
+	specBytes, err = jsutil.Marshal(requestData)
 	if err != nil {
 		return spec, fmt.Errorf("marshaling requet: %w", err)
 	}
-	err = util.Unmarshal(specBytes, &spec)
+	err = jsutil.Unmarshal(specBytes, &spec)
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
 
@@ -571,7 +571,8 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 		spec.Headers = make(map[string]any)
 	}
 	for k, v := range testCase.standardHeader {
-		if _, exist := spec.Headers[k]; !exist {
+		_, exist := spec.Headers[k]
+		if !exist {
 			spec.Headers[k] = v
 		}
 	}
@@ -580,7 +581,8 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 		spec.HeaderFromStore = make(map[string]string)
 	}
 	for k, v := range testCase.standardHeaderFromStore {
-		if _, exist := spec.HeaderFromStore[k]; !exist {
+		_, exist := spec.HeaderFromStore[k]
+		if !exist {
 			spec.HeaderFromStore[k] = v
 		}
 	}
@@ -595,12 +597,12 @@ func (testCase Case) loadResponseSerialization(genJSON any) (spec api.ResponseSe
 		return spec, fmt.Errorf("loading response data: %w", err)
 	}
 
-	specBytes, err := json.Marshal(responseData)
+	specBytes, err := jsutil.Marshal(responseData)
 	if err != nil {
 		return spec, fmt.Errorf("marshaling response: %w", err)
 	}
 
-	err = util.Unmarshal(specBytes, &spec)
+	err = jsutil.Unmarshal(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("unmarshaling response: %w", err)
 	}

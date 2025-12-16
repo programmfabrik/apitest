@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
 	libcsv "github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/net/html"
@@ -39,7 +39,7 @@ func GetStringFromInterface(queryParam any) (v string, err error) {
 		return fmt.Sprintf("%d", t), nil
 	default:
 		var jsonVal []byte
-		jsonVal, err = json.Marshal(t)
+		jsonVal, err = jsutil.Marshal(t)
 		return string(jsonVal), err
 	}
 }
@@ -147,7 +147,7 @@ func Xlsx2Json(rawXlsx []byte, sheetIdx int) (jsonStr []byte, err error) {
 		return []byte{}, fmt.Errorf("could not parse csv: %w", err)
 	}
 
-	jsonStr, err = json.Marshal(csvData)
+	jsonStr, err = jsutil.Marshal(csvData)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}

@@ -3,7 +3,7 @@ package compare
 import (
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/yudai/pp"
 )
@@ -11,8 +11,8 @@ import (
 func TestComparison(t *testing.T) {
 	testData := []struct {
 		name      string
-		left      util.JsonObject
-		right     util.JsonObject
+		left      jsutil.Object
+		right     jsutil.Object
 		eEqual    bool
 		eFailures []compareFailure
 	}{
@@ -805,33 +805,33 @@ func TestComparison(t *testing.T) {
 		// },
 		{
 			name: "Check controls in array (more elements, different order)",
-			left: util.JsonObject{
-				"body": util.JsonArray{
-					util.JsonObject{
-						"pool": util.JsonObject{
-							"reference:control": util.JsonObject{
+			left: jsutil.Object{
+				"body": jsutil.Array{
+					jsutil.Object{
+						"pool": jsutil.Object{
+							"reference:control": jsutil.Object{
 								"is_number": true,
 							},
 						},
 					},
-					util.JsonObject{
-						"pool": util.JsonObject{
-							"reference:control": util.JsonObject{
+					jsutil.Object{
+						"pool": jsutil.Object{
+							"reference:control": jsutil.Object{
 								"is_string": true,
 							},
 						},
 					},
 				},
 			},
-			right: util.JsonObject{
-				"body": util.JsonArray{
-					util.JsonObject{
-						"pool": util.JsonObject{
+			right: jsutil.Object{
+				"body": jsutil.Array{
+					jsutil.Object{
+						"pool": jsutil.Object{
 							"reference": "system:root",
 						},
 					},
-					util.JsonObject{
-						"pool": util.JsonObject{
+					jsutil.Object{
+						"pool": jsutil.Object{
 							"reference": 123,
 						},
 					},
@@ -842,28 +842,28 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check body no extra",
-			left: util.JsonObject{
-				"body": util.JsonArray{
-					util.JsonObject{
-						"pool": util.JsonObject{
+			left: jsutil.Object{
+				"body": jsutil.Array{
+					jsutil.Object{
+						"pool": jsutil.Object{
 							"reference": "system:root",
 						},
 					},
 				},
-				"body:control": util.JsonObject{
+				"body:control": jsutil.Object{
 					"no_extra": true,
 				},
 			},
-			right: util.JsonObject{
-				"body": util.JsonArray{
-					util.JsonObject{
-						"pool": util.JsonObject{
+			right: jsutil.Object{
+				"body": jsutil.Array{
+					jsutil.Object{
+						"pool": jsutil.Object{
 							"reference":  "system:root",
 							"reference2": "system:root",
 						},
 					},
-					util.JsonObject{
-						"pool": util.JsonObject{
+					jsutil.Object{
+						"pool": jsutil.Object{
 							"reference": "system:root",
 						},
 					},
@@ -879,12 +879,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "check control not_equal (different types number, string)",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": "right",
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": 123.456,
 			},
 			eEqual:    true,
@@ -892,12 +892,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "check control not_equal (different types number, array)",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
-					"not_equal": util.JsonArray([]any{"right"}),
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
+					"not_equal": jsutil.Array([]any{"right"}),
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": 123.456,
 			},
 			eEqual:    true,
@@ -905,12 +905,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "check control not_equal (different types string, number)",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": 123.45,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": "left",
 			},
 			eEqual:    true,
@@ -918,12 +918,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "check control not_equal (different types bool, number)",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": 456.789,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": true,
 			},
 			eEqual:    true,
@@ -931,12 +931,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "check control not_equal (different types number, bool)",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": true,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": 789.0001,
 			},
 			eEqual:    true,
@@ -944,12 +944,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal with null and null",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": nil,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": nil,
 			},
 			eEqual: false,
@@ -962,12 +962,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal with null and string",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": nil,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": "not null",
 			},
 			eEqual:    true,
@@ -975,12 +975,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal with string and null",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": "not null",
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": nil,
 			},
 			eEqual:    true,
@@ -988,25 +988,25 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal with null and array",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": nil,
 				},
 			},
-			right: util.JsonObject{
-				"v": util.JsonArray([]any{"not null"}),
+			right: jsutil.Object{
+				"v": jsutil.Array([]any{"not null"}),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "Check not_equal with array and null",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
-					"not_equal": util.JsonArray([]any{"not null"}),
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
+					"not_equal": jsutil.Array([]any{"not null"}),
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": nil,
 			},
 			eEqual:    true,
@@ -1014,12 +1014,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: string with different value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": "left",
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": "right",
 			},
 			eEqual:    true,
@@ -1027,12 +1027,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: string with same value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": "left",
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": "left",
 			},
 			eEqual: false,
@@ -1045,26 +1045,26 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: array with different value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
-					"not_equal": util.JsonArray([]any{"left", "right"}),
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
+					"not_equal": jsutil.Array([]any{"left", "right"}),
 				},
 			},
-			right: util.JsonObject{
-				"v": util.JsonArray([]any{"right", "left"}),
+			right: jsutil.Object{
+				"v": jsutil.Array([]any{"right", "left"}),
 			},
 			eEqual:    true,
 			eFailures: nil,
 		},
 		{
 			name: "Check not_equal: array with same value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
-					"not_equal": util.JsonArray([]any{"left", "right"}),
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
+					"not_equal": jsutil.Array([]any{"left", "right"}),
 				},
 			},
-			right: util.JsonObject{
-				"v": util.JsonArray([]any{"left", "right"}),
+			right: jsutil.Object{
+				"v": jsutil.Array([]any{"left", "right"}),
 			},
 			eEqual: false,
 			eFailures: []compareFailure{
@@ -1076,12 +1076,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: number with different value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": 123.45,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": 6.789,
 			},
 			eEqual:    true,
@@ -1089,12 +1089,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: number with same value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": 0.111,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": 0.111,
 			},
 			eEqual: false,
@@ -1107,12 +1107,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: boolean with different value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": false,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": true,
 			},
 			eEqual:    true,
@@ -1120,12 +1120,12 @@ func TestComparison(t *testing.T) {
 		},
 		{
 			name: "Check not_equal: boolean with same value",
-			left: util.JsonObject{
-				"v:control": util.JsonObject{
+			left: jsutil.Object{
+				"v:control": jsutil.Object{
 					"not_equal": false,
 				},
 			},
-			right: util.JsonObject{
+			right: jsutil.Object{
 				"v": false,
 			},
 			eEqual: false,

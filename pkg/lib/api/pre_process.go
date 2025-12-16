@@ -2,12 +2,12 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 )
 
@@ -109,7 +109,7 @@ func ensureJson(data []byte) (dataFixed []byte) {
 
 	dataFixed = data
 
-	parseErr = json.Unmarshal(data, &v)
+	parseErr = jsutil.Unmarshal(data, &v)
 	if parseErr != nil {
 		dataFixed, _ = golib.JsonBytes(string(data))
 	}

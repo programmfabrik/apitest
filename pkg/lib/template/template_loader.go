@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
@@ -277,7 +277,7 @@ func (loader *Loader) Render(
 			return loader.datastore.Get(key)
 		},
 		"unmarshal": func(s string) (gj any, err error) {
-			err = util.Unmarshal([]byte(s), &gj)
+			err = jsutil.UnmarshalString(s, &gj)
 			if err != nil {
 				return nil, err
 			}
@@ -285,11 +285,7 @@ func (loader *Loader) Render(
 		},
 		"N": n,
 		"marshal": func(data any) (jsonBytes string, err error) {
-			var (
-				bytes []byte
-			)
-
-			bytes, err = json.Marshal(data)
+			bytes, err := jsutil.Marshal(data)
 			if err != nil {
 				return "", err
 			}

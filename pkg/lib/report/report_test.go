@@ -1,13 +1,12 @@
 package report
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"testing"
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 )
 
 func TestReportStructure(t *testing.T) {
@@ -51,39 +50,39 @@ func TestReportGetJSONResult(t *testing.T) {
 
 	jsonResult := r.GetTestResult(ParseJSONResult)
 	expResult := []byte(`{
- "failures": 2,
- "sub_tests": [
-  {
-   "failures": 1,
-   "name": "Level 1 - 1"
-  },
-  {
-   "failures": 1,
-   "name": "Level 1 - 2",
-   "sub_tests": [
-    {
-     "failures": 0,
-     "name": "Level 2 - 1"
-    },
-    {
-     "failures": 1,
-     "name": "Level 2 - 2",
-     "sub_tests": [
-      {
-       "failures": 1,
-       "name": "Level 3 - 1"
-      }
-     ]
-    }
-   ]
-  }
- ]
-}`)
+		"failures": 2,
+		"sub_tests": [
+			{
+				"failures": 1,
+				"name": "Level 1 - 1"
+			},
+			{
+				"failures": 1,
+				"name": "Level 1 - 2",
+				"sub_tests": [
+					{
+						"failures": 0,
+						"name": "Level 2 - 1"
+					},
+					{
+						"failures": 1,
+						"name": "Level 2 - 2",
+						"sub_tests": [
+							{
+								"failures": 1,
+								"name": "Level 3 - 1"
+							}
+						]
+					}
+				]
+			}
+		]
+	}`)
 
 	var expJ, realJ any
 
-	util.Unmarshal(jsonResult, &realJ)
-	util.Unmarshal(expResult, &expJ)
+	jsutil.Unmarshal(jsonResult, &realJ)
+	jsutil.Unmarshal(expResult, &expJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
@@ -133,18 +132,18 @@ func TestReportGetJUnitResult(t *testing.T) {
 		}
 	}
 
-	expJBytes, _ := json.Marshal(expX)
-	realJBytes, _ := json.Marshal(realX)
+	expJBytes, _ := jsutil.Marshal(expX)
+	realJBytes, _ := jsutil.Marshal(realX)
 
 	var expJ, realJ any
 
-	util.Unmarshal(expJBytes, &expJ)
-	util.Unmarshal(realJBytes, &realJ)
+	jsutil.Unmarshal(expJBytes, &expJ)
+	jsutil.Unmarshal(realJBytes, &realJ)
 
 	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
 
 	if !equal.Equal {
-		//		t.Error(equal.Failures)
+		// t.Error(equal.Failures)
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expJBytes, realJBytes)
 		t.Fail()
 	}
@@ -220,7 +219,7 @@ func TestReportGetStatsResult(t *testing.T) {
 
 	jsonResult := r.GetTestResult(parseJSONStatsResult)
 	var statsRep statsReport
-	util.Unmarshal(jsonResult, &statsRep)
+	jsutil.Unmarshal(jsonResult, &statsRep)
 
 	if statsRep.Version != r.Version {
 		t.Fatalf("Got version %s, expected %s", statsRep.Version, r.Version)

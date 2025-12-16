@@ -1,4 +1,4 @@
-package util
+package jsutil
 
 import (
 	"fmt"
@@ -95,8 +95,8 @@ welt:1
 	}
 
 	for _, v := range testCases {
-		var out JsonObject
-		oErr := Unmarshal([]byte(v.iJson), &out)
+		var out Object
+		oErr := UnmarshalString(v.iJson, &out)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 	}
@@ -106,22 +106,22 @@ welt:1
 func TestRemoveComments(t *testing.T) {
 	testCases := []struct {
 		iJson string
-		eOut  JsonObject
+		eOut  Object
 	}{
 		{
 			`{
 "hallo":2
 }`,
-			JsonObject{
-				"hallo": float64(2),
+			Object{
+				"hallo": Number("2"),
 			},
 		},
 		{
 			`{
 "hallo":2
 }`,
-			JsonObject{
-				"hallo": float64(2),
+			Object{
+				"hallo": Number("2"),
 			},
 		},
 		{
@@ -131,8 +131,8 @@ func TestRemoveComments(t *testing.T) {
 
 #line2
 }`,
-			JsonObject{
-				"hallo": float64(2),
+			Object{
+				"hallo": Number("2"),
 			},
 		},
 		{
@@ -143,16 +143,16 @@ func TestRemoveComments(t *testing.T) {
 #line2
 "hey":"ha"
 }`,
-			JsonObject{
-				"hallo": float64(2),
+			Object{
+				"hallo": Number("2"),
 				"hey":   "ha",
 			},
 		},
 	}
 
 	for _, v := range testCases {
-		var out JsonObject
-		Unmarshal([]byte(v.iJson), &out)
+		var out Object
+		UnmarshalString(v.iJson, &out)
 		for k, v := range v.eOut {
 			if out[k] != v {
 				t.Errorf("[%s] Have %T '%v' != '%f' want", k, k, out[k], v)
@@ -165,13 +165,13 @@ func TestRemoveComments(t *testing.T) {
 func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	testCases := []struct {
 		cjsonString string
-		eObject     JsonObject
+		eObject     Object
 		eError      error
 	}{
 		{
 			`{"hallo":3}`,
-			JsonObject{
-				"hallo": float64(3),
+			Object{
+				"hallo": Number("3"),
 			},
 			nil,
 		},
@@ -243,8 +243,8 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 	}
 
 	for _, v := range testCases {
-		oObject := JsonObject{}
-		oErr := Unmarshal([]byte(v.cjsonString), &oObject)
+		oObject := Object{}
+		oErr := UnmarshalString(v.cjsonString, &oObject)
 
 		go_test_utils.AssertErrorEquals(t, oErr, v.eError)
 		if oErr == nil {
@@ -269,8 +269,8 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 
 	var oObject expectedStructure
 
-	oErr := Unmarshal(
-		[]byte(cjsonString),
+	oErr := UnmarshalString(
+		cjsonString,
 		&oObject,
 	)
 

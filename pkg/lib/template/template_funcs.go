@@ -1,7 +1,6 @@
 package template
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -22,7 +22,7 @@ func n(count any) (elements []struct{}, err error) {
 		return make([]struct{}, v), nil
 	case int:
 		return make([]struct{}, v), nil
-	case json.Number:
+	case jsutil.Number:
 		var i int64
 		i, err = v.Int64()
 		if err != nil {
@@ -38,13 +38,13 @@ func n(count any) (elements []struct{}, err error) {
 func rowsToMap(keyCol, valCol string, rows []map[string]any) (retMap map[string]any, err error) {
 	retMap = make(map[string]any)
 
-	//If there is no keyCol, return empty map
+	// If there is no keyCol, return empty map
 	if keyCol == "" {
 		return
 	}
 
 	for _, singlewRow := range rows {
-		//Get typed map index
+		// Get typed map index
 		if singlewRow[keyCol] == nil {
 			continue
 		}
@@ -54,14 +54,14 @@ func rowsToMap(keyCol, valCol string, rows []map[string]any) (retMap map[string]
 		}
 
 		if valCol != "" {
-			//Normal row
+			// Normal row
 			val := singlewRow[valCol]
 			if val == nil {
 				val = ""
 			}
 			retMap[mapIndex] = val
 		} else {
-			//Row with not valCol
+			// Row with not valCol
 			retMap[mapIndex] = singlewRow
 		}
 	}
@@ -111,7 +111,7 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 				sheetRow[sheetKey] = v
 			case "json":
 				var i any
-				err = json.Unmarshal([]byte(v), &i)
+				err = jsutil.UnmarshalString(v, &i)
 				if err == nil {
 					sheetRow[sheetKey] = i
 				}
@@ -120,8 +120,8 @@ func pivotRows(key, typ string, rows []map[string]any) (sheet []map[string]any, 
 			case "float64":
 				sheetRow[sheetKey], _ = strconv.ParseFloat(v, 10)
 			case "number":
-				var number json.Number
-				err = json.Unmarshal([]byte(v), &number)
+				var number jsutil.Number
+				err = jsutil.UnmarshalString(v, &number)
 				if err == nil {
 					sheetRow[sheetKey] = number
 				}
@@ -240,7 +240,7 @@ func subtract(b, a any) (result any, err error) {
 }
 
 func intOrFloatFromJsonNumber(a any) any {
-	aN, ok := a.(json.Number)
+	aN, ok := a.(jsutil.Number)
 	if !ok {
 		return a
 	}

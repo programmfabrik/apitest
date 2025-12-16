@@ -142,12 +142,14 @@ func runApiTests(cmd *cobra.Command, args []string) {
 
 	// Check if paths are valid
 	for _, rootDirectory := range rootDirectorys {
-		if _, err := os.Stat(rootDirectory); rootDirectory != "." && os.IsNotExist(err) {
+		_, err := os.Stat(rootDirectory)
+		if rootDirectory != "." && os.IsNotExist(err) {
 			logrus.Fatalf("The path '%s' for the test folders is not valid", rootDirectory)
 		}
 	}
 	for _, singleTest := range singleTests {
-		if _, err := os.Stat(singleTest); singleTest != "" && os.IsNotExist(err) {
+		_, err := os.Stat(singleTest)
+		if singleTest != "" && os.IsNotExist(err) {
 			logrus.Fatalf("The path '%s' for the single test is not valid", singleTest)
 		}
 	}

@@ -1,0 +1,132 @@
+[
+    {
+        "name": "unmarshal and bounce high numbers | sanity check: small integer",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "number": 1234
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 1234
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | sanity check: small float",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "number": 1234.567
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 1234.567
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | high integer (> int32)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                // max: 2,147,483,647
+                "number": 2147483648
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 2147483648
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | high integer (> int64)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                // max: 9,223,372,036,854,775,807
+                "number": 9223372036854775808
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 9223372036854775808
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | high integer (> int64)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "number": 1234e4567
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 1234e4567
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | high integer (== float64)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                // max: 1.7E+308
+                "number": 1.7e308
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 1.7e308
+                }
+            }
+        }
+    },
+    {
+        "name": "unmarshal and bounce high numbers | high integer (> float64)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                // max: 1.7E+308
+                "number": 1.8e308
+            }
+        },
+        "response": {
+            "body": {
+                "body": {
+                    "number": 1.8e308
+                }
+            }
+        }
+    }
+]

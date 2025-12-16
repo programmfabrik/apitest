@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 )
@@ -25,7 +25,7 @@ type Response struct {
 	HeaderFlat  map[string]any // ":control" is an object, so we must use "any" here
 	Cookies     []*http.Cookie
 	Body        []byte
-	BodyControl util.JsonObject
+	BodyControl jsutil.Object
 	Format      ResponseFormat
 
 	ReqDur      time.Duration
@@ -58,7 +58,7 @@ type ResponseSerialization struct {
 	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
 	Cookies     map[string]cookie `yaml:"cookie" json:"cookie,omitempty"`
 	Body        any               `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
+	BodyControl jsutil.Object     `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
 }
 
@@ -98,7 +98,7 @@ func NewResponse(statusCode *int,
 	headersAny map[string]any,
 	cookies []*http.Cookie,
 	body io.Reader,
-	bodyControl util.JsonObject,
+	bodyControl jsutil.Object,
 	bodyFormat ResponseFormat,
 ) (res Response, err error) {
 
@@ -159,7 +159,7 @@ func NewResponse(statusCode *int,
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	var body io.Reader
 	if spec.Body != nil {
-		bodyBytes, err := json.Marshal(spec.Body)
+		bodyBytes, err := jsutil.Marshal(spec.Body)
 		if err != nil {
 			return res, err
 		}
@@ -189,8 +189,8 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 }
 
 // splitLines is a helper function needed for format "text"
-func splitLines(s string) (lines util.JsonArray) {
-	lines = util.JsonArray{}
+func splitLines(s string) (lines jsutil.Array) {
+	lines = jsutil.Array{}
 	sc := bufio.NewScanner(strings.NewReader(s))
 	for sc.Scan() {
 		lines = append(lines, sc.Text())
@@ -256,7 +256,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, fmt.Errorf("could not parse csv: %w", err)
 		}
 
-		bodyData, err = json.Marshal(csvData)
+		bodyData, err = jsutil.Marshal(csvData)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal csv to json: %w", err)
 		}
@@ -264,10 +264,10 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(resp.Body))
-		jsonObject := util.JsonObject{
-			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+		jsonObject := jsutil.Object{
+			"md5sum": jsutil.String(hex.EncodeToString(hasher.Sum(nil))),
 		}
-		bodyData, err = json.Marshal(jsonObject)
+		bodyData, err = jsutil.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal body with md5sum to json: %w", err)
 		}
@@ -275,9 +275,9 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// render the content as text
 		bodyText := string(resp.Body)
 		bodyTextTrimmed := strings.TrimSpace(bodyText)
-		jsonObject := util.JsonObject{
-			"text":         util.JsonString(bodyText),
-			"text_trimmed": util.JsonString(bodyTextTrimmed),
+		jsonObject := jsutil.Object{
+			"text":         jsutil.String(bodyText),
+			"text_trimmed": jsutil.String(bodyTextTrimmed),
 			"lines":        splitLines(bodyText),
 			"float64":      nil,
 			"int64":        nil,
@@ -286,11 +286,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// ignore errors silently in case the text is not numerical
 		n, err2 := strconv.ParseFloat(bodyTextTrimmed, 64)
 		if err2 == nil {
-			jsonObject["float64"] = util.JsonNumber(n)
-			jsonObject["int64"] = util.JsonNumber(int64(n))
+			jsonObject["float64"] = n
+			jsonObject["int64"] = int64(n)
 		}
 
-		bodyData, err = json.Marshal(jsonObject)
+		bodyData, err = jsutil.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal body to text (string): %w", err)
 		}
@@ -341,7 +341,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if !responseFormat.IgnoreBody {
 
 		if len(bodyData) > 0 {
-			err = json.Unmarshal(bodyData, &bodyJSON)
+			err = jsutil.Unmarshal(bodyData, &bodyJSON)
 			if err != nil {
 				return res, err
 			}
@@ -354,12 +354,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err = json.Marshal(responseJSON)
+	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
 
-	err = json.Unmarshal(responseBytes, &res)
+	err = jsutil.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}
@@ -377,7 +377,7 @@ func (response Response) ToGenericJSON() (res any, err error) {
 
 	// We have a json, and thereby try to unmarshal it into our body
 	if len(response.Body) > 0 {
-		err = json.Unmarshal(response.Body, &bodyJSON)
+		err = jsutil.Unmarshal(response.Body, &bodyJSON)
 		if err != nil {
 			return res, err
 		}
@@ -417,11 +417,11 @@ func (response Response) ToGenericJSON() (res any, err error) {
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err = json.Marshal(responseJSON)
+	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
-	err = json.Unmarshal(responseBytes, &res)
+	err = jsutil.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}

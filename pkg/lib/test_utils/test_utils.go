@@ -1,11 +1,11 @@
 package test_utils
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"testing"
 
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/programmfabrik/golib"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -37,7 +37,7 @@ func AssertJsonStringEquals(t testing.TB, expected, got string) {
 		expectedMinified, gotMinifed []byte
 	)
 
-	err := json.Unmarshal([]byte(expected), &expectedJson)
+	err := jsutil.UnmarshalString(expected, &expectedJson)
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,7 +46,7 @@ func AssertJsonStringEquals(t testing.TB, expected, got string) {
 		log.Fatal(err)
 	}
 
-	err = json.Unmarshal([]byte(got), &gotJson)
+	err = jsutil.UnmarshalString(got, &gotJson)
 	if err != nil {
 		t.Error(err)
 	}

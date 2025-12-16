@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -374,8 +374,8 @@ func TestTrivialJsonComparer(t *testing.T) {
 	var json1, json2 any
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
-			util.Unmarshal([]byte(td.want), &json1)
-			util.Unmarshal([]byte(td.have), &json2)
+			jsutil.UnmarshalString(td.want, &json1)
+			jsutil.UnmarshalString(td.have, &json2)
 			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
 			if err != nil {
 				t.Fatal("Error occurred: ", err)
