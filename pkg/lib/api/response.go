@@ -122,7 +122,7 @@ func NewResponse(statusCode *int,
 					return res, fmt.Errorf("unknown type %T in header %q", v2, key)
 				}
 			}
-			headers[key] = v
+			headers[key] = headerS
 			continue
 		case []string:
 			headers[key] = v

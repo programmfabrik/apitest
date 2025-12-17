@@ -558,9 +558,12 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 
 	specBytes, err = jsutil.Marshal(requestData)
 	if err != nil {
-		return spec, fmt.Errorf("marshaling requet: %w", err)
+		return spec, fmt.Errorf("marshaling request: %w", err)
 	}
 	err = jsutil.Unmarshal(specBytes, &spec)
+	if err != nil {
+		return spec, fmt.Errorf("unmarshaling request: %w", err)
+	}
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
 

@@ -253,9 +253,10 @@ func (h *smtpHTTPHandler) handleMessageIndex(w http.ResponseWriter, r *http.Requ
 		messagesOut = append(messagesOut, buildMessageBasicMeta(msg))
 	}
 
-	out := make(map[string]any)
-	out["count"] = len(receivedMessages)
-	out["messages"] = messagesOut
+	out := map[string]any{
+		"count":    len(receivedMessages),
+		"messages": messagesOut,
+	}
 
 	handlerutil.RespondWithJSON(w, http.StatusOK, out)
 }
@@ -380,24 +381,22 @@ func buildContentMeta(c *receivedContent) (out map[string]any) {
 		contentTypeParams = make(map[string]string)
 	}
 
+	headers := make(map[string]any)
+	for k, v := range c.Headers() {
+		headers[k] = v
+	}
+
 	out = map[string]any{
 		"bodySize":          len(c.Body()),
 		"isMultipart":       c.IsMultipart(),
 		"contentType":       c.ContentType(),
 		"contentTypeParams": contentTypeParams,
+		"headers":           headers,
 	}
-
-	headers := make(map[string]any)
-	for k, v := range c.Headers() {
-		headers[k] = v
-	}
-	out["headers"] = headers
 
 	if c.IsMultipart() {
 		multipartIndex := buildMultipartIndex(c.Multiparts())
-		for k, v := range multipartIndex {
-			out[k] = v
-		}
+		maps.Copy(out, multipartIndex)
 	}
 
 	return out
@@ -436,9 +435,7 @@ func buildMessageFullMeta(msg *receivedMessage) (out map[string]any) {
 	out = buildMessageBasicMeta(msg)
 	contentMeta := buildContentMeta(msg.Content())
 
-	for k, v := range contentMeta {
-		out[k] = v
-	}
+	maps.Copy(out, contentMeta)
 
 	return out
 }
@@ -450,9 +447,10 @@ func buildMultipartIndex(parts []*receivedPart) (out map[string]any) {
 		multipartsOut[i] = buildMultipartMeta(part)
 	}
 
-	out = make(map[string]any)
-	out["multipartsCount"] = len(parts)
-	out["multiparts"] = multipartsOut
+	out = map[string]any{
+		"multipartsCount": len(parts),
+		"multiparts":      multipartsOut,
+	}
 
 	return out
 }

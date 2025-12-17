@@ -126,13 +126,12 @@ func (ds *Datastore) Set(index string, value any) (err error) {
 		if err == nil {
 			value = n
 		} else {
+			// ignore errors silently
 			f, err := t.Float64()
 			if err == nil {
 				value = f
 			}
 		}
-		// ignore errors silently
-		err = nil
 	}
 
 	ds.lock.Lock()

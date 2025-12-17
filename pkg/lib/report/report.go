@@ -146,9 +146,7 @@ func (r ReportElement) getLog() []string {
 	errors := make([]string, 0)
 
 	// root Errors
-	for _, singleMessage := range r.LogStorage {
-		errors = append(errors, singleMessage)
-	}
+	errors = append(errors, r.LogStorage...)
 
 	// Child errors
 	for _, singleTest := range r.SubTests {
