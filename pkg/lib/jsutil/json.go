@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/programmfabrik/golib"
 	"github.com/tidwall/jsonc"
 )
 
@@ -26,6 +27,24 @@ var coloredError bool
 
 func init() {
 	coloredError = true
+}
+
+// Marshal converts the given interface into json bytes
+func Marshal(v any) (data []byte, err error) {
+	return golib.JsonBytes(v)
+}
+
+// Encode marshals the given interface and writes the json bytes to the given writer
+func Encode(w io.Writer, v any) (err error) {
+	data, err := Marshal(v)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // UnmarshalString is a wrapper for Unmarshal for string input
@@ -170,14 +189,4 @@ func lineAndCharacter(input string, offset int) (line int, character int, err er
 	}
 
 	return line, character, nil
-}
-
-// wrappers for consistency
-// also to remove unnecessary imports of "encoding/json"
-func Marshal(v any) (data []byte, err error) {
-	return json.Marshal(v)
-}
-
-func Encode(w io.Writer, v any) (err error) {
-	return json.NewEncoder(w).Encode(v)
 }

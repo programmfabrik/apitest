@@ -1,0 +1,41 @@
+{
+    "name": "bounce-json: numbers out of int64 range",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {
+            "number1":   1234,
+            "number2":   1234.567,
+            "number3":   2147483648,          // max for int32: 2,147,483,647
+            "number4":   9223372036854775808, // max for int64: 9,223,372,036,854,775,807
+            "number5":  -9223372036854775808,
+            "number6":   1234e4567,
+            "number7":  -1234e4567,
+            "number8":   1.7e308,             // max for float64: 1.7E+308
+            "number9":   1.8e308,
+            "number10": -1.8e308,
+            "number11":  46546848348651535484445.5435848343165,
+            "number12": -87786184587458754158.7846848
+        }
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "number1":   1234,
+                "number2":   1234.567,
+                "number3":   2147483648,
+                "number4":   9223372036854775808,
+                "number5":  -9223372036854775808,
+                "number6":   1234e4567,
+                "number7":  -1234e4567,
+                "number8":   1.7e308,
+                "number9":   1.8e308,
+                "number10": -1.8e308,
+                "number11":  46546848348651535484445.5435848343165,
+                "number12": -87786184587458754158.7846848
+            }
+        }
+    }
+}
