@@ -17,6 +17,8 @@ import (
 	"golang.org/x/net/html"
 )
 
+var xmlDeclarationRegex = regexp.MustCompile(`<\?xml.*?\?>`)
+
 func removeFromJsonArray(input []any, removeIndex int) (output []any) {
 	output = make([]any, len(input))
 	copy(output, input)
@@ -50,12 +52,10 @@ func GetStringFromInterface(queryParam any) (v string, err error) {
 // - "xml2": use mxj.NewMapXmlSeq (simpler format)
 func Xml2Json(rawXml []byte, format string) (jsonStr []byte, err error) {
 	var (
-		mv                  mxj.Map
-		xmlDeclarationRegex *regexp.Regexp
-		replacedXML         []byte
+		mv          mxj.Map
+		replacedXML []byte
 	)
 
-	xmlDeclarationRegex = regexp.MustCompile(`<\?xml.*?\?>`)
 	replacedXML = xmlDeclarationRegex.ReplaceAll(rawXml, []byte{})
 
 	switch format {

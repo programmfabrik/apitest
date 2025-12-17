@@ -29,6 +29,13 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var (
+	delimsRegex        = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
+	removeCheckRegex   = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
+	splitRegex         = regexp.MustCompile(`[\t ]`)
+	removeCommentRegex = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
+)
+
 // delimiters as go template parsing options
 type delimiters struct {
 	Left  string
@@ -69,31 +76,22 @@ func (loader *Loader) Render(
 	ctx any) (res []byte, err error) {
 
 	var (
-		delimsRE        *regexp.Regexp
-		removeCheckRE   *regexp.Regexp
-		splitRE         *regexp.Regexp
-		removeCommentRE *regexp.Regexp
-		matches         []string
-		replacements    []string
-		newTmplStr      string
+		matches      []string
+		replacements []string
+		newTmplStr   string
 	)
 
-	delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
-	removeCheckRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
-	splitRE = regexp.MustCompile(`[\t ]`)
-	removeCommentRE = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
-
 	// First check for custom delimiters
-	matches = delimsRE.FindStringSubmatch(string(tmplBytes))
+	matches = delimsRegex.FindStringSubmatch(string(tmplBytes))
 	if len(matches) == 3 {
 		loader.Delimiters.Left, loader.Delimiters.Right = matches[1], matches[2]
 	}
 
 	// Second check for placeholders removal
-	matches = removeCheckRE.FindStringSubmatch(string(tmplBytes))
+	matches = removeCheckRegex.FindStringSubmatch(string(tmplBytes))
 	replacements = []string{}
 	if len(matches) > 1 {
-		placeholders := splitRE.Split(matches[1], -1)
+		placeholders := splitRegex.Split(matches[1], -1)
 		for _, s := range placeholders {
 			replacements = append(replacements, s, "")
 		}
@@ -103,7 +101,7 @@ func (loader *Loader) Render(
 
 	// Remove comments from template if comments are not the delimiters
 	if loader.Delimiters.Left != "//" {
-		tmplBytes = []byte(removeCommentRE.ReplaceAllString(string(tmplBytes), ``))
+		tmplBytes = []byte(removeCommentRegex.ReplaceAllString(string(tmplBytes), ``))
 	}
 
 	funcMap := template.FuncMap{

@@ -13,6 +13,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
+
 type Datastore struct {
 	storage      map[string]any // custom storage
 	responseJson []string       // store the responses
@@ -110,7 +112,6 @@ func (ds *Datastore) SetMap(smap map[string]any) (err error) {
 }
 
 func (ds *Datastore) Set(index string, value any) (err error) {
-	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
 	switch t := value.(type) {
 	case float64:
@@ -200,8 +201,6 @@ func (ds Datastore) Get(index string) (res any, err error) {
 		// return the entire custom store
 		return ds.storage, nil
 	}
-
-	var dsMapRegex = regexp.MustCompile(`^(.*?)\[(.+?)\]$`)
 
 	rego := dsMapRegex.FindStringSubmatch(index)
 	if len(rego) > 0 {

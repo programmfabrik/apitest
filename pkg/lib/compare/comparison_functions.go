@@ -37,6 +37,8 @@ type ComparisonContext struct {
 	notEqual       *any
 }
 
+var controlKeyRegex = regexp.MustCompile(`(?P<Key>.*?):control`)
+
 func fillComparisonContext(in jsutil.Object) (out *ComparisonContext, err error) {
 	out = &ComparisonContext{}
 
@@ -232,8 +234,13 @@ func fillComparisonContext(in jsutil.Object) (out *ComparisonContext, err error)
 // hereby we also check our control structures and the noExtra parameter. If noExtra is true it is not allowed to have
 // elements than set
 func objectComparison(left, right jsutil.Object, noExtra bool) (res CompareResult, err error) {
+	var (
+		rv, lv   any
+		rOK, lOK bool
+		k        string
+	)
+
 	res.Equal = true
-	keyRegex := regexp.MustCompile(`(?P<Key>.*?):control`)
 
 	takenInRight := make(map[string]bool)
 	takenInLeft := make(map[string]bool)
@@ -244,15 +251,12 @@ func objectComparison(left, right jsutil.Object, noExtra bool) (res CompareResul
 		if takenInLeft[ck] {
 			continue
 		}
-		var rv, lv any
-		var rOK, lOK bool
 		control := &ComparisonContext{}
-		var k string
 
 		// Check which type of key we have
 		if strings.HasSuffix(ck, ":control") {
 			// We have a control key
-			k = keyRegex.FindStringSubmatch(ck)[1]
+			k = controlKeyRegex.FindStringSubmatch(ck)[1]
 			if !takenInRight[k] {
 				rv, rOK = right[k]
 			}
@@ -371,7 +375,7 @@ func arrayComparison(left, right jsutil.Array, currControl ComparisonContext, ne
 	}
 
 	takenInRight := make(map[int]bool)
-	var lastPositionFromLeftInRight int = -1
+	lastPositionFromLeftInRight := -1
 
 	for lk, lv := range left {
 		if currControl.orderMatters {
@@ -569,16 +573,20 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	}
 
+	var (
+		matchS    string
+		doesMatch bool
+	)
+
 	// Check if string matches regex
 	if control.regexMatch != nil {
-		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			matchS = fmt.Sprintf("%v", right)
 		} else {
 			matchS = right.(jsutil.String)
 		}
-		doesMatch, err := regexp.Match(*control.regexMatch, []byte(matchS))
+		doesMatch, err = regexp.Match(*control.regexMatch, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatch, err)
 		}
@@ -589,15 +597,13 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check if string does not match regex
 	if control.regexMatchNot != nil {
-
-		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			matchS = fmt.Sprintf("%v", right)
 		} else {
 			matchS = right.(jsutil.String)
 		}
-		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(matchS))
+		doesMatch, err = regexp.Match(*control.regexMatchNot, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatchNot, err)
 		}

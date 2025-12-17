@@ -23,7 +23,10 @@ type (
 	RawMessage = json.RawMessage
 )
 
-var coloredError bool
+var (
+	coloredError      bool
+	cjsonCommentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
+)
 
 func init() {
 	coloredError = true
@@ -55,8 +58,7 @@ func UnmarshalString(input string, output any) (err error) {
 // Unmarshal decodes the input bytes into the output if it is valid cjson
 func Unmarshal(input []byte, output any) (err error) {
 	// Remove # comments from template
-	commentRegex := regexp.MustCompile(`(?m)^[\t ]*#.*$`)
-	tmplBytes := commentRegex.ReplaceAll(input, []byte{})
+	tmplBytes := cjsonCommentRegex.ReplaceAll(input, []byte{})
 
 	// Remove //, /* comments plus tailing commas
 	tmplBytes = jsonc.ToJSON(tmplBytes)
