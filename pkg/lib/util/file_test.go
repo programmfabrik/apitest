@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/spf13/afero"
 )
 
@@ -30,7 +31,8 @@ func TestOpenFileOrUrl(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	afero.WriteFile(filesystem.Fs, "localExists", []byte("Hallo ich bin da!"), 0644)
+	err := afero.WriteFile(filesystem.Fs, "localExists", []byte("Hallo ich bin da!"), 0644)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	tests := []testOpenFileStruct{
 		{
@@ -65,9 +67,7 @@ func TestOpenFileOrUrl(t *testing.T) {
 			} else {
 				defer file.Close()
 				data, err := io.ReadAll(file)
-				if err != nil {
-					t.Fatal(err)
-				}
+				go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 				if md5.Sum(data) != v.expHash {
 					t.Errorf("Got '%s' != '%s' Exp", md5.Sum(data), v.expHash)
@@ -81,47 +81,46 @@ func TestOpenFileOrUrl(t *testing.T) {
 func TestOpenLocalFile(t *testing.T) {
 	filesystem.Fs = afero.NewMemMapFs()
 
-	afero.WriteFile(filesystem.Fs, filepath.Join("/", "root", "file.json"), []byte("From ROOT /"), 0644)
-	afero.WriteFile(filesystem.Fs, "file.json", []byte("From binary ./"), 0644)
-	afero.WriteFile(filesystem.Fs, filepath.Join("/", "manifestdir", "file.json"), []byte("From manifest"), 0644)
+	err := afero.WriteFile(filesystem.Fs, filepath.Join("/", "root", "file.json"), []byte("From ROOT /"), 0644)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	err = afero.WriteFile(filesystem.Fs, "file.json", []byte("From binary ./"), 0644)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	err = afero.WriteFile(filesystem.Fs, filepath.Join("/", "manifestdir", "file.json"), []byte("From manifest"), 0644)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	reader, err := openLocalFile("/root/file.json", "/manifestdir")
-	if err != nil {
-		t.Fatalf("Root File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+
 	defer reader.Close()
 	rootFile, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatalf("Root File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if string(rootFile) != "From ROOT /" {
 		t.Errorf("Wrong file content for root file: %s", string(rootFile))
 	}
 
 	reader, err = openLocalFile("file.json", "/manifestdir")
-	if err != nil {
-		t.Fatalf("Manifest File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	defer reader.Close()
 	manifestFile, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatalf("Manifest File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if string(manifestFile) != "From manifest" {
 		t.Errorf("Wrong file content for manifest file: %s", string(manifestFile))
 	}
 
 	reader, err = openLocalFile("./file.json", "/manifestdir")
-	if err != nil {
-		t.Fatalf("Binary File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	defer reader.Close()
 
 	binaryFile, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatalf("Binary File: %s", err.Error())
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if string(binaryFile) != "From binary ./" {
 		t.Errorf("Wrong file content for binary file: %s", string(binaryFile))
 	}
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

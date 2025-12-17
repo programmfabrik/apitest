@@ -7,6 +7,7 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/compare"
 	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestReportStructure(t *testing.T) {
@@ -79,13 +80,18 @@ func TestReportGetJSONResult(t *testing.T) {
 		]
 	}`)
 
-	var expJ, realJ any
+	var (
+		expJ, realJ any
+		err         error
+	)
 
-	jsutil.Unmarshal(jsonResult, &realJ)
-	jsutil.Unmarshal(expResult, &expJ)
+	err = jsutil.Unmarshal(jsonResult, &realJ)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	err = jsutil.Unmarshal(expResult, &expJ)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
-	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
-
+	equal, err := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if !equal.Equal {
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expResult, jsonResult)
 		t.Fail()
@@ -116,10 +122,16 @@ func TestReportGetJUnitResult(t *testing.T) {
 	</testsuite>
 </testsuites>`
 
-	var expX, realX xmlRoot
+	var (
+		expX, realX xmlRoot
+		expJ, realJ any
+		err         error
+	)
 
-	xml.Unmarshal([]byte(expResult), &expX)
-	xml.Unmarshal(jsonResult, &realX)
+	err = xml.Unmarshal([]byte(expResult), &expX)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	err = xml.Unmarshal(jsonResult, &realX)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	realX.Id = ""
 	realX.Name = ""
@@ -132,16 +144,18 @@ func TestReportGetJUnitResult(t *testing.T) {
 		}
 	}
 
-	expJBytes, _ := jsutil.Marshal(expX)
-	realJBytes, _ := jsutil.Marshal(realX)
+	expJBytes, err := jsutil.Marshal(expX)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	realJBytes, err := jsutil.Marshal(realX)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
-	var expJ, realJ any
+	err = jsutil.Unmarshal(expJBytes, &expJ)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	err = jsutil.Unmarshal(realJBytes, &realJ)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
-	jsutil.Unmarshal(expJBytes, &expJ)
-	jsutil.Unmarshal(realJBytes, &realJ)
-
-	equal, _ := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
-
+	equal, err := compare.JsonEqual(expJ, realJ, compare.ComparisonContext{})
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if !equal.Equal {
 		// t.Error(equal.Failures)
 		t.Errorf("Wanted:\n%s\n\nGot:\n%s", expJBytes, realJBytes)
@@ -219,7 +233,8 @@ func TestReportGetStatsResult(t *testing.T) {
 
 	jsonResult := r.GetTestResult(parseJSONStatsResult)
 	var statsRep statsReport
-	jsutil.Unmarshal(jsonResult, &statsRep)
+	err := jsutil.Unmarshal(jsonResult, &statsRep)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	if statsRep.Version != r.Version {
 		t.Fatalf("Got version %s, expected %s", statsRep.Version, r.Version)
@@ -239,4 +254,11 @@ func TestReportGetStatsResult(t *testing.T) {
 	if statsRep.Manifests[2].Group != 1 {
 		t.Fatalf("Manifest 3 in group %d, expected to be in 1", statsRep.Manifests[2].Group)
 	}
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

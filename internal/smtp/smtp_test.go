@@ -319,8 +319,18 @@ func runTestSession() *Server {
 
 	server := NewServer(addr, 0)
 	server.clock = func() time.Time { return testTime }
-	go server.ListenAndServe()
-	defer server.Shutdown(context.Background())
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
+	}()
+	defer func() {
+		err := server.Shutdown(context.Background())
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// give the server some time to open
 	time.Sleep(time.Second)

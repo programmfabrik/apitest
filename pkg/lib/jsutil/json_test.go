@@ -150,9 +150,14 @@ func TestRemoveComments(t *testing.T) {
 		},
 	}
 
+	var (
+		out Object
+		err error
+	)
+
 	for _, v := range testCases {
-		var out Object
-		UnmarshalString(v.iJson, &out)
+		err = UnmarshalString(v.iJson, &out)
+		go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 		for k, v := range v.eOut {
 			if out[k] != v {
 				t.Errorf("[%s] Have %T '%v' != '%f' want", k, k, out[k], v)
@@ -282,4 +287,11 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct 'expectedStructure', field 'name'. See input file line 1, character 9", cjsonStringLines),
 		},
 	)
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

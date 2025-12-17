@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
 func TestGetPasswordCredentialsToken(t *testing.T) {
@@ -33,9 +35,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 		Secret: "whatever",
 	}
 	_, err := cfg.GetPasswordCredentialsAuthToken("hey", "yo")
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -45,9 +45,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 		Secret: "whatever",
 	}
 	_, err = cfg.GetPasswordCredentialsAuthToken("hey", "yo")
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -57,9 +55,7 @@ func TestGetPasswordCredentialsToken(t *testing.T) {
 		Secret: theSecret,
 	}
 	token, err := cfg.GetPasswordCredentialsAuthToken("hey", "yo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}
@@ -96,9 +92,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 		Secret: "whatever",
 	}
 	_, err := cfg.GetClientCredentialsAuthToken()
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -108,9 +102,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 		Secret: "whatever",
 	}
 	_, err = cfg.GetClientCredentialsAuthToken()
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -120,9 +112,7 @@ func TestGetClientCredentialsToken(t *testing.T) {
 		Secret: theSecret,
 	}
 	token, err := cfg.GetClientCredentialsAuthToken()
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}
@@ -186,9 +176,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret:      "whatever",
 	}
 	_, err := cfg.GetCodeAuthToken()
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -200,9 +188,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret:      "whatever",
 	}
 	_, err = cfg.GetCodeAuthToken()
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -212,9 +198,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret: theSecret,
 	}
 	_, err = cfg.GetCodeAuthToken("username", theUsername, "password", thePassword)
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -226,9 +210,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret:      theSecret,
 	}
 	_, err = cfg.GetCodeAuthToken("username", theUsername, "password", "wrong")
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -240,9 +222,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret:      theSecret,
 	}
 	token, err := cfg.GetCodeAuthToken("username", theUsername, "password", thePassword)
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}
@@ -263,9 +243,7 @@ func TestGetCodeToken(t *testing.T) {
 		Secret:      theSecret,
 	}
 	token, err = cfg.GetCodeAuthToken("guest_access", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}
@@ -315,9 +293,7 @@ func TestGetAuthToken(t *testing.T) {
 		RedirectURL: rs.URL,
 	}
 	_, err := cfg.GetAuthToken()
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client:      theClient,
@@ -325,9 +301,7 @@ func TestGetAuthToken(t *testing.T) {
 		RedirectURL: rs.URL,
 	}
 	_, err = cfg.GetAuthToken("username", theUsername, "password", thePassword)
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -337,9 +311,7 @@ func TestGetAuthToken(t *testing.T) {
 		RedirectURL: rs.URL,
 	}
 	_, err = cfg.GetAuthToken("username", theUsername, "password", "wrong")
-	if err == nil {
-		t.Fatal("Expected error")
-	}
+	go_test_utils.ExpectError(t, err, "Expected error")
 
 	cfg = OAuthClientConfig{
 		Client: theClient,
@@ -349,9 +321,7 @@ func TestGetAuthToken(t *testing.T) {
 		RedirectURL: rs.URL,
 	}
 	token, err := cfg.GetAuthToken("username", theUsername, "password", thePassword)
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}
@@ -370,9 +340,7 @@ func TestGetAuthToken(t *testing.T) {
 		RedirectURL: rs.URL,
 	}
 	token, err = cfg.GetAuthToken("guest_access", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	if token == nil {
 		t.Fatal("No token nor error returned")
 	}

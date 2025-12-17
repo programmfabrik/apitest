@@ -90,7 +90,10 @@ func TestRequestBuildHttpWithCookie(t *testing.T) {
 	request.buildPolicy = buildRegular
 	ds := datastore.NewStore(false)
 	for key, val := range storeCookies {
-		ds.Set(key, val)
+		err := ds.Set(key, val)
+		if err != nil {
+			t.Fatalf("Could not store cookie in datastore: %s", err.Error())
+		}
 	}
 	request.DataStore = ds
 	httpRequest, err := request.buildHttpRequest()

@@ -58,7 +58,7 @@ func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 
 	// Invalid rootDirectory -> Expect error
 	conf, err := newTestToolConfig(server.URL+"/api/v1", []string{"path"}, false, false, false)
-	go_test_utils.ExpectNoError(t, err, "NewTestToolConfig did fail on valid root directory")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	expectedResults := []string{
 		filepath.Dir(manifestPath1),
