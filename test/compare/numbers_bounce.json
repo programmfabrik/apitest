@@ -1,0 +1,53 @@
+{
+    "name": "store numbers, compare number values in response",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {
+            "int1": {{ datastore `int1` }},
+            "int1<6": true,
+            "int1==5": true,
+            "int1!=7": true,
+
+            // test the same float with different trailing zeroes
+            // which do not change the value and must be accepted as equal
+            "float1_a": {{ datastore `float1` }},
+            "float1_b": {{ datastore `float1` }}0
+        }
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "int1": 5,
+
+                "int1<6":
+                {{ if lt ( datastore `int1` ) 6 }}
+                    true
+                {{ else }}
+                    false
+                {{ end }},
+
+                "int1==5":
+                {{ if eq ( datastore `int1` ) 5 }}
+                    true
+                {{ else }}
+                    false
+                {{ end }},
+
+                "int1!=7":
+                {{ if ne ( datastore `int1` ) 7 }}
+                    true
+                {{ else }}
+                    false
+                {{ end }},
+
+                // test the same float with different trailing zeroes
+                // which do not change the value and must be accepted as equal
+                "float1_a": {{ datastore `float1` }}000,
+                "float1_b": {{ datastore `float1` }}
+            }
+        }
+    }
+}

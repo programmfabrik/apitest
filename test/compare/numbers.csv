@@ -1,0 +1,8 @@
+hint,value1,value2
+string,string,string
+"int and int in range",12,12
+"int and float in range",2.0,2
+"int and float in range",30000.0,30000.0000
+"float and float in range",3.14,3.14
+"float and float in range",3.14,3.140
+"int and int out of range",28342e234456,28342e234456

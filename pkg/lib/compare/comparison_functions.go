@@ -667,7 +667,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, *control.notEqual)
 				}
 			case "JsonNumber":
-				if jsonNumberEq((*control.notEqual).(jsutil.Number), right.(jsutil.Number)) {
+				if jsutil.NumberEqual((*control.notEqual).(jsutil.Number), right.(jsutil.Number)) {
 					return fmt.Errorf("expected %v, got %v", right, *control.notEqual)
 				}
 			case "Bool":

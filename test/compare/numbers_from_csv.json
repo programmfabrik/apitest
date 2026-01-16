@@ -1,0 +1,23 @@
+[
+    {{ range $idx, $row := file_csv "numbers.csv"  ','  }}
+        {
+            "name": "compare {{ $row.value1 }} and {{ $row.value2 }} ({{ $row.hint }}), expected to be equal",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "body": {
+                    "value": {{ $row.value1 }}
+                }
+            },
+            "response": {
+                "body": {
+                    "body": {
+                        // both values must be seen as equal
+                        "value": {{ $row.value2 }}
+                    }
+                }
+            }
+        },
+    {{ end }}
+]
