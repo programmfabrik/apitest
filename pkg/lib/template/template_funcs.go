@@ -427,7 +427,25 @@ func loadFileCSV(rootDir string) any {
 // extendForJsonNumber overwrites some sprig template functions
 // so they can be used with json.Number
 func extendForJsonNumber(funcMap template.FuncMap) template.FuncMap {
+	funcMap["eq"] = func(a, b any) (eq bool) {
+		// check if both values can be converted to float64 to handle json.Number
+		fa, fb, err := normalizeToFloats(a, b)
+		if err == nil {
+			return fa == fb
+		}
+
+		if comparable(a, b) {
+			return a == b
+		}
+		return reflect.DeepEqual(a, b)
+	}
 	funcMap["ne"] = func(a, b any) (ne bool) {
+		// check if both values can be converted to float64 to handle json.Number
+		fa, fb, err := normalizeToFloats(a, b)
+		if err == nil {
+			return fa != fb
+		}
+
 		if comparable(a, b) {
 			return a != b
 		}
