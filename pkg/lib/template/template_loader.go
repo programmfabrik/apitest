@@ -519,7 +519,7 @@ func (loader *Loader) Render(
 	tmpl, err := template.
 		New("tmpl").
 		Delims(loader.Delimiters.Left, loader.Delimiters.Right).
-		Funcs(extendForJsonNumber(sprig.TxtFuncMap())).
+		Funcs(sprig.TxtFuncMap()).
 		Funcs(funcMap).
 		Parse(string(tmplBytes))
 	if err != nil {

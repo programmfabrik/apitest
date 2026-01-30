@@ -1,13 +1,11 @@
 package template
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
 	"reflect"
 	"strconv"
-	"text/template"
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
@@ -422,124 +420,4 @@ func loadFileCSV(rootDir string) any {
 		}
 		return data, err
 	}
-}
-
-// equal compares all elements in b with a.
-// if any of the elements in b is equal to a, return true
-func equal(a any, b []any) (eq bool) {
-	for _, f := range b {
-		// check if all values can be converted to float64 to handle json.Number
-		fa, fb, err := normalizeToFloats(a, f)
-		if err == nil {
-			if fa == fb {
-				return true
-			}
-			continue
-		}
-		if comparable(a, f) {
-			if a == f {
-				return true
-			}
-			continue
-		}
-		if reflect.DeepEqual(a, f) {
-			return true
-		}
-	}
-	return false
-}
-
-// extendForJsonNumber overwrites some sprig template functions
-// so they can be used with json.Number
-func extendForJsonNumber(funcMap template.FuncMap) template.FuncMap {
-	funcMap["eq"] = func(a any, b ...any) (ne bool) {
-		return equal(a, b)
-	}
-	funcMap["ne"] = func(a any, b ...any) (ne bool) {
-		return !equal(a, b)
-	}
-	funcMap["gt"] = func(a, b any) (ne bool, err error) {
-		na, nb, err := normalizeToFloats(a, b)
-		if err != nil {
-			return false, err
-		}
-		return na > nb, nil
-	}
-	funcMap["ge"] = func(a, b any) (ne bool, err error) {
-		na, nb, err := normalizeToFloats(a, b)
-		if err != nil {
-			return false, err
-		}
-		return na >= nb, nil
-	}
-	funcMap["lt"] = func(a, b any) (ne bool, err error) {
-		na, nb, err := normalizeToFloats(a, b)
-		if err != nil {
-			return false, err
-		}
-		return na < nb, nil
-	}
-	funcMap["le"] = func(a, b any) (ne bool, err error) {
-		na, nb, err := normalizeToFloats(a, b)
-		if err != nil {
-			return false, err
-		}
-		return na <= nb, nil
-	}
-
-	return funcMap
-}
-
-func normalizeToFloats(a, b any) (na, nb float64, err error) {
-	na, err = normalizeToFloat(a)
-	if err != nil {
-		return 0, 0, err
-	}
-	nb, err = normalizeToFloat(b)
-	if err != nil {
-		return 0, 0, err
-	}
-	return na, nb, err
-}
-
-func normalizeToFloat(v any) (n float64, err error) {
-	switch x := v.(type) {
-	case json.Number:
-		f, err := x.Float64()
-		if err != nil {
-			return 0, fmt.Errorf("can not convert json.Number %q to float64: %w", v, err)
-		}
-		return f, nil
-	case float64:
-		return x, nil
-	case float32:
-		return float64(x), nil
-	case int:
-		return float64(x), nil
-	case int8:
-		return float64(x), nil
-	case int16:
-		return float64(x), nil
-	case int32:
-		return float64(x), nil
-	case int64:
-		return float64(x), nil
-	case uint:
-		return float64(x), nil
-	case uint8:
-		return float64(x), nil
-	case uint16:
-		return float64(x), nil
-	case uint32:
-		return float64(x), nil
-	case uint64:
-		return float64(x), nil
-	default:
-		return 0, fmt.Errorf("can not convert %v to float64", v)
-	}
-}
-
-func comparable(a, b any) (comp bool) {
-	ta, tb := reflect.TypeOf(a), reflect.TypeOf(b)
-	return ta == tb && ta.Comparable()
 }
