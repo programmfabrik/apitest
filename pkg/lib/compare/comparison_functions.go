@@ -271,6 +271,8 @@ func objectComparison(left, right jsutil.Object, noExtra bool) (res CompareResul
 				if err != nil {
 					return res, err
 				}
+			} else {
+				return res, fmt.Errorf("%s:control must be an object", k)
 			}
 			delete(leftCopy, ck)
 		} else {
