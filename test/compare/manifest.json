@@ -6,8 +6,7 @@
     },
     "name": "simple compare functions",
     "store": {
-        "int1": 5,
-        "float1": 7756.789
+        "int1": 5
     },
     "tests": [
         "@numbers_bounce.json",

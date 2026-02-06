@@ -8,12 +8,7 @@
             "int1": {{ datastore `int1` }},
             "int1<6": true,
             "int1==5": true,
-            "int1!=7": true,
-
-            // test the same float with different trailing zeroes
-            // which do not change the value and must be accepted as equal
-            "float1_a": {{ datastore `float1` }},
-            "float1_b": {{ datastore `float1` }}0
+            "int1!=7": true
         }
     },
     "response": {
@@ -41,12 +36,7 @@
                     true
                 {{ else }}
                     false
-                {{ end }},
-
-                // test the same float with different trailing zeroes
-                // which do not change the value and must be accepted as equal
-                "float1_a": {{ datastore `float1` }}000,
-                "float1_b": {{ datastore `float1` }}
+                {{ end }}
             }
         }
     }

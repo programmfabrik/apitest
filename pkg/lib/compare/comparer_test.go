@@ -406,10 +406,10 @@ func TestJsonNumberEq(t *testing.T) {
 	if !assert.Equal(t, true, jsutil.NumberEqual("-9223372036854775808", "-9223372036854775808")) {
 		return
 	}
-	if !assert.Equal(t, true, jsutil.NumberEqual("1", "1.0")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("1", "1.0")) {
 		return
 	}
-	if !assert.Equal(t, true, jsutil.NumberEqual("12.3", "12.30000")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("12.3", "12.30000")) {
 		return
 	}
 	if !assert.Equal(t, false, jsutil.NumberEqual("-9223372036854775808", "-9223372036854775809")) {
@@ -418,11 +418,14 @@ func TestJsonNumberEq(t *testing.T) {
 	if !assert.Equal(t, false, jsutil.NumberEqual("-9223372036854775809", "-9223372036854775808")) {
 		return
 	}
-	if !assert.Equal(t, true, jsutil.NumberEqual("1e10", "10000000000")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("1e10", "10000000000")) {
+		return
+	}
+	if !assert.Equal(t, true, jsutil.NumberEqual("1e10", "1e10")) {
 		return
 	}
 	// Although this is the same value, we cannot say its equal
-	if !assert.Equal(t, true, jsutil.NumberEqual("-9.223372036854775808e+18", "-9223372036854775808")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("-9.223372036854775808e+18", "-9223372036854775808")) {
 		return
 	}
 	if !assert.Equal(t, true, jsutil.NumberEqual("-9.223372036854775808e+18", "-9.223372036854775808e+18")) {

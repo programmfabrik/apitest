@@ -32,50 +32,10 @@ func init() {
 	coloredError = true
 }
 
-// NumberEqual is comparing ints, floats or strings of the number. It fails to
-// compare different formats, 1e10 != 10000000000, although it is the same mathematical value.
+// NumberEqual is comparing the string representation of the json.Number.
+// It fails to compare different formats, 1e10 != 10000000000, although it is the same mathematical value.
 func NumberEqual(numberExp, numberGot Number) (eq bool) {
-
-	expInt, expIntErr := numberExp.Int64()
-	gotInt, gotIntErr := numberGot.Int64()
-	expFloat, expFloatErr := numberExp.Float64()
-	gotFloat, gotFloatErr := numberGot.Float64()
-
-	var cmp string
-	_ = cmp
-
-	if expIntErr == nil && gotIntErr == nil {
-		cmp = "int"
-	} else if expFloatErr == nil && gotFloatErr == nil {
-		cmp = "float"
-	} else {
-		cmp = "string"
-	}
-
-	// if any of the interpretations is out of range, we compare by string
-	for _, e := range []error{
-		expIntErr, gotIntErr, expFloatErr, gotFloatErr,
-	} {
-		if e == nil {
-			continue
-		}
-		if strings.Contains(e.Error(), "range") {
-			cmp = "string"
-			break
-		}
-	}
-
-	switch cmp {
-	case "int":
-		eq = expInt == gotInt
-	case "float":
-		eq = expFloat == gotFloat
-	case "string":
-		eq = numberExp == numberGot
-	}
-
-	return eq
-
+	return numberExp == numberGot
 }
 
 // Marshal converts the given interface into json bytes
