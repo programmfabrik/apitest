@@ -1,9 +1,9 @@
 package handlerutil
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,7 +33,7 @@ func RespondWithJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	err := json.NewEncoder(w).Encode(v)
+	err := jsutil.Encode(w, v)
 	if err != nil {
 		logrus.Errorf("Could not encode JSON response: %s (%v)", err, v)
 	}

@@ -48,7 +48,8 @@ func loadConfig(cfgFile string) {
 		logrus.Infof("No config file provided (will only use command line parameters)")
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
+	err := viper.ReadInConfig()
+	if err != nil {
 		logrus.Infof("No config %q read (will only use command line parameters): %s", cfgFile, err.Error())
 	}
 
@@ -99,7 +100,7 @@ func (config *testToolConfig) extractTestDirectories() (err error) {
 					// logrus.Infof("Skipping: %s", path)
 					return filepath.SkipDir
 				}
-				//Skip directories not containing a manifest
+				// Skip directories not containing a manifest
 				_, err2 = filesystem.Fs.Stat(filepath.Join(path, "manifest.json"))
 				if err2 != nil {
 					return nil

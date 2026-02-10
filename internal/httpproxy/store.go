@@ -1,7 +1,6 @@
 package httpproxy
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/programmfabrik/apitest/internal/handlerutil"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 )
 
 // mode definition
@@ -65,7 +65,7 @@ func (st *store) write(w http.ResponseWriter, r *http.Request) {
 
 	st.Data = append(st.Data, storeEntry{offset, reqData})
 
-	err = json.NewEncoder(w).Encode(struct {
+	err = jsutil.Encode(w, struct {
 		Offset int `json:"offset"`
 	}{offset})
 	if err != nil {

@@ -1,0 +1,15 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../../_res/assets",
+        "testmode": false
+    },
+    "name": "simple compare functions",
+    "store": {
+        "int1": 5
+    },
+    "tests": [
+        "@numbers_bounce.json",
+        "@numbers_from_csv.json"
+    ]
+}

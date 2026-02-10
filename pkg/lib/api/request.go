@@ -2,7 +2,6 @@ package api
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/moul/http2curl"
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 )
@@ -63,7 +63,7 @@ type Request struct {
 
 func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	if request.buildPolicy == nil {
-		//Set Build policy
+		// Set Build policy
 		switch request.BodyType {
 		case "multipart":
 			request.buildPolicy = buildMultipart
@@ -75,7 +75,7 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 			request.buildPolicy = buildRegular
 		}
 	}
-	//Render Request Url
+	// Render Request Url
 
 	requestUrl := fmt.Sprintf("%s/%s", request.ServerURL, request.Endpoint)
 	if request.Endpoint == "" {
@@ -237,11 +237,11 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 		if len(storeKey) > 0 && request.DataStore != nil {
 			cookieInt, err := request.DataStore.Get(storeKey)
 			if err == nil && cookieInt != "" {
-				ckBytes, err := json.Marshal(cookieInt)
+				ckBytes, err := jsutil.Marshal(cookieInt)
 				if err != nil {
 					return nil, fmt.Errorf("could not marshal cookie %q from Datastore", storeKey)
 				}
-				err = json.Unmarshal(ckBytes, &ck)
+				err = jsutil.Unmarshal(ckBytes, &ck)
 				if err != nil {
 					return nil, fmt.Errorf("could not unmarshal cookie %q from Datastore (%q): %w", storeKey, string(ckBytes), err)
 				}
@@ -313,7 +313,7 @@ func (request Request) ToString(curl bool) (res string) {
 
 		rep := ""
 		for key, val := range request.Body.(map[string]any) {
-			pathSpec, ok := val.(util.JsonString)
+			pathSpec, ok := val.(jsutil.String)
 			if !ok {
 				panic(errors.New("pathSpec should be a string"))
 			}

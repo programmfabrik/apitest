@@ -22,7 +22,7 @@ var (
 )
 
 func SetupFS() {
-	//Setup testserver
+	// Setup testserver
 	server = go_test_utils.NewTestServer(go_test_utils.Routes{
 		"/api/v1/session": func(w *http.ResponseWriter, r *http.Request) {
 			(*w).Write([]byte("{\"token\": \"mock\"}"))
@@ -32,7 +32,7 @@ func SetupFS() {
 		},
 	})
 
-	//Setup test filesystem
+	// Setup test filesystem
 	filesystem.Fs = afero.NewMemMapFs()
 	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath1), 0755)
 	filesystem.Fs.MkdirAll(filepath.Dir(manifestPath2), 0755)
@@ -52,13 +52,13 @@ func SetupFS() {
 func TestTestToolConfig_ExtractTestDirectories(t *testing.T) {
 	SetupFS()
 
-	//Invalid rootDirectory -> Expect error
+	// Invalid rootDirectory -> Expect error
 	_, err := newTestToolConfig(server.URL+"/api/v1", []string{"invalid"}, false, false, false)
 	go_test_utils.ExpectError(t, err, "NewTestToolConfig did not fail on invalid root directory")
 
-	//Invalid rootDirectory -> Expect error
+	// Invalid rootDirectory -> Expect error
 	conf, err := newTestToolConfig(server.URL+"/api/v1", []string{"path"}, false, false, false)
-	go_test_utils.ExpectNoError(t, err, "NewTestToolConfig did fail on valid root directory")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	expectedResults := []string{
 		filepath.Dir(manifestPath1),

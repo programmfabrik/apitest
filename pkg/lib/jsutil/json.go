@@ -1,39 +1,77 @@
-package util
+package jsutil
 
 import (
 	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/programmfabrik/golib"
 	"github.com/tidwall/jsonc"
 )
 
-type JsonObject = map[string]any
-type JsonArray = []any
-type JsonString = string
-type JsonNumber = float64
-type JsonBool = bool
+type (
+	Object     = map[string]any
+	Array      = []any
+	String     = string
+	Number     = json.Number
+	Bool       = bool
+	RawMessage = json.RawMessage
+)
 
-var coloredError bool
+var (
+	coloredError      bool
+	cjsonCommentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
+)
 
 func init() {
 	coloredError = true
 }
 
+// NumberEqual is comparing the string representation of the json.Number.
+// It fails to compare different formats, 1e10 != 10000000000, although it is the same mathematical value.
+func NumberEqual(numberExp, numberGot Number) (eq bool) {
+	return numberExp == numberGot
+}
+
+// Marshal converts the given interface into json bytes
+func Marshal(v any) (data []byte, err error) {
+	return golib.JsonBytes(v)
+}
+
+// Encode marshals the given interface and writes the json bytes to the given writer
+func Encode(w io.Writer, v any) (err error) {
+	data, err := Marshal(v)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UnmarshalString is a wrapper for Unmarshal for string input
+func UnmarshalString(input string, output any) (err error) {
+	return Unmarshal([]byte(input), output)
+}
+
+// Unmarshal decodes the input bytes into the output if it is valid cjson
 func Unmarshal(input []byte, output any) (err error) {
 	// Remove # comments from template
-	var commentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
-	tmplBytes := []byte(commentRegex.ReplaceAllString(string(input), ``))
+	tmplBytes := cjsonCommentRegex.ReplaceAll(input, []byte{})
 
 	// Remove //, /* comments plus tailing commas
 	tmplBytes = jsonc.ToJSON(tmplBytes)
 
 	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
 	dec.DisallowUnknownFields()
+	dec.UseNumber()
 
 	// unmarshal into object
 	err = dec.Decode(output)
@@ -147,7 +185,7 @@ func lineAndCharacter(input string, offset int) (line int, character int, err er
 	if offset > len(input) || offset < 0 {
 		return 0, 0, fmt.Errorf("Couldn't find offset %d within the input.", offset)
 	}
-	//humans count line from 1
+	// humans count line from 1
 	line = 1
 	for _, b := range input[:offset] {
 		if b == rune('\n') {

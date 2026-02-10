@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -10,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -22,7 +22,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 	var replaceFilename *string
 	val, ok := request.Body.(map[string]any)["file:filename"]
 	if ok {
-		f, ok := val.(util.JsonString)
+		f, ok := val.(jsutil.String)
 		if !ok {
 			return nil, nil, fmt.Errorf("file:filename should be a string")
 		}
@@ -36,7 +36,7 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 			return nil
 		}
 
-		rawPathSpec, ok := val.(util.JsonString)
+		rawPathSpec, ok := val.(jsutil.String)
 		if !ok {
 			return fmt.Errorf("pathSpec should be a string")
 		}
@@ -60,7 +60,8 @@ func buildMultipart(request Request) (additionalHeaders map[string]string, body 
 		if err != nil {
 			return err
 		}
-		if _, err := io.Copy(part, file); err != nil {
+		_, err = io.Copy(part, file)
+		if err != nil {
 			return err
 		}
 
@@ -106,7 +107,7 @@ func buildRegular(request Request) (additionalHeaders map[string]string, body io
 	if request.Body == nil {
 		body = bytes.NewBuffer([]byte{})
 	} else {
-		bodyBytes, err := json.Marshal(request.Body)
+		bodyBytes, err := jsutil.Marshal(request.Body)
 		if err != nil {
 			return nil, nil, fmt.Errorf("marshaling request body: %w", err)
 		}

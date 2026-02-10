@@ -1,13 +1,13 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/programmfabrik/golib"
 	"github.com/tidwall/gjson"
@@ -21,7 +21,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 		},
 	}
 	genericJson, err := response.ToGenericJSON()
-	go_test_utils.ExpectNoError(t, err, "error calling response.ToGenericJson")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	jsonObjResp, ok := genericJson.(map[string]any)
 	if !ok {
@@ -31,7 +31,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 	if !ok {
 		t.Fatalf("responseJsonObj should have status code field")
 	}
-	if statusCode != float64(200) {
+	if statusCode != jsutil.Number("200") {
 		t.Errorf("responseJson had wrong statuscode, expected 200, got: %d", statusCode)
 	}
 	jsonHeaders, ok := jsonObjResp["header"]
@@ -52,14 +52,14 @@ func TestResponse_NewResponseFromSpec(t *testing.T) {
 		StatusCode: golib.IntRef(200),
 		Headers: map[string]any{
 			"foo": []string{"bar"},
-			"foo2:control": util.JsonObject{
+			"foo2:control": jsutil.Object{
 				"must_not_exist": true,
 			},
 		},
 		Body: nil,
 	}
 	response, err := NewResponseFromSpec(responseSpec)
-	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertIntEquals(t, *response.StatusCode, *responseSpec.StatusCode)
 	go_test_utils.AssertStringEquals(t, response.Headers["foo"].([]string)[0], "bar")
 }
@@ -69,12 +69,12 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 		Body: nil,
 	}
 	_, err := NewResponseFromSpec(responseSpec)
-	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 }
 
 func TestResponse_NewResponse(t *testing.T) {
 	response, err := NewResponse(golib.IntRef(200), nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
-	go_test_utils.ExpectNoError(t, err, "unexpected error")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertIntEquals(t, *response.StatusCode, 200)
 }
 
@@ -87,7 +87,7 @@ func TestResponse_String(t *testing.T) {
 	}`
 
 	response, err := NewResponse(golib.IntRef(200), nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})
-	go_test_utils.ExpectNoError(t, err, "error constructing response")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	assertString := "200\n\n\n" + requestString
 	assertString = strings.ReplaceAll(assertString, "\n", "")
@@ -110,24 +110,16 @@ func TestResponse_Cookies(t *testing.T) {
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	defer res.Body.Close()
 
 	header, err := httpHeaderToMap(res.Header)
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	response, err := NewResponse(golib.IntRef(res.StatusCode), header, res.Cookies(), res.Body, nil, ResponseFormat{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	jsonStr, err := response.ServerResponseToJsonString(false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	if !gjson.Valid(jsonStr) {
 		t.Fatalf("Invalid serialized JSON: %s", jsonStr)
@@ -142,14 +134,10 @@ func TestResponse_Cookies(t *testing.T) {
 	}
 
 	var ck http.Cookie
-	vb, err := json.Marshal(v.Value())
-	if err != nil {
-		t.Fatalf("Error marshalling Cookie raw object: %v\n%s", v, err.Error())
-	}
-	err = json.Unmarshal(vb, &ck)
-	if err != nil {
-		t.Fatalf("Error unmarshalling into Cookie object: %v\n%s", v, err.Error())
-	}
+	vb, err := jsutil.Marshal(v.Value())
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("marshalling Cookie raw object: %v", v))
+	err = jsutil.Unmarshal(vb, &ck)
+	go_test_utils.ExpectNoError(t, err, fmt.Sprintf("unmarshalling into Cookie object: %v", v))
 
 	go_test_utils.AssertStringEquals(t, ck.Value, "you_session_data")
 }

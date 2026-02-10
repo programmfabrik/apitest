@@ -4,9 +4,9 @@
         "dir": "../../_res/assets",
         "testmode": false
     },
-    "name": "check 2^53-1 int numbers",
+    "name": "check numbers in and out of int range",
     "tests": [
-        // cmp  equal
-        "@number.json"
+         "@number.json"
+        ,"@high_numbers.json"
     ]
 }

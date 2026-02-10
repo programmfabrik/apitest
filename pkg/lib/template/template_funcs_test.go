@@ -3,8 +3,10 @@ package template
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -294,5 +296,46 @@ func TestPivot(t *testing.T) {
 	}
 	if !assert.Equal(t, true, reflect.DeepEqual(dataP, exp)) {
 		return
+	}
+}
+
+func TestExtendForJsonNumber(t *testing.T) {
+	store := datastore.NewStore(false)
+	loader := NewLoader(store)
+
+	type testCase struct {
+		tmpl, exp string
+	}
+	for _, c := range []testCase{
+		{
+			tmpl: `{{ if eq "1" "1" }} 1==1 {{ else }} 1!=1 {{ end }}`,
+			exp:  `1==1`,
+		},
+		{
+			tmpl: `{{ if ne 2 3 }}2!=3{{ else }}2==3{{ end }}`,
+			exp:  `2!=3`,
+		},
+		{
+			tmpl: `{{ add 4 5 }}`,
+			exp:  `9`,
+		},
+		{
+			tmpl: `{{ sub 6 1 }}`,
+			exp:  `5`,
+		},
+		{
+			tmpl: `{{ if lt 7 8 }} 7<8 {{ else }} 7>=8 {{ end }}`,
+			exp:  `7<8`,
+		},
+		{
+			tmpl: `{{ if gt 10 9 }} 10>9 {{ else }} 9<=10 {{ end }}`,
+			exp:  `10>9`,
+		},
+	} {
+		res, err := loader.Render([]byte(c.tmpl), "", nil)
+		go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+		if !assert.Equal(t, strings.TrimSpace(c.exp), strings.TrimSpace(string(res))) {
+			return
+		}
 	}
 }

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
+	go_test_utils "github.com/programmfabrik/go-test-utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +14,7 @@ var trivialComparerTestData = []struct {
 	have  string
 	match bool
 	name  string
-	err   error
+	eErr  error
 }{
 	{
 		`{
@@ -205,7 +206,7 @@ var trivialComparerTestData = []struct {
 		`nil`,
 		false,
 		"string conversion fails",
-		nil,
+		fmt.Errorf("[$] the actual response is no JsonString"),
 	},
 	{
 		`"a"`,
@@ -374,19 +375,24 @@ func TestTrivialJsonComparer(t *testing.T) {
 	var json1, json2 any
 	for _, td := range trivialComparerTestData {
 		t.Run(td.name, func(t *testing.T) {
-			util.Unmarshal([]byte(td.want), &json1)
-			util.Unmarshal([]byte(td.have), &json2)
-			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
-			if err != nil {
-				t.Fatal("Error occurred: ", err)
+			err := jsutil.UnmarshalString(td.want, &json1)
+			if td.eErr == nil {
+				go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 			}
+			err = jsutil.UnmarshalString(td.have, &json2)
+			if td.eErr == nil {
+				go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+			}
+
+			tjcMatch, err := JsonEqual(json1, json2, ComparisonContext{})
+			go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 			if td.match != tjcMatch.Equal {
 				t.Errorf("Got %t, expected %t", tjcMatch.Equal, td.match)
 			}
 
-			if td.err != nil {
-				if len(tjcMatch.Failures) != 1 || td.err.Error() != tjcMatch.Failures[0].String() {
-					t.Errorf("Error missmatch. Got '%s', epected '%s'", tjcMatch.Failures[0].String(), td.err)
+			if td.eErr != nil {
+				if len(tjcMatch.Failures) != 1 || td.eErr.Error() != tjcMatch.Failures[0].String() {
+					t.Errorf("Error missmatch. Got '%s', epected '%s'", tjcMatch.Failures[0].String(), td.eErr)
 				}
 			}
 		})
@@ -394,26 +400,45 @@ func TestTrivialJsonComparer(t *testing.T) {
 }
 
 func TestJsonNumberEq(t *testing.T) {
-	if !assert.Equal(t, true, jsonNumberEq("200", "200")) {
+	if !assert.Equal(t, true, jsutil.NumberEqual("200", "200")) {
 		return
 	}
-	if !assert.Equal(t, false, jsonNumberEq("-9223372036854775808", "-9223372036854775809")) {
+	if !assert.Equal(t, true, jsutil.NumberEqual("-9223372036854775808", "-9223372036854775808")) {
 		return
 	}
-	if !assert.Equal(t, false, jsonNumberEq("-9223372036854775809", "-9223372036854775808")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("1", "1.0")) {
 		return
 	}
-	if !assert.Equal(t, true, jsonNumberEq("1e10", "10000000000")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("12.3", "12.30000")) {
+		return
+	}
+	if !assert.Equal(t, false, jsutil.NumberEqual("-9223372036854775808", "-9223372036854775809")) {
+		return
+	}
+	if !assert.Equal(t, false, jsutil.NumberEqual("-9223372036854775809", "-9223372036854775808")) {
+		return
+	}
+	if !assert.Equal(t, false, jsutil.NumberEqual("1e10", "10000000000")) {
+		return
+	}
+	if !assert.Equal(t, true, jsutil.NumberEqual("1e10", "1e10")) {
 		return
 	}
 	// Although this is the same value, we cannot say its equal
-	if !assert.Equal(t, true, jsonNumberEq("-9.223372036854775808e+18", "-9223372036854775808")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("-9.223372036854775808e+18", "-9223372036854775808")) {
 		return
 	}
-	if !assert.Equal(t, true, jsonNumberEq("-9.223372036854775808e+18", "-9.223372036854775808e+18")) {
+	if !assert.Equal(t, true, jsutil.NumberEqual("-9.223372036854775808e+18", "-9.223372036854775808e+18")) {
 		return
 	}
-	if !assert.Equal(t, false, jsonNumberEq("-9.223372036854775809e+18", "-9223372036854775809")) {
+	if !assert.Equal(t, false, jsutil.NumberEqual("-9.223372036854775809e+18", "-9223372036854775809")) {
 		return
 	}
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

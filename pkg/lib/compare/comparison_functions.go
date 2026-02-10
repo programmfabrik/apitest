@@ -1,7 +1,6 @@
 package compare
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -9,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 )
 
@@ -26,19 +25,21 @@ type ComparisonContext struct {
 	mustNotExist   bool
 	isObject       bool
 	isBool         bool
-	numberGT       *util.JsonNumber
-	numberGE       *util.JsonNumber
-	numberLT       *util.JsonNumber
-	numberLE       *util.JsonNumber
-	regexMatch     *util.JsonString
-	regexMatchNot  *util.JsonString
-	startsWith     *util.JsonString
-	endsWith       *util.JsonString
+	numberGT       *jsutil.Number
+	numberGE       *jsutil.Number
+	numberLT       *jsutil.Number
+	numberLE       *jsutil.Number
+	regexMatch     *jsutil.String
+	regexMatchNot  *jsutil.String
+	startsWith     *jsutil.String
+	endsWith       *jsutil.String
 	notEqualNull   bool
 	notEqual       *any
 }
 
-func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
+var controlKeyRegex = regexp.MustCompile(`(?P<Key>.*?):control`)
+
+func fillComparisonContext(in jsutil.Object) (out *ComparisonContext, err error) {
 	out = &ComparisonContext{}
 
 	for k, v := range in {
@@ -169,7 +170,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			out.isBool = tV
 		case "number_gt":
 			// Number must be bigger
-			tV, ok := v.(util.JsonNumber)
+			tV, ok := v.(jsutil.Number)
 			if !ok {
 				err = errors.New("number_gt is no number")
 				return
@@ -179,7 +180,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			out.isNumber = true
 		case "number_ge":
 			// Number must be equal or bigger
-			tV, ok := v.(util.JsonNumber)
+			tV, ok := v.(jsutil.Number)
 			if !ok {
 				err = errors.New("number_gt is no number")
 				return
@@ -189,7 +190,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			out.isNumber = true
 		case "number_lt":
 			// Number must be smaller
-			tV, ok := v.(util.JsonNumber)
+			tV, ok := v.(jsutil.Number)
 			if !ok {
 				err = errors.New("number_lt is no number")
 				return
@@ -199,7 +200,7 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 			out.isNumber = true
 		case "number_le":
 			// Number must be equal or smaller
-			tV, ok := v.(util.JsonNumber)
+			tV, ok := v.(jsutil.Number)
 			if !ok {
 				err = errors.New("number_le is no number")
 				return
@@ -232,9 +233,14 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 // objectComparsion checks if two objects are equal
 // hereby we also check our control structures and the noExtra parameter. If noExtra is true it is not allowed to have
 // elements than set
-func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareResult, err error) {
+func objectComparison(left, right jsutil.Object, noExtra bool) (res CompareResult, err error) {
+	var (
+		rv, lv   any
+		rOK, lOK bool
+		k        string
+	)
+
 	res.Equal = true
-	keyRegex := regexp.MustCompile(`(?P<Key>.*?):control`)
 
 	takenInRight := make(map[string]bool)
 	takenInLeft := make(map[string]bool)
@@ -245,15 +251,12 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 		if takenInLeft[ck] {
 			continue
 		}
-		var rv, lv any
-		var rOK, lOK bool
 		control := &ComparisonContext{}
-		var k string
 
 		// Check which type of key we have
 		if strings.HasSuffix(ck, ":control") {
 			// We have a control key
-			k = keyRegex.FindStringSubmatch(ck)[1]
+			k = controlKeyRegex.FindStringSubmatch(ck)[1]
 			if !takenInRight[k] {
 				rv, rOK = right[k]
 			}
@@ -262,12 +265,14 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			takenInLeft[k] = true
 			takenInRight[k] = true
 
-			cvObj, ok := cv.(util.JsonObject)
+			cvObj, ok := cv.(jsutil.Object)
 			if ok {
 				control, err = fillComparisonContext(cvObj)
 				if err != nil {
 					return res, err
 				}
+			} else {
+				return res, fmt.Errorf("%s:control must be an object", k)
 			}
 			delete(leftCopy, ck)
 		} else {
@@ -282,7 +287,7 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 			takenInLeft[k] = true
 			takenInRight[k] = true
 
-			leftObj, ok := leftCopy[k+":control"].(util.JsonObject)
+			leftObj, ok := leftCopy[k+":control"].(jsutil.Object)
 			if ok {
 				iControl, err := fillComparisonContext(leftObj)
 				if err != nil {
@@ -346,13 +351,13 @@ func objectComparison(left, right util.JsonObject, noExtra bool) (res CompareRes
 
 // ArrayComparison offerst the compare feature to other packages, with the standard behavior
 // noExtra=false, orderMatter=false
-func ArrayComparison(left, right util.JsonArray) (res CompareResult, err error) {
+func ArrayComparison(left, right jsutil.Array) (res CompareResult, err error) {
 	return arrayComparison(left, right, ComparisonContext{}, ComparisonContext{})
 }
 
 // arrayComparison makes a simple array comparison by either running trough both arrays with the same key (orderMaters)
 // or taking a value from the left array and search it in the right one
-func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, nextControl ComparisonContext) (res CompareResult, err error) {
+func arrayComparison(left, right jsutil.Array, currControl ComparisonContext, nextControl ComparisonContext) (res CompareResult, err error) {
 	res.Equal = true
 
 	if len(left) > len(right) {
@@ -372,7 +377,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 	}
 
 	takenInRight := make(map[int]bool)
-	var lastPositionFromLeftInRight int = -1
+	lastPositionFromLeftInRight := -1
 
 	for lk, lv := range left {
 		if currControl.orderMatters {
@@ -393,7 +398,7 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 			if !takenInRight[lk] {
 				key := fmt.Sprintf("[%d]", lk)
 				elStr := fmt.Sprintf("%v", lv)
-				elBytes, err := json.Marshal(lv)
+				elBytes, err := jsutil.Marshal(lv)
 				if err == nil {
 					elStr = string(elBytes)
 				}
@@ -455,11 +460,11 @@ func arrayComparison(left, right util.JsonArray, currControl ComparisonContext, 
 	return res, nil
 }
 
-func ObjectEqualWithControl(left, right util.JsonObject, control ComparisonContext) (res CompareResult, err error) {
+func ObjectEqualWithControl(left, right jsutil.Object, control ComparisonContext) (res CompareResult, err error) {
 	return objectComparison(left, right, control.noExtra)
 }
 
-func ArrayEqualWithControl(left, right util.JsonArray, control ComparisonContext) (res CompareResult, err error) {
+func ArrayEqualWithControl(left, right jsutil.Array, control ComparisonContext) (res CompareResult, err error) {
 	nextControl := ComparisonContext{
 		noExtra: control.elementNoExtra,
 		depth:   -9999,
@@ -537,7 +542,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
 		}
 
-		rightArray := right.(util.JsonArray)
+		rightArray := right.(jsutil.Array)
 		rightLen := int64(len(rightArray))
 		if rightLen != *control.elementCount {
 			return fmt.Errorf("length of the actual response array %d != %d expected length", rightLen, *control.elementCount)
@@ -546,40 +551,44 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check for number range
 	if control.numberGE != nil {
-		rightNumber := right.(util.JsonNumber)
+		rightNumber := right.(jsutil.Number)
 		if !(rightNumber >= *control.numberGE) {
-			return fmt.Errorf("actual number %f is not equal or greater than %f", rightNumber, *control.numberGE)
+			return fmt.Errorf("actual number %s is not equal or greater than %s", rightNumber, *control.numberGE)
 		}
 	}
 	if control.numberGT != nil {
-		rightNumber := right.(util.JsonNumber)
+		rightNumber := right.(jsutil.Number)
 		if !(rightNumber > *control.numberGT) {
-			return fmt.Errorf("actual number %f is not greater than %f", rightNumber, *control.numberGT)
+			return fmt.Errorf("actual number %s is not greater than %s", rightNumber, *control.numberGT)
 		}
 	}
 	if control.numberLE != nil {
-		rightNumber := right.(util.JsonNumber)
+		rightNumber := right.(jsutil.Number)
 		if !(rightNumber <= *control.numberLE) {
-			return fmt.Errorf("actual number %f is not equal or less than %f", rightNumber, *control.numberLE)
+			return fmt.Errorf("actual number %s is not equal or less than %s", rightNumber, *control.numberLE)
 		}
 	}
 	if control.numberLT != nil {
-		rightNumber := right.(util.JsonNumber)
+		rightNumber := right.(jsutil.Number)
 		if !(rightNumber < *control.numberLT) {
-			return fmt.Errorf("actual number %f is not less than %f", rightNumber, *control.numberLT)
+			return fmt.Errorf("actual number %s is not less than %s", rightNumber, *control.numberLT)
 		}
 	}
 
+	var (
+		matchS    string
+		doesMatch bool
+	)
+
 	// Check if string matches regex
 	if control.regexMatch != nil {
-		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			matchS = fmt.Sprintf("%v", right)
 		} else {
-			matchS = right.(util.JsonString)
+			matchS = right.(jsutil.String)
 		}
-		doesMatch, err := regexp.Match(*control.regexMatch, []byte(matchS))
+		doesMatch, err = regexp.Match(*control.regexMatch, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatch, err)
 		}
@@ -590,15 +599,13 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 	// Check if string does not match regex
 	if control.regexMatchNot != nil {
-
-		var matchS string
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			matchS = fmt.Sprintf("%v", right)
 		} else {
-			matchS = right.(util.JsonString)
+			matchS = right.(jsutil.String)
 		}
-		doesMatch, err := regexp.Match(*control.regexMatchNot, []byte(matchS))
+		doesMatch, err = regexp.Match(*control.regexMatchNot, []byte(matchS))
 		if err != nil {
 			return fmt.Errorf("could not match regex %q: %w", *control.regexMatchNot, err)
 		}
@@ -614,7 +621,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 			return fmt.Errorf("should be 'String' for starts_with but is '%s'", jsonType)
 		}
 
-		if !strings.HasPrefix(right.(util.JsonString), *control.startsWith) {
+		if !strings.HasPrefix(right.(jsutil.String), *control.startsWith) {
 			return fmt.Errorf("does not start with '%s'", *control.startsWith)
 		}
 	}
@@ -624,7 +631,7 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 			return fmt.Errorf("should be 'String' for ends_with but is '%s'", jsonType)
 		}
 
-		if !strings.HasSuffix(right.(util.JsonString), *control.endsWith) {
+		if !strings.HasSuffix(right.(jsutil.String), *control.endsWith) {
 			return fmt.Errorf("does not end with '%s'", *control.endsWith)
 		}
 	}
@@ -642,11 +649,11 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		if jsonType == controlJsonType {
 			switch jsonType {
 			case "Array":
-				leftMar, err := json.Marshal((*control.notEqual).(util.JsonArray))
+				leftMar, err := jsutil.Marshal((*control.notEqual).(jsutil.Array))
 				if err != nil {
 					return fmt.Errorf("could not marshal left part: %w", err)
 				}
-				rightMar, err := json.Marshal(right.(util.JsonArray))
+				rightMar, err := jsutil.Marshal(right.(jsutil.Array))
 				if err != nil {
 					return fmt.Errorf("could not marshal right part: %w", err)
 				}
@@ -654,20 +661,20 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 					return fmt.Errorf("is equal to %s %s, should not be equal", jsonType, string(leftMar))
 				}
 			case "String":
-				if (*control.notEqual).(util.JsonString) == right.(util.JsonString) {
-					return fmt.Errorf("is equal to %s '%s', should not be equal", jsonType, (*control.notEqual).(util.JsonString))
+				if (*control.notEqual).(jsutil.String) == right.(jsutil.String) {
+					return fmt.Errorf("is equal to %s '%s', should not be equal", jsonType, (*control.notEqual).(jsutil.String))
 				}
 			case "Number":
-				if (*control.notEqual).(util.JsonNumber) == right.(util.JsonNumber) {
-					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, (*control.notEqual).(util.JsonNumber))
+				if *control.notEqual == right {
+					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, *control.notEqual)
 				}
 			case "JsonNumber":
-				if jsonNumberEq((*control.notEqual).(json.Number), right.(json.Number)) {
+				if jsutil.NumberEqual((*control.notEqual).(jsutil.Number), right.(jsutil.Number)) {
 					return fmt.Errorf("expected %v, got %v", right, *control.notEqual)
 				}
 			case "Bool":
-				if (*control.notEqual).(util.JsonBool) == right.(util.JsonBool) {
-					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, (*control.notEqual).(util.JsonBool))
+				if (*control.notEqual).(jsutil.Bool) == right.(jsutil.Bool) {
+					return fmt.Errorf("is equal to %s %v, should not be equal", jsonType, (*control.notEqual).(jsutil.Bool))
 				}
 			}
 		}
@@ -678,17 +685,17 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 
 func getJsonType(value any) string {
 	switch value.(type) {
-	case util.JsonObject:
+	case jsutil.Object:
 		return "Object"
-	case util.JsonArray:
+	case jsutil.Array:
 		return "Array"
-	case util.JsonString:
+	case jsutil.String:
 		return "String"
-	case util.JsonNumber, int:
+	case int, float64:
 		return "Number"
-	case json.Number:
+	case jsutil.Number:
 		return "JsonNumber"
-	case util.JsonBool:
+	case jsutil.Bool:
 		return "Bool"
 	default:
 		return "No JSON Type: " + fmt.Sprintf("%v[%T]", value, value)
@@ -703,7 +710,7 @@ func getAsInt64(value any) (n int64, err error) {
 		return int64(t), nil
 	case float32, float64:
 		return strconv.ParseInt(fmt.Sprintf("%.0f", t), 10, 64)
-	case json.Number:
+	case jsutil.Number:
 		return t.Int64()
 	default:
 		return 0, fmt.Errorf("'%v' has no valid json number type", value)

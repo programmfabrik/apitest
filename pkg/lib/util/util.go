@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,10 +11,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/clbanning/mxj"
 	libcsv "github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/net/html"
 )
+
+var xmlDeclarationRegex = regexp.MustCompile(`<\?xml.*?\?>`)
 
 func removeFromJsonArray(input []any, removeIndex int) (output []any) {
 	output = make([]any, len(input))
@@ -39,7 +41,7 @@ func GetStringFromInterface(queryParam any) (v string, err error) {
 		return fmt.Sprintf("%d", t), nil
 	default:
 		var jsonVal []byte
-		jsonVal, err = json.Marshal(t)
+		jsonVal, err = jsutil.Marshal(t)
 		return string(jsonVal), err
 	}
 }
@@ -50,12 +52,10 @@ func GetStringFromInterface(queryParam any) (v string, err error) {
 // - "xml2": use mxj.NewMapXmlSeq (simpler format)
 func Xml2Json(rawXml []byte, format string) (jsonStr []byte, err error) {
 	var (
-		mv                  mxj.Map
-		xmlDeclarationRegex *regexp.Regexp
-		replacedXML         []byte
+		mv          mxj.Map
+		replacedXML []byte
 	)
 
-	xmlDeclarationRegex = regexp.MustCompile(`<\?xml.*?\?>`)
 	replacedXML = xmlDeclarationRegex.ReplaceAll(rawXml, []byte{})
 
 	switch format {
@@ -147,7 +147,7 @@ func Xlsx2Json(rawXlsx []byte, sheetIdx int) (jsonStr []byte, err error) {
 		return []byte{}, fmt.Errorf("could not parse csv: %w", err)
 	}
 
-	jsonStr, err = json.Marshal(csvData)
+	jsonStr, err = jsutil.Marshal(csvData)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not convert to json: %w", err)
 	}

@@ -1,0 +1,34 @@
+[
+    {{ range $idx, $row := file_csv "numbers.csv"  ','  }}
+        {
+            "name": "compare \"{{ $row.value1 }}\" and \"{{ $row.value2 }}\" ({{ $row.hint }}), expected to be{{ if not $row.equal }} not{{ end }} equal",
+            "request": {
+                "server_url": "http://localhost:9999",
+                "endpoint": "bounce-json",
+                "method": "POST",
+                "body": {
+                    "value": {{ $row.value1 }}
+                }
+            },
+            {{ if $row.equal }}
+                "response": {
+                    "body": {
+                        "body": {
+                            "value": {{ $row.value2 }}
+                        }
+                    }
+                }
+            {{ else }}
+                "break_response": [
+                    {
+                        "body": {
+                            "body": {
+                                "value": {{ $row.value2 }}
+                            }
+                        }
+                    }
+                ]
+            {{ end }}
+        },
+    {{ end }}
+]

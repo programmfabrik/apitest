@@ -1,5 +1,5 @@
 {
-    "name": "bounce-json",
+    "name": "bounce-json: numbers in int64 range",
     "request": {
         "server_url": "http://localhost:9999",
         "endpoint": "bounce-json",

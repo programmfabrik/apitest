@@ -95,7 +95,8 @@ func ParseJSONResult(baseResult *ReportElement) []byte {
 func parseJSONStatsResult(baseResult *ReportElement) []byte {
 
 	currUsername := "unknown"
-	if currUser, _ := user.Current(); currUser != nil {
+	currUser, _ := user.Current()
+	if currUser != nil {
 		currUsername = currUser.Username
 	}
 	currPath, _ := os.Getwd()

@@ -42,10 +42,10 @@ func openLocalFile(path, rootDir string) (f io.ReadCloser, err error) {
 
 func LocalPath(path, rootDir string) (absPath string) {
 	if strings.HasPrefix(path, "./") {
-		//Path relative to binary
+		// Path relative to binary
 		absPath = path
 	} else if strings.HasPrefix(path, "/") {
-		//Absolute Path
+		// Absolute Path
 		absPath = filepath.Join("/", path)
 	} else {
 		absPath = filepath.Join(rootDir, path)

@@ -1,9 +1,9 @@
 package template
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 )
 
@@ -25,27 +25,29 @@ func LoadManifestDataAsObject(data any, manifestDir string, loader Loader) (path
 			return nil, res, fmt.Errorf("rendering request: %w", err)
 		}
 
-		var jsonObject util.JsonObject
-		var jsonArray util.JsonArray
+		var (
+			jsonObject jsutil.Object
+			jsonArray  jsutil.Array
+		)
 
-		if err = util.Unmarshal(requestBytes, &jsonObject); err != nil {
-			if err = util.Unmarshal(requestBytes, &jsonArray); err == nil {
+		if err = jsutil.Unmarshal(requestBytes, &jsonObject); err != nil {
+			if err = jsutil.Unmarshal(requestBytes, &jsonArray); err == nil {
 
 				return pathSpec, jsonArray, nil
 			}
 			return nil, res, fmt.Errorf("unmarshalling: %w", err)
 		}
 		return pathSpec, jsonObject, nil
-	case util.JsonObject:
+	case jsutil.Object:
 		return nil, typedData, nil
-	case util.JsonArray:
+	case jsutil.Array:
 		return nil, typedData, nil
 	default:
 		return nil, res, fmt.Errorf("specification needs to be string[@...] or jsonObject but is: %v", data)
 	}
 }
 
-func LoadManifestDataAsRawJson(data any, manifestDir string) (pathSpec *util.PathSpec, res json.RawMessage, err error) {
+func LoadManifestDataAsRawJson(data any, manifestDir string) (pathSpec *util.PathSpec, res jsutil.RawMessage, err error) {
 	switch typedData := data.(type) {
 	case []byte:
 		err = res.UnmarshalJSON(typedData)
@@ -60,12 +62,12 @@ func LoadManifestDataAsRawJson(data any, manifestDir string) (pathSpec *util.Pat
 			return nil, res, fmt.Errorf("loading fileFromPathSpec: %w", err)
 		}
 		return pathSpec, res, nil
-	case util.JsonObject, util.JsonArray:
-		jsonMar, err := json.Marshal(typedData)
+	case jsutil.Object, jsutil.Array:
+		jsonMar, err := jsutil.Marshal(typedData)
 		if err != nil {
 			return nil, res, fmt.Errorf("marshaling: %w", err)
 		}
-		if err = util.Unmarshal(jsonMar, &res); err != nil {
+		if err = jsutil.Unmarshal(jsonMar, &res); err != nil {
 			return nil, res, fmt.Errorf("unmarshalling: %w", err)
 		}
 		return nil, res, nil

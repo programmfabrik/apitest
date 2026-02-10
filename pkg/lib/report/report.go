@@ -145,12 +145,10 @@ func (r *ReportElement) getTestResult() *ReportElement {
 func (r ReportElement) getLog() []string {
 	errors := make([]string, 0)
 
-	//root Errors
-	for _, singleMessage := range r.LogStorage {
-		errors = append(errors, singleMessage)
-	}
+	// root Errors
+	errors = append(errors, r.LogStorage...)
 
-	//Child errors
+	// Child errors
 	for _, singleTest := range r.SubTests {
 		errors = append(errors, singleTest.getLog()...)
 	}

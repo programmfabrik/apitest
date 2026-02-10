@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/programmfabrik/apitest/pkg/lib/csv"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 	"github.com/programmfabrik/golib"
 )
@@ -25,7 +25,7 @@ type Response struct {
 	HeaderFlat  map[string]any // ":control" is an object, so we must use "any" here
 	Cookies     []*http.Cookie
 	Body        []byte
-	BodyControl util.JsonObject
+	BodyControl jsutil.Object
 	Format      ResponseFormat
 
 	ReqDur      time.Duration
@@ -58,7 +58,7 @@ type ResponseSerialization struct {
 	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
 	Cookies     map[string]cookie `yaml:"cookie" json:"cookie,omitempty"`
 	Body        any               `yaml:"body" json:"body,omitempty"`
-	BodyControl util.JsonObject   `yaml:"body:control" json:"body:control,omitempty"`
+	BodyControl jsutil.Object     `yaml:"body:control" json:"body:control,omitempty"`
 	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
 }
 
@@ -75,6 +75,17 @@ type responseFormatXLSX struct {
 	SheetIdx int `json:"sheet_idx,omitempty"`
 }
 
+const (
+	responseTypeXml    string = "xml"
+	responseTypeXml2   string = "xml2"
+	responseTypeHtml   string = "html"
+	responseTypeXhtml  string = "xhtml"
+	responseTypeXlsx   string = "xlsx"
+	responseTypeCsv    string = "csv"
+	responseTypeBinary string = "binary"
+	responseTypeText   string = "text"
+)
+
 type ResponseFormat struct {
 	IgnoreBody bool               `json:"-"`    // if true, do not try to parse the body (since it is not expected in the response)
 	Type       string             `json:"type"` // default "json", allowed: "csv", "json", "xml", "xml2", "html", "xhtml", "binary", "text", "xlsx"
@@ -87,7 +98,7 @@ func NewResponse(statusCode *int,
 	headersAny map[string]any,
 	cookies []*http.Cookie,
 	body io.Reader,
-	bodyControl util.JsonObject,
+	bodyControl jsutil.Object,
 	bodyFormat ResponseFormat,
 ) (res Response, err error) {
 
@@ -111,7 +122,7 @@ func NewResponse(statusCode *int,
 					return res, fmt.Errorf("unknown type %T in header %q", v2, key)
 				}
 			}
-			headers[key] = v
+			headers[key] = headerS
 			continue
 		case []string:
 			headers[key] = v
@@ -148,7 +159,7 @@ func NewResponse(statusCode *int,
 func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	var body io.Reader
 	if spec.Body != nil {
-		bodyBytes, err := json.Marshal(spec.Body)
+		bodyBytes, err := jsutil.Marshal(spec.Body)
 		if err != nil {
 			return res, err
 		}
@@ -178,8 +189,8 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 }
 
 // splitLines is a helper function needed for format "text"
-func splitLines(s string) (lines util.JsonArray) {
-	lines = util.JsonArray{}
+func splitLines(s string) (lines jsutil.Array) {
+	lines = jsutil.Array{}
 	sc := bufio.NewScanner(strings.NewReader(s))
 	for sc.Scan() {
 		lines = append(lines, sc.Text())
@@ -214,27 +225,27 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 
 	switch responseFormat.Type {
-	case "xml", "xml2":
+	case responseTypeXml, responseTypeXml2:
 		bodyData, err = util.Xml2Json(resp.Body, responseFormat.Type)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xml to json: %w", err)
 		}
-	case "html":
+	case responseTypeHtml:
 		bodyData, err = util.Html2Json(resp.Body)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal html to json: %w", err)
 		}
-	case "xhtml":
+	case responseTypeXhtml:
 		bodyData, err = util.Xhtml2Json(resp.Body)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xhtml to json: %w", err)
 		}
-	case "xlsx":
+	case responseTypeXlsx:
 		bodyData, err = util.Xlsx2Json(resp.Body, responseFormat.XLSX.SheetIdx)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal xlsx to json: %w", err)
 		}
-	case "csv":
+	case responseTypeCsv:
 		runeComma := ','
 		if responseFormat.CSV.Comma != "" {
 			runeComma = []rune(responseFormat.CSV.Comma)[0]
@@ -245,28 +256,28 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, fmt.Errorf("could not parse csv: %w", err)
 		}
 
-		bodyData, err = json.Marshal(csvData)
+		bodyData, err = jsutil.Marshal(csvData)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal csv to json: %w", err)
 		}
-	case "binary":
+	case responseTypeBinary:
 		// We have another file format (binary). We thereby take the md5 Hash of the body and compare that one
 		hasher := md5.New()
 		hasher.Write([]byte(resp.Body))
-		jsonObject := util.JsonObject{
-			"md5sum": util.JsonString(hex.EncodeToString(hasher.Sum(nil))),
+		jsonObject := jsutil.Object{
+			"md5sum": jsutil.String(hex.EncodeToString(hasher.Sum(nil))),
 		}
-		bodyData, err = json.Marshal(jsonObject)
+		bodyData, err = jsutil.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal body with md5sum to json: %w", err)
 		}
-	case "text":
+	case responseTypeText:
 		// render the content as text
 		bodyText := string(resp.Body)
 		bodyTextTrimmed := strings.TrimSpace(bodyText)
-		jsonObject := util.JsonObject{
-			"text":         util.JsonString(bodyText),
-			"text_trimmed": util.JsonString(bodyTextTrimmed),
+		jsonObject := jsutil.Object{
+			"text":         jsutil.String(bodyText),
+			"text_trimmed": jsutil.String(bodyTextTrimmed),
 			"lines":        splitLines(bodyText),
 			"float64":      nil,
 			"int64":        nil,
@@ -275,11 +286,11 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		// ignore errors silently in case the text is not numerical
 		n, err2 := strconv.ParseFloat(bodyTextTrimmed, 64)
 		if err2 == nil {
-			jsonObject["float64"] = util.JsonNumber(n)
-			jsonObject["int64"] = util.JsonNumber(int64(n))
+			jsonObject["float64"] = n
+			jsonObject["int64"] = int64(n)
 		}
 
-		bodyData, err = json.Marshal(jsonObject)
+		bodyData, err = jsutil.Marshal(jsonObject)
 		if err != nil {
 			return res, fmt.Errorf("could not marshal body to text (string): %w", err)
 		}
@@ -330,7 +341,7 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	if !responseFormat.IgnoreBody {
 
 		if len(bodyData) > 0 {
-			err = json.Unmarshal(bodyData, &bodyJSON)
+			err = jsutil.Unmarshal(bodyData, &bodyJSON)
 			if err != nil {
 				return res, err
 			}
@@ -343,12 +354,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err = json.Marshal(responseJSON)
+	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
 
-	err = json.Unmarshal(responseBytes, &res)
+	err = jsutil.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}
@@ -366,7 +377,7 @@ func (response Response) ToGenericJSON() (res any, err error) {
 
 	// We have a json, and thereby try to unmarshal it into our body
 	if len(response.Body) > 0 {
-		err = json.Unmarshal(response.Body, &bodyJSON)
+		err = jsutil.Unmarshal(response.Body, &bodyJSON)
 		if err != nil {
 			return res, err
 		}
@@ -406,11 +417,11 @@ func (response Response) ToGenericJSON() (res any, err error) {
 		responseJSON.Body = &bodyJSON
 	}
 
-	responseBytes, err = json.Marshal(responseJSON)
+	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
-	err = json.Unmarshal(responseBytes, &res)
+	err = jsutil.Unmarshal(responseBytes, &res)
 	if err != nil {
 		return res, err
 	}
@@ -464,7 +475,14 @@ func (response Response) ToString() (s string) {
 	// for logging, always show the body
 	resp.Format.IgnoreBody = false
 	switch resp.Format.Type {
-	case "xml", "xml2", "csv", "html", "xhtml", "text", "binary":
+	case responseTypeXml,
+		responseTypeXml2,
+		responseTypeHtml,
+		responseTypeXhtml,
+		responseTypeXlsx,
+		responseTypeCsv,
+		responseTypeBinary,
+		responseTypeText:
 		bodyString, err = resp.ServerResponseToJsonString(true)
 		if err != nil {
 			bodyString = "[BINARY DATA NOT DISPLAYED]\n\n"

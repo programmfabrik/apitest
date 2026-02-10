@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
 )
 
@@ -48,7 +48,7 @@ func TestBuildCurl(t *testing.T) {
 			"query_param": "value",
 		},
 		ServerURL: "https://serverUrl",
-		Body: util.JsonObject{
+		Body: jsutil.Object{
 			"hey": 1,
 		},
 	}
@@ -90,7 +90,10 @@ func TestRequestBuildHttpWithCookie(t *testing.T) {
 	request.buildPolicy = buildRegular
 	ds := datastore.NewStore(false)
 	for key, val := range storeCookies {
-		ds.Set(key, val)
+		err := ds.Set(key, val)
+		if err != nil {
+			t.Fatalf("Could not store cookie in datastore: %s", err.Error())
+		}
 	}
 	request.DataStore = ds
 	httpRequest, err := request.buildHttpRequest()

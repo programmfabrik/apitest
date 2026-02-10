@@ -16,8 +16,8 @@ func TestBuildMultipart(t *testing.T) {
 	assertContent := "mock"
 	assertFilename := "mockfile.json"
 	filesystem.Fs = afero.NewMemMapFs()
-	filesystem.Fs.MkdirAll("test/path", 0755)
-	afero.WriteFile(filesystem.Fs, fmt.Sprintf("test/%s", assertFilename), []byte(assertContent), 0644)
+	_ = filesystem.Fs.MkdirAll("test/path", 0755)
+	_ = afero.WriteFile(filesystem.Fs, fmt.Sprintf("test/%s", assertFilename), []byte(assertContent), 0644)
 
 	testRequest := Request{
 		Body: map[string]any{
@@ -28,16 +28,17 @@ func TestBuildMultipart(t *testing.T) {
 	}
 
 	httpRequest, err := testRequest.buildHttpRequest()
-	go_test_utils.ExpectNoError(t, err, "error building multipart request")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	testReader, err := httpRequest.MultipartReader()
-	go_test_utils.ExpectNoError(t, err, "error getting multipart reader from request")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	part, err := testReader.NextPart()
-	go_test_utils.ExpectNoError(t, err, "error reading part from multipart reader")
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	go_test_utils.AssertStringEquals(t, part.FileName(), assertFilename)
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(part)
+	_, err = buf.ReadFrom(part)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertStringEquals(t, assertContent, buf.String())
 }
 
@@ -50,9 +51,7 @@ func TestBuildMultipart_ErrPathSpec(t *testing.T) {
 	}
 
 	_, _, err := buildMultipart(testRequest)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	go_test_utils.ExpectError(t, err, "expected error")
 	if !strings.Contains(err.Error(), "pathSpec noPathspec is not valid") {
 		t.Error("expected error because of invalid pathspec")
 	}
@@ -67,9 +66,7 @@ func TestBuildMultipart_ErrPathSpecNoString(t *testing.T) {
 	}
 
 	_, _, err := buildMultipart(testRequest)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	go_test_utils.ExpectError(t, err, "expected error")
 	if !strings.Contains(err.Error(), "pathSpec should be a string") {
 		t.Error("expected error because of invalid type for pathSpec")
 	}
@@ -84,10 +81,15 @@ func TestBuildMultipart_FileDoesNotExist(t *testing.T) {
 	}
 
 	_, _, err := buildMultipart(testRequest)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	go_test_utils.ExpectError(t, err, "expected error")
 	if !strings.Contains(err.Error(), "does_not_exist.json: file does not exist") {
 		t.Errorf("expected error because file does not exist")
 	}
+}
+
+func errorStringIfNotNil(err error) (errS string) {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

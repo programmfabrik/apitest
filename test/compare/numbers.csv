@@ -1,0 +1,8 @@
+hint,value1,value2,equal
+string,string,string,bool
+"int and int in range",12,12,true
+"int and float in range, different trailing zeroes",2.0,2,false
+"int and float in range, different trailing zeroes",30000.0,30000.0000,false
+"float and float in range",3.14,3.14,true
+"float and float in range, different trailing zeroes",3.14,3.140,false
+"int and int out of range",28342e234456,28342e234456,true

@@ -1,11 +1,9 @@
 package compare
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
-	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 )
 
 type CompareResult struct {
@@ -26,54 +24,8 @@ func (f compareFailure) Error() string {
 	return f.String()
 }
 
-// jsonNumberEq is comparing ints, floats or strings of the number. It fails to
-// compare different formats, 1e10 != 10000000000, although it is the same mathematical value.
-func jsonNumberEq(numberExp, numberGot json.Number) (eq bool) {
-
-	expInt, expIntErr := numberExp.Int64()
-	gotInt, gotIntErr := numberGot.Int64()
-	expFloat, expFloatErr := numberExp.Float64()
-	gotFloat, gotFloatErr := numberGot.Float64()
-
-	var cmp string
-	_ = cmp
-
-	if expIntErr == nil && gotIntErr == nil {
-		cmp = "int"
-	} else if expFloatErr == nil && gotFloatErr == nil {
-		cmp = "float"
-	} else {
-		cmp = "string"
-	}
-
-	// if any of the interpretations is out of range, we compare by string
-	for _, e := range []error{
-		expIntErr, gotIntErr, expFloatErr, gotFloatErr,
-	} {
-		if e == nil {
-			continue
-		}
-		if strings.Contains(e.Error(), "range") {
-			cmp = "string"
-			break
-		}
-	}
-
-	switch cmp {
-	case "int":
-		eq = expInt == gotInt
-	case "float":
-		eq = expFloat == gotFloat
-	case "string":
-		eq = numberExp == numberGot
-	}
-
-	// golib.Pln("exp %q == got %q : %t %s", numberExp, numberGot, eq, cmp)
-	return eq
-}
-
 func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, err error) {
-	//left may be nil, because we dont specify the content of the field
+	// left may be nil, because we dont specify the content of the field
 	if left == nil && right == nil {
 		res := CompareResult{
 			Equal: true,
@@ -94,22 +46,22 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 	}
 
 	switch typedLeft := left.(type) {
-	case json.Number:
-		typedRight, ok := right.(json.Number)
+	case float64:
+		typedRight, ok := right.(float64)
 		if !ok {
 			res := CompareResult{
 				false,
 				[]compareFailure{
 					{
 						"$",
-						fmt.Sprintf("expected json.Number, but got %T", right),
+						fmt.Sprintf("expected float64, but got %T", right),
 					},
 				},
 			}
 			return res, nil
 		}
 
-		if jsonNumberEq(typedLeft, typedRight) {
+		if typedLeft == typedRight {
 			res = CompareResult{
 				Equal: true,
 			}
@@ -119,15 +71,15 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 				Failures: []compareFailure{
 					{
 						"",
-						fmt.Sprintf("Got '%s', expected '%s'", typedRight, typedLeft),
+						fmt.Sprintf("Got %f, expected %f", typedRight, typedLeft),
 					},
 				},
 			}
 		}
 		return res, nil
 
-	case util.JsonObject:
-		rightAsObject, ok := right.(util.JsonObject)
+	case jsutil.Object:
+		rightAsObject, ok := right.(jsutil.Object)
 		if !ok {
 			res := CompareResult{
 				false,
@@ -142,7 +94,8 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		}
 
 		return ObjectEqualWithControl(typedLeft, rightAsObject, control)
-	case util.JsonArray:
+
+	case jsutil.Array:
 		/*if len(typedLeft) == 0 {
 			res := CompareResult{
 				Equal: true,
@@ -150,7 +103,7 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 			return res, nil
 		}*/
 
-		rightAsArray, ok := right.(util.JsonArray)
+		rightAsArray, ok := right.(jsutil.Array)
 		if !ok {
 			res := CompareResult{
 				false,
@@ -165,8 +118,8 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		}
 		return ArrayEqualWithControl(typedLeft, rightAsArray, control)
 
-	case util.JsonString:
-		rightAsString, ok := right.(util.JsonString)
+	case jsutil.String:
+		rightAsString, ok := right.(jsutil.String)
 		if !ok {
 			res := CompareResult{
 				false,
@@ -195,21 +148,27 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 			}
 		}
 		return res, nil
-	case util.JsonNumber:
-		rightAsNumber, ok := right.(util.JsonNumber)
+
+	case jsutil.Number:
+		rightAsNumber, ok := right.(jsutil.Number)
 		if !ok {
-			res := CompareResult{
-				false,
-				[]compareFailure{
-					{
-						"$",
-						"the actual response is no JsonNumber",
+			switch v := right.(type) {
+			case int64, float64:
+				rightAsNumber = jsutil.Number(fmt.Sprint(v))
+			default:
+				res := CompareResult{
+					false,
+					[]compareFailure{
+						{
+							"$",
+							fmt.Sprintf("the actual response is no JsonNumber, is '%T'", right),
+						},
 					},
-				},
+				}
+				return res, nil
 			}
-			return res, nil
 		}
-		if typedLeft == rightAsNumber {
+		if jsutil.NumberEqual(typedLeft, rightAsNumber) {
 			res = CompareResult{
 				Equal: true,
 			}
@@ -226,8 +185,8 @@ func JsonEqual(left, right any, control ComparisonContext) (res CompareResult, e
 		}
 		return res, nil
 
-	case util.JsonBool:
-		rightAsBool, ok := right.(util.JsonBool)
+	case jsutil.Bool:
+		rightAsBool, ok := right.(jsutil.Bool)
 		if !ok {
 			res := CompareResult{
 				false,

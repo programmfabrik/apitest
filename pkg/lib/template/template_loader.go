@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/golib"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
@@ -27,6 +27,13 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tidwall/gjson"
+)
+
+var (
+	delimsRegex        = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
+	removeCheckRegex   = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
+	splitRegex         = regexp.MustCompile(`[\t ]`)
+	removeCommentRegex = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
 )
 
 // delimiters as go template parsing options
@@ -69,31 +76,22 @@ func (loader *Loader) Render(
 	ctx any) (res []byte, err error) {
 
 	var (
-		delimsRE        *regexp.Regexp
-		removeCheckRE   *regexp.Regexp
-		splitRE         *regexp.Regexp
-		removeCommentRE *regexp.Regexp
-		matches         []string
-		replacements    []string
-		newTmplStr      string
+		matches      []string
+		replacements []string
+		newTmplStr   string
 	)
 
-	delimsRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-delims:[\t ]*([^\t ]+)[\t ]+([^\t\n ]+).*$`)
-	removeCheckRE = regexp.MustCompile(`(?m)^[\t ]*(?://|/\*)[\t ]*template-remove-tokens:[\t ]*(.+)$`)
-	splitRE = regexp.MustCompile(`[\t ]`)
-	removeCommentRE = regexp.MustCompile(`(?m)^[\t ]*//.*$`)
-
 	// First check for custom delimiters
-	matches = delimsRE.FindStringSubmatch(string(tmplBytes))
+	matches = delimsRegex.FindStringSubmatch(string(tmplBytes))
 	if len(matches) == 3 {
 		loader.Delimiters.Left, loader.Delimiters.Right = matches[1], matches[2]
 	}
 
 	// Second check for placeholders removal
-	matches = removeCheckRE.FindStringSubmatch(string(tmplBytes))
+	matches = removeCheckRegex.FindStringSubmatch(string(tmplBytes))
 	replacements = []string{}
 	if len(matches) > 1 {
-		placeholders := splitRE.Split(matches[1], -1)
+		placeholders := splitRegex.Split(matches[1], -1)
 		for _, s := range placeholders {
 			replacements = append(replacements, s, "")
 		}
@@ -103,7 +101,7 @@ func (loader *Loader) Render(
 
 	// Remove comments from template if comments are not the delimiters
 	if loader.Delimiters.Left != "//" {
-		tmplBytes = []byte(removeCommentRE.ReplaceAllString(string(tmplBytes), ``))
+		tmplBytes = []byte(removeCommentRegex.ReplaceAllString(string(tmplBytes), ``))
 	}
 
 	funcMap := template.FuncMap{
@@ -277,7 +275,7 @@ func (loader *Loader) Render(
 			return loader.datastore.Get(key)
 		},
 		"unmarshal": func(s string) (gj any, err error) {
-			err = util.Unmarshal([]byte(s), &gj)
+			err = jsutil.UnmarshalString(s, &gj)
 			if err != nil {
 				return nil, err
 			}
@@ -285,11 +283,7 @@ func (loader *Loader) Render(
 		},
 		"N": n,
 		"marshal": func(data any) (jsonBytes string, err error) {
-			var (
-				bytes []byte
-			)
-
-			bytes, err = json.Marshal(data)
+			bytes, err := jsutil.Marshal(data)
 			if err != nil {
 				return "", err
 			}
