@@ -469,9 +469,9 @@ Expected http status code, if the response has another status code, the test cas
 
 ## Comparison of numerical values
 
-To represent numerical values (integers, floats) are stored `json.Number` (strings). This means that not the numerical value is compared, but the string representation.
+To handle numerical values (integers, floats) these values are internally represented as `json.Number` (strings). This means that not the numerical value is compared, but the string representation. Differences in precision, trailing zeroes or format will cause a comparison to fail, even if the values are mathematically equal.
 
-This means differences in precision, trailing zeroes or format will cause a comparison to fail, even if the values are mathematically equal. E.g. the following values **are not equal**:
+E.g. the following values **are not equal**:
 
 * `1` ≠ `1.0`
 * `2.3` ≠ `2.30`
