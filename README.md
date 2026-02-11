@@ -467,6 +467,40 @@ Expected http status code, if the response has another status code, the test cas
 }
 ```
 
+## Comparison of numerical values
+
+To represent numerical values (integers, floats) are stored `json.Number` (strings). This means that not the numerical value is compared, but the string representation.
+
+This means differences in precision, trailing zeroes or format will cause a comparison to fail, even if the values are mathematically equal. E.g. the following values **are not equal**:
+
+* `1` ≠ `1.0`
+* `2.3` ≠ `2.30`
+* `4` ≠ `04`
+* `5.0` ≠ `5.00`
+* `6e3` ≠ `6000`
+
+### Explicit number casting
+
+To explicitly compare the numerical values, the `json.Number` representation can be cast into primitive types using [sprig type conversion functions](https://masterminds.github.io/sprig/conversion.html).
+
+E.g., if this expression using a variable (internally a `json.Number`):
+
+```jsonc
+{{ if eq $idx 3 }}
+
+{{ end }}
+```
+
+causes a parser error like `error calling eq: incompatible types for comparison: json.Number and int64`, then the string representation must be cast:
+
+
+```jsonc
+{{ if eq ( int64 $idx ) 3 }}
+
+{{ end }}
+```
+
+
 ## Override template delimiters
 
 Go template delimiters can be redefined as part of a single line comment in any of these syntax:
