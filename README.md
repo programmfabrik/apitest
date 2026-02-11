@@ -485,7 +485,7 @@ To explicitly compare the numerical values, the `json.Number` representation can
 
 E.g., if this expression using a variable (internally a `json.Number`):
 
-```jsonc
+```js
 {{ if eq $idx 3 }}
 
 {{ end }}
@@ -494,7 +494,7 @@ E.g., if this expression using a variable (internally a `json.Number`):
 causes a parser error like `error calling eq: incompatible types for comparison: json.Number and int64`, then the string representation must be cast:
 
 
-```jsonc
+```js
 {{ if eq ( int64 $idx ) 3 }}
 
 {{ end }}
