@@ -340,10 +340,10 @@ Expected http status code, if the response has another status code, the test cas
                 "path": "/auth",
                 "domain": "mydomain",
                 "expires": "2021-11-10T10:00:00Z",
-                "max_age": 86400,
+                "maxage": 86400,
                 "secure": false,
-                "http_only": true,
-                "same_site": 1
+                "httponly": true,
+                "samesite": 1
             }
         ],
 
@@ -407,10 +407,10 @@ Expected http status code, if the response has another status code, the test cas
                 "path": "/auth",
                 "domain": "mydomain",
                 "expires": "2021-11-10T10:00:00Z",
-                "max_age": 86400,
+                "maxage": 86400,
                 "secure": false,
-                "http_only": true,
-                "same_site": 1
+                "httponly": true,
+                "samesite": 1
             }
         },
 

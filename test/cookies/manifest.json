@@ -23,10 +23,10 @@
                         "path": "/mypath",
                         "domain": "mydomain",
                         "expires": "2021-11-10T10:00:00Z",
-                        "max_age": 86400,
+                        "maxage": 86400,
                         "secure": false,
-                        "http_only": false,
-                        "same_site": 2
+                        "httponly": false,
+                        "samesite": 2
                     }
                 ],
                 "body": {}
@@ -41,19 +41,22 @@
                 },
                 "cookie": {
                     "sess": {
+                        "raw": "sess=my_sess",
                         "name": "sess",
                         "value": "my_sess"
                     },
                     "dummy": {
+                        "raw": "dummy=whatever; Path=/mypath; Domain=mydomain; Expires=Wed, 10 Nov 2021 10:00:00 GMT; Max-Age=86400; SameSite=Lax",
                         "name": "dummy",
                         "value": "whatever",
                         "path": "/mypath",
                         "domain": "mydomain",
                         "expires": "2021-11-10T10:00:00Z",
-                        "max_age": 86400,
+                        "rawexpires": "Wed, 10 Nov 2021 10:00:00 GMT",
+                        "maxage": 86400,
                         "secure": false,
-                        "http_only": false,
-                        "same_site": 2
+                        "httponly": false,
+                        "samesite": 2
                     }
                 },
                 "body": {}
