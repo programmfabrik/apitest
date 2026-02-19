@@ -40,26 +40,13 @@ func httpHeaderToMap(header http.Header) (headers map[string]any, err error) {
 	return headers, nil
 }
 
-// cookie definition
-type cookie struct {
-	Name     string        `json:"name"`
-	Value    string        `json:"value"`
-	Path     string        `json:"path,omitempty"`
-	Domain   string        `json:"domain,omitempty"`
-	Expires  time.Time     `json:"expires,omitempty"`
-	MaxAge   int           `json:"max_age,omitempty"`
-	Secure   bool          `json:"secure,omitempty"`
-	HttpOnly bool          `json:"http_only,omitempty"`
-	SameSite http.SameSite `json:"same_site,omitempty"`
-}
-
 type ResponseSerialization struct {
-	StatusCode  *int              `yaml:"statuscode,omitempty" json:"statuscode,omitempty"`
-	Headers     map[string]any    `yaml:"header" json:"header,omitempty"`
-	Cookies     map[string]cookie `yaml:"cookie" json:"cookie,omitempty"`
-	Body        any               `yaml:"body" json:"body,omitempty"`
-	BodyControl jsutil.Object     `yaml:"body:control" json:"body:control,omitempty"`
-	Format      ResponseFormat    `yaml:"format" json:"format,omitempty"`
+	StatusCode  *int                   `yaml:"statuscode,omitempty" json:"statuscode,omitempty"`
+	Headers     map[string]any         `yaml:"header" json:"header,omitempty"`
+	Cookies     map[string]http.Cookie `yaml:"cookie" json:"cookie,omitempty"`
+	Body        any                    `yaml:"body" json:"body,omitempty"`
+	BodyControl jsutil.Object          `yaml:"body:control" json:"body:control,omitempty"`
+	Format      ResponseFormat         `yaml:"format" json:"format"`
 }
 
 type responseSerializationInternal struct {
@@ -171,17 +158,7 @@ func NewResponseFromSpec(spec ResponseSerialization) (res Response, err error) {
 	if len(spec.Cookies) > 0 {
 		cookies = make([]*http.Cookie, 0)
 		for _, rck := range spec.Cookies {
-			cookies = append(cookies, &http.Cookie{
-				Name:     rck.Name,
-				Value:    rck.Value,
-				Path:     rck.Path,
-				Domain:   rck.Domain,
-				Expires:  rck.Expires,
-				MaxAge:   rck.MaxAge,
-				Secure:   rck.Secure,
-				HttpOnly: rck.HttpOnly,
-				SameSite: rck.SameSite,
-			})
+			cookies = append(cookies, &rck)
 		}
 	}
 
@@ -319,21 +296,12 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 
 	// Build cookies map from standard bag
 	if len(resp.Cookies) > 0 {
-		responseJSON.Cookies = make(map[string]cookie)
+		responseJSON.Cookies = make(map[string]http.Cookie)
 		for _, ck := range resp.Cookies {
-			if ck != nil {
-				responseJSON.Cookies[ck.Name] = cookie{
-					Name:     ck.Name,
-					Value:    ck.Value,
-					Path:     ck.Path,
-					Domain:   ck.Domain,
-					Expires:  ck.Expires,
-					MaxAge:   ck.MaxAge,
-					Secure:   ck.Secure,
-					HttpOnly: ck.HttpOnly,
-					SameSite: ck.SameSite,
-				}
+			if ck == nil {
+				continue
 			}
+			responseJSON.Cookies[ck.Name] = *ck
 		}
 	}
 
@@ -394,21 +362,12 @@ func (response Response) ToGenericJSON() (res any, err error) {
 
 	// Build cookies map from standard bag
 	if len(response.Cookies) > 0 {
-		responseJSON.Cookies = make(map[string]cookie)
+		responseJSON.Cookies = make(map[string]http.Cookie)
 		for _, ck := range response.Cookies {
-			if ck != nil {
-				responseJSON.Cookies[ck.Name] = cookie{
-					Name:     ck.Name,
-					Value:    ck.Value,
-					Path:     ck.Path,
-					Domain:   ck.Domain,
-					Expires:  ck.Expires,
-					MaxAge:   ck.MaxAge,
-					Secure:   ck.Secure,
-					HttpOnly: ck.HttpOnly,
-					SameSite: ck.SameSite,
-				}
+			if ck == nil {
+				continue
 			}
+			responseJSON.Cookies[ck.Name] = *ck
 		}
 	}
 

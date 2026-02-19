@@ -51,7 +51,7 @@ type Request struct {
 	Headers              map[string]any            `yaml:"header" json:"header"`
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*requestCookie `yaml:"cookies" json:"cookies"`
-	SetCookies           []*cookie                 `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	SetCookies           []*http.Cookie            `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 any                       `yaml:"body" json:"body"`
@@ -257,24 +257,13 @@ func (request Request) buildHttpRequest() (req *http.Request, err error) {
 	}
 
 	// Add to custom header cookies to set in server
-	for _, v := range request.SetCookies {
-		if v == nil {
+	for _, ck := range request.SetCookies {
+		if ck == nil {
 			continue
-		}
-		ck := http.Cookie{
-			Name:     v.Name,
-			Value:    v.Value,
-			Path:     v.Path,
-			Domain:   v.Domain,
-			Expires:  v.Expires,
-			MaxAge:   v.MaxAge,
-			Secure:   v.Secure,
-			HttpOnly: v.HttpOnly,
-			SameSite: v.SameSite,
 		}
 		ckVal := ck.String()
 		if ckVal == "" {
-			return nil, fmt.Errorf("Invalid cookie to set server-side: %v", v)
+			return nil, fmt.Errorf("Invalid cookie to set server-side: %v", ck)
 		}
 		req.Header.Add("X-Test-Set-Cookies", ckVal)
 	}
