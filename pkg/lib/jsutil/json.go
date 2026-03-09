@@ -134,14 +134,13 @@ func getIndepthJsonError(input []byte, inputError error) (err error) {
 }
 
 func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers string) {
-	jsonWithLineNumbers = "\n"
 	inputString := input
 
 	n := strings.Count(inputString, "\n")
 	if len(inputString) > 0 && !strings.HasSuffix(inputString, "\n") {
 		n++
 	}
-	fmtString := fmt.Sprintf("%s%d%s", "%s%", len(strconv.Itoa(n)), "d: %s\n")
+	fmtString := fmt.Sprintf("%s%d%s", "%", len(strconv.Itoa(n)), "d: %s")
 
 	scanner := bufio.NewScanner(strings.NewReader(string(input)))
 	// Set some significant buffer to scanner (lines up to 1Mb)
@@ -150,6 +149,9 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 	buf := make([]byte, 0, bufio.MaxScanTokenSize)
 	scanner.Buffer(buf, 16*bufio.MaxScanTokenSize)
 	i := 1
+
+	lines := []string{}
+
 	for scanner.Scan() {
 		scannerText := scanner.Text()
 		// Because we increased the scanner capacity the line can be too long
@@ -162,10 +164,11 @@ func getErrorJsonWithLineNumbers(input string, errLn int) (jsonWithLineNumbers s
 			if coloredError && i == errLn {
 				fmtStringRow = "\033[31m%s\033[0m"
 			}
-			jsonWithLineNumbers = fmt.Sprintf(fmtString, jsonWithLineNumbers, i, fmt.Sprintf(fmtStringRow, scannerText))
+			lines = append(lines, fmt.Sprintf(fmtString, i, fmt.Sprintf(fmtStringRow, scannerText)))
 		}
 		i++
 	}
+	jsonWithLineNumbers = "\n" + strings.Join(lines, "\n") + "\n"
 
 	// We reached an error in the scanner, so output it
 	err := scanner.Err()
