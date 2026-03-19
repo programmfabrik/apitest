@@ -16,7 +16,6 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
-	"github.com/programmfabrik/golib"
 )
 
 var httpClient *http.Client
@@ -348,7 +347,7 @@ func (request Request) Send() (response Response, err error) {
 	if err != nil {
 		return response, err
 	}
-	response, err = NewResponse(golib.IntRef(httpResponse.StatusCode), header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
+	response, err = NewResponse(new(httpResponse.StatusCode), header, httpResponse.Cookies(), httpResponse.Body, nil, ResponseFormat{})
 	if err != nil {
 		return response, fmt.Errorf("constructing response from http response: %w", err)
 	}
