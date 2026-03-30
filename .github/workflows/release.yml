@@ -7,7 +7,7 @@ on:
       - '**'
 
 env:
-  go_version: 1.22
+  go_version: 1.26
   slack_channel: github-fylr
 
 jobs:
@@ -21,18 +21,18 @@ jobs:
       FYLR_BOT_ACCESS_TOKEN: ${{ secrets.FYLR_BOT_PERSONAL_ACCESS_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.FYLR_BOT_PERSONAL_ACCESS_TOKEN }}
 
       - name: Set up Go ${{ env.go_version }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.go_version }}
 
       - name: Run goreleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
           args: release --clean
