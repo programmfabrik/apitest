@@ -62,7 +62,7 @@ func (ps PathSpec) LoadContents(manifestDir string) (contents []byte, err error)
 
 	contents, err = io.ReadAll(requestFile)
 	if err != nil {
-		return nil, fmt.Errorf("loading file at %q: %w", ps, err)
+		return nil, fmt.Errorf("loading file at %q: %w", ps.Path, err)
 	}
 
 	return contents, nil
