@@ -7,7 +7,7 @@ on:
       - "!production"
 
 env:
-  go_version: 1.22
+  go_version: 1.26
   slack_channel: github-fylr
 
 jobs:
@@ -20,12 +20,12 @@ jobs:
         run: sudo apt update && sudo apt install libimage-exiftool-perl imagemagick
 
       - name: Run go ${{ env.go_version }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.go_version }}
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: output imagemagick version
         shell: bash
