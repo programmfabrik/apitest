@@ -9,13 +9,12 @@ import (
 
 	"github.com/programmfabrik/apitest/pkg/lib/jsutil"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
-	"github.com/programmfabrik/golib"
 	"github.com/tidwall/gjson"
 )
 
 func TestResponse_ToGenericJson(t *testing.T) {
 	response := Response{
-		StatusCode: golib.IntRef(200),
+		StatusCode: new(200),
 		Headers: map[string]any{
 			"foo": []string{"bar"},
 		},
@@ -49,7 +48,7 @@ func TestResponse_ToGenericJson(t *testing.T) {
 
 func TestResponse_NewResponseFromSpec(t *testing.T) {
 	responseSpec := ResponseSerialization{
-		StatusCode: golib.IntRef(200),
+		StatusCode: new(200),
 		Headers: map[string]any{
 			"foo": []string{"bar"},
 			"foo2:control": jsutil.Object{
@@ -73,7 +72,7 @@ func TestResponse_NewResponseFromSpec_StatusCode_not_set(t *testing.T) {
 }
 
 func TestResponse_NewResponse(t *testing.T) {
-	response, err := NewResponse(golib.IntRef(200), nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
+	response, err := NewResponse(new(200), nil, nil, strings.NewReader("foo"), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 	go_test_utils.AssertIntEquals(t, *response.StatusCode, 200)
 }
@@ -86,7 +85,7 @@ func TestResponse_String(t *testing.T) {
 		}
 	}`
 
-	response, err := NewResponse(golib.IntRef(200), nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})
+	response, err := NewResponse(new(200), nil, nil, strings.NewReader(requestString), nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	assertString := "200\n\n\n" + requestString
@@ -115,7 +114,7 @@ func TestResponse_Cookies(t *testing.T) {
 
 	header, err := httpHeaderToMap(res.Header)
 	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
-	response, err := NewResponse(golib.IntRef(res.StatusCode), header, res.Cookies(), res.Body, nil, ResponseFormat{})
+	response, err := NewResponse(new(res.StatusCode), header, res.Cookies(), res.Body, nil, ResponseFormat{})
 	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
 
 	jsonStr, err := response.ServerResponseToJsonString(false)
