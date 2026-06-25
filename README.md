@@ -193,6 +193,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 |------------------------------------|-----------------|
 | `name`                             | Name to identify this single test. Is important for the log. Try to give an explaining name |
 | `store`                            | Store custom values to the datastore |
+| `cookie_jar`                       | If set to `true` on the `manifest.json` top level, all requests of the suite share a cookie jar: `Set-Cookie` responses are stored and replayed automatically, honoring the cookie `Path`/`Domain`/`Secure` scoping like a browser, instead of being threaded by hand via `request.cookies`. Off by default |
 | `http_server`                      | Optional temporary [HTTP Server](#http-server) |
 | `smtp_server`                      | Optional temporary [SMTP Server](#smtp-server) |
 | `log_network`                      | Log network only for this single test |

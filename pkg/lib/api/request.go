@@ -51,6 +51,11 @@ type Request struct {
 	HeaderFromStore      map[string]string         `yaml:"header_from_store" json:"header_from_store"`
 	Cookies              map[string]*requestCookie `yaml:"cookies" json:"cookies"`
 	SetCookies           []*http.Cookie            `yaml:"header-x-test-set-cookie" json:"header-x-test-set-cookie"`
+	// CookieJar is set programmatically (never from the manifest) when the suite
+	// opts in via "cookie_jar": all requests of that suite share one jar, so
+	// Set-Cookie responses are stored and replayed honoring Path/Domain/Secure
+	// like a browser, instead of being threaded by hand.
+	CookieJar            http.CookieJar            `yaml:"-" json:"-"`
 	BodyType             string                    `yaml:"body_type" json:"body_type"`
 	BodyFile             string                    `yaml:"body_file" json:"body_file"`
 	Body                 any                       `yaml:"body" json:"body"`
@@ -324,17 +329,28 @@ func (request Request) Send() (response Response, err error) {
 		return response, fmt.Errorf("could not buildHttpRequest: %w", err)
 	}
 
+	// Default: the shared client, cookies threaded by hand. When the suite opted
+	// into a cookie jar, use a per-request client copy carrying that jar (sharing
+	// the Transport) so Set-Cookie responses are stored and replayed honoring the
+	// cookie Path/Domain/Secure scoping, like a browser.
+	client := httpClient
+	if request.CookieJar != nil {
+		c := *httpClient
+		c.Jar = request.CookieJar
+		client = &c
+	}
+
 	if request.NoRedirect {
-		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) (err error) {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) (err error) {
 			return http.ErrUseLastResponse
 		}
 	} else {
-		httpClient.CheckRedirect = nil
+		client.CheckRedirect = nil
 	}
 
 	now := time.Now()
 
-	httpResponse, err := httpClient.Do(httpRequest)
+	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
 		return response, fmt.Errorf("could not do http request: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"os/signal"
@@ -46,7 +47,13 @@ type Suite struct {
 	StandardHeader          map[string]any    `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string `yaml:"header_from_store" json:"header_from_store"`
 
+	// CookieJar opts the whole suite into a shared cookie jar: Set-Cookie
+	// responses are stored and replayed honoring Path/Domain/Secure like a
+	// browser, instead of being threaded by hand per request. Off by default.
+	CookieJar bool `yaml:"cookie_jar" json:"cookie_jar"`
+
 	config          testToolConfig
+	cookieJar       http.CookieJar
 	datastore       *datastore.Datastore
 	manifestRelDir  string
 	manifestDir     string
@@ -150,6 +157,16 @@ func newTestSuite(
 	}
 	suite.httpServerHost = suitePreload.httpServerHost
 	suite.loader = suitePreload.loader
+
+	// One shared jar for the whole suite when opted in. A nil PublicSuffixList is
+	// deliberate: it still scopes cookies by Path/Domain (what we model) but does
+	// not reject cookies set for single-label hosts like "localhost".
+	if suite.CookieJar {
+		suite.cookieJar, err = cookiejar.New(nil)
+		if err != nil {
+			return suite, fmt.Errorf("creating cookie jar: %w", err)
+		}
+	}
 
 	// Append suite manifest path to name, so we know in an automatic setup where the test is loaded from
 	suite.Name = fmt.Sprintf("%s (%s)", suite.Name, manifestPath)
@@ -419,6 +436,7 @@ func (ats *Suite) runLiteralTest(
 	test.suiteIndex = ats.index
 	test.index = index
 	test.dataStore = ats.datastore
+	test.cookieJar = ats.cookieJar
 	test.standardHeader = ats.StandardHeader
 	test.standardHeaderFromStore = ats.StandardHeaderFromStore
 	if test.LogNetwork == nil {

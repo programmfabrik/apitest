@@ -1,0 +1,37 @@
+{
+    "name": "server sets two cookies with different Paths; the jar stores them (the request itself carries none yet)",
+    "request": {
+        "server_url": "http://localhost:9924",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "header-x-test-set-cookie": [
+            {
+                "name": "jar_match",
+                "value": "v1",
+                "path": "/bounce-json"
+            },
+            {
+                "name": "jar_off",
+                "value": "v2",
+                "path": "/elsewhere"
+            }
+        ],
+        "body": {}
+    },
+    "response": {
+        "statuscode": 200,
+        "header": {
+            "Set-Cookie": [
+                "jar_match=v1; Path=/bounce-json",
+                "jar_off=v2; Path=/elsewhere"
+            ]
+        },
+        "body": {
+            "header": {
+                "Cookie:control": {
+                    "must_not_exist": true
+                }
+            }
+        }
+    }
+}

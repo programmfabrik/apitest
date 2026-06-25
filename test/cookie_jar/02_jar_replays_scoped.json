@@ -1,0 +1,19 @@
+{
+    "name": "next POST /bounce-json carries NO manual cookie: the jar replays ONLY jar_match (Path=/bounce-json), withholding jar_off (Path=/elsewhere)",
+    "request": {
+        "server_url": "http://localhost:9924",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {}
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "header": {
+                "Cookie": [
+                    "jar_match=v1"
+                ]
+            }
+        }
+    }
+}

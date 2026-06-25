@@ -47,6 +47,7 @@ type Case struct {
 	suiteIndex  int
 	index       int
 	dataStore   *datastore.Datastore
+	cookieJar   http.CookieJar
 
 	standardHeader          map[string]any // can be string or []string
 	standardHeaderFromStore map[string]string
@@ -566,6 +567,7 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 	}
 	spec.ManifestDir = testCase.manifestDir
 	spec.DataStore = testCase.dataStore
+	spec.CookieJar = testCase.cookieJar
 
 	if spec.ServerURL == "" {
 		spec.ServerURL = testCase.ServerURL

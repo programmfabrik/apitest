@@ -1,0 +1,15 @@
+{
+    "http_server": {
+        "addr": ":9924",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "cookie_jar: Set-Cookie responses are stored and replayed honoring the cookie Path",
+    "cookie_jar": true,
+    "tests": [
+        // server sets jar_match (Path=/bounce-json) + jar_off (Path=/elsewhere); the jar stores both, this request carries none
+        "@01_set_cookies.json"
+        // next POST /bounce-json (no manual cookie): the jar replays ONLY jar_match, withholding jar_off (Path mismatch)
+        ,"@02_jar_replays_scoped.json"
+    ]
+}
