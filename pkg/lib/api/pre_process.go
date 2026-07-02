@@ -107,12 +107,14 @@ func ensureJson(data []byte) (dataFixed []byte) {
 		parseErr error
 	)
 
-	dataFixed = data
-
 	parseErr = jsutil.Unmarshal(data, &v)
 	if parseErr != nil {
 		dataFixed, _ = golib.JsonBytes(string(data))
+		return dataFixed
 	}
 
+	// re-marshal, so the body parses as plain JSON further down even if
+	// the pre process output contained cjson comments
+	dataFixed, _ = golib.JsonBytes(v)
 	return dataFixed
 }

@@ -123,6 +123,23 @@ You can also set the log verbosity per single testcase. The greater verbosity wi
 | ---                             | ---                                                                                   |
 | `--report-format-stats-group 3` | Sets the number of groups for manifests distrubution when using report format `stats` |
 
+### Profiling the apitest binary
+
+To investigate where apitest itself spends time and memory, two environment
+variables write [pprof](https://pkg.go.dev/runtime/pprof) profiles of the
+whole run. They have no effect (and no cost) when unset.
+
+| Environment variable | Description                                                    |
+| ---                  | ---                                                            |
+| `APITEST_CPUPROFILE` | Write a CPU profile of the run to the given file               |
+| `APITEST_MEMPROFILE` | Write an allocation profile of the run to the given file       |
+
+```bash
+APITEST_CPUPROFILE=cpu.pb.gz APITEST_MEMPROFILE=mem.pb.gz ./apitest -d mytests
+go tool pprof ./apitest cpu.pb.gz
+go tool pprof -sample_index=alloc_space ./apitest mem.pb.gz
+```
+
 ### Examples
 
 - Run all tests in the directory **apitests** display **all server communication** and save the maschine report as **junit** for later parsing it with *jenkins*

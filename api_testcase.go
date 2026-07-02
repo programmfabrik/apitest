@@ -561,7 +561,7 @@ func (testCase Case) loadRequestSerialization() (req api.Request, err error) {
 	if err != nil {
 		return spec, fmt.Errorf("marshaling request: %w", err)
 	}
-	err = jsutil.Unmarshal(specBytes, &spec)
+	err = jsutil.UnmarshalPlain(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("unmarshaling request: %w", err)
 	}
@@ -607,7 +607,7 @@ func (testCase Case) loadResponseSerialization(genJSON any) (spec api.ResponseSe
 		return spec, fmt.Errorf("marshaling response: %w", err)
 	}
 
-	err = jsutil.Unmarshal(specBytes, &spec)
+	err = jsutil.UnmarshalPlain(specBytes, &spec)
 	if err != nil {
 		return spec, fmt.Errorf("unmarshaling response: %w", err)
 	}

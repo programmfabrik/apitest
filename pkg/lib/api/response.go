@@ -306,10 +306,14 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 	}
 
 	// if the body should not be ignored, serialize the parsed/converted body
+	hasBody := false
 	if !responseFormat.IgnoreBody {
 
 		if len(bodyData) > 0 {
-			err = jsutil.Unmarshal(bodyData, &bodyJSON)
+			// a server response body must be plain JSON, cjson comments
+			// are only supported in test files. pre_process output is
+			// normalized in ensureJson.
+			err = jsutil.UnmarshalPlain(bodyData, &bodyJSON)
 			if err != nil {
 				return res, err
 			}
@@ -319,17 +323,25 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return bodyJSON, nil
 		}
 
-		responseJSON.Body = &bodyJSON
+		hasBody = true
 	}
 
+	// The body is left out of the marshal/unmarshal roundtrip and inserted
+	// directly: it is already generic UseNumber JSON, the roundtrip would
+	// only reproduce the same value at the cost of re-encoding and
+	// re-parsing the biggest part of the response.
 	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
 
-	err = jsutil.Unmarshal(responseBytes, &res)
+	err = jsutil.UnmarshalPlain(responseBytes, &res)
 	if err != nil {
 		return res, err
+	}
+
+	if hasBody {
+		res.(jsutil.Object)["body"] = bodyJSON
 	}
 
 	return res, nil
@@ -343,9 +355,11 @@ func (response Response) ToGenericJSON() (res any, err error) {
 		responseBytes []byte
 	)
 
-	// We have a json, and thereby try to unmarshal it into our body
+	// We have a json, and thereby try to unmarshal it into our body.
+	// The body comes from NewResponseFromSpec's Marshal, so it cannot
+	// contain cjson comments.
 	if len(response.Body) > 0 {
-		err = jsutil.Unmarshal(response.Body, &bodyJSON)
+		err = jsutil.UnmarshalPlain(response.Body, &bodyJSON)
 		if err != nil {
 			return res, err
 		}
@@ -371,18 +385,18 @@ func (response Response) ToGenericJSON() (res any, err error) {
 		}
 	}
 
-	// necessary because check for <nil> against missing body would fail, but must succeed
-	if bodyJSON != nil {
-		responseJSON.Body = &bodyJSON
-	}
-
 	responseBytes, err = jsutil.Marshal(responseJSON)
 	if err != nil {
 		return res, err
 	}
-	err = jsutil.Unmarshal(responseBytes, &res)
+	err = jsutil.UnmarshalPlain(responseBytes, &res)
 	if err != nil {
 		return res, err
+	}
+	// the body is inserted directly, see ServerResponseToGenericJSON.
+	// necessary because check for <nil> against missing body would fail, but must succeed
+	if bodyJSON != nil {
+		res.(jsutil.Object)["body"] = bodyJSON
 	}
 	return res, nil
 }

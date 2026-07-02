@@ -25,19 +25,19 @@ func LoadManifestDataAsObject(data any, manifestDir string, loader Loader) (path
 			return nil, res, fmt.Errorf("rendering request: %w", err)
 		}
 
-		var (
-			jsonObject jsutil.Object
-			jsonArray  jsutil.Array
-		)
-
-		if err = jsutil.Unmarshal(requestBytes, &jsonObject); err != nil {
-			if err = jsutil.Unmarshal(requestBytes, &jsonArray); err == nil {
-
-				return pathSpec, jsonArray, nil
-			}
+		// parse once and dispatch on the type, instead of parsing up to
+		// twice (object first, array on error)
+		var jsonData any
+		if err = jsutil.Unmarshal(requestBytes, &jsonData); err != nil {
 			return nil, res, fmt.Errorf("unmarshalling: %w", err)
 		}
-		return pathSpec, jsonObject, nil
+		switch typedJson := jsonData.(type) {
+		case jsutil.Object:
+			return pathSpec, typedJson, nil
+		case jsutil.Array:
+			return pathSpec, typedJson, nil
+		}
+		return nil, res, fmt.Errorf("unmarshalling: %s does not contain a json object or array", pathSpec.Path)
 	case jsutil.Object:
 		return nil, typedData, nil
 	case jsutil.Array:
@@ -67,10 +67,7 @@ func LoadManifestDataAsRawJson(data any, manifestDir string) (pathSpec *util.Pat
 		if err != nil {
 			return nil, res, fmt.Errorf("marshaling: %w", err)
 		}
-		if err = jsutil.Unmarshal(jsonMar, &res); err != nil {
-			return nil, res, fmt.Errorf("unmarshalling: %w", err)
-		}
-		return nil, res, nil
+		return nil, jsonMar, nil
 	default:
 		return nil, res, fmt.Errorf("specification needs to be string[@...] or jsonObject but is: %v", data)
 	}

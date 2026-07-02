@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,8 +23,7 @@ type (
 )
 
 var (
-	coloredError      bool
-	cjsonCommentRegex = regexp.MustCompile(`(?m)^[\t ]*#.*$`)
+	coloredError bool
 )
 
 func init() {
@@ -63,20 +61,23 @@ func UnmarshalString(input string, output any) (err error) {
 
 // Unmarshal decodes the input bytes into the output if it is valid cjson
 func Unmarshal(input []byte, output any) (err error) {
-	// Remove # comments from template
-	tmplBytes := cjsonCommentRegex.ReplaceAll(input, []byte{})
-
 	// Remove //, /* comments plus tailing commas
-	tmplBytes = jsonc.ToJSON(tmplBytes)
+	return UnmarshalPlain(jsonc.ToJSON(input), output)
+}
 
-	dec := json.NewDecoder(bytes.NewReader(tmplBytes))
+// UnmarshalPlain decodes the input bytes into the output like Unmarshal, but
+// without the cjson comment / trailing comma handling. Use it for JSON which
+// was produced by marshaling or received from a server, that JSON cannot
+// contain comments and running the comment passes over it is wasted work.
+func UnmarshalPlain(input []byte, output any) (err error) {
+	dec := json.NewDecoder(bytes.NewReader(input))
 	dec.DisallowUnknownFields()
 	dec.UseNumber()
 
 	// unmarshal into object
 	err = dec.Decode(output)
 	if err != nil {
-		return getIndepthJsonError(tmplBytes, err)
+		return getIndepthJsonError(input, err)
 	}
 	return nil
 }

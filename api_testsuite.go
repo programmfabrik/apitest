@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -355,23 +356,24 @@ func (ats *Suite) testGoroutine(
 		return
 	}
 
-	// Build list of test cases
+	// Build list of test cases. Peek at the first byte to decide between a
+	// list and a single test, instead of running the whole cjson parse
+	// twice for single objects.
 	var testCases []jsutil.RawMessage
-	err = jsutil.Unmarshal(testRendered, &testCases)
-	if err != nil {
-		// Input could not be deserialized into list, try to deserialize into single object
+	if firstJsonByte(testRendered) == '[' {
+		err = jsutil.Unmarshal(testRendered, &testCases)
+	} else {
 		var singleTest jsutil.RawMessage
 		err = jsutil.Unmarshal(testRendered, &singleTest)
-		if err != nil {
-			// Malformed json
-			r.SaveToReportLog(err.Error())
-			logrus.Error(fmt.Errorf("can not unmarshal (%s): %w", testFilePath, err))
-
-			// note that successCount is not incremented
-			return
-		}
-
 		testCases = []jsutil.RawMessage{singleTest}
+	}
+	if err != nil {
+		// Malformed json
+		r.SaveToReportLog(err.Error())
+		logrus.Error(fmt.Errorf("can not unmarshal (%s): %w", testFilePath, err))
+
+		// note that successCount is not incremented
+		return
 	}
 
 	for testIdx, testCase := range testCases {
@@ -380,7 +382,10 @@ func (ats *Suite) testGoroutine(
 		// If testCase can be unmarshalled as string, we may have a
 		// reference to another test using @ notation at hand
 		var testCaseStr string
-		err = jsutil.Unmarshal(testCase, &testCaseStr)
+		err = errNotAJsonString
+		if firstJsonByte(testCase) == '"' {
+			err = jsutil.Unmarshal(testCase, &testCaseStr)
+		}
 		if err == nil && util.IsPathSpec(testCaseStr) {
 			// Recurse if the testCase points to another file using @ notation
 			success = ats.parseAndRunTest(
@@ -498,4 +503,20 @@ func (ats *Suite) loadManifest() (manifest []byte, err error) {
 
 	ats.loader = loader
 	return manifest, nil
+}
+
+// errNotAJsonString marks a test case which cannot be a `@file` reference,
+// so the string probe (and its full parse) can be skipped
+var errNotAJsonString = errors.New("not a json string")
+
+// firstJsonByte returns the first non-whitespace byte of data, 0 if none
+func firstJsonByte(data []byte) byte {
+	for _, c := range data {
+		switch c {
+		case ' ', '\t', '\n', '\r':
+			continue
+		}
+		return c
+	}
+	return 0
 }

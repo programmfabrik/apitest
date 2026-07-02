@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"time"
 
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
@@ -114,11 +115,46 @@ var testCMD = &cobra.Command{
 }
 
 func main() {
+	stopProfiling := startProfiling()
 	err := testCMD.Execute()
+	stopProfiling()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+// startProfiling writes a CPU / allocation profile if the environment
+// variables APITEST_CPUPROFILE / APITEST_MEMPROFILE name a file for it.
+// Analyze with `go tool pprof <apitest-binary> <file>`.
+func startProfiling() (stop func()) {
+	stop = func() {}
+	if fn := os.Getenv("APITEST_CPUPROFILE"); fn != "" {
+		f, err := os.Create(fn)
+		if err != nil {
+			logrus.Warnf("APITEST_CPUPROFILE: %s", err)
+		} else {
+			pprof.StartCPUProfile(f)
+			stop = func() {
+				pprof.StopCPUProfile()
+				f.Close()
+			}
+		}
+	}
+	if fn := os.Getenv("APITEST_MEMPROFILE"); fn != "" {
+		stopCpu := stop
+		stop = func() {
+			stopCpu()
+			f, err := os.Create(fn)
+			if err != nil {
+				logrus.Warnf("APITEST_MEMPROFILE: %s", err)
+				return
+			}
+			pprof.Lookup("allocs").WriteTo(f, 0)
+			f.Close()
+		}
+	}
+	return stop
 }
 
 var cfgFile string

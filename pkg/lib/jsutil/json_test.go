@@ -127,9 +127,9 @@ func TestRemoveComments(t *testing.T) {
 		{
 			`{
 "hallo":2
-## line 2
+// line 2
 
-#line2
+//line2
 }`,
 			Object{
 				"hallo": Number("2"),
@@ -138,9 +138,9 @@ func TestRemoveComments(t *testing.T) {
 		{
 			`{
 "hallo":2,
-# line 2
+/* line 2 */
 
-#line2
+//line2
 "hey":"ha"
 }`,
 			Object{
@@ -165,6 +165,39 @@ func TestRemoveComments(t *testing.T) {
 		}
 	}
 
+}
+
+// TestHashCommentsRemoved checks that the former nonstandard # comment
+// support is gone: a # line is now a parse error, not a comment.
+func TestHashCommentsRemoved(t *testing.T) {
+	var out Object
+	err := UnmarshalString("{\n# comment\n\"a\": 1\n}", &out)
+	if err == nil {
+		t.Error("# comment did not produce a parse error")
+	}
+}
+
+// TestJsoncUnmarshal checks that jsonc comments and trailing commas
+// still parse, while UnmarshalPlain rejects them.
+func TestJsoncUnmarshal(t *testing.T) {
+	in := `{"a": 1, /* c */ "b": 2, // line
+	"url": "http://x/y",}`
+	var out Object
+	err := UnmarshalString(in, &out)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	if out["a"] != Number("1") || out["b"] != Number("2") || out["url"] != "http://x/y" {
+		t.Errorf("jsonc input parsed wrong: %v", out)
+	}
+
+	var out2 Object
+	if UnmarshalPlain([]byte(in), &out2) == nil {
+		t.Error("UnmarshalPlain accepted jsonc input")
+	}
+	err = UnmarshalPlain([]byte(`{"a": 1}`), &out2)
+	go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+	if out2["a"] != Number("1") {
+		t.Errorf("plain input parsed wrong: %v", out2)
+	}
 }
 
 func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
