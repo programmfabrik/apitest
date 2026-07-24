@@ -15,5 +15,7 @@
         ,"@not_equal.json"
         // match 0 in body
         ,"@match2.json"
+        // number_gt/ge/lt/le compare numerically, not as strings
+        ,"@number_range.json"
     ]
 }

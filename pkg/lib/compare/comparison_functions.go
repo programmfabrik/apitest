@@ -182,7 +182,7 @@ func fillComparisonContext(in jsutil.Object) (out *ComparisonContext, err error)
 			// Number must be equal or bigger
 			tV, ok := v.(jsutil.Number)
 			if !ok {
-				err = errors.New("number_gt is no number")
+				err = errors.New("number_ge is no number")
 				return
 
 			}
@@ -549,29 +549,43 @@ func keyChecks(right any, rOK bool, control ComparisonContext) (err error) {
 		}
 	}
 
-	// Check for number range
+	// Check for number range. Both sides are converted to float64 first:
+	// jsutil.Number is a string type, comparing it directly would be
+	// lexicographic ("8574" > "100000")
 	if control.numberGE != nil {
-		rightNumber := right.(jsutil.Number)
-		if !(rightNumber >= *control.numberGE) {
-			return fmt.Errorf("actual number %s is not equal or greater than %s", rightNumber, *control.numberGE)
+		rightNumber, cmpNumber, err := getRangeOperands(right, *control.numberGE)
+		if err != nil {
+			return err
+		}
+		if !(rightNumber >= cmpNumber) {
+			return fmt.Errorf("actual number %v is not equal or greater than %s", right, *control.numberGE)
 		}
 	}
 	if control.numberGT != nil {
-		rightNumber := right.(jsutil.Number)
-		if !(rightNumber > *control.numberGT) {
-			return fmt.Errorf("actual number %s is not greater than %s", rightNumber, *control.numberGT)
+		rightNumber, cmpNumber, err := getRangeOperands(right, *control.numberGT)
+		if err != nil {
+			return err
+		}
+		if !(rightNumber > cmpNumber) {
+			return fmt.Errorf("actual number %v is not greater than %s", right, *control.numberGT)
 		}
 	}
 	if control.numberLE != nil {
-		rightNumber := right.(jsutil.Number)
-		if !(rightNumber <= *control.numberLE) {
-			return fmt.Errorf("actual number %s is not equal or less than %s", rightNumber, *control.numberLE)
+		rightNumber, cmpNumber, err := getRangeOperands(right, *control.numberLE)
+		if err != nil {
+			return err
+		}
+		if !(rightNumber <= cmpNumber) {
+			return fmt.Errorf("actual number %v is not equal or less than %s", right, *control.numberLE)
 		}
 	}
 	if control.numberLT != nil {
-		rightNumber := right.(jsutil.Number)
-		if !(rightNumber < *control.numberLT) {
-			return fmt.Errorf("actual number %s is not less than %s", rightNumber, *control.numberLT)
+		rightNumber, cmpNumber, err := getRangeOperands(right, *control.numberLT)
+		if err != nil {
+			return err
+		}
+		if !(rightNumber < cmpNumber) {
+			return fmt.Errorf("actual number %v is not less than %s", right, *control.numberLT)
 		}
 	}
 
@@ -715,4 +729,35 @@ func getAsInt64(value any) (n int64, err error) {
 	default:
 		return 0, fmt.Errorf("'%v' has no valid json number type", value)
 	}
+}
+
+func getAsFloat64(value any) (f float64, err error) {
+	switch t := value.(type) {
+	case int64:
+		return float64(t), nil
+	case int:
+		return float64(t), nil
+	case float32:
+		return float64(t), nil
+	case float64:
+		return t, nil
+	case jsutil.Number:
+		return t.Float64()
+	default:
+		return 0, fmt.Errorf("'%v' has no valid json number type", value)
+	}
+}
+
+// getRangeOperands returns the actual value and the control value of a
+// number_gt/ge/lt/le check as float64 for a numeric comparison
+func getRangeOperands(right any, controlValue jsutil.Number) (rightNumber, cmpNumber float64, err error) {
+	rightNumber, err = getAsFloat64(right)
+	if err != nil {
+		return 0, 0, err
+	}
+	cmpNumber, err = getAsFloat64(controlValue)
+	if err != nil {
+		return 0, 0, err
+	}
+	return rightNumber, cmpNumber, nil
 }

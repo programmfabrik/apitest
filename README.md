@@ -1599,7 +1599,7 @@ E.g. the following response would **fail** as `"beGreater"` is equal to the expe
 
 ### `number_ge`
 
-With `number_ge` (`=>`), you can check if your field of type number (implicit check) is equal or greater than a specific number.
+With `number_ge` (`>=`), you can check if your field of type number (implicit check) is equal or greater than a specific number.
 
 This control can be used without the actual key. So only the `:control` key is present.
 
