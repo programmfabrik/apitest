@@ -238,7 +238,7 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 | `store_response_gjson.sess_cookie` | Cookies are stored in `cookie` map |
 | `wait_before_ms`                   | Pauses right before sending the test request `<n>` milliseconds |
 | `wait_after_ms`                    | Pauses right after sending the test request `<n>` milliseconds |
-| `delay_ms`                         | Delay the request by `<n>` milliseconds |
+| `delay_ms`                         | Pauses `<n>` milliseconds between the repetitions of a polling request (see `timeout_ms`); the first request is sent without delay — `wait_before_ms` is the pause before that one |
 | `timeout_ms`                       | With this the testing tool will repeat the request to wait for certain events. The timeout is `<n>` milliseconds before the test fails |
 | `break_response`                   | If one of this responses occurs, the tool fails the test and tells it found a break response |
 | `collect_response`                 | The tool will check if all responses occur in the response (even in different poll runs) |
@@ -458,10 +458,11 @@ Expected http status code, if the response has another status code, the test cas
     // wait_before_ms pauses right before sending the test request <n> milliseconds
     "wait_before_ms": 0,
 
-    // wait_after_ms pauses right before sending the test request <n> milliseconds
+    // wait_after_ms pauses right after sending the test request <n> milliseconds
     "wait_after_ms": 0,
 
-    // Delay the request by x msec
+    // Pause x msec between the repetitions of the request (see timeout_ms below).
+    // The first request is not delayed; wait_before_ms pauses before that one.
     "delay_ms": 5000,
 
     // With the poll we can make the testing tool redo the request to wait for certain events (Only timeout_ms is required)

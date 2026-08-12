@@ -389,8 +389,15 @@ func (testCase Case) run() (successs bool, apiResponse api.Response, err error) 
 
 	// Poll repeats the request until the right response is found, or a timeout triggers
 	for {
-		// delay between repeating a request
-		if testCase.Delay != nil {
+		// delay BETWEEN the repetitions of a request: the first attempt is not
+		// delayed. Pausing before a request that has not been sent yet is what
+		// wait_before_ms does, and that one is independent of the repetition.
+		// Delaying the first attempt too made every polling test pay its delay
+		// even when the server was ready right away — in fylr's CI that was
+		// ~22 min per run, most of it in one shared setup fragment that four
+		// times per test waits 500ms for a server that answers in
+		// milliseconds (fylr #80713).
+		if testCase.Delay != nil && requestCounter > 0 {
 			time.Sleep(time.Duration(*testCase.Delay) * time.Millisecond)
 		}
 
