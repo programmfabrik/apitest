@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"io"
 	"strconv"
@@ -65,21 +67,135 @@ func Unmarshal(input []byte, output any) (err error) {
 	return UnmarshalPlain(jsonc.ToJSON(input), output)
 }
 
+// unmarshalPlainOpts configures the json/v2 engine to match the semantics of
+// the former v1 decoder exactly: v1 defaults (case-insensitive field names,
+// duplicate keys last-wins, invalid UTF-8 replaced) plus DisallowUnknownFields
+// and, via anyUseNumberUnmarshaler, UseNumber for every `any` destination.
+var unmarshalPlainOpts = jsonv2.JoinOptions(
+	json.DefaultOptionsV1(),
+	jsonv2.RejectUnknownMembers(true),
+	jsonv2.WithUnmarshalers(jsonv2.UnmarshalFromFunc(anyUseNumberUnmarshaler)),
+)
+
 // UnmarshalPlain decodes the input bytes into the output like Unmarshal, but
 // without the cjson comment / trailing comma handling. Use it for JSON which
 // was produced by marshaling or received from a server, that JSON cannot
 // contain comments and running the comment passes over it is wasted work.
+//
+// It runs on the json/v2 engine: unlike the v1 json.Decoder, which copies the
+// input into its internal buffer and decodes generic values through reflect,
+// jsontext parses the []byte in place (bytes.Buffer fast path) and the `any`
+// tree is built by a plain token loop. Semantics are kept at v1: see
+// unmarshalPlainOpts, and like the old Decoder.Decode, only the first JSON
+// value is read, trailing data is ignored. On error the old v1 decode is
+// re-run on the same input so error values and texts stay byte-identical.
 func UnmarshalPlain(input []byte, output any) (err error) {
+	dec := jsontext.NewDecoder(bytes.NewBuffer(input), unmarshalPlainOpts)
+	err = jsonv2.UnmarshalDecode(dec, output, unmarshalPlainOpts)
+	if err != nil {
+		v1Err := unmarshalPlainV1(input, output)
+		if v1Err == nil {
+			// v2 was stricter than v1 here; the v1 decode filled output.
+			return nil
+		}
+		return getIndepthJsonError(input, v1Err)
+	}
+	return nil
+}
+
+// unmarshalPlainV1 is the pre-json/v2 implementation of UnmarshalPlain. It is
+// kept as the error path of UnmarshalPlain: decoding is deterministic, so
+// re-running it on failing input reproduces the exact v1 error (types
+// *json.SyntaxError / *json.UnmarshalTypeError and their texts, which
+// getIndepthJsonError and the tests rely on). Should the v2 path ever be
+// stricter than v1 on some input, this also silently restores the v1 result.
+func unmarshalPlainV1(input []byte, output any) (err error) {
 	dec := json.NewDecoder(bytes.NewReader(input))
 	dec.DisallowUnknownFields()
 	dec.UseNumber()
 
 	// unmarshal into object
-	err = dec.Decode(output)
+	return dec.Decode(output)
+}
+
+// anyUseNumberUnmarshaler decodes a JSON value into an `any` destination the
+// way the v1 decoder with UseNumber did: Object / Array / String / Number
+// (json.Number) / Bool / nil, duplicate object keys last-wins.
+func anyUseNumberUnmarshaler(dec *jsontext.Decoder, out *any) error {
+	v, err := decodeAnyValue(dec)
 	if err != nil {
-		return getIndepthJsonError(input, err)
+		return err
 	}
+	*out = v
 	return nil
+}
+
+func decodeAnyValue(dec *jsontext.Decoder) (any, error) {
+	switch dec.PeekKind() {
+	case '{':
+		if _, err := dec.ReadToken(); err != nil { // '{'
+			return nil, err
+		}
+		obj := Object{}
+		for dec.PeekKind() != '}' {
+			keyTok, err := dec.ReadToken()
+			if err != nil {
+				return nil, err
+			}
+			key := keyTok.String()
+			val, err := decodeAnyValue(dec)
+			if err != nil {
+				return nil, err
+			}
+			obj[key] = val
+		}
+		if _, err := dec.ReadToken(); err != nil { // '}'
+			return nil, err
+		}
+		return obj, nil
+	case '[':
+		if _, err := dec.ReadToken(); err != nil { // '['
+			return nil, err
+		}
+		arr := Array{}
+		for dec.PeekKind() != ']' {
+			val, err := decodeAnyValue(dec)
+			if err != nil {
+				return nil, err
+			}
+			arr = append(arr, val)
+		}
+		if _, err := dec.ReadToken(); err != nil { // ']'
+			return nil, err
+		}
+		return arr, nil
+	case '"':
+		tok, err := dec.ReadToken()
+		if err != nil {
+			return nil, err
+		}
+		return tok.String(), nil
+	case '0':
+		val, err := dec.ReadValue()
+		if err != nil {
+			return nil, err
+		}
+		return Number(val), nil
+	default:
+		tok, err := dec.ReadToken() // true / false / null, or a syntax error
+		if err != nil {
+			return nil, err
+		}
+		switch tok.Kind() {
+		case 't':
+			return true, nil
+		case 'f':
+			return false, nil
+		case 'n':
+			return nil, nil
+		}
+		return nil, fmt.Errorf("jsutil: unexpected token %v", tok)
+	}
 }
 
 func getIndepthJsonError(input []byte, inputError error) (err error) {
