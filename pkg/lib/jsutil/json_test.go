@@ -90,7 +90,7 @@ welt:1
 2: "hallo": 2,
 3: "welt": "string
 4: }
-' schema due to a syntax error at line 4, character 0: invalid character '\n' in string literal`),
+' schema due to a syntax error at line 4, character 0: invalid character '\n' in string`),
 		},
 	}
 
@@ -235,7 +235,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 4: 	"hey":"e
 5: }
 6: }
-' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
+' schema due to a syntax error at line 5, character 0: invalid character '\n' in string`),
 		},
 		{
 			cjsonString: `{"hallo":3,
@@ -253,7 +253,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
 6: 	"hey":"e
 7: }
 8: }
-' schema due to a syntax error at line 7, character 0: invalid character '\n' in string literal`),
+' schema due to a syntax error at line 7, character 0: invalid character '\n' in string`),
 		},
 		{
 			cjsonString: `{"hallo":3,
@@ -276,7 +276,7 @@ func TestCJSONUnmarshalSyntaxErr(t *testing.T) {
  4: 	"hey":"e
  5: }
 13: }
-' schema due to a syntax error at line 5, character 0: invalid character '\n' in string literal`),
+' schema due to a syntax error at line 5, character 0: invalid character '\n' in string`),
 		},
 	}
 
@@ -318,6 +318,8 @@ func TestCJSONUnmarshalTypeErr(t *testing.T) {
 		[]error{
 			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct '', field ''. See input file line 1, character 9", cjsonStringLines),
 			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct 'expectedStructure', field 'name'. See input file line 1, character 9", cjsonStringLines),
+			// go 1.27 reports the Go field name, not the json tag
+			fmt.Errorf("In JSON '%s', the type 'number' cannot be converted into the Go 'string' type on struct 'expectedStructure', field 'Name'. See input file line 1, character 9", cjsonStringLines),
 		},
 	)
 }
