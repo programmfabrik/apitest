@@ -7,6 +7,8 @@
     "name": "check control structures in array",
     "tests": [
         "@invalid_control.json"
+        // A bare :control must fail instead of silently allowing extra array elements.
+        ,"@bare_control.json"
         ,"@match.json"
         ,"@no_extra.json"
         ,"@starts_ends_with.json"

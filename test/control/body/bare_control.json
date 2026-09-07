@@ -1,0 +1,25 @@
+{
+    "name": "reject a bare control inside an array element",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {
+            "rows": [{"id": 1}, {"id": 2}]
+        }
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "rows": [
+                    {
+                        "id": 1,
+                        ":control": {"no_extra": true, "order_matters": false}
+                    }
+                ]
+            }
+        }
+    },
+    "reverse_test_result": true
+}

@@ -999,6 +999,8 @@ Some of them also need a value and some don't. For those which don't need a valu
 
 In the example we use the jsonObject `test` and define some control structures on it. A control structure uses the key it is attached to plus `:control`. So for our case it would be `test:control`. The tool gets that this two keys `test` and `test:control` are in relationship with each other.
 
+A bare `":control"` key is invalid. To control an array, place `"arrayName:control"` beside `"arrayName"` in its parent object, not inside an array element.
+
 ```json
 {
     "test": {

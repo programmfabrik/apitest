@@ -234,6 +234,10 @@ func fillComparisonContext(in jsutil.Object) (out *ComparisonContext, err error)
 // hereby we also check our control structures and the noExtra parameter. If noExtra is true it is not allowed to have
 // elements than set
 func objectComparison(left, right jsutil.Object, noExtra bool) (res CompareResult, err error) {
+	if _, ok := left[":control"]; ok {
+		return CompareResult{}, errors.New(`":control" must have a non-empty target key; use "<key>:control" beside the target field`)
+	}
+
 	var (
 		rv, lv   any
 		rOK, lOK bool
