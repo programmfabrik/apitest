@@ -2779,6 +2779,14 @@ Write **msg** to log output. Args can be given. This uses logrus.Debugf to outpu
 
 Removes from **key** from **url**'s query, returns the **url** with the **key** removed. In case of an error, the **url** is returned as is. Unparsable urls are ignored and the **url** is returned.
 
+## `append_to_url` [suffix] [url]
+
+Appends **suffix** to the path of **url**, in front of its query and fragment, and returns the new **url**. Use it to append a path to a url that carries a query, for example a signed url: `{{ append_to_url "/videos/a.mp4" (datastore "zip_url") }}`.
+
+## `add_to_url` [key] [value] [url]
+
+Sets **key** to **value** in **url**'s query, returns the new **url**. An existing **key** is replaced. In case of an error, the **url** is returned as is. Unparsable urls are ignored and the **url** is returned.
+
 ## `value_from_url` [key]
 
 Returns the **value** from the **url**'s query for **key**. In case of an error, an empty string is returned. Unparsable urls are ignored and an empty string is returned.

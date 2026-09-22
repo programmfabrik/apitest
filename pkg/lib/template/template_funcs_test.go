@@ -339,3 +339,41 @@ func TestExtendForJsonNumber(t *testing.T) {
 		}
 	}
 }
+
+func TestUrlFuncs(t *testing.T) {
+	store := datastore.NewStore(false)
+	loader := NewLoader(store)
+
+	type testCase struct {
+		tmpl, exp string
+	}
+	for _, c := range []testCase{
+		// the path lands in front of the query and the fragment
+		{
+			tmpl: `{{ append_to_url "/videos/a.mp4" "http://h/f/original.zip?x-fylr-signature=abc..2026..def#frag" }}`,
+			exp:  `http://h/f/original.zip/videos/a.mp4?x-fylr-signature=abc..2026..def#frag`,
+		},
+		{
+			tmpl: `{{ append_to_url "/index.html" "http://h/f/original.zip" }}`,
+			exp:  `http://h/f/original.zip/index.html`,
+		},
+		{
+			tmpl: `{{ add_to_url "disposition" "attachment" "http://h/f/pages.zip?x-fylr-signature=abc" }}`,
+			exp:  `http://h/f/pages.zip?disposition=attachment&x-fylr-signature=abc`,
+		},
+		{
+			tmpl: `{{ add_to_url "a" "2" "http://h/p?a=1" }}`,
+			exp:  `http://h/p?a=2`,
+		},
+		{
+			tmpl: `{{ remove_from_url "x-fylr-signature" (add_to_url "x-fylr-signature" "abc" "http://h/p") }}`,
+			exp:  `http://h/p`,
+		},
+	} {
+		res, err := loader.Render([]byte(c.tmpl), "", nil)
+		go_test_utils.ExpectNoError(t, err, errorStringIfNotNil(err))
+		if !assert.Equal(t, c.exp, strings.TrimSpace(string(res))) {
+			return
+		}
+	}
+}

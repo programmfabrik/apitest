@@ -501,6 +501,27 @@ func (loader *Loader) Render(
 			u.RawQuery = q.Encode()
 			return u.String()
 		},
+		// append_to_url appends suffix to url's path, in front of the query
+		// and fragment, so a path appended to a signed url stays a path
+		"append_to_url": func(suffix, urlStr string) (urlPatched string) {
+			i := strings.IndexAny(urlStr, "?#")
+			if i < 0 {
+				return urlStr + suffix
+			}
+			return urlStr[:i] + suffix + urlStr[i:]
+		},
+		// add_to_url sets key to value in url's query part, returns the
+		// new url
+		"add_to_url": func(qKey, qValue, urlStr string) (urlPatched string) {
+			u, err := url.Parse(urlStr)
+			if err != nil {
+				return urlStr
+			}
+			q := u.Query()
+			q.Set(qKey, qValue)
+			u.RawQuery = q.Encode()
+			return u.String()
+		},
 		// value_from_url returns the value from url's query part
 		"value_from_url": func(qKey, urlStr string) (value string) {
 			u, err := url.Parse(urlStr)
