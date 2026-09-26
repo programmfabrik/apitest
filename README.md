@@ -239,13 +239,17 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
 | `wait_before_ms`                   | Pauses right before sending the test request `<n>` milliseconds |
 | `wait_after_ms`                    | Pauses right after sending the test request `<n>` milliseconds |
 | `delay_ms`                         | Pauses `<n>` milliseconds between the repetitions of a polling request (see `timeout_ms`); the first request is sent without delay — `wait_before_ms` is the pause before that one |
-| `timeout_ms`                       | With this the testing tool will repeat the request to wait for certain events. The timeout is `<n>` milliseconds before the test fails |
+| `timeout_ms`                       | With this the testing tool will repeat the request to wait for certain events. The timeout is `<n>` milliseconds before the test fails. It is checked between repetitions and does not shorten a single request (see [Request timeout](#request-timeout)) |
 | `break_response`                   | If one of this responses occurs, the tool fails the test and tells it found a break response |
 | `collect_response`                 | The tool will check if all responses occur in the response (even in different poll runs) |
 | `reverse_test_result`              | If set to true, the test case will consider its failure as a success, and the other way around |
 | `continue_on_failure`              | Define if the test suite should continue even if this test fails. (default: false) |
 
 The `response` definition is optional. If it is not included in the test case, a status code of `200` and no specific body is expected.
+
+#### Request timeout
+
+Every request has a fixed timeout of 5 minutes, covering connecting, redirects and reading the response body. A request that is not answered within that time fails the test with `Client.Timeout exceeded`. The timeout cannot be configured, and `timeout_ms` does not shorten it: a test for a server that hangs takes 5 minutes to fail.
 
 #### Statuscode
 
