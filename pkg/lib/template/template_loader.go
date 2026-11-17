@@ -25,8 +25,10 @@ import (
 
 	"path/filepath"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/tidwall/gjson"
+
+	// the sqlite driver of file_sqlite, without cgo
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -160,7 +162,8 @@ func (loader *Loader) Render(
 				row      []any
 			)
 
-			database, err = sql.Open("sqlite3", filepath.Join(rootDir, path))
+			// _inttotime: an integer in a DATE, DATETIME or TIMESTAMP column is a time
+			database, err = sql.Open("sqlite", filepath.Join(rootDir, path)+"?_inttotime=1")
 			if err != nil {
 				return nil, err
 			}
@@ -192,7 +195,12 @@ func (loader *Loader) Render(
 				}
 
 				for idx, d := range row {
-					dataEntry[columns[idx].Name()] = reflect.ValueOf(d).Elem().Interface()
+					v := reflect.ValueOf(d).Elem().Interface()
+					// a BOOLEAN column is true or false
+					if i, ok := v.(int64); ok && strings.EqualFold(columns[idx].DatabaseTypeName(), "boolean") {
+						v = i > 0
+					}
+					dataEntry[columns[idx].Name()] = v
 				}
 
 				data = append(data, dataEntry)
